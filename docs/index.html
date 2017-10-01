@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Frappe Charts</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="open source javascript js charts library svg zero-dependency interactive data visualization beautiful drag resize">
+    <meta name="description" content="A simple, responsive, modern charts library for the web.">
+
+    <link rel="stylesheet" type="text/css" href="assets/css/normalize.css" media="screen">
+    <!--<link href='https://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet' type='text/css'>-->
+    <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="assets/css/frappe_theme.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="assets/css/index.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="assets/css/default.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="../src/charts.css" media="screen">
+    <script src="assets/js/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <!--<link rel="shortcut icon" href="https://frappe.github.io/frappe/assets/img/favicon.png" type="image/x-icon">
+    <link rel="icon" href="https://frappe.github.io/frappe/assets/img/favicon.png" type="image/x-icon">-->
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="row hero" style="padding-top: 30px; padding-bottom: 0px;">
+        <div class="jumbotron" style="background: transparent;">
+          <h1>Frappé Charts</h1>
+          <p class="mt-2">GitHub-style simple and modern charts for the web</p>
+          <p class="mt-2">with zero dependencies.</p>
+        </div>
+
+        <div class="col-sm-10 push-sm-1 later" style="font-size: 14px;">
+          <div id="charts-1" class="chart-container"></div>
+          <p class="mt-1"><strong>Try it!</strong> Use arrow keys to navigate data points</p>
+        </div>
+        <div class="col-sm-10 push-sm-1 later" style="font-size: 14px;">
+          <div id="charts-2" class="chart-container"></div>
+        </div>
+      </div>
+
+      <div class="group later">
+        <div class="row section">
+          <div class="col-sm-10 push-sm-1">
+            <div class="dashboard-section">
+              <h1>Installation</h1>
+              <pre>
+                <code class="hljs">npm install frappe-charts</code>
+              </pre>
+              <svg class="chart" width="720" height="140">
+
+                <rect class="bar mini fill green" x="449.99999999999994" y="15.32519666666667" width="23.076923076923077" height="10">
+                </rect>
+               <!--<animate
+                    attributeName="height"
+                    from="10"
+                    to="110"
+                    begin="0.2s"
+                    dur="2s"
+                    values="10;110"
+                    keySplines="0 0 1 1"
+                    keyTimes="
+                      0;1"
+                    calcMode="spline"
+
+
+                  />-->
+
+                <!--<animate
+                    attributeName="height"
+                    from="10"
+                    to="110"
+                    begin="0s"
+                    dur="1s"
+                    values="10;110"
+                    keySplines="0.1 0.8 0.2 1"
+                    keyTimes="
+                      0;1"
+                    calcMode="spline"
+
+
+                  />
+                  <animate
+                    attributeName="y"
+                    from="15"
+                    to="50"
+                    begin="0s"
+                    dur="1s"
+                    values="15;50"
+                    keySplines="0.1 0.8 0.2 1"
+                    keyTimes="
+                      0;1"
+                    calcMode="spline"
+
+
+                  />-->
+
+                <path class="stroke green"
+                  d="M0,100L54.55,100L109.09,100L163.64,89.75L218.18,86.18L272.73,96L327.27,100L381.82,100L436.36,95.69L490.91,15.33L545.45,80.53L600,100">
+                  <animate
+                    attributeName="d"
+                    from="M0,100L54.55,100L109.09,100L163.64,89.75L218.18,86.18L272.73,96L327.27,100L381.82,100L436.36,95.69L490.91,15.33L545.45,80.53L600,100"
+                    to="M0,100L54.55,35L109.09,100L163.64,89.75L218.18,86.18L222.73,96L267.27,32L381.82,45L436.36,95.69L490.91,65.33L545.45,80.53L600,100"
+                    begin="1s"
+                    dur="1s"
+                    values="M0,100L54.55,100L109.09,100L163.64,89.75L218.18,86.18L272.73,96L327.27,100L381.82,100L436.36,95.69L490.91,15.33L545.45,80.53L600,100;
+                      M0,100L54.55,35L109.09,100L163.64,89.75L218.18,86.18L222.73,96L267.27,32L381.82,45L436.36,95.69L490.91,65.33L545.45,80.53L600,100"
+                    keySplines="0.1 0.8 0.2 1"
+                    keyTimes="
+                      0;1"
+                    calcMode="spline"
+                    repeatCount="indefinite"
+                  />
+                </path>
+                <!--<path class="stroke green"
+                  d="M0,100L54.55,35L109.09,100L163.64,89.75L218.18,86.18L272.73,96L327.27,32L381.82,45L436.36,95.69L490.91,65.33L500.45,80.53L530,20">
+                  <animate
+                    attributeName="d"
+                    from="M0,100L54.55,35L109.09,100L163.64,89.75L218.18,86.18L272.73,96L327.27,32L381.82,45L436.36,95.69L490.91,65.33L500.45,80.53L530,20"
+                    to="M0,100L54.55,35L109.09,100L163.64,89.75L218.18,86.18L272.73,96L327.27,32L381.82,45L436.36,95.69L490.91,65.33L500.45,80.53L530,20L560,80L600,50"
+                    begin="0s"
+                    dur="6s"
+                    values="M0,100L54.55,35L109.09,100L163.64,89.75L218.18,86.18L272.73,96L327.27,32L381.82,45L436.36,95.69L490.91,65.33L500.45,80.53L530,20;
+                      M0,100L54.55,35L109.09,100L163.64,89.75L218.18,86.18L272.73,96L327.27,32L381.82,45L436.36,95.69L490.91,65.33L500.45,80.53L530,20L560,80L600,50"
+                    keySplines="0.1 0.8 0.2 1"
+                    keyTimes="
+                      0;1"
+                    calcMode="spline"
+                    repeatCount="indefinite"
+                  />
+                </path>-->
+
+                <!--<path class="stroke green" d="M0,100L54.55,35L109.09,100L163.64,89.75L218.18,86.18L272.73,96L327.27,32L381.82,45L436.36,95.69L490.91,65.33L500.45,80.53L600,100"></path>-->
+              </svg>
+              <!--<svg class="chart" width="720" height="140">
+                <path class="stroke green" d="M0,100L54.55,35L109.09,100L163.64,89.75L218.18,86.18L272.73,96L327.27,32L381.82,45L436.36,95.69L490.91,65.33L500.45,80.53L530,20L560,80L600,50"></path>
+              </svg>-->
+            </div>
+          </div>
+          <div class="col-sm-10 push-sm-1">
+            <div class="dashboard-section">
+              <h1>Usage</h1>
+              <h6 style="margin:2em 0 0 0">
+                Include it in your html
+              </h6>
+              <pre>
+                <code class="hljs html">&lt;script src="frappe-charts.min.js" /&gt;</code>
+              </pre>
+              <h6 style="margin:0">Create an svg element</h6>
+              <pre>
+                <code class="hljs html">&lt;svg id="chart"&gt;&lt;/svg&gt;</code>
+              </pre>
+              <h6 style="margin:0">Initiliaze a new Chart object</h6>
+              <pre>
+                <code class="hljs javascript">var tasks = [
+                    {
+                      id: 'Task 1',
+                      name: 'Redesign website',
+                      start: '2016-12-28',
+                      end: '2016-12-31',
+                      progress: 20,
+                      dependencies: 'Task 2, Task 3'
+                    },
+                    ...
+                  ]
+                  var chart = new Chart;
+                </code>
+              </pre>
+            </div>
+          </div>
+          <div class="col-sm-10 push-sm-1">
+            <div class="dashboard-section">
+              <h1>Examples</h1>
+
+
+
+
+              <!-- Closing -->
+              <div class="text-center" style="margin-top: 70px">
+                <a href=""><button class="large blue button">Download</button></a>
+                <p class="mt-2"><a href="https://github.com/frappe" target="_blank">View on GitHub</a></p>
+                <p>License: MIT</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="../src/charts.js"></script>
+    <script src="assets/js/index.js"></script>
+  </body>
+</html>

@@ -1,0 +1,59 @@
+.page-header {
+	width: 100%;
+	text-align: center;
+	color: #fff;
+	padding: 2em 0;
+}
+
+.project-name {
+	padding-top: 1.8em;
+	font-size: 2.5em;
+}
+.project-tagline {
+	font-size: 1em;
+	opacity: 0.7;
+	padding: 2em;
+}
+.btn-transparent {
+	margin: 0 0.5em;
+	color: #fff;
+	background: rgba(255, 255, 255, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.4)
+}
+.btn-transparent:hover {
+	color: #fff;
+	background: rgba(255, 255, 255, 0.3);
+}
+
+.main-content {
+	padding: 2em;
+}
+
+.main-content .row {
+	margin-bottom: 20px;
+}
+
+hr {
+	margin-bottom: 2rem;
+}
+
+.chart-container {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+}
+
+pre.highlight {
+	background: #f7f7f7;
+	border-radius: 3px;
+}
+
+.btn-group>.btn {
+	outline: none !important;
+}
+.dashboard-section h1 {
+	margin-left: -2px;
+}
+
+.hero .gantt-container {
+	text-align: left;
+}

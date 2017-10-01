@@ -1,0 +1,272 @@
+/* graphs */
+.graph-container .graph-focus-margin {
+  margin: 0px 5%;
+}
+.graph-container .graphics {
+  margin-top: 10px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  position: relative;
+}
+.graph-container .graph-stats-group {
+  display: flex;
+  justify-content: space-around;
+  flex: 1;
+}
+.graph-container .graph-stats-container {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 10px;
+}
+.graph-container .graph-stats-container .stats {
+  padding-bottom: 15px;
+}
+.graph-container .graph-stats-container .stats-title {
+  color: #8D99A6;
+}
+.graph-container .graph-stats-container .stats-value {
+  font-size: 20px;
+  font-weight: 300;
+}
+.graph-container .graph-stats-container .stats-description {
+  font-size: 12px;
+  color: #8D99A6;
+}
+.graph-container .graph-stats-container .graph-data .stats-value {
+  color: #98d85b;
+}
+.graph-container .axis,
+.graph-container .chart-label {
+  font-size: 10px;
+  fill: #959ba1;
+}
+.graph-container .axis line,
+.graph-container .chart-label line {
+  stroke: rgba(27, 31, 35, 0.1);
+}
+.graph-container .percentage-graph .progress {
+  margin-bottom: 0px;
+}
+.graph-container .data-points circle {
+  stroke: #fff;
+  stroke-width: 2;
+}
+.graph-container .data-points path {
+  fill: none;
+  stroke-opacity: 1;
+  stroke-width: 2px;
+}
+.graph-container line.dashed {
+  stroke-dasharray: 5,3;
+}
+.graph-container .tick.x-axis-label {
+  display: block;
+}
+.graph-container .tick .specific-value {
+  text-anchor: start;
+}
+.graph-container .tick .y-value-text {
+  text-anchor: end;
+}
+.graph-container .tick .x-value-text {
+  text-anchor: middle;
+}
+.graph-svg-tip {
+  position: absolute;
+  z-index: 99999;
+  padding: 10px;
+  font-size: 12px;
+  color: #959da5;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 3px;
+}
+.graph-svg-tip.comparison {
+  padding: 0;
+  text-align: left;
+  pointer-events: none;
+}
+.graph-svg-tip.comparison .title {
+  display: block;
+  padding: 10px;
+  margin: 0;
+  font-weight: 600;
+  line-height: 1;
+  pointer-events: none;
+}
+.graph-svg-tip.comparison ul {
+  margin: 0;
+  white-space: nowrap;
+  list-style: none;
+}
+.graph-svg-tip.comparison li {
+  display: inline-block;
+  padding: 5px 10px;
+}
+.graph-svg-tip ul,
+.graph-svg-tip ol {
+  padding-left: 0;
+  display: flex;
+}
+.graph-svg-tip ul.data-point-list li {
+  min-width: 90px;
+  flex: 1;
+}
+.graph-svg-tip strong {
+  color: #dfe2e5;
+}
+.graph-svg-tip .svg-pointer {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin: 0 0 0 -5px;
+  content: " ";
+  border: 5px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.8);
+}
+.stroke.grey {
+  stroke: #F0F4F7;
+}
+.stroke.blue {
+  stroke: #5e64ff;
+}
+.stroke.red {
+  stroke: #ff5858;
+}
+.stroke.light-green {
+  stroke: #98d85b;
+}
+.stroke.green {
+  stroke: #28a745;
+}
+.stroke.orange {
+  stroke: #ffa00a;
+}
+.stroke.purple {
+  stroke: #743ee2;
+}
+.stroke.darkgrey {
+  stroke: #b8c2cc;
+}
+.stroke.black {
+  stroke: #36414C;
+}
+.stroke.yellow {
+  stroke: #FEEF72;
+}
+.stroke.light-blue {
+  stroke: #7CD6FD;
+}
+.stroke.lightblue {
+  stroke: #7CD6FD;
+}
+.fill.grey {
+  fill: #F0F4F7;
+}
+.fill.blue {
+  fill: #5e64ff;
+}
+.fill.red {
+  fill: #ff5858;
+}
+.fill.light-green {
+  fill: #98d85b;
+}
+.fill.green {
+  fill: #28a745;
+}
+.fill.orange {
+  fill: #ffa00a;
+}
+.fill.purple {
+  fill: #743ee2;
+}
+.fill.darkgrey {
+  fill: #b8c2cc;
+}
+.fill.black {
+  fill: #36414C;
+}
+.fill.yellow {
+  fill: #FEEF72;
+}
+.fill.light-blue {
+  fill: #7CD6FD;
+}
+.fill.lightblue {
+  fill: #7CD6FD;
+}
+.background.grey {
+  background: #F0F4F7;
+}
+.background.blue {
+  background: #5e64ff;
+}
+.background.red {
+  background: #ff5858;
+}
+.background.light-green {
+  background: #98d85b;
+}
+.background.green {
+  background: #28a745;
+}
+.background.orange {
+  background: #ffa00a;
+}
+.background.purple {
+  background: #743ee2;
+}
+.background.darkgrey {
+  background: #b8c2cc;
+}
+.background.black {
+  background: #36414C;
+}
+.background.yellow {
+  background: #FEEF72;
+}
+.background.light-blue {
+  background: #7CD6FD;
+}
+.background.lightblue {
+  background: #7CD6FD;
+}
+.border-top.grey {
+  border-top: 3px solid #F0F4F7;
+}
+.border-top.blue {
+  border-top: 3px solid #5e64ff;
+}
+.border-top.red {
+  border-top: 3px solid #ff5858;
+}
+.border-top.light-green {
+  border-top: 3px solid #98d85b;
+}
+.border-top.green {
+  border-top: 3px solid #28a745;
+}
+.border-top.orange {
+  border-top: 3px solid #ffa00a;
+}
+.border-top.purple {
+  border-top: 3px solid #743ee2;
+}
+.border-top.darkgrey {
+  border-top: 3px solid #b8c2cc;
+}
+.border-top.black {
+  border-top: 3px solid #36414C;
+}
+.border-top.yellow {
+  border-top: 3px solid #FEEF72;
+}
+.border-top.light-blue {
+  border-top: 3px solid #7CD6FD;
+}
+.border-top.lightblue {
+  border-top: 3px solid #7CD6FD;
+}
