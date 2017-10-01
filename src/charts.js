@@ -320,12 +320,8 @@ class AxisGraph extends FrappeChart {
 	make_graph_components() {
 		this.make_y_axis();
 		this.make_x_axis();
-
-		if(this.specific_values.length > 0) {
-			this.make_y_specifics();
-		}
-
 		this.draw_graph();
+		this.make_y_specifics();
 	}
 
 	// make HORIZONTAL lines for y values
@@ -424,6 +420,7 @@ class AxisGraph extends FrappeChart {
 	}
 
 	draw_graph() {
+		// TODO: Don't animate on refresh
 		let data = [];
 		this.y.map((d, i) => {
 			// Anim: Don't draw initial values, store them and update later
@@ -546,53 +543,44 @@ class AxisGraph extends FrappeChart {
 
 	// API
 	update_values(new_y) {
-		let u = this.unit_args;
-		let elements = [];
+		// Just update values prop, setup_y() will do the rest
+		this.y.map((d, i) => {d.values = new_y[i].values;});
 
+		let old_upper_limit = this.upper_limit;
+		this.setup_y();
+		if(this.old_upper_limit !== this.upper_limit){
+			this.make_y_axis();
+		}
+
+		let elements_to_animate = [];
 		this.y.map((d, i) => {
-			let new_d = new_y[i];
-			new_d.y_tops = new_d.values.map(val => chart_utils.float_2(this.height - val * this.multiplier));
-			let new_units = [];
-
-			// below is equal to this.y[i].svg_units..
+			d.y_tops = d.values.map(val => chart_utils.float_2(this.height - val * this.multiplier));
 			d.svg_units.map((unit, j) => {
-				let current_y_top = d.y_tops[j];
-				let current_height = this.height - current_y_top;
-
-				let new_y_top = new_d.y_tops[j];
-				let new_height = current_height - (new_y_top - current_y_top);
-
-				let args = this.animate[u.type]({unit:unit, array:d.svg_units, index: j}, new_y_top, {new_height: new_height});
-
-				elements.push(args);
-
-				// Replace values and formatted and tops
-				[d.values, d.y_tops] = [new_d.values, new_d.y_tops];
-
+				elements_to_animate.push(this.animate[this.unit_args.type](
+					{unit:unit, array:d.svg_units, index: j}, // unit, with info to replace from data
+					d.y_tops[j],
+					{new_height: this.height - d.y_tops[j]}
+				));
 			});
-
 		});
-
 		this.calc_min_tops();
 
 		// create new x,y pair string and animate path
 		if(this.y[0].path) {
-			new_y.map((e, i) => {
+			this.y.map((e, i) => {
 				let new_points_list = e.y_tops.map((y, i) => (this.x_axis_values[i] + ',' + y));
 				let new_path_str = "M"+new_points_list.join("L");
 				let args = [{unit:this.y[i].path, object: this.y[i], key:'path'}, {d:new_path_str}, 300, "easein"];
-				elements.push(args);
+				elements_to_animate.push(args);
 			});
 		}
 
-		// elements = elements.concat(this.update_y_axis());
-		let new_svg_units, anim_svg;
-
-		[new_svg_units, anim_svg] = $$.runSVGAnimation(this.svg, elements);
-
+		// elements_to_animate = elements_to_animate.concat(this.update_y_axis());
+		let anim_svg = $$.runSVGAnimation(this.svg, elements_to_animate);
 		this.chart_wrapper.innerHTML = '';
 		this.chart_wrapper.appendChild(anim_svg);
 
+		// Replace the new svg (data has long been replaced)
 		setTimeout(() => {
 			this.chart_wrapper.innerHTML = '';
 			this.chart_wrapper.appendChild(this.svg);
@@ -601,17 +589,7 @@ class AxisGraph extends FrappeChart {
 
 	update_y_axis() {
 		let elements = [];
-		let old_upper_limit = this.upper_limit;
-		this.setup_y();
-		console.log("upper limits", old_upper_limit, this.upper_limit);
-		if(this.old_upper_limit !== this.upper_limit){
-			// resetup y_axis
-			this.make_y_axis();
-		}
-		this.y.map((d, i) => {
-			this.make_new_units(d.y_tops, d.color || this.colors[i], i);
-			this.make_path && this.make_path(d, d.color || this.colors[i]);
-		});
+
 		return elements;
 	}
 
@@ -620,7 +598,6 @@ class AxisGraph extends FrappeChart {
 	}
 
 	add_data_point(data_point) {
-		//
 		this.x.push(data_point.label);
 		this.y.values.push();
 	}
@@ -1434,7 +1411,7 @@ $$.runSVGAnimation = (svg_container, elements) => {
 		elements[i][0] = new_elements[i];
 	});
 
-	return [new_elements, anim_svg];
+	return anim_svg;
 }
 
 $$.animateSVG = (element, props, dur, easing_type="linear") => {
