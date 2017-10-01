@@ -38,11 +38,11 @@
 .graph-container .axis,
 .graph-container .chart-label {
   font-size: 10px;
-  fill: #959ba1;
+  fill: #555b51;
 }
 .graph-container .axis line,
 .graph-container .chart-label line {
-  stroke: rgba(27, 31, 35, 0.1);
+  stroke: rgba(27, 31, 35, 0.2);
 }
 .graph-container .percentage-graph .progress {
   margin-bottom: 0px;
