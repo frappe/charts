@@ -1,4 +1,7 @@
 /* graphs */
+.chart-container {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
 .chart-container .graph-focus-margin {
   margin: 0px 5%;
 }
