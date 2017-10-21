@@ -9,7 +9,7 @@
 // 	{
 // 		title: "Total",
 // 		color: 'blue',		// Indicator colors: 'grey', 'blue', 'red', 'green', 'orange',
-// 					// 'purple', 'darkgrey', 'black', 'yellow', 'lightblue'
+// 					// 'violet', 'darkgrey', 'black', 'yellow', 'light-blue'
 // 		value: 80
 // 	}
 // ]
@@ -262,8 +262,8 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		this.get_x_tooltip = this.format_lambdas.x_tooltip;
 		this.get_y_tooltip = this.format_lambdas.y_tooltip;
 
-		this.colors = ['lightblue', 'purple', 'blue', 'green', 'lightgreen',
-			'yellow', 'orange', 'red'];
+		this.colors = ['green', 'blue', 'violet', 'red', 'orange',
+				'yellow', 'light-blue', 'light-green', 'purple', 'magenta'];
 
 		this.zero_line = this.height;
 	}
@@ -487,14 +487,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	bind_tooltip() {
 		// TODO: could be in tooltip itself, as it is a given functionality for its parent
 		this.chart_wrapper.addEventListener('mousemove', (e) => {
-			let rect = this.chart_wrapper.getBoundingClientRect();
-			let offset = {
-				// https://stackoverflow.com/a/7436602/6495043
-				// rect.top varies with scroll, so we add whatever has been
-				// scrolled to it to get absolute distance from actual page top
-				top: rect.top + (document.documentElement.scrollTop || document.body.scrollTop),
-				left: rect.left + (document.documentElement.scrollLeft || document.body.scrollLeft)
-			}
+			let offset = $$.offset(this.chart_wrapper);
 			let relX = e.pageX - offset.left - this.translate_x;
 			let relY = e.pageY - offset.top - this.translate_y;
 
@@ -672,7 +665,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		}
 
 		// Make both region parts even
-		if(pos_no_of_parts % 2 !== 0) pos_no_of_parts++;
+		if(pos_no_of_parts % 2 !== 0 && neg_no_of_parts > 0) pos_no_of_parts++;
 		if(neg_no_of_parts % 2 !== 0) {
 			// every increase in no_of_parts entails an increase in corresponding bound
 			// except here, it happens implicitly after every calc_no_of_parts() call
@@ -820,18 +813,18 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 }
 
 frappe.chart.BarChart = class BarChart extends frappe.chart.AxisChart {
-	constructor() {
-		super(arguments[0]);
+	constructor(args) {
+		super(args);
 
 		this.type = 'bar-graph';
+		this.x_axis_mode = args.x_axis_mode || 'tick';
+		this.y_axis_mode = args.y_axis_mode || 'span';
 		this.setup();
 	}
 
 	setup_values() {
 		super.setup_values();
 		this.x_offset = this.avg_unit_width;
-		this.y_axis_mode = 'span';
-		this.x_axis_mode = 'tick';
 		this.unit_args = {
 			type: 'bar',
 			args: {
@@ -892,14 +885,14 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 
 		this.type = 'line-graph';
 		this.region_fill = args.region_fill;
+		this.x_axis_mode = args.x_axis_mode || 'span';
+		this.y_axis_mode = args.y_axis_mode || 'span';
 
 		this.setup();
 	}
 
 	setup_values() {
 		super.setup_values();
-		this.y_axis_mode = 'span';
-		this.x_axis_mode = 'span';
 		this.unit_args = {
 			type: 'dot',
 			args: { radius: 4 }
@@ -957,13 +950,20 @@ frappe.chart.PercentageChart = class PercentageChart extends frappe.chart.Frappe
 	constructor(args) {
 		super(args);
 
-		this.x = this.data.labels;
-		this.y = this.data.datasets;
-
 		this.get_x_label = this.format_lambdas.x_label;
 		this.get_y_label = this.format_lambdas.y_label;
 		this.get_x_tooltip = this.format_lambdas.x_tooltip;
 		this.get_y_tooltip = this.format_lambdas.y_tooltip;
+
+		this.max_slices = 10;
+		this.max_legend_points = 6;
+
+		this.colors = args.colors;
+
+		if(!this.colors || this.colors.length < this.data.labels.length) {
+			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange',
+				'yellow', 'green', 'light-green', 'purple', 'magenta'];
+		}
 
 		this.setup();
 	}
@@ -991,22 +991,6 @@ frappe.chart.PercentageChart = class PercentageChart extends frappe.chart.Frappe
 		});
 	}
 
-	setup_values() {
-		this.x.totals = this.x.map((d, i) => {
-			let total = 0;
-			this.y.map(e => {
-				total += e.values[i];
-			});
-			return total;
-		});
-
-		if(!this.x.colors) {
-			this.x.colors = ['green', 'blue', 'purple', 'red', 'orange',
-				'yellow', 'lightblue', 'lightgreen'];
-		}
-	}
-
-	setup_utils() { }
 	setup_components() {
 		this.percentage_bar = $$.create('div', {
 			className: 'progress',
@@ -1014,46 +998,83 @@ frappe.chart.PercentageChart = class PercentageChart extends frappe.chart.Frappe
 		});
 	}
 
+	setup_values() {
+		this.slice_totals = [];
+		let all_totals = this.data.labels.map((d, i) => {
+			let total = 0;
+			this.data.datasets.map(e => {
+				total += e.values[i];
+			});
+			return [total, d];
+		}).filter(d => { return d[0] > 0; }); // keep only positive results
+
+		let totals = all_totals;
+
+		if(all_totals.length > this.max_slices) {
+			all_totals.sort((a, b) => { return b[0] - a[0]; });
+
+			totals = all_totals.slice(0, this.max_slices-1);
+			let others = all_totals.slice(this.max_slices-1);
+
+			let sum_of_others = 0;
+			others.map(d => {sum_of_others += d[0]});
+
+			totals.push([sum_of_others, 'Rest']);
+
+			this.colors[this.max_slices-1] = 'grey';
+		}
+
+		this.labels = [];
+		totals.map(d => {
+			this.slice_totals.push(d[0]);
+			this.labels.push(d[1]);
+		});
+
+		this.legend_totals = this.slice_totals.slice(0, this.max_legend_points);
+	}
+
+	setup_utils() { }
+
 	make_graph_components() {
-		this.grand_total = this.x.totals.reduce((a, b) => a + b, 0);
-		this.x.units = [];
-		this.x.totals.map((total, i) => {
-			let part = $$.create('div', {
-				className: `progress-bar background ${this.x.colors[i]}`,
+		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
+		this.slices = [];
+		this.slice_totals.map((total, i) => {
+			let slice = $$.create('div', {
+				className: `progress-bar background ${this.colors[i]}`,
 				style: `width: ${total*100/this.grand_total}%`,
 				inside: this.percentage_bar
 			});
-			this.x.units.push(part);
+			this.slices.push(slice);
 		});
 	}
 
 	bind_tooltip() {
-		this.x.units.map((part, i) => {
-			part.addEventListener('mouseenter', () => {
-				let g_off = this.chart_wrapper.offset(), p_off = part.offset();
+		this.slices.map((slice, i) => {
+			slice.addEventListener('mouseenter', () => {
+				let g_off = $$.offset(this.chart_wrapper), p_off = $$.offset(slice);
 
-				let x = p_off.left - g_off.left + part.offsetWidth/2;
+				let x = p_off.left - g_off.left + slice.offsetWidth/2;
 				let y = p_off.top - g_off.top - 6;
-				let title = (this.x.formatted && this.x.formatted.length>0
-					? this.x.formatted[i] : this.x[i]) + ': ';
-				let percent = (this.x.totals[i]*100/this.grand_total).toFixed(1);
+				let title = (this.formatted_labels && this.formatted_labels.length>0
+					? this.formatted_labels[i] : this.labels[i]) + ': ';
+				let percent = (this.slice_totals[i]*100/this.grand_total).toFixed(1);
 
-				this.tip.set_values(x, y, title, percent);
+				this.tip.set_values(x, y, title, percent + "%");
 				this.tip.show_tip();
 			});
 		});
 	}
 
 	show_summary() {
-		let x_values = this.x.formatted && this.x.formatted.length > 0
-			? this.x.formatted : this.x;
-		this.x.totals.map((d, i) => {
+		let x_values = this.formatted_labels && this.formatted_labels.length > 0
+			? this.formatted_labels : this.labels;
+		this.legend_totals.map((d, i) => {
 			if(d) {
 				let stats = $$.create('div', {
 					className: 'stats',
 					inside: this.stats_wrapper
 				});
-				stats.innerHTML = `<span class="indicator ${this.x.colors[i]}">
+				stats.innerHTML = `<span class="indicator ${this.colors[i]}">
 					<span class="text-muted">${x_values[i]}:</span>
 					${d}
 				</span>`;
@@ -1613,6 +1634,17 @@ $$.animateSVG = (element, props, dur, easing_type="linear") => {
 
 	return [anim_element, new_element];
 }
+
+$$.offset = function(element) {
+	let rect = element.getBoundingClientRect();
+	return {
+		// https://stackoverflow.com/a/7436602/6495043
+		// rect.top varies with scroll, so we add whatever has been
+		// scrolled to it to get absolute distance from actual page top
+		top: rect.top + (document.documentElement.scrollTop || document.body.scrollTop),
+		left: rect.left + (document.documentElement.scrollLeft || document.body.scrollLeft)
+	}
+};
 
 $$.bind = function(element, o) {
 	if (element) {
