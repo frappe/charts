@@ -20,8 +20,8 @@ let line_data = {
 	"labels": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
 	"datasets": [{
 			"color": "green",
-			// "values": [25, 40, 30, 35, 48, 52, 17],
-			"values": [25, -90, -30, 35, 48, 52, -17]
+			"values": [25, 40, 30, 35, 48, 52, 17],
+			// "values": [25, -90, -30, 35, 48, 52, -17]
 
 		}
 	]
@@ -70,16 +70,18 @@ let more_line_data = {
 let line_chart = new frappe.chart.FrappeChart ({
 	parent: "#charts-2",
 	data: line_data,
-	type: 'bar',
-	height: 140
+	type: 'line',
+	height: 340,
+	region_fill: 1
 })
 
 let bar_chart = new frappe.chart.FrappeChart ({
 	parent: "#charts-1",
 	data: bar_data,
-	type: 'bar',
+	type: 'line',
 	height: 140,
-	is_navigable: 1
+	is_navigable: 1,
+	region_fill: 1
 })
 
 bar_chart.parent.addEventListener('data-select', (e) => {
@@ -88,8 +90,9 @@ bar_chart.parent.addEventListener('data-select', (e) => {
 
 // console.log("chart", bar_chart);
 
+let percentage_data = {};
 
-let heatmap_data = {}
+let heatmap_data = {};
 
 // update_test() {
 // 	setTimeout(() => {
