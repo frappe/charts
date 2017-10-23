@@ -25,49 +25,47 @@ let line_data = {
 			"values": [25, 40, 30, 35, 48, 52, 17],
 			// "values": [25, -90, -30, 35, 48, 52, -17]
 
-		}
+		},
+		// {
+		// 	"color": "yellow",
+		// 	// "values": [25, 40, 30, 35, 48, 52, 17],
+		// 	"values": [25, -90, -30, 35, 48, 52, -17]
+
+		// }
 	]
 };
 
 let more_line_data = {
-	0: {
-		values: [25, -90, -30, 35, 48, 52, -17]
-	},
-	1: {
-		// values: [35, 48, -40, -30, 52, -17, 25]
-		// values: [25, -40, -30, 35, 48, 52, -17, 20]
-		values: [25, -40, -30, 35, 48, 52]
-	},
-	2: {
-		values: [5, 48, 52, 17, 25, 40, 30, 20, 30]
-	},
-	3: {
-		values: [25, 40, 30, 35, 48, 52, 17, 20, 30, 40]
-	},
-	4: {
-		values: [35, 48, 40, 30, 52, 17, 72]
-	},
-	5: {
-		values: [5, 48, 52, 17, 72, 40, 30]
-	},
-	6: {
-		values: [72, 40, 30, 35, 48, 52, 17]
-	},
-	7: {
-		values: [35, 48, 40, 30, 52, 17, 25]
-	},
-	8: {
-		values: [5, 48, 52, 17, 25, 40, 30]
-	},
-	9: {
-		values: [25, 40, 30, 35, 48, 52, 17]
-	},
-	10: {
-		values: [35, 48, 40, 30, 52, 17, 25]
-	},
-	11: {
-		values: [5, 48, 52, 17, 25, 40, 30]
-	}
+	0: [{values: [25, -90, -30, 35, 48, 52, -17]}, ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]],
+	1: [{values: [25, -40, -30, 35, 48, 52]}, ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri"]],
+	2: [{values: [5, 48, -52, 17, -25, 40, 30, 20, -25, 40, 30, 20]}, ["Thu", "Fri", "Sat", "Sun", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]],
+	// 3: {
+	// 	values: [25, 40, 30, 35, 48, 52, 17, 20, 30, 40]
+	// },
+	// 4: {
+	// 	values: [35, 48, 40, 30, 52, 17, 72]
+	// },
+	// 5: {
+	// 	values: [5, 48, 52, 17, 72, 40, 30]
+	// },
+	// 6: {
+	// 	values: [72, 40, 30, 35, 48, 52, 17]
+	// },
+	// 7: {
+	// 	values: [35, 48, 40, 30, 52, 17, 25]
+	// },
+	// 8: {
+	// 	values: [5, 48, 52, 17, 25, 40, 30]
+	// },
+	// 9: {
+	// 	values: [25, 40, 30, 35, 48, 52, 17]
+	// },
+	// 10: {
+	// 	values: [35, 48, 40, 30, 52, 17, 25]
+	// },
+	// 11: {
+	// 	values: [5, 48, 52, 17, 25, 40, 30]
+	// }
 }
 
 let line_chart = new frappe.chart.FrappeChart ({
@@ -89,10 +87,7 @@ let bar_chart = new frappe.chart.FrappeChart ({
 })
 
 bar_chart.parent.addEventListener('data-select', (e) => {
-	line_chart.update_values([more_line_data[e.index]],
-	//  ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
-	 ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri"]);
-	//  ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
+	line_chart.update_values([more_line_data[e.index][0]], more_line_data[e.index][1]);
 });
 
 // console.log("chart", bar_chart);

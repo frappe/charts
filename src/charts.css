@@ -54,7 +54,7 @@
   stroke: #fff;
   stroke-width: 2;
 }
-.chart-container .paths-group path {
+.chart-container .path-group path {
   fill: none;
   stroke-opacity: 1;
   stroke-width: 2px;

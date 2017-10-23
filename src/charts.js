@@ -165,12 +165,7 @@ frappe.chart.FrappeChart = class {
 		});
 	}
 
-	setup_components() {
-		this.svg_units_group = $$.createSVG('g', {
-			className: 'data-points',
-			inside: this.draw_area
-		});
-	}
+	setup_components() { }
 
 	make_tooltip() {
 		this.tip = new frappe.chart.SvgTip({
@@ -318,10 +313,18 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	}
 
 	setup_components() {
+		super.setup_components();
 		this.y_axis_group = $$.createSVG('g', {className: 'y axis', inside: this.draw_area});
 		this.x_axis_group = $$.createSVG('g', {className: 'x axis', inside: this.draw_area});
 		this.specific_y_group = $$.createSVG('g', {className: 'specific axis', inside: this.draw_area});
-		super.setup_components();
+
+		this.svg_units_groups = [];
+		this.y.map((d, i) => {
+			this.svg_units_groups[i] = $$.createSVG('g', {
+				className: 'data-points data-points-' + i,
+				inside: this.draw_area
+			});
+		});
 	}
 
 	make_graph_components() {
@@ -403,15 +406,14 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	draw_graph() {
 		// TODO: Don't animate on refresh
 		let data = [];
-		this.svg_units_group.textContent = '';
 		this.y.map((d, i) => {
 			// Anim: Don't draw initial values, store them and update later
 			d.y_tops = new Array(d.values.length).fill(this.zero_line); // no value
 			data.push({values: d.values});
 			d.svg_units = [];
 
-			this.make_path && this.make_path(d, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
-			this.make_new_units_for_dataset(d.y_tops, d.color || this.colors[i], i);
+			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
+			this.make_new_units_for_dataset(this.x_axis_positions, d.y_tops, d.color || this.colors[i], i);
 		});
 
 		setTimeout(() => {
@@ -426,19 +428,27 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		}, 1000);
 	}
 
-	make_new_units_for_dataset(y_values, color, dataset_index) {
+	make_new_units() {
+		this.y.map((d, i) => {
+			this.make_new_units_for_dataset(this.x_axis_positions, d.y_tops, d.color || this.colors[i], i);
+		});
+	}
+
+	make_new_units_for_dataset(x_values, y_values, color, dataset_index) {
+		let group = this.svg_units_groups[dataset_index];
+		group.textContent = '';
 		this.y[dataset_index].svg_units = [];
 
 		let d = this.unit_args;
 		y_values.map((y, i) => {
 			let data_unit = this.draw[d.type](
-				this.x_axis_positions[i],
+				x_values[i],
 				y,
 				d.args,
 				color,
 				dataset_index
 			);
-			this.svg_units_group.appendChild(data_unit);
+			group.appendChild(data_unit);
 			this.y[dataset_index].svg_units.push(data_unit);
 		});
 	}
@@ -510,7 +520,6 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		const new_vals = this.x;
 
 		const last_line_x_pos = old_pos[old_pos.length - 1];
-		const no_of_extra_vals = new_vals.length - old_vals.length;
 
 		let superimposed_positions, superimposed_values;
 
@@ -537,7 +546,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 		this.x_axis_group.textContent = '';
 
-		if(no_of_extra_vals > 0) {
+		if(this.no_of_extras > 0) {
 			// More axis are needed
 			// First make only the superimposed (same position) ones
 			// Add in the extras at the end later
@@ -547,10 +556,10 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			// Axis have to be reduced
 			// Fake it by moving all current extra axis to the last position
 			// You'll need filler positions and values in the new arrays
-			const filler_vals = new Array(Math.abs(no_of_extra_vals)).fill("");
+			const filler_vals = new Array(Math.abs(this.no_of_extras)).fill("");
 			superimposed_values = new_vals.concat(filler_vals);
 
-			const filler_pos = new Array(Math.abs(no_of_extra_vals)).fill(last_line_x_pos);
+			const filler_pos = new Array(Math.abs(this.no_of_extras)).fill(last_line_x_pos);
 			superimposed_positions = new_pos.concat(filler_pos);
 		}
 
@@ -559,7 +568,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			add_and_animate_line(value, old_pos[i], superimposed_positions[i]);
 		});
 
-		if(no_of_extra_vals > 0) {
+		if(this.no_of_extras > 0) {
 			// Add in extra axis in the end
 			// and then animate to new positions
 			const extra_values = new_vals.slice(old_vals.length);
@@ -642,12 +651,17 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 	// API
 	update_values(new_y, new_x) {
+		if(!new_x) {
+			new_x = this.x;
+		}
 		this.elements_to_animate = [];
 		this.updating = true;
 
 		this.old_x_axis_values = this.x.slice();
 		this.old_y_axis_values = this.y.map(d => d.values);
 		this.old_y_axis_tops = this.y.map(d => d.y_tops);
+
+		this.no_of_extras = new_x.length - this.x.length;
 
 		// Just update values prop, setup_x/y() will do the rest
 		this.y.map((d, i) => {d.values = new_y[i].values;});
@@ -675,15 +689,30 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		// 	this.make_y_axis();
 		// }
 
-		this.animate_units();
+		// Change in data, so calculate dependencies
+		this.calc_y_tops();
 
-		if(this.y[0].path) {
-			this.animate_paths();
-			setTimeout(() => {
-				if(!this.updating) this.make_paths();
-			}, 400)
-		}
+		this.animate_graphs();
 
+		// if(this.y[0].path) {
+		// 	this.animate_paths();
+		// 	setTimeout(() => {
+		// 		if(!this.updating) this.make_paths();
+		// 	}, 400)
+		// }
+
+		// this.animate_units();
+		// setTimeout(() => {
+		// 	if(!this.updating) this.make_new_units();
+		// }, 400)
+
+		// Trigger animation with the animatable elements in this.elements_to_animate
+		this.run_animation();
+
+		this.updating = false;
+	}
+
+	run_animation() {
 		let anim_svg = $$.runSVGAnimation(this.svg, this.elements_to_animate);
 
 		if(this.svg.parentNode == this.chart_wrapper) {
@@ -699,88 +728,101 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 				this.chart_wrapper.appendChild(this.svg);
 			}
 		}, 200);
-
-		this.updating = false;
 	}
 
-	animate_units() {
-		this.y.map((d) => {
-			this.set_y_tops(d);
+	calc_old_and_new_postions(d, i) {
+		let old_x = this.x_old_axis_positions.slice();
+		let new_x = this.x_axis_positions.slice();
 
-			let type = this.unit_args.type;
-			d.svg_units.map((unit, j) => {
-				this.elements_to_animate.push(this.animate[type](
-					{unit:unit, array:d.svg_units, index: j}, // unit, with info to replace where it came from in the data
-					d.y_tops[j],
-					this.zero_line
-				));
-			});
+		let old_y = this.old_y_axis_tops[i].slice();
+		let new_y = d.y_tops.slice();
+
+		const last_old_x_pos = old_x[old_x.length - 1];
+		const last_old_y_pos = old_y[old_y.length - 1];
+
+		const last_new_x_pos = new_x[new_x.length - 1];
+		const last_new_y_pos = new_y[new_y.length - 1];
+
+		if(this.no_of_extras >= 0) {
+			// First substitute current path with a squiggled one (looking the same but
+			// having more points at end),
+			// then animate to stretch it later to new points
+			// (new points already have more points)
+
+			// Hence, the extra end points will correspond to current(old) positions
+			let filler_x = new Array(Math.abs(this.no_of_extras)).fill(last_old_x_pos);
+			let filler_y = new Array(Math.abs(this.no_of_extras)).fill(last_old_y_pos);
+
+			old_x = old_x.concat(filler_x);
+			old_y = old_y.concat(filler_y);
+
+		} else {
+			// Just modify the new points to have extra points
+			// with the same position at end
+			let filler_x = new Array(Math.abs(this.no_of_extras)).fill(last_new_x_pos);
+			let filler_y = new Array(Math.abs(this.no_of_extras)).fill(last_new_y_pos);
+
+			new_x = new_x.concat(filler_x);
+			new_y = new_y.concat(filler_y);
+		}
+
+		return [old_x, old_y, new_x, new_y];
+	}
+
+	animate_graphs() {
+		this.y.map((d, i) => {
+			// Pre-prep, equilize no of positions between old and new
+			let [old_x, old_y, new_x, new_y] = this.calc_old_and_new_postions(d, i);
+			if(this.no_of_extras >= 0) {
+				this.make_path && this.make_path(d, i, old_x, old_y, d.color || this.colors[i]);
+				this.make_new_units_for_dataset(old_x, old_y, d.color || this.colors[i], i);
+			}
+			d.path && this.animate_path(d, i, old_x, old_y, new_x, new_y);
+			this.animate_units(d, i, old_x, old_y, new_x, new_y);
 		});
 
-		// Change in data, so calculate dependencies
-		this.calc_min_tops();
+		// TODO: replace with real units
+		// setTimeout(() => {
+		// 	this.y.map((d, i) => {
+		// 		this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
+		// 		this.make_new_units_for_dataset(this.x_axis_positions, d.y_tops, d.color || this.colors[i], i);
+		// 	});
+		// }, 400);
 	}
 
-	animate_paths() {
-		this.y.map((e, i) => {
-			let old_x = this.x_old_axis_positions.slice();
-			let new_x = this.x_axis_positions.slice();
+	animate_path(d, i, old_x, old_y, new_x, new_y) {
+		// Animate path
+		const new_points_list = new_y.map((y, i) => (new_x[i] + ',' + y));
+		const new_path_str = new_points_list.join("L");
 
-			let old_y = this.old_y_axis_tops[i].slice();
-			let new_y = e.y_tops.slice();
+		const path_args = [{unit: d.path, object: d, key: 'path'}, {d:"M"+new_path_str}, 250, "easein"];
+		this.elements_to_animate.push(path_args);
 
-			const last_old_x_pos = old_x[old_x.length - 1];
-			const last_old_y_pos = old_y[old_y.length - 1];
+		// Animate region
+		if(d.region_path) {
+			let reg_start_pt = `0,${this.zero_line}L`;
+			let reg_end_pt = `L${this.width},${this.zero_line}`;
 
-			const last_new_x_pos = new_x[new_x.length - 1];
-			const last_new_y_pos = new_y[new_y.length - 1];
+			const region_args = [
+				{unit: d.region_path, object: d, key: 'region_path'},
+				{d:"M" + reg_start_pt + new_path_str + reg_end_pt},
+				250,
+				"easein"
+			];
+			this.elements_to_animate.push(region_args);
+		}
+	}
 
-			const no_of_extra_pos = new_x.length - old_x.length;
+	animate_units(d, index, old_x, old_y, new_x, new_y) {
+		let type = this.unit_args.type;
 
-			if(no_of_extra_pos >= 0) {
-				// First substitute current path with a squiggled one (looking the same but
-				// having more points at end),
-				// then animate to stretch it later to new points
-				// (new points already have more points)
-
-				// Hence, the extra end points will correspond to current(old) positions
-				let filler_x = new Array(Math.abs(no_of_extra_pos)).fill(last_old_x_pos);
-				let filler_y = new Array(Math.abs(no_of_extra_pos)).fill(last_old_y_pos);
-
-				let x_pos = old_x.concat(filler_x);
-				let y_pos = old_y.concat(filler_y);
-				this.make_path(e, x_pos, y_pos, e.color || this.colors[i]);
-
-			} else {
-				// Just modify the new points to have extra points
-				// with the same position at end
-				let filler_x = new Array(Math.abs(no_of_extra_pos)).fill(last_new_x_pos);
-				let filler_y = new Array(Math.abs(no_of_extra_pos)).fill(last_new_y_pos);
-
-				new_x = new_x.concat(filler_x);
-				new_y = new_y.concat(filler_y);
-			}
-
-			// Animate path
-			const new_points_list = new_y.map((y, i) => (new_x[i] + ',' + y));
-			const new_path_str = new_points_list.join("L");
-
-			const path_args = [{unit: this.y[i].path, object: this.y[i], key: 'path'}, {d:"M"+new_path_str}, 250, "easein"];
-			this.elements_to_animate.push(path_args);
-
-			// Animate region
-			if(this.y[i].region_path) {
-				let reg_start_pt = `0,${this.zero_line}L`;
-				let reg_end_pt = `L${this.width},${this.zero_line}`;
-
-				const region_args = [
-					{unit: this.y[i].region_path, object: this.y[i], key: 'region_path'},
-					{d:"M" + reg_start_pt + new_path_str + reg_end_pt},
-					250,
-					"easein"
-				];
-				this.elements_to_animate.push(region_args);
-			}
+		d.svg_units.map((unit, i) => {
+			this.elements_to_animate.push(this.animate[type](
+				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
+				new_x[i],
+				new_y[i],
+				index
+			));
 		});
 	}
 
@@ -914,16 +956,10 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		return all_values.concat(this.specific_values.map(d => d.value));
 	}
 
-	set_y_tops(d) {
-		d.y_tops = d.values.map( val => $$.float_2(this.zero_line - val * this.multiplier));
-	}
-
-	calc_min_tops() {
-		// Maintain a global array having the ...
-
+	calc_y_tops() {
 		this.y_min_tops = new Array(this.x_axis_positions.length).fill(9999);
-
 		this.y.map(d => {
+			d.y_tops = d.values.map( val => $$.float_2(this.zero_line - val * this.multiplier));
 			d.y_tops.map( (y_top, i) => {
 				if(y_top < this.y_min_tops[i]) {
 					this.y_min_tops[i] = y_top;
@@ -932,24 +968,47 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		});
 	}
 
+	get_rect_height_and_y_attr(y_top) {
+		let height, y;
+		if (y_top <= this.zero_line) {
+			height = this.zero_line - y_top;
+			y = y_top;
+
+			// In case of invisible bars
+			if(height === 0) {
+				height = this.height * 0.02;
+				y -= height;
+			}
+		} else {
+			height = y_top - this.zero_line;
+			y = this.zero_line;
+
+			// In case of invisible bars
+			if(height === 0) {
+				height = this.height * 0.02;
+			}
+		}
+
+		return [height, y];
+	}
+
 	setup_utils() {
 		this.draw = {
-			'bar': (x, y, args, color, index) => {
+			'bar': (x, y_top, args, color, index) => {
 				let total_width = this.avg_unit_width - args.space_width;
 				let start_x = x - total_width/2;
 
 				let width = total_width / args.no_of_datasets;
 				let current_x = start_x + width * index;
-				if(y == this.zero_line) {
-					y = this.zero_line * 0.98;
-				}
+
+				let [height, y] = this.get_rect_height_and_y_attr(y_top);
 
 				return $$.createSVG('rect', {
 					className: `bar mini fill ${color}`,
 					x: current_x,
 					y: y,
 					width: width,
-					height: this.zero_line - y
+					height: height
 				});
 
 			},
@@ -964,21 +1023,18 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		};
 
 		this.animate = {
-			'bar': (bar_obj, y_top, zero_line) => {
-				let height, y;
-				if (y_top < zero_line) {
-					height = zero_line - y_top;
-					y = y_top;
-				} else {
-					height = y_top - zero_line;
-					y = zero_line;
-				}
+			'bar': (bar_obj, x, y_top, index) => {
+				let start = x - this.avg_unit_width/4;
+				let width = (this.avg_unit_width/2)/this.y.length;
+				let [height, y] = this.get_rect_height_and_y_attr(y_top);
 
-				return [bar_obj, {height: height, y: y}, 250, "easein"];
+				x = start + (width * index);
+
+				return [bar_obj, {width: width, height: height, x: x, y: y}, 250, "easein"];
 				// bar.animate({height: args.new_height, y: y_top}, 250, mina.easein);
 			},
-			'dot': (dot_obj, y_top) => {
-				return [dot_obj, {cy: y_top}, 250, "easein"];
+			'dot': (dot_obj, x, y_top) => {
+				return [dot_obj, {cx: x, cy: y_top}, 250, "easein"];
 				// dot.animate({cy: y_top}, 250, mina.easein);
 			}
 		};
@@ -1065,8 +1121,15 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 	}
 
 	setup_components() {
+		this.paths_groups = [];
+		this.y.map((d, i) => {
+			this.paths_groups[i] = $$.createSVG('g', {
+				className: 'path-group path-group-' + i,
+				inside: this.draw_area
+			});
+		});
+
 		super.setup_components();
-		this.paths_group = $$.createSVG('g', {className: 'paths-group', inside: this.draw_area});
 	}
 
 	setup_values() {
@@ -1079,18 +1142,18 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 
 	make_paths() {
 		this.y.map((d, i) => {
-			this.make_path(d, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
+			this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
 		});
 	}
 
-	make_path(d, x_positions, y_positions, color) {
+	make_path(d, i, x_positions, y_positions, color) {
 		let points_list = y_positions.map((y, i) => (x_positions[i] + ',' + y));
 		let points_str = points_list.join("L");
 
-		this.paths_group.textContent = '';
+		this.paths_groups[i].textContent = '';
 
 		d.path = $$.createSVG('path', {
-			inside: this.paths_group,
+			inside: this.paths_groups[i],
 			className: `stroke ${color}`,
 			d: "M"+points_str
 		});
@@ -1121,7 +1184,7 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 			set_gradient_stop(this.gradient_def, "100%", color, 0);
 
 			d.region_path = $$.createSVG('path', {
-				inside: this.paths_group,
+				inside: this.paths_groups[i],
 				className: `region-fill`,
 				d: "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`,
 			});
