@@ -15,6 +15,7 @@
 // ]
 
 // Validate all arguments, check passed data format, set defaults
+"use strict";
 
 let frappe = {chart:{}};
 
@@ -278,14 +279,34 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 	setup_x() {
 		this.set_avg_unit_width_and_x_offset();
-		this.x_axis_values = this.x.map((d, i) => frappe.chart.utils.float_2(this.x_offset + i * this.avg_unit_width));
+
+		if(this.x_axis_positions) {
+			this.x_old_axis_positions =  this.x_axis_positions.slice();
+		}
+		this.x_axis_positions = this.x.map((d, i) =>
+			$$.float_2(this.x_offset + i * this.avg_unit_width));
+
+		if(!this.x_old_axis_positions) {
+			this.x_old_axis_positions = this.x_axis_positions.slice();
+		}
 	}
 
 	setup_y() {
 		const values = this.get_all_y_values();
-		this.y_axis_values = this.get_y_axis_points(values);
 
-		const y_pts = this.y_axis_values;
+		if(this.y_axis_positions) {
+			this.y_old_axis_positions =  this.y_axis_positions.slice();
+		}
+
+		this.y_axis_positions = this.get_y_axis_points(values);
+
+		if(!this.y_old_axis_positions) {
+			this.y_old_axis_positions = this.y_axis_positions.slice();
+		}
+
+		// this.y_axis_positions = this.get_y_axis_points(values);
+
+		const y_pts = this.y_axis_positions;
 		const value_range = y_pts[y_pts.length-1] - y_pts[0];
 		this.multiplier = this.height / value_range;
 
@@ -299,7 +320,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	setup_components() {
 		this.y_axis_group = $$.createSVG('g', {className: 'y axis', inside: this.draw_area});
 		this.x_axis_group = $$.createSVG('g', {className: 'x axis', inside: this.draw_area});
-		this.specific_y_lines = $$.createSVG('g', {className: 'specific axis', inside: this.draw_area});
+		this.specific_y_group = $$.createSVG('g', {className: 'specific axis', inside: this.draw_area});
 		super.setup_components();
 	}
 
@@ -311,60 +332,41 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	}
 
 	// make HORIZONTAL lines for y values
-	make_y_axis() {
-		if(this.y_axis_group.textContent) {
-			// animate from old to new, both elemnets
-		} else {
-			// only new
-		}
-
-		this.y_axis_group.textContent = '';
-
-		let width, text_end_at = -9, label_class = '', start_at = 0;
+	make_y_axis(animate=false) {
+		let width, text_end_at = -9, axis_line_class = '', start_at = 0;
 		if(this.y_axis_mode === 'span') {		// long spanning lines
 			width = this.width + 6;
 			start_at = -6;
 		} else if(this.y_axis_mode === 'tick'){	// short label lines
 			width = -6;
-			label_class = 'y-axis-label';
+			axis_line_class = 'y-axis-label';
 		}
 
-		this.y_axis_values.map((point, i) => {
-			let line = $$.createSVG('line', {
-				x1: start_at,
-				x2: width,
-				y1: 0,
-				y2: 0
-			});
+		if(animate) {
+			this.make_anim_y_axis(width, text_end_at, axis_line_class, start_at);
+			return;
+		}
 
-			let text = $$.createSVG('text', {
-				className: 'y-value-text',
-				x: text_end_at,
-				y: 0,
-				dy: '.32em',
-				innerHTML: point+""
-			});
-
-			let y_level = $$.createSVG('g', {
-				className: `tick ${label_class}`,
-				transform: `translate(0, ${this.zero_line - point * this.multiplier })`
-			});
-
-			// Non-first Zero line
-			if(point === 0 && i !== 0) {
-				line.style.stroke = "rgba(27, 31, 35, 0.6)";
-			}
-
-			y_level.appendChild(line);
-			y_level.appendChild(text);
-
-			this.y_axis_group.appendChild(y_level);
+		this.y_axis_group.textContent = '';
+		this.y_axis_positions.map((point, i) => {
+			this.y_axis_group.appendChild(
+				this.make_y_line(
+					start_at,
+					width,
+					text_end_at,
+					point,
+					'y-value-text',
+					axis_line_class,
+					this.zero_line - point * this.multiplier,
+					(point === 0 && i !== 0) // Non-first Zero line
+				)
+			);
 		});
 	}
 
 	// make VERTICAL lines for x values
-	make_x_axis() {
-		let start_at, height, text_start_at, label_class = '';
+	make_x_axis(animate=false) {
+		let start_at, height, text_start_at, axis_line_class = '';
 		if(this.x_axis_mode === 'span') {		// long spanning lines
 			start_at = -7;
 			height = this.height + 15;
@@ -373,41 +375,28 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			start_at = this.height;
 			height = 6;
 			text_start_at = 9;
-			label_class = 'x-axis-label';
+			axis_line_class = 'x-axis-label';
 		}
 
 		this.x_axis_group.setAttribute('transform', `translate(0,${start_at})`);
 
+		if(animate) {
+			this.make_anim_x_axis(height, text_start_at, axis_line_class);
+			return;
+		}
+
+		this.x_axis_group.textContent = '';
 		this.x.map((point, i) => {
-			let allowed_space = this.avg_unit_width * 1.5;
-			if(this.get_strwidth(point) > allowed_space) {
-				let allowed_letters = allowed_space / 8;
-				point = point.slice(0, allowed_letters-3) + " ...";
-			}
-
-			let line = $$.createSVG('line', {
-				x1: 0,
-				x2: 0,
-				y1: 0,
-				y2: height
-			});
-			let text = $$.createSVG('text', {
-				className: 'x-value-text',
-				x: 0,
-				y: text_start_at,
-				dy: '.71em',
-				innerHTML: point
-			});
-
-			let x_level = $$.createSVG('g', {
-				className: `tick ${label_class}`,
-				transform:  `translate(${ this.x_axis_values[i] }, 0)`
-			});
-
-			x_level.appendChild(line);
-			x_level.appendChild(text);
-
-			this.x_axis_group.appendChild(x_level);
+			this.x_axis_group.appendChild(
+				this.make_x_line(
+					height,
+					text_start_at,
+					point,
+					'x-value-text',
+					axis_line_class,
+					this.x_axis_positions[i]
+				)
+			);
 		});
 	}
 
@@ -421,7 +410,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			data.push({values: d.values});
 			d.svg_units = [];
 
-			this.make_path && this.make_path(d, d.color || this.colors[i]);
+			this.make_path && this.make_path(d, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
 			this.make_new_units_for_dataset(d.y_tops, d.color || this.colors[i], i);
 		});
 
@@ -443,7 +432,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		let d = this.unit_args;
 		y_values.map((y, i) => {
 			let data_unit = this.draw[d.type](
-				this.x_axis_values[i],
+				this.x_axis_positions[i],
 				y,
 				d.args,
 				color,
@@ -456,31 +445,17 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 	make_y_specifics() {
 		this.specific_values.map(d => {
-			let line = $$.createSVG('line', {
-				className: d.line_type === "dashed" ? "dashed": "",
-				x1: 0,
-				x2: this.width,
-				y1: 0,
-				y2: 0
-			});
-
-			let text = $$.createSVG('text', {
-				className: 'specific-value',
-				x: this.width + 5,
-				y: 0,
-				dy: '.32em',
-				innerHTML: d.title.toUpperCase()
-			});
-
-			let specific_y_level = $$.createSVG('g', {
-				className: `tick`,
-				transform: `translate(0, ${this.zero_line - d.value * this.multiplier })`
-			});
-
-			specific_y_level.appendChild(line);
-			specific_y_level.appendChild(text);
-
-			this.specific_y_lines.appendChild(specific_y_level);
+			this.specific_y_group.appendChild(
+				this.make_y_line(
+					0,
+					this.width,
+					this.width + 5,
+					d.title.toUpperCase(),
+					'specific-value',
+					'specific-value',
+					this.zero_line - d.value * this.multiplier
+				)
+			);
 		});
 	}
 
@@ -500,9 +475,9 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	}
 
 	map_tooltip_x_position_and_show(relX) {
-		for(var i=this.x_axis_values.length - 1; i >= 0 ; i--) {
-			let x_val = this.x_axis_values[i];
-			// let delta = i === 0 ? this.avg_unit_width : x_val - this.x_axis_values[i-1];
+		for(var i=this.x_axis_positions.length - 1; i >= 0 ; i--) {
+			let x_val = this.x_axis_positions[i];
+			// let delta = i === 0 ? this.avg_unit_width : x_val - this.x_axis_positions[i-1];
 			if(relX > x_val - this.avg_unit_width/2) {
 				let x = x_val + this.translate_x;
 				let y = this.y_min_tops[i] + this.translate_y;
@@ -525,29 +500,196 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		}
 	}
 
-	// API
-	update_values(new_y) {
-		// Just update values prop, setup_y() will do the rest
-		this.y.map((d, i) => {d.values = new_y[i].values;});
+	make_anim_x_axis(height, text_start_at, axis_line_class) {
+		// Animate X AXIS to account for more or less axis lines
 
-		this.setup_y();
+		const old_pos = this.x_old_axis_positions;
+		const new_pos = this.x_axis_positions;
 
-		// Maybe not always
-		this.make_y_axis();
+		const old_vals = this.old_x_axis_values;
+		const new_vals = this.x;
 
-		let elements_to_animate = [];
-		elements_to_animate = this.animate_for_equilength_data(elements_to_animate);
+		const last_line_x_pos = old_pos[old_pos.length - 1];
+		const no_of_extra_vals = new_vals.length - old_vals.length;
 
-		if(this.y[0].path) {
-			elements_to_animate = this.animate_path(elements_to_animate);
+		let superimposed_positions, superimposed_values;
+
+		let add_and_animate_line = (value, old_pos, new_pos) => {
+			const x_line = this.make_x_line(
+				height,
+				text_start_at,
+				value, // new value
+				'x-value-text',
+				axis_line_class,
+				old_pos // old position
+			);
+			this.x_axis_group.appendChild(x_line);
+
+			this.elements_to_animate && this.elements_to_animate.push([
+				{unit: x_line, array: [0], index: 0},
+				{transform: `${ new_pos }, 0`},
+				250,
+				"easein",
+				"translate",
+				`${ old_pos }, 0`
+			]);
 		}
 
-		// elements_to_animate = elements_to_animate.concat(this.update_y_axis());
-		let anim_svg = $$.runSVGAnimation(this.svg, elements_to_animate);
+		this.x_axis_group.textContent = '';
+
+		if(no_of_extra_vals > 0) {
+			// More axis are needed
+			// First make only the superimposed (same position) ones
+			// Add in the extras at the end later
+			superimposed_positions = new_pos.slice(0, old_pos.length);
+			superimposed_values = new_vals.slice(0, old_vals.length);
+		} else {
+			// Axis have to be reduced
+			// Fake it by moving all current extra axis to the last position
+			// You'll need filler positions and values in the new arrays
+			const filler_vals = new Array(Math.abs(no_of_extra_vals)).fill("");
+			superimposed_values = new_vals.concat(filler_vals);
+
+			const filler_pos = new Array(Math.abs(no_of_extra_vals)).fill(last_line_x_pos);
+			superimposed_positions = new_pos.concat(filler_pos);
+		}
+
+		this.x_axis_group.textContent = '';
+		superimposed_values.map((value, i) => {
+			add_and_animate_line(value, old_pos[i], superimposed_positions[i]);
+		});
+
+		if(no_of_extra_vals > 0) {
+			// Add in extra axis in the end
+			// and then animate to new positions
+			const extra_values = new_vals.slice(old_vals.length);
+			const extra_positions = new_pos.slice(old_pos.length);
+
+			extra_values.map((value, i) => {
+				add_and_animate_line(value, last_line_x_pos, extra_positions[i]);
+			});
+		}
+	}
+
+	make_anim_y_axis() {
+		// Animate Y AXIS to account for more or less axis lines
+	}
+
+	make_x_line(height, text_start_at, point, label_class, axis_line_class, x_pos) {
+		let allowed_space = this.avg_unit_width * 1.5;
+
+		if(this.get_strwidth(point) > allowed_space) {
+			let allowed_letters = allowed_space / 8;
+			point = point.slice(0, allowed_letters-3) + " ...";
+		}
+
+		let line = $$.createSVG('line', {
+			x1: 0,
+			x2: 0,
+			y1: 0,
+			y2: height
+		});
+
+		let text = $$.createSVG('text', {
+			className: label_class,
+			x: 0,
+			y: text_start_at,
+			dy: '.71em',
+			innerHTML: point
+		});
+
+		let x_level = $$.createSVG('g', {
+			className: `tick ${axis_line_class}`,
+			transform: `translate(${ x_pos }, 0)`
+		});
+
+		x_level.appendChild(line);
+		x_level.appendChild(text);
+
+		return x_level;
+	}
+
+	make_y_line(start_at, width, text_end_at, point, label_class, axis_line_class, y_pos, darker=false) {
+		let line = $$.createSVG('line', {
+			x1: start_at,
+			x2: width,
+			y1: 0,
+			y2: 0
+		});
+
+		let text = $$.createSVG('text', {
+			className: label_class,
+			x: text_end_at,
+			y: 0,
+			dy: '.32em',
+			innerHTML: point+""
+		});
+
+		let y_level = $$.createSVG('g', {
+			className: `tick ${axis_line_class}`,
+			transform: `translate(0, ${y_pos})`
+		});
+
+		if(darker) {
+			line.style.stroke = "rgba(27, 31, 35, 0.6)";
+		}
+
+		y_level.appendChild(line);
+		y_level.appendChild(text);
+
+		return y_level;
+	}
+
+	// API
+	update_values(new_y, new_x) {
+		this.elements_to_animate = [];
+		this.updating = true;
+
+		this.old_x_axis_values = this.x.slice();
+		this.old_y_axis_values = this.y.map(d => d.values);
+		this.old_y_axis_tops = this.y.map(d => d.y_tops);
+
+		// Just update values prop, setup_x/y() will do the rest
+		this.y.map((d, i) => {d.values = new_y[i].values;});
+		if(new_x) this.x = new_x;
+
+		this.setup_x();
+		this.setup_y();
+
+		// Animate only if positions have changed
+		if(!$$.arrays_equal(this.x_old_axis_positions, this.x_axis_positions)) {
+			this.make_x_axis(true);
+			setTimeout(() => {
+				if(!this.updating) this.make_x_axis();
+			}, 400)
+		} else {
+			this.make_x_axis();
+		}
+
+		// if(!$$.arrays_equal(this.y_old_axis_positions, this.y_axis_positions)) {
+		// 	this.make_y_axis(true);
+		// 	setTimeout(() => {
+		// 		if(!this.updating) this.make_y_axis();
+		// 	}, 400)
+		// } else {
+		// 	this.make_y_axis();
+		// }
+
+		this.animate_units();
+
+		if(this.y[0].path) {
+			this.animate_paths();
+			setTimeout(() => {
+				if(!this.updating) this.make_paths();
+			}, 400)
+		}
+
+		let anim_svg = $$.runSVGAnimation(this.svg, this.elements_to_animate);
 
 		if(this.svg.parentNode == this.chart_wrapper) {
 			this.chart_wrapper.removeChild(this.svg);
 			this.chart_wrapper.appendChild(anim_svg);
+
 		}
 
 		// Replace the new svg (data has long been replaced)
@@ -557,25 +699,17 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 				this.chart_wrapper.appendChild(this.svg);
 			}
 		}, 200);
+
+		this.updating = false;
 	}
 
-	update_y_axis() {
-		let elements = [];
-
-		return elements;
-	}
-
-	update_x_axis() {
-		// update
-	}
-
-	animate_for_equilength_data(elements_to_animate) {
+	animate_units() {
 		this.y.map((d) => {
 			this.set_y_tops(d);
 
 			let type = this.unit_args.type;
 			d.svg_units.map((unit, j) => {
-				elements_to_animate.push(this.animate[type](
+				this.elements_to_animate.push(this.animate[type](
 					{unit:unit, array:d.svg_units, index: j}, // unit, with info to replace where it came from in the data
 					d.y_tops[j],
 					this.zero_line
@@ -585,30 +719,69 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 		// Change in data, so calculate dependencies
 		this.calc_min_tops();
-
-		return elements_to_animate;
 	}
 
-	animate_path(elements_to_animate) {
-		// create new x,y pair string and animate path
-
+	animate_paths() {
 		this.y.map((e, i) => {
-			let new_points_list = e.y_tops.map((y, i) => (this.x_axis_values[i] + ',' + y));
-			let new_path_str = new_points_list.join("L");
-			let path_args = [{unit: this.y[i].path, object: this.y[i], key: 'path'}, {d:"M"+new_path_str}, 250, "easein"];
-			elements_to_animate.push(path_args);
+			let old_x = this.x_old_axis_positions.slice();
+			let new_x = this.x_axis_positions.slice();
 
+			let old_y = this.old_y_axis_tops[i].slice();
+			let new_y = e.y_tops.slice();
+
+			const last_old_x_pos = old_x[old_x.length - 1];
+			const last_old_y_pos = old_y[old_y.length - 1];
+
+			const last_new_x_pos = new_x[new_x.length - 1];
+			const last_new_y_pos = new_y[new_y.length - 1];
+
+			const no_of_extra_pos = new_x.length - old_x.length;
+
+			if(no_of_extra_pos >= 0) {
+				// First substitute current path with a squiggled one (looking the same but
+				// having more points at end),
+				// then animate to stretch it later to new points
+				// (new points already have more points)
+
+				// Hence, the extra end points will correspond to current(old) positions
+				let filler_x = new Array(Math.abs(no_of_extra_pos)).fill(last_old_x_pos);
+				let filler_y = new Array(Math.abs(no_of_extra_pos)).fill(last_old_y_pos);
+
+				let x_pos = old_x.concat(filler_x);
+				let y_pos = old_y.concat(filler_y);
+				this.make_path(e, x_pos, y_pos, e.color || this.colors[i]);
+
+			} else {
+				// Just modify the new points to have extra points
+				// with the same position at end
+				let filler_x = new Array(Math.abs(no_of_extra_pos)).fill(last_new_x_pos);
+				let filler_y = new Array(Math.abs(no_of_extra_pos)).fill(last_new_y_pos);
+
+				new_x = new_x.concat(filler_x);
+				new_y = new_y.concat(filler_y);
+			}
+
+			// Animate path
+			const new_points_list = new_y.map((y, i) => (new_x[i] + ',' + y));
+			const new_path_str = new_points_list.join("L");
+
+			const path_args = [{unit: this.y[i].path, object: this.y[i], key: 'path'}, {d:"M"+new_path_str}, 250, "easein"];
+			this.elements_to_animate.push(path_args);
+
+			// Animate region
 			if(this.y[i].region_path) {
-				let region_args = [
+				let reg_start_pt = `0,${this.zero_line}L`;
+				let reg_end_pt = `L${this.width},${this.zero_line}`;
+
+				const region_args = [
 					{unit: this.y[i].region_path, object: this.y[i], key: 'region_path'},
-					{d:"M" + `0,${this.zero_line}L` + new_path_str + `L${this.width},${this.zero_line}`},
+					{d:"M" + reg_start_pt + new_path_str + reg_end_pt},
 					250,
 					"easein"
 				];
-				elements_to_animate.push(region_args);
+				this.elements_to_animate.push(region_args);
 			}
 		});
-		return elements_to_animate;
 	}
 
 	add_data_point(data_point) {
@@ -742,13 +915,13 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	}
 
 	set_y_tops(d) {
-		d.y_tops = d.values.map( val => frappe.chart.utils.float_2(this.zero_line - val * this.multiplier));
+		d.y_tops = d.values.map( val => $$.float_2(this.zero_line - val * this.multiplier));
 	}
 
 	calc_min_tops() {
 		// Maintain a global array having the ...
 
-		this.y_min_tops = new Array(this.x_axis_values.length).fill(9999);
+		this.y_min_tops = new Array(this.x_axis_positions.length).fill(9999);
 
 		this.y.map(d => {
 			d.y_tops.map( (y_top, i) => {
@@ -891,6 +1064,11 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 		this.setup();
 	}
 
+	setup_components() {
+		super.setup_components();
+		this.paths_group = $$.createSVG('g', {className: 'paths-group', inside: this.draw_area});
+	}
+
 	setup_values() {
 		super.setup_values();
 		this.unit_args = {
@@ -899,12 +1077,20 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 		};
 	}
 
-	make_path(d, color) {
-		let points_list = d.y_tops.map((y, i) => (this.x_axis_values[i] + ',' + y));
+	make_paths() {
+		this.y.map((d, i) => {
+			this.make_path(d, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
+		});
+	}
+
+	make_path(d, x_positions, y_positions, color) {
+		let points_list = y_positions.map((y, i) => (x_positions[i] + ',' + y));
 		let points_str = points_list.join("L");
 
+		this.paths_group.textContent = '';
+
 		d.path = $$.createSVG('path', {
-			inside: this.svg_units_group,
+			inside: this.paths_group,
 			className: `stroke ${color}`,
 			d: "M"+points_str
 		});
@@ -935,7 +1121,7 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 			set_gradient_stop(this.gradient_def, "100%", color, 0);
 
 			d.region_path = $$.createSVG('path', {
-				inside: this.svg_units_group,
+				inside: this.paths_group,
 				className: `region-fill`,
 				d: "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`,
 			});
@@ -1490,9 +1676,18 @@ frappe.chart.SvgTip = class {
 
 // Helpers
 frappe.chart.utils = {};
-frappe.chart.utils.float_2 = d => parseFloat(d.toFixed(2));
+$$.float_2 = d => parseFloat(d.toFixed(2));
 function $$(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
+}
+
+$$.arrays_equal = (arr1, arr2) => {
+	if(arr1.length !== arr2.length) return false;
+	let are_equal = true;
+	arr1.map((d, i) => {
+		if(arr2[i] !== d) are_equal = false;
+	});
+	return are_equal;
 }
 
 // $$.findNodeIndex = (node) =>
@@ -1557,22 +1752,24 @@ $$.createSVG = function(tag, o) {
 };
 
 $$.runSVGAnimation = (svg_container, elements) => {
-	let parent = elements[0][0]['unit'].parentNode;
+	// let parent = elements[0][0]['unit'].parentNode;
 
 	let new_elements = [];
 	let anim_elements = [];
 
 	elements.map(element => {
 		let obj = element[0];
+		let parent = obj.unit.parentNode;
 		// let index = $$.findNodeIndex(obj.unit);
 
 		let anim_element, new_element;
 
 		element[0] = obj.unit;
+
 		[anim_element, new_element] = $$.animateSVG(...element);
 
 		new_elements.push(new_element);
-		anim_elements.push(anim_element);
+		anim_elements.push([anim_element, parent]);
 
 		parent.replaceChild(anim_element, obj.unit);
 
@@ -1586,14 +1783,16 @@ $$.runSVGAnimation = (svg_container, elements) => {
 	let anim_svg = svg_container.cloneNode(true);
 
 	anim_elements.map((anim_element, i) => {
-		parent.replaceChild(new_elements[i], anim_element);
+		anim_element[1].replaceChild(new_elements[i], anim_element[0]);
 		elements[i][0] = new_elements[i];
 	});
 
 	return anim_svg;
 }
 
-$$.animateSVG = (element, props, dur, easing_type="linear") => {
+// $$.animateMotion = (element, props, dur, easing_type="linear")
+
+$$.animateSVG = (element, props, dur, easing_type="linear", type=undefined, old_value=undefined) => {
 	let easing = {
 		ease: "0.25 0.1 0.25 1",
 		linear: "0 0 1 1",
@@ -1603,13 +1802,17 @@ $$.animateSVG = (element, props, dur, easing_type="linear") => {
 		easeinout: "0.42 0 0.58 1"
 	}
 
-	let anim_element = element.cloneNode(false);
-	let new_element = element.cloneNode(false);
+	let anim_element = element.cloneNode(true);
+	let new_element = element.cloneNode(true);
 
 	for(var attributeName in props) {
-		let animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animate");
-
-		let current_value = element.getAttribute(attributeName);
+		let animate_element;
+		if(attributeName === 'transform') {
+			animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+		} else {
+			animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+		}
+		let current_value = old_value || element.getAttribute(attributeName);
 		let value = props[attributeName];
 
 		let anim_attr = {
@@ -1621,7 +1824,12 @@ $$.animateSVG = (element, props, dur, easing_type="linear") => {
 			values: current_value + ";" + value,
 			keySplines: easing[easing_type],
 			keyTimes: "0;1",
-			calcMode: "spline"
+			calcMode: "spline",
+			fill: 'freeze'
+		}
+
+		if(type) {
+			anim_attr["type"] = type;
 		}
 
 		for (var i in anim_attr) {
@@ -1629,7 +1837,12 @@ $$.animateSVG = (element, props, dur, easing_type="linear") => {
 		}
 
 		anim_element.appendChild(animate_element);
-		new_element.setAttribute(attributeName, value);
+
+		if(type) {
+			new_element.setAttribute(attributeName, `translate(${value})`);
+		} else {
+			new_element.setAttribute(attributeName, value);
+		}
 	}
 
 	return [anim_element, new_element];

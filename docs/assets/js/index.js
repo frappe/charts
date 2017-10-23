@@ -34,14 +34,15 @@ let more_line_data = {
 		values: [25, -90, -30, 35, 48, 52, -17]
 	},
 	1: {
-		// values: [35, 48, 40, 30, 52, 17, 25]
-		values: [25, -40, -30, 35, 48, 52, -17]
+		// values: [35, 48, -40, -30, 52, -17, 25]
+		// values: [25, -40, -30, 35, 48, 52, -17, 20]
+		values: [25, -40, -30, 35, 48, 52]
 	},
 	2: {
-		values: [5, 48, 52, 17, 25, 40, 30]
+		values: [5, 48, 52, 17, 25, 40, 30, 20, 30]
 	},
 	3: {
-		values: [25, 40, 30, 35, 48, 52, 17]
+		values: [25, 40, 30, 35, 48, 52, 17, 20, 30, 40]
 	},
 	4: {
 		values: [35, 48, 40, 30, 52, 17, 72]
@@ -75,20 +76,23 @@ let line_chart = new frappe.chart.FrappeChart ({
 	type: 'line',
 	height: 340,
 	region_fill: 1,
-	y_axis_mode: 'tick'
+	// y_axis_mode: 'tick'
 })
 
 let bar_chart = new frappe.chart.FrappeChart ({
 	parent: "#charts-1",
 	data: bar_data,
-	type: 'percentage',
+	type: 'bar',
 	height: 140,
 	is_navigable: 1,
 	// region_fill: 1
 })
 
 bar_chart.parent.addEventListener('data-select', (e) => {
-	line_chart.update_values([more_line_data[e.index]]);
+	line_chart.update_values([more_line_data[e.index]],
+	//  ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+	 ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri"]);
+	//  ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
 });
 
 // console.log("chart", bar_chart);
