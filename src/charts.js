@@ -289,19 +289,19 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	setup_y() {
 		const values = this.get_all_y_values();
 
-		if(this.y_axis_positions) {
-			this.y_old_axis_positions =  this.y_axis_positions.slice();
+		if(this.y_axis_values) {
+			this.y_old_axis_values =  this.y_axis_values.slice();
 		}
 
-		this.y_axis_positions = this.get_y_axis_points(values);
+		this.y_axis_values = this.get_y_axis_points(values);
 
-		if(!this.y_old_axis_positions) {
-			this.y_old_axis_positions = this.y_axis_positions.slice();
+		if(!this.y_old_axis_values) {
+			this.y_old_axis_values = this.y_axis_values.slice();
 		}
 
-		// this.y_axis_positions = this.get_y_axis_points(values);
+		// this.y_axis_values = this.get_y_axis_points(values);
 
-		const y_pts = this.y_axis_positions;
+		const y_pts = this.y_axis_values;
 		const value_range = y_pts[y_pts.length-1] - y_pts[0];
 		this.multiplier = this.height / value_range;
 
@@ -332,39 +332,6 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		this.make_x_axis();
 		this.draw_graph();
 		this.make_y_specifics();
-	}
-
-	// make HORIZONTAL lines for y values
-	make_y_axis(animate=false) {
-		let width, text_end_at = -9, axis_line_class = '', start_at = 0;
-		if(this.y_axis_mode === 'span') {		// long spanning lines
-			width = this.width + 6;
-			start_at = -6;
-		} else if(this.y_axis_mode === 'tick'){	// short label lines
-			width = -6;
-			axis_line_class = 'y-axis-label';
-		}
-
-		if(animate) {
-			this.make_anim_y_axis(width, text_end_at, axis_line_class, start_at);
-			return;
-		}
-
-		this.y_axis_group.textContent = '';
-		this.y_axis_positions.map((point, i) => {
-			this.y_axis_group.appendChild(
-				this.make_y_line(
-					start_at,
-					width,
-					text_end_at,
-					point,
-					'y-value-text',
-					axis_line_class,
-					this.zero_line - point * this.multiplier,
-					(point === 0 && i !== 0) // Non-first Zero line
-				)
-			);
-		});
 	}
 
 	// make VERTICAL lines for x values
@@ -398,6 +365,39 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 					'x-value-text',
 					axis_line_class,
 					this.x_axis_positions[i]
+				)
+			);
+		});
+	}
+
+	// make HORIZONTAL lines for y values
+	make_y_axis(animate=false) {
+		let width, text_end_at = -9, axis_line_class = '', start_at = 0;
+		if(this.y_axis_mode === 'span') {		// long spanning lines
+			width = this.width + 6;
+			start_at = -6;
+		} else if(this.y_axis_mode === 'tick'){	// short label lines
+			width = -6;
+			axis_line_class = 'y-axis-label';
+		}
+
+		if(animate) {
+			this.make_anim_y_axis(width, text_end_at, axis_line_class, start_at);
+			return;
+		}
+
+		this.y_axis_group.textContent = '';
+		this.y_axis_values.map((value, i) => {
+			this.y_axis_group.appendChild(
+				this.make_y_line(
+					start_at,
+					width,
+					text_end_at,
+					value,
+					'y-value-text',
+					axis_line_class,
+					this.zero_line - value * this.multiplier,
+					(value === 0 && i !== 0) // Non-first Zero line
 				)
 			);
 		});
@@ -510,20 +510,201 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		}
 	}
 
+	// API
+	update_values(new_y, new_x) {
+		if(!new_x) {
+			new_x = this.x;
+		}
+		this.elements_to_animate = [];
+		this.updating = true;
+
+		this.old_x_values = this.x.slice();
+		this.old_y_axis_tops = this.y.map(d => d.y_tops.slice());
+
+		this.old_y_values = this.y.map(d => d.values);
+
+		this.no_of_extra_pts = new_x.length - this.x.length;
+
+		// Just update values prop, setup_x/y() will do the rest
+		this.y.map((d, i) => {d.values = new_y[i].values;});
+		if(new_x) this.x = new_x;
+
+		this.setup_x();
+		this.setup_y();
+
+		// Animate only if positions have changed
+		if(!$$.arrays_equal(this.x_old_axis_positions, this.x_axis_positions)) {
+			this.make_x_axis(true);
+			setTimeout(() => {
+				if(!this.updating) this.make_x_axis();
+			}, 300)
+		} else {
+			this.make_x_axis();
+		}
+
+		if(!$$.arrays_equal(this.y_old_axis_values, this.y_axis_values)) {
+			this.make_y_axis(true);
+			setTimeout(() => {
+				if(!this.updating) this.make_y_axis();
+			}, 300)
+		} else {
+			this.make_y_axis();
+		}
+
+		// Change in data, so calculate dependencies
+		this.calc_y_tops();
+
+		this.animate_graphs();
+
+		// if(this.y[0].path) {
+		// 	this.animate_paths();
+		// 	setTimeout(() => {
+		// 		if(!this.updating) this.make_paths();
+		// 	}, 300)
+		// }
+
+		// this.animate_units();
+		// setTimeout(() => {
+		// 	if(!this.updating) this.make_new_units();
+		// }, 300)
+
+		// Trigger animation with the animatable elements in this.elements_to_animate
+		this.run_animation();
+
+		this.updating = false;
+	}
+
+	add_data_point(data_point) {
+		this.x.push(data_point.label);
+		this.y.values.push();
+	}
+
+	run_animation() {
+		let anim_svg = $$.runSVGAnimation(this.svg, this.elements_to_animate);
+
+		if(this.svg.parentNode == this.chart_wrapper) {
+			this.chart_wrapper.removeChild(this.svg);
+			this.chart_wrapper.appendChild(anim_svg);
+
+		}
+
+		// Replace the new svg (data has long been replaced)
+		setTimeout(() => {
+			if(anim_svg.parentNode == this.chart_wrapper) {
+				this.chart_wrapper.removeChild(anim_svg);
+				this.chart_wrapper.appendChild(this.svg);
+			}
+		}, 200);
+	}
+
+	calc_old_and_new_postions(d, i) {
+		let old_x = this.x_old_axis_positions.slice();
+		let new_x = this.x_axis_positions.slice();
+
+		let old_y = this.old_y_axis_tops[i].slice();
+		let new_y = d.y_tops.slice();
+
+		const last_old_x_pos = old_x[old_x.length - 1];
+		const last_old_y_pos = old_y[old_y.length - 1];
+
+		const last_new_x_pos = new_x[new_x.length - 1];
+		const last_new_y_pos = new_y[new_y.length - 1];
+
+		if(this.no_of_extra_pts >= 0) {
+			// First substitute current path with a squiggled one (looking the same but
+			// having more points at end),
+			// then animate to stretch it later to new points
+			// (new points already have more points)
+
+			// Hence, the extra end points will correspond to current(old) positions
+			let filler_x = new Array(Math.abs(this.no_of_extra_pts)).fill(last_old_x_pos);
+			let filler_y = new Array(Math.abs(this.no_of_extra_pts)).fill(last_old_y_pos);
+
+			old_x = old_x.concat(filler_x);
+			old_y = old_y.concat(filler_y);
+
+		} else {
+			// Just modify the new points to have extra points
+			// with the same position at end
+			let filler_x = new Array(Math.abs(this.no_of_extra_pts)).fill(last_new_x_pos);
+			let filler_y = new Array(Math.abs(this.no_of_extra_pts)).fill(last_new_y_pos);
+
+			new_x = new_x.concat(filler_x);
+			new_y = new_y.concat(filler_y);
+		}
+
+		return [old_x, old_y, new_x, new_y];
+	}
+
+	animate_graphs() {
+		this.y.map((d, i) => {
+			// Pre-prep, equilize no of positions between old and new
+			let [old_x, old_y, new_x, new_y] = this.calc_old_and_new_postions(d, i);
+			if(this.no_of_extra_pts >= 0) {
+				this.make_path && this.make_path(d, i, old_x, old_y, d.color || this.colors[i]);
+				this.make_new_units_for_dataset(old_x, old_y, d.color || this.colors[i], i);
+			}
+			d.path && this.animate_path(d, i, old_x, old_y, new_x, new_y);
+			this.animate_units(d, i, old_x, old_y, new_x, new_y);
+		});
+
+		// TODO: replace with real units
+		// setTimeout(() => {
+		// 	this.y.map((d, i) => {
+		// 		this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
+		// 		this.make_new_units_for_dataset(this.x_axis_positions, d.y_tops, d.color || this.colors[i], i);
+		// 	});
+		// }, 300);
+	}
+
+	animate_path(d, i, old_x, old_y, new_x, new_y) {
+		// Animate path
+		const new_points_list = new_y.map((y, i) => (new_x[i] + ',' + y));
+		const new_path_str = new_points_list.join("L");
+
+		const path_args = [{unit: d.path, object: d, key: 'path'}, {d:"M"+new_path_str}, 250, "easein"];
+		this.elements_to_animate.push(path_args);
+
+		// Animate region
+		if(d.region_path) {
+			let reg_start_pt = `0,${this.zero_line}L`;
+			let reg_end_pt = `L${this.width},${this.zero_line}`;
+
+			const region_args = [
+				{unit: d.region_path, object: d, key: 'region_path'},
+				{d:"M" + reg_start_pt + new_path_str + reg_end_pt},
+				250,
+				"easein"
+			];
+			this.elements_to_animate.push(region_args);
+		}
+	}
+
+	animate_units(d, index, old_x, old_y, new_x, new_y) {
+		let type = this.unit_args.type;
+
+		d.svg_units.map((unit, i) => {
+			this.elements_to_animate.push(this.animate[type](
+				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
+				new_x[i],
+				new_y[i],
+				index
+			));
+		});
+	}
+
 	make_anim_x_axis(height, text_start_at, axis_line_class) {
 		// Animate X AXIS to account for more or less axis lines
 
 		const old_pos = this.x_old_axis_positions;
 		const new_pos = this.x_axis_positions;
 
-		const old_vals = this.old_x_axis_values;
+		const old_vals = this.old_x_values;
 		const new_vals = this.x;
 
-		const last_line_x_pos = old_pos[old_pos.length - 1];
+		const last_line_pos = old_pos[old_pos.length - 1];
 
-		let superimposed_positions, superimposed_values;
-
-		let add_and_animate_line = (value, old_pos, new_pos) => {
+		let add_and_animate_line = (value, old_pos, new_pos, i) => {
 			const x_line = this.make_x_line(
 				height,
 				text_start_at,
@@ -546,7 +727,71 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 		this.x_axis_group.textContent = '';
 
-		if(this.no_of_extras > 0) {
+		this.make_new_axis_anim_lines(
+			old_pos,
+			new_pos,
+			old_vals,
+			new_vals,
+			last_line_pos,
+			add_and_animate_line
+		);
+	}
+
+	make_anim_y_axis(width, text_end_at, axis_line_class, start_at) {
+		// Animate Y AXIS to account for more or less axis lines
+
+		const old_pos = this.y_old_axis_values.map(value =>
+			this.zero_line - value * this.multiplier);
+		const new_pos = this.y_axis_values.map(value =>
+			this.zero_line - value * this.multiplier);
+
+		const old_vals = this.y_old_axis_values;
+		const new_vals = this.y_axis_values;
+
+		const last_line_pos = old_pos[old_pos.length - 1];
+
+		let add_and_animate_line = (value, old_pos, new_pos, i) => {
+			const y_line = this.make_y_line(
+				start_at,
+				width,
+				text_end_at,
+				value,
+				'y-value-text',
+				axis_line_class,
+				old_pos,  // old position
+				(value === 0 && i !== 0) // Non-first Zero line
+			);
+
+			// this.zero_line - value * this.multiplier
+			this.y_axis_group.appendChild(y_line);
+			// console.log(`0, ${ new_pos }`, `0, ${ old_pos }`);
+
+			this.elements_to_animate && this.elements_to_animate.push([
+				{unit: y_line, array: [0], index: 0},
+				{transform: `0, ${ new_pos }`},
+				250,
+				"easein",
+				"translate",
+				`0, ${ old_pos }`
+			]);
+		}
+
+		this.y_axis_group.textContent = '';
+
+		this.make_new_axis_anim_lines(
+			old_pos,
+			new_pos,
+			old_vals,
+			new_vals,
+			last_line_pos,
+			add_and_animate_line
+		);
+	}
+
+	make_new_axis_anim_lines(old_pos, new_pos, old_vals, new_vals, last_line_pos, add_and_animate_line) {
+		let superimposed_positions, superimposed_values;
+		let no_of_extras = new_vals.length - old_vals.length;
+		if(no_of_extras > 0) {
 			// More axis are needed
 			// First make only the superimposed (same position) ones
 			// Add in the extras at the end later
@@ -556,32 +801,28 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			// Axis have to be reduced
 			// Fake it by moving all current extra axis to the last position
 			// You'll need filler positions and values in the new arrays
-			const filler_vals = new Array(Math.abs(this.no_of_extras)).fill("");
+			const filler_vals = new Array(Math.abs(no_of_extras)).fill("");
 			superimposed_values = new_vals.concat(filler_vals);
 
-			const filler_pos = new Array(Math.abs(this.no_of_extras)).fill(last_line_x_pos);
+			const filler_pos = new Array(Math.abs(no_of_extras)).fill(last_line_pos);
 			superimposed_positions = new_pos.concat(filler_pos);
 		}
 
-		this.x_axis_group.textContent = '';
+		// console.log(superimposed_values, old_pos, new_pos);
 		superimposed_values.map((value, i) => {
-			add_and_animate_line(value, old_pos[i], superimposed_positions[i]);
+			add_and_animate_line(value, old_pos[i], superimposed_positions[i], i);
 		});
 
-		if(this.no_of_extras > 0) {
+		if(no_of_extras > 0) {
 			// Add in extra axis in the end
 			// and then animate to new positions
 			const extra_values = new_vals.slice(old_vals.length);
 			const extra_positions = new_pos.slice(old_pos.length);
 
 			extra_values.map((value, i) => {
-				add_and_animate_line(value, last_line_x_pos, extra_positions[i]);
+				add_and_animate_line(value, last_line_pos, extra_positions[i], i);
 			});
 		}
-	}
-
-	make_anim_y_axis() {
-		// Animate Y AXIS to account for more or less axis lines
 	}
 
 	make_x_line(height, text_start_at, point, label_class, axis_line_class, x_pos) {
@@ -647,188 +888,6 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		y_level.appendChild(text);
 
 		return y_level;
-	}
-
-	// API
-	update_values(new_y, new_x) {
-		if(!new_x) {
-			new_x = this.x;
-		}
-		this.elements_to_animate = [];
-		this.updating = true;
-
-		this.old_x_axis_values = this.x.slice();
-		this.old_y_axis_values = this.y.map(d => d.values);
-		this.old_y_axis_tops = this.y.map(d => d.y_tops);
-
-		this.no_of_extras = new_x.length - this.x.length;
-
-		// Just update values prop, setup_x/y() will do the rest
-		this.y.map((d, i) => {d.values = new_y[i].values;});
-		if(new_x) this.x = new_x;
-
-		this.setup_x();
-		this.setup_y();
-
-		// Animate only if positions have changed
-		if(!$$.arrays_equal(this.x_old_axis_positions, this.x_axis_positions)) {
-			this.make_x_axis(true);
-			setTimeout(() => {
-				if(!this.updating) this.make_x_axis();
-			}, 400)
-		} else {
-			this.make_x_axis();
-		}
-
-		// if(!$$.arrays_equal(this.y_old_axis_positions, this.y_axis_positions)) {
-		// 	this.make_y_axis(true);
-		// 	setTimeout(() => {
-		// 		if(!this.updating) this.make_y_axis();
-		// 	}, 400)
-		// } else {
-		// 	this.make_y_axis();
-		// }
-
-		// Change in data, so calculate dependencies
-		this.calc_y_tops();
-
-		this.animate_graphs();
-
-		// if(this.y[0].path) {
-		// 	this.animate_paths();
-		// 	setTimeout(() => {
-		// 		if(!this.updating) this.make_paths();
-		// 	}, 400)
-		// }
-
-		// this.animate_units();
-		// setTimeout(() => {
-		// 	if(!this.updating) this.make_new_units();
-		// }, 400)
-
-		// Trigger animation with the animatable elements in this.elements_to_animate
-		this.run_animation();
-
-		this.updating = false;
-	}
-
-	run_animation() {
-		let anim_svg = $$.runSVGAnimation(this.svg, this.elements_to_animate);
-
-		if(this.svg.parentNode == this.chart_wrapper) {
-			this.chart_wrapper.removeChild(this.svg);
-			this.chart_wrapper.appendChild(anim_svg);
-
-		}
-
-		// Replace the new svg (data has long been replaced)
-		setTimeout(() => {
-			if(anim_svg.parentNode == this.chart_wrapper) {
-				this.chart_wrapper.removeChild(anim_svg);
-				this.chart_wrapper.appendChild(this.svg);
-			}
-		}, 200);
-	}
-
-	calc_old_and_new_postions(d, i) {
-		let old_x = this.x_old_axis_positions.slice();
-		let new_x = this.x_axis_positions.slice();
-
-		let old_y = this.old_y_axis_tops[i].slice();
-		let new_y = d.y_tops.slice();
-
-		const last_old_x_pos = old_x[old_x.length - 1];
-		const last_old_y_pos = old_y[old_y.length - 1];
-
-		const last_new_x_pos = new_x[new_x.length - 1];
-		const last_new_y_pos = new_y[new_y.length - 1];
-
-		if(this.no_of_extras >= 0) {
-			// First substitute current path with a squiggled one (looking the same but
-			// having more points at end),
-			// then animate to stretch it later to new points
-			// (new points already have more points)
-
-			// Hence, the extra end points will correspond to current(old) positions
-			let filler_x = new Array(Math.abs(this.no_of_extras)).fill(last_old_x_pos);
-			let filler_y = new Array(Math.abs(this.no_of_extras)).fill(last_old_y_pos);
-
-			old_x = old_x.concat(filler_x);
-			old_y = old_y.concat(filler_y);
-
-		} else {
-			// Just modify the new points to have extra points
-			// with the same position at end
-			let filler_x = new Array(Math.abs(this.no_of_extras)).fill(last_new_x_pos);
-			let filler_y = new Array(Math.abs(this.no_of_extras)).fill(last_new_y_pos);
-
-			new_x = new_x.concat(filler_x);
-			new_y = new_y.concat(filler_y);
-		}
-
-		return [old_x, old_y, new_x, new_y];
-	}
-
-	animate_graphs() {
-		this.y.map((d, i) => {
-			// Pre-prep, equilize no of positions between old and new
-			let [old_x, old_y, new_x, new_y] = this.calc_old_and_new_postions(d, i);
-			if(this.no_of_extras >= 0) {
-				this.make_path && this.make_path(d, i, old_x, old_y, d.color || this.colors[i]);
-				this.make_new_units_for_dataset(old_x, old_y, d.color || this.colors[i], i);
-			}
-			d.path && this.animate_path(d, i, old_x, old_y, new_x, new_y);
-			this.animate_units(d, i, old_x, old_y, new_x, new_y);
-		});
-
-		// TODO: replace with real units
-		// setTimeout(() => {
-		// 	this.y.map((d, i) => {
-		// 		this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
-		// 		this.make_new_units_for_dataset(this.x_axis_positions, d.y_tops, d.color || this.colors[i], i);
-		// 	});
-		// }, 400);
-	}
-
-	animate_path(d, i, old_x, old_y, new_x, new_y) {
-		// Animate path
-		const new_points_list = new_y.map((y, i) => (new_x[i] + ',' + y));
-		const new_path_str = new_points_list.join("L");
-
-		const path_args = [{unit: d.path, object: d, key: 'path'}, {d:"M"+new_path_str}, 250, "easein"];
-		this.elements_to_animate.push(path_args);
-
-		// Animate region
-		if(d.region_path) {
-			let reg_start_pt = `0,${this.zero_line}L`;
-			let reg_end_pt = `L${this.width},${this.zero_line}`;
-
-			const region_args = [
-				{unit: d.region_path, object: d, key: 'region_path'},
-				{d:"M" + reg_start_pt + new_path_str + reg_end_pt},
-				250,
-				"easein"
-			];
-			this.elements_to_animate.push(region_args);
-		}
-	}
-
-	animate_units(d, index, old_x, old_y, new_x, new_y) {
-		let type = this.unit_args.type;
-
-		d.svg_units.map((unit, i) => {
-			this.elements_to_animate.push(this.animate[type](
-				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
-				new_x[i],
-				new_y[i],
-				index
-			));
-		});
-	}
-
-	add_data_point(data_point) {
-		this.x.push(data_point.label);
-		this.y.values.push();
 	}
 
 	// Helpers
