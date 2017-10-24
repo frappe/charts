@@ -4,6 +4,7 @@
 // 		line_type: "dashed",	// "dashed" or "solid"
 // 		value: 10
 // 	},
+// ]
 
 // summary = [
 // 	{
@@ -29,7 +30,6 @@ frappe.chart.FrappeChart = class {
 		data = {},
 		format_lambdas = {},
 
-		specific_values = [],
 		summary = [],
 
 		is_navigable = 0,
@@ -57,7 +57,7 @@ frappe.chart.FrappeChart = class {
 		this.data = data;
 		this.format_lambdas = format_lambdas;
 
-		this.specific_values = specific_values;
+		this.specific_values = data.specific_values || [];
 		this.summary = summary;
 
 		this.is_navigable = is_navigable;
@@ -189,21 +189,23 @@ frappe.chart.FrappeChart = class {
 	setup_navigation() {
 		this.make_overlay();
 		this.bind_overlay();
-		document.onkeydown = (e) => {
-			e = e || window.event;
+		document.addEventListener('keydown', (e) => {
+			if($$.isElementInViewport(this.chart_wrapper)) {
+				e = e || window.event;
 
-			if (e.keyCode == '37') {
-				this.on_left_arrow();
-			} else if (e.keyCode == '39') {
-				this.on_right_arrow();
-			} else if (e.keyCode == '38') {
-				this.on_up_arrow();
-			} else if (e.keyCode == '40') {
-				this.on_down_arrow();
-			} else if (e.keyCode == '13') {
-				this.on_enter_key();
+				if (e.keyCode == '37') {
+					this.on_left_arrow();
+				} else if (e.keyCode == '39') {
+					this.on_right_arrow();
+				} else if (e.keyCode == '38') {
+					this.on_up_arrow();
+				} else if (e.keyCode == '40') {
+					this.on_down_arrow();
+				} else if (e.keyCode == '13') {
+					this.on_enter_key();
+				}
 			}
-		};
+		});
 	}
 
 	make_overlay() {}
@@ -463,7 +465,9 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 					d.title.toUpperCase(),
 					'specific-value',
 					'specific-value',
-					this.zero_line - d.value * this.multiplier
+					this.zero_line - d.value * this.multiplier,
+					false,
+					d.line_type
 				)
 			);
 		});
@@ -847,8 +851,9 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		return x_level;
 	}
 
-	make_y_line(start_at, width, text_end_at, point, label_class, axis_line_class, y_pos, darker=false) {
+	make_y_line(start_at, width, text_end_at, point, label_class, axis_line_class, y_pos, darker=false, line_type="") {
 		let line = $$.createSVG('line', {
+			className: line_type === "dashed" ? "dashed": "",
 			x1: start_at,
 			x2: width,
 			y1: 0,
@@ -1964,7 +1969,7 @@ $$.animateSVG = (element, props, dur, easing_type="linear", type=undefined, old_
 	return [anim_element, new_element];
 }
 
-$$.offset = function(element) {
+$$.offset = (element) => {
 	let rect = element.getBoundingClientRect();
 	return {
 		// https://stackoverflow.com/a/7436602/6495043
@@ -1974,6 +1979,18 @@ $$.offset = function(element) {
 		left: rect.left + (document.documentElement.scrollLeft || document.body.scrollLeft)
 	}
 };
+
+$$.isElementInViewport = (el) => {
+	// Although straightforward: https://stackoverflow.com/a/7557433/6495043
+    var rect = el.getBoundingClientRect();
+
+    return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /*or $(window).height() */
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
+    );
+}
 
 $$.bind = function(element, o) {
 	if (element) {

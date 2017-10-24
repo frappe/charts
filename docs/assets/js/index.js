@@ -1,3 +1,5 @@
+// Data
+// ================================================================================
 let bar_composite_data = {
 	"labels": ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"],
 	"datasets": [{
@@ -64,7 +66,6 @@ let type_data = {
 		{
 			"color": "blue",
 			"values": [15, 20, -3, -15, 58, 12, -17]
-
 		}
 	]
 };
@@ -75,6 +76,13 @@ let update_data = {
 			"color": "red",
 			"values": [25, 40, 30, 35, 48, 52, 17]
 		}
+	],
+	"specific_values": [
+		{
+			title: "Altitude",
+			line_type: "dashed",	// "dashed" or "solid"
+			value: 43
+		},
 	]
 };
 
@@ -115,6 +123,9 @@ let heatmap_data = {
 	1506277800.0: 2
 };
 
+
+// Charts
+// ================================================================================
 let bar_composite_chart = new frappe.chart.FrappeChart ({
 	parent: "#chart-composite-1",
 	data: bar_composite_data,
@@ -174,3 +185,6 @@ let heatmap = new frappe.chart.FrappeChart({
 	height: 100,
 	// discrete_domains: 1
 });
+
+// Events
+// ================================================================================
