@@ -4,7 +4,9 @@
 	color: #fff;
 	padding: 2em 0;
 }
-
+.jumbotron {
+    padding: 2rem 2rem;
+}
 .project-name {
 	padding-top: 1.8em;
 	font-size: 2.5em;
@@ -37,7 +39,7 @@ hr {
 	margin-bottom: 2rem;
 }
 
-.chart-container {
+.graphics-container {
 	border: 1px solid #ddd;
 	border-radius: 3px;
 }
@@ -47,7 +49,7 @@ pre.highlight {
 	border-radius: 3px;
 }
 
-.btn-group>.btn {
+.btn {
 	outline: none !important;
 }
 .dashboard-section h1 {
@@ -56,4 +58,14 @@ pre.highlight {
 
 .hero .gantt-container {
 	text-align: left;
+}
+.hero {
+	/*font-size: 1.4rem;*/
+}
+.margin-vertical-px {
+	margin: 15px 0px;
+}
+
+.margin-vertical-rem {
+	margin: 2em 0 1em 0;
 }

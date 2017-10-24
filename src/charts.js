@@ -556,18 +556,6 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 		this.animate_graphs();
 
-		// if(this.y[0].path) {
-		// 	this.animate_paths();
-		// 	setTimeout(() => {
-		// 		if(!this.updating) this.make_paths();
-		// 	}, 300)
-		// }
-
-		// this.animate_units();
-		// setTimeout(() => {
-		// 	if(!this.updating) this.make_new_units();
-		// }, 300)
-
 		// Trigger animation with the animatable elements in this.elements_to_animate
 		this.run_animation();
 
@@ -1231,9 +1219,9 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 
 			function set_gradient_stop(grad_elem, offset, color, opacity) {
 				$$.createSVG('stop', {
+					'className': 'stop-color ' + color,
 					'inside': grad_elem,
 					'offset': offset,
-					'stop-color': color,
 					'stop-opacity': opacity
 				});
 			}
@@ -1393,7 +1381,7 @@ frappe.chart.PercentageChart = class PercentageChart extends frappe.chart.Frappe
 
 frappe.chart.HeatMap = class HeatMap extends frappe.chart.FrappeChart {
 	constructor({
-		start = new Date(moment().subtract(1, 'year').toDate()),
+		start = '',
 		domain = '',
 		subdomain = '',
 		data = {},
@@ -1406,10 +1394,12 @@ frappe.chart.HeatMap = class HeatMap extends frappe.chart.FrappeChart {
 
 		this.domain = domain;
 		this.subdomain = subdomain;
-		this.start = start;
 		this.data = data;
 		this.discrete_domains = discrete_domains;
 		this.count_label = count_label;
+
+		let today = new Date();
+		this.start = start || this.add_days(today, 365);
 
 		this.legend_colors = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
 
@@ -1437,6 +1427,10 @@ frappe.chart.HeatMap = class HeatMap extends frappe.chart.FrappeChart {
 
 	set_width() {
 		this.base_width = (this.no_of_cols) * 12;
+
+		if(this.discrete_domains) {
+			this.base_width += (12 * 12);
+		}
 	}
 
 	setup_components() {

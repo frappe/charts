@@ -410,3 +410,47 @@
 .border-top.magenta {
   border-top: 3px solid #ffa3ef;
 }
+
+.stop-color.grey {
+  stop-color: #bdd3e6;
+}
+.stop-color.light-grey {
+  stop-color: #F0F4F7;
+}
+.stop-color.blue {
+  stop-color: #5e64ff;
+}
+.stop-color.red {
+  stop-color: #ff5858;
+}
+.stop-color.light-green {
+  stop-color: #98d85b;
+}
+.stop-color.green {
+  stop-color: #28a745;
+}
+.stop-color.orange {
+  stop-color: #ffa00a;
+}
+.stop-color.violet {
+  stop-color: #743ee2;
+}
+.stop-color.darkgrey {
+  stop-color: #b8c2cc;
+}
+.stop-color.black {
+  stop-color: #36414C;
+}
+.stop-color.yellow {
+  stop-color: #FEEF72;
+}
+.stop-color.light-blue {
+  stop-color: #7CD6FD;
+}
+.stop-color.purple {
+  stop-color: #b554ff;
+}
+.stop-color.magenta {
+  stop-color: #ffa3ef;
+}
+
