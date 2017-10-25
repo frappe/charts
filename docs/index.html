@@ -8,7 +8,7 @@
     <meta name="description" content="A simple, responsive, modern charts library for the web.">
 
     <link rel="stylesheet" type="text/css" href="assets/css/normalize.css" media="screen">
-    <link href='https://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet' type='text/css'>
+    <!--<link href='https://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet' type='text/css'>-->
     <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" type="text/css" href="assets/css/frappe_theme.css" media="screen">
     <link rel="stylesheet" type="text/css" href="assets/css/index.css" media="screen">
@@ -33,11 +33,11 @@
         </div>
 
         <div class="col-sm-10 push-sm-1 later" style="font-size: 14px;">
-          <div id="chart-composite-1" class="graphics-container"></div>
+          <div id="chart-composite-1" class="graphics-container"><svg height=225></svg></div>
           <p class="mt-1">Use arrow keys to navigate data points</p>
         </div>
         <div class="col-sm-10 push-sm-1 later" style="font-size: 14px;">
-          <div id="chart-composite-2" class="graphics-container"></div>
+          <div id="chart-composite-2" class="graphics-container"><svg height=225></svg></div>
         </div>
       </div>
 
@@ -47,15 +47,16 @@
           <div class="col-sm-10 push-sm-1">
             <div class="dashboard-section">
               <h6 class="margin-vertical-rem">
-                Bars, Lines or <a href="http://www.storytellingwithdata.com/blog/2011/07/death-to-pie-charts" target="_blank">Percentages</a>
+                <!--Bars, Lines or <a href="http://www.storytellingwithdata.com/blog/2011/07/death-to-pie-charts" target="_blank">Percentages</a>-->
+                Create a new chart
               </h6>
+              <pre><code class="hljs html">&lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
               <div id="chart-types" class="graphics-container"></div>
-              <div class="mt-1 mx-auto" role="group">
-                <button type="button" class="btn btn-sm btn-secondary active">Bar Chart</button>
-                <button type="button" class="btn btn-sm btn-secondary">Line Chart</button>
-                <button type="button" class="btn btn-sm btn-secondary">Percentage Chart</button>
+              <div class="btn-group chart-type-buttons margin-vertical-px mx-auto" role="group">
+                <button type="button" class="btn btn-sm btn-secondary active" data-type='bar'>Bar Chart</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-type='line'>Line Chart</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-type='percentage'>Percentage Chart</button>
               </div>
-              <pre><code class="hljs html margin-vertical-px">&lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
             </div>
           </div>
 
@@ -64,11 +65,12 @@
               <h6 class="margin-vertical-rem">
                 Update Values
               </h6>
+              <pre><code class="hljs html">&lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
               <div id="chart-update" class="graphics-container"></div>
-              <div class="mt-1 mx-auto" role="group">
-                <button type="button" class="btn btn-sm btn-secondary">Random Data</button>
-                <button type="button" class="btn btn-sm btn-secondary">Add Value</button>
-                <button type="button" class="btn btn-sm btn-secondary">Remove Value</button>
+              <div class="chart-update-buttons mt-1 mx-auto" role="group">
+                <button type="button" class="btn btn-sm btn-secondary" data-update="random">Random Data</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-update="add">Add Value</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-update="remove">Remove Value</button>
               </div>
               <pre><code class="hljs html margin-vertical-px">&lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
             </div>
@@ -131,15 +133,16 @@
 
     <div class="built-with-frappe text-center" style="margin-top: -20px">
         <img style="padding: 5px; width: 40px; background: #fff" class="frappe-bird" src="https://frappe.github.io/frappe/assets/img/frappe-bird-grey.svg">
-        <p style="margin: 24px 0 80px 0; font-size: 15px">Made by <a href="https://github.com/pratu16x7" target="_blank">pratu16x7</a>. Used in <a href="https://erpnext.com" target="_blank">ERPNext</a>.</p>
+        <p style="margin: 24px 0 0px 0; font-size: 15px">Made by <a href="https://github.com/pratu16x7" target="_blank">pratu16x7</a>. Used in <a href="https://erpnext.com" target="_blank">ERPNext</a>.</p>
+        <p style="margin: 24px 0 80px 0; font-size: 12px">Data from <a href="https://api.nasa.gov/index.html" target="_blank">NASA Open APIs</a></p>
     </div>
 
     <a href="https://github.com/frappe/charts" target="_blank" class="github-corner" aria-label="View source on Github">
-    <svg width="80" height="80" viewBox="0 0 250 250" style="fill:#9a9a9a; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true">
-    <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
-    <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
-    <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path>
-    </svg>
+      <svg width="80" height="80" viewBox="0 0 250 250" style="fill:#9a9a9a; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true">
+        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+        <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+        <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path>
+      </svg>
     </a>
 
     <script src="../src/charts.js"></script>

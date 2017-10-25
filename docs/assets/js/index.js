@@ -70,18 +70,33 @@ let type_data = {
 	]
 };
 
+let update_data_all_labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
+	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed",
+	 "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"];
+let update_data_all_values = [25, 40, 30, 35, 48, 52, 17, 15, 20, -3, -15, 58,
+	12, -17, 35, 48, 40, 30, 52, 17, 25, 5, 48, 52, 17];
+
+// We're gonna be shuffling this
+let update_data_all_indices = update_data_all_labels.map((d,i) => i);
+
+let get_update_data = (source_array, length=10) => {
+	let indices = update_data_all_indices.slice(0, length);
+	return indices.map((index) => source_array[index]);
+}
+
 let update_data = {
-	"labels": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+	"labels": get_update_data(update_data_all_labels),
 	"datasets": [{
 			"color": "red",
-			"values": [25, 40, 30, 35, 48, 52, 17]
+			"values": get_update_data(update_data_all_values)
 		}
 	],
 	"specific_values": [
 		{
 			title: "Altitude",
-			line_type: "dashed",	// "dashed" or "solid"
-			value: 43
+			// title: "Altiteragrwst ude",
+			line_type: "dashed",
+			value: 38
 		},
 	]
 };
@@ -138,7 +153,7 @@ let bar_composite_chart = new frappe.chart.FrappeChart ({
 let line_composite_chart = new frappe.chart.FrappeChart ({
 	parent: "#chart-composite-2",
 	data: line_composite_data,
-	type: 'line',
+	type: 'bar',
 	height: 180
 })
 
@@ -188,3 +203,44 @@ let heatmap = new frappe.chart.FrappeChart({
 
 // Events
 // ================================================================================
+
+Array.prototype.slice.call(
+	document.querySelectorAll('.chart-type-buttons button')
+).map(el => {
+	el.addEventListener('click', (e) => {
+		btn = e.target;
+		let type = btn.getAttribute('data-type');
+
+		type_chart = type_chart.get_different_chart(type);
+
+		Array.prototype.slice.call(
+			btn.parentNode.querySelectorAll('button')).map(el => {
+				el.classList.remove('active');
+			});
+		btn.classList.add('active');
+	});
+});
+
+let chart_update_buttons = document.querySelector('.chart-update-buttons');
+
+chart_update_buttons.querySelector('[data-update="random"]').addEventListener("click", (e) => {
+	$$.shuffle(update_data_all_indices);
+	update_chart.update_values(
+		[{values: get_update_data(update_data_all_values)}],
+		get_update_data(update_data_all_labels)
+	);
+});
+
+chart_update_buttons.querySelector('[data-update="add"]').addEventListener("click", (e) => {
+	// NOTE: this ought to be problem, labels stay the same after update
+	let index = update_chart.x.length; // last index to add
+	if(index >= update_data_all_indices.length) return;
+	update_chart.add_data_point(
+		[update_data_all_values[index]], update_data_all_labels[index]
+	);
+});
+
+chart_update_buttons.querySelector('[data-update="remove"]').addEventListener("click", (e) => {
+	update_chart.remove_data_point();
+});
+

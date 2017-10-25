@@ -18,7 +18,7 @@
 // Validate all arguments, check passed data format, set defaults
 "use strict";
 
-let frappe = {chart:{}};
+let frappe = {chart:{}, chart_types:['line', 'bar', 'percentage', 'heatmap']};
 
 frappe.chart.FrappeChart = class {
 	constructor({
@@ -50,6 +50,8 @@ frappe.chart.FrappeChart = class {
 			}
 		}
 
+		this.raw_chart_args = arguments[0];
+
 		this.parent = document.querySelector(parent);
 		this.title = title;
 		this.subtitle = subtitle;
@@ -65,7 +67,43 @@ frappe.chart.FrappeChart = class {
 			this.current_index = 0;
 		}
 
+		$$.createSVG('svg', {
+			className: 'chart',
+			inside: parent,
+			width: 1000,
+			height: height
+		});
+
 		this.set_margins(height);
+	}
+
+	get_different_chart(type) {
+		if(!frappe.chart_types.includes(type)) {
+			console.error(`'${type}' is not a valid chart type.`);
+		}
+		if(type === this.type) return;
+
+		// Only across compatible types
+		let compatible_types = {
+			bar: ['line', 'percentage'],
+			line: ['bar', 'percentage'],
+			percentage: ['bar', 'line'],
+			heatmap: []
+		}
+
+		if(!compatible_types[this.type].includes(type)) {
+			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
+		}
+
+		// Okay, this is anticlimactic
+		// this function will need to be 'change_chart_type(type)'
+		// that will update only the required elements, but for now ...
+		return new frappe.chart.FrappeChart({
+			parent: this.raw_chart_args.parent,
+			data: this.raw_chart_args.data,
+			type: type,
+			height: this.raw_chart_args.height
+		});
 	}
 
 	set_margins(height) {
@@ -113,7 +151,7 @@ frappe.chart.FrappeChart = class {
 		let special_values_width = 0;
 		this.specific_values.map(val => {
 			if(this.get_strwidth(val.title) > special_values_width) {
-				special_values_width = this.get_strwidth(val.title);
+				special_values_width = this.get_strwidth(val.title) - 40;
 			}
 		});
 		this.base_width = this.parent.offsetWidth - special_values_width;
@@ -159,7 +197,7 @@ frappe.chart.FrappeChart = class {
 
 	make_draw_area() {
 		this.draw_area = $$.createSVG("g", {
-			className: this.type,
+			className: this.type + '-chart',
 			inside: this.svg,
 			transform: `translate(${this.translate_x}, ${this.translate_y})`
 		});
@@ -305,13 +343,18 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 		const y_pts = this.y_axis_values;
 		const value_range = y_pts[y_pts.length-1] - y_pts[0];
+
+		if(this.multiplier) this.old_multiplier = this.multiplier;
 		this.multiplier = this.height / value_range;
+		if(!this.old_multiplier) this.old_multiplier = this.multiplier;
 
 		const zero_index = y_pts.indexOf(0);
 		const interval = y_pts[1] - y_pts[0];
 		const interval_height = interval * this.multiplier;
 
+		if(this.zero_line) this.old_zero_line = this.zero_line;
 		this.zero_line = this.height - (zero_index * interval_height);
+		if(!this.old_zero_line) this.old_zero_line = this.zero_line;
 	}
 
 	setup_components() {
@@ -374,19 +417,13 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 	// make HORIZONTAL lines for y values
 	make_y_axis(animate=false) {
-		let width, text_end_at = -9, axis_line_class = '', start_at = 0;
-		if(this.y_axis_mode === 'span') {		// long spanning lines
-			width = this.width + 6;
-			start_at = -6;
-		} else if(this.y_axis_mode === 'tick'){	// short label lines
-			width = -6;
-			axis_line_class = 'y-axis-label';
-		}
-
 		if(animate) {
-			this.make_anim_y_axis(width, text_end_at, axis_line_class, start_at);
+			this.make_anim_y_axis();
+			this.make_anim_y_specifics();
 			return;
 		}
+
+		let [width, text_end_at, axis_line_class, start_at] = this.get_y_axis_line_props();
 
 		this.y_axis_group.textContent = '';
 		this.y_axis_values.map((value, i) => {
@@ -403,6 +440,22 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 				)
 			);
 		});
+	}
+
+	get_y_axis_line_props(specific=false) {
+		if(specific) {
+			return[this.width, this.width + 5, 'specific-value', 0];
+		}
+		let width, text_end_at = -9, axis_line_class = '', start_at = 0;
+		if(this.y_axis_mode === 'span') {		// long spanning lines
+			width = this.width + 6;
+			start_at = -6;
+		} else if(this.y_axis_mode === 'tick'){	// short label lines
+			width = -6;
+			axis_line_class = 'y-axis-label';
+		}
+
+		return [width, text_end_at, axis_line_class, start_at];
 	}
 
 	draw_graph() {
@@ -457,6 +510,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 	make_y_specifics() {
 		this.specific_values.map(d => {
+			this.specific_y_group.textContent = '';
 			this.specific_y_group.appendChild(
 				this.make_y_line(
 					0,
@@ -542,17 +596,16 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			setTimeout(() => {
 				if(!this.updating) this.make_x_axis();
 			}, 300)
-		} else {
-			this.make_x_axis();
 		}
 
 		if(!$$.arrays_equal(this.y_old_axis_values, this.y_axis_values)) {
 			this.make_y_axis(true);
 			setTimeout(() => {
-				if(!this.updating) this.make_y_axis();
+				if(!this.updating) {
+					this.make_y_axis();
+					this.make_y_specifics();
+				}
 			}, 300)
-		} else {
-			this.make_y_axis();
 		}
 
 		// Change in data, so calculate dependencies
@@ -566,9 +619,24 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		this.updating = false;
 	}
 
-	add_data_point(data_point) {
-		this.x.push(data_point.label);
-		this.y.values.push();
+	add_data_point(y_point, x_point, index=this.x.length) {
+		let new_y = this.y.map(data_set => { return {values:data_set.values}; });
+		new_y.map((d, i) => { d.values.splice(index, 0, y_point[i]); });
+		let new_x = this.x.slice();
+		new_x.splice(index, 0, x_point);
+
+		this.update_values(new_y, new_x);
+	}
+
+	remove_data_point(index = this.x.length-1) {
+		if(this.x.length < 3) return;
+
+		let new_y = this.y.map(data_set => { return {values:data_set.values}; });
+		new_y.map((d, i) => { d.values.splice(index, 1); });
+		let new_x = this.x.slice();
+		new_x.splice(index, 1);
+
+		this.update_values(new_y, new_x);
 	}
 
 	run_animation() {
@@ -587,6 +655,63 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 				this.chart_wrapper.appendChild(this.svg);
 			}
 		}, 200);
+	}
+
+	animate_graphs() {
+		this.y.map((d, i) => {
+			// Pre-prep, equilize no of positions between old and new
+			let [old_x, old_y, new_x, new_y] = this.calc_old_and_new_postions(d, i);
+			if(this.no_of_extra_pts >= 0) {
+				this.make_path && this.make_path(d, i, old_x, old_y, d.color || this.colors[i]);
+				this.make_new_units_for_dataset(old_x, old_y, d.color || this.colors[i], i);
+			}
+			d.path && this.animate_path(d, i, old_x, old_y, new_x, new_y);
+			this.animate_units(d, i, old_x, old_y, new_x, new_y);
+		});
+
+		// TODO: replace with real units
+		setTimeout(() => {
+			this.y.map((d, i) => {
+				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
+				this.make_new_units_for_dataset(this.x_axis_positions, d.y_tops, d.color || this.colors[i], i);
+			});
+		}, 300);
+	}
+
+	animate_path(d, i, old_x, old_y, new_x, new_y) {
+		// Animate path
+		const new_points_list = new_y.map((y, i) => (new_x[i] + ',' + y));
+		const new_path_str = new_points_list.join("L");
+
+		const path_args = [{unit: d.path, object: d, key: 'path'}, {d:"M"+new_path_str}, 250, "easein"];
+		this.elements_to_animate.push(path_args);
+
+		// Animate region
+		if(d.region_path) {
+			let reg_start_pt = `0,${this.zero_line}L`;
+			let reg_end_pt = `L${this.width},${this.zero_line}`;
+
+			const region_args = [
+				{unit: d.region_path, object: d, key: 'region_path'},
+				{d:"M" + reg_start_pt + new_path_str + reg_end_pt},
+				250,
+				"easein"
+			];
+			this.elements_to_animate.push(region_args);
+		}
+	}
+
+	animate_units(d, index, old_x, old_y, new_x, new_y) {
+		let type = this.unit_args.type;
+
+		d.svg_units.map((unit, i) => {
+			this.elements_to_animate.push(this.animate[type](
+				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
+				new_x[i],
+				new_y[i],
+				index
+			));
+		});
 	}
 
 	calc_old_and_new_postions(d, i) {
@@ -628,63 +753,6 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		return [old_x, old_y, new_x, new_y];
 	}
 
-	animate_graphs() {
-		this.y.map((d, i) => {
-			// Pre-prep, equilize no of positions between old and new
-			let [old_x, old_y, new_x, new_y] = this.calc_old_and_new_postions(d, i);
-			if(this.no_of_extra_pts >= 0) {
-				this.make_path && this.make_path(d, i, old_x, old_y, d.color || this.colors[i]);
-				this.make_new_units_for_dataset(old_x, old_y, d.color || this.colors[i], i);
-			}
-			d.path && this.animate_path(d, i, old_x, old_y, new_x, new_y);
-			this.animate_units(d, i, old_x, old_y, new_x, new_y);
-		});
-
-		// TODO: replace with real units
-		// setTimeout(() => {
-		// 	this.y.map((d, i) => {
-		// 		this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
-		// 		this.make_new_units_for_dataset(this.x_axis_positions, d.y_tops, d.color || this.colors[i], i);
-		// 	});
-		// }, 300);
-	}
-
-	animate_path(d, i, old_x, old_y, new_x, new_y) {
-		// Animate path
-		const new_points_list = new_y.map((y, i) => (new_x[i] + ',' + y));
-		const new_path_str = new_points_list.join("L");
-
-		const path_args = [{unit: d.path, object: d, key: 'path'}, {d:"M"+new_path_str}, 250, "easein"];
-		this.elements_to_animate.push(path_args);
-
-		// Animate region
-		if(d.region_path) {
-			let reg_start_pt = `0,${this.zero_line}L`;
-			let reg_end_pt = `L${this.width},${this.zero_line}`;
-
-			const region_args = [
-				{unit: d.region_path, object: d, key: 'region_path'},
-				{d:"M" + reg_start_pt + new_path_str + reg_end_pt},
-				250,
-				"easein"
-			];
-			this.elements_to_animate.push(region_args);
-		}
-	}
-
-	animate_units(d, index, old_x, old_y, new_x, new_y) {
-		let type = this.unit_args.type;
-
-		d.svg_units.map((unit, i) => {
-			this.elements_to_animate.push(this.animate[type](
-				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
-				new_x[i],
-				new_y[i],
-				index
-			));
-		});
-	}
-
 	make_anim_x_axis(height, text_start_at, axis_line_class) {
 		// Animate X AXIS to account for more or less axis lines
 
@@ -713,7 +781,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 				250,
 				"easein",
 				"translate",
-				`${ old_pos }, 0`
+				{transform: `${ old_pos }, 0`}
 			]);
 		}
 
@@ -729,7 +797,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		);
 	}
 
-	make_anim_y_axis(width, text_end_at, axis_line_class, start_at) {
+	make_anim_y_axis() {
 		// Animate Y AXIS to account for more or less axis lines
 
 		const old_pos = this.y_old_axis_values.map(value =>
@@ -742,32 +810,6 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 		const last_line_pos = old_pos[old_pos.length - 1];
 
-		let add_and_animate_line = (value, old_pos, new_pos, i) => {
-			const y_line = this.make_y_line(
-				start_at,
-				width,
-				text_end_at,
-				value,
-				'y-value-text',
-				axis_line_class,
-				old_pos,  // old position
-				(value === 0 && i !== 0) // Non-first Zero line
-			);
-
-			// this.zero_line - value * this.multiplier
-			this.y_axis_group.appendChild(y_line);
-			// console.log(`0, ${ new_pos }`, `0, ${ old_pos }`);
-
-			this.elements_to_animate && this.elements_to_animate.push([
-				{unit: y_line, array: [0], index: 0},
-				{transform: `0, ${ new_pos }`},
-				250,
-				"easein",
-				"translate",
-				`0, ${ old_pos }`
-			]);
-		}
-
 		this.y_axis_group.textContent = '';
 
 		this.make_new_axis_anim_lines(
@@ -776,11 +818,27 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			old_vals,
 			new_vals,
 			last_line_pos,
-			add_and_animate_line
+			this.add_and_animate_y_line.bind(this),
+			this.y_axis_group
 		);
 	}
 
-	make_new_axis_anim_lines(old_pos, new_pos, old_vals, new_vals, last_line_pos, add_and_animate_line) {
+	make_anim_y_specifics() {
+		this.specific_y_group.textContent = '';
+		this.specific_values.map((d, i) => {
+			this.add_and_animate_y_line(
+				d.title,
+				this.old_zero_line - d.value * this.old_multiplier,
+				this.zero_line - d.value * this.multiplier,
+				0,
+				this.specific_y_group,
+				d.line_type,
+				true
+			);
+		});
+	}
+
+	make_new_axis_anim_lines(old_pos, new_pos, old_vals, new_vals, last_line_pos, add_and_animate_line, group) {
 		let superimposed_positions, superimposed_values;
 		let no_of_extras = new_vals.length - old_vals.length;
 		if(no_of_extras > 0) {
@@ -802,7 +860,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 		// console.log(superimposed_values, old_pos, new_pos);
 		superimposed_values.map((value, i) => {
-			add_and_animate_line(value, old_pos[i], superimposed_positions[i], i);
+			add_and_animate_line(value, old_pos[i], superimposed_positions[i], i, group);
 		});
 
 		if(no_of_extras > 0) {
@@ -812,7 +870,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			const extra_positions = new_pos.slice(old_pos.length);
 
 			extra_values.map((value, i) => {
-				add_and_animate_line(value, last_line_pos, extra_positions[i], i);
+				add_and_animate_line(value, last_line_pos, extra_positions[i], i, group);
 			});
 		}
 	}
@@ -883,7 +941,34 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		return y_level;
 	}
 
-	// Helpers
+	add_and_animate_y_line(value, old_pos, new_pos, i, group, type, specific=false) {
+		let [width, text_end_at, axis_line_class, start_at] = this.get_y_axis_line_props(specific);
+		let axis_label_class = !specific ? 'y-value-text' : 'specific-value';
+		value = !specific ? value : (value+"").toUpperCase();
+		const y_line = this.make_y_line(
+			start_at,
+			width,
+			text_end_at,
+			value,
+			axis_label_class,
+			axis_line_class,
+			old_pos,  // old position
+			(value === 0 && i !== 0), // Non-first Zero line
+			type
+		);
+
+		group.appendChild(y_line);
+
+		this.elements_to_animate && this.elements_to_animate.push([
+			{unit: y_line, array: [0], index: 0},
+			{transform: `0, ${ new_pos }`},
+			250,
+			"easein",
+			"translate",
+			{transform: `0, ${ old_pos }`}
+		]);
+	}
+
 	get_y_axis_points(array) {
 		//*** Where the magic happens ***
 
@@ -967,13 +1052,12 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		// and a consequent optimal number of parts
 
 		const part_size = Math.pow(10, ((max_val+"").length - 1));
-
-		let no_of_parts = this.calc_no_of_parts(max_val, part_size);
+		const no_of_parts = this.calc_no_of_parts(max_val, part_size);
 
 		// Use it to get a nice even upper bound
 		const upper_bound = part_size * no_of_parts;
 
-		return [upper_bound, this.get_optimal_no_of_parts(no_of_parts)];
+		return [upper_bound, no_of_parts];
 	}
 
 	calc_no_of_parts(value, divisor) {
@@ -1020,7 +1104,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		});
 	}
 
-	get_rect_height_and_y_attr(y_top) {
+	get_bar_height_and_y_attr(y_top) {
 		let height, y;
 		if (y_top <= this.zero_line) {
 			height = this.zero_line - y_top;
@@ -1028,7 +1112,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 			// In case of invisible bars
 			if(height === 0) {
-				height = this.height * 0.02;
+				height = this.height * 0.01;
 				y -= height;
 			}
 		} else {
@@ -1037,7 +1121,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 			// In case of invisible bars
 			if(height === 0) {
-				height = this.height * 0.02;
+				height = this.height * 0.01;
 			}
 		}
 
@@ -1053,7 +1137,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 				let width = total_width / args.no_of_datasets;
 				let current_x = start_x + width * index;
 
-				let [height, y] = this.get_rect_height_and_y_attr(y_top);
+				let [height, y] = this.get_bar_height_and_y_attr(y_top);
 
 				return $$.createSVG('rect', {
 					className: `bar mini fill ${color}`,
@@ -1065,6 +1149,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 			},
 			'dot': (x, y, args, color) => {
+				console.log(x, y);
 				return $$.createSVG('circle', {
 					className: `fill ${color}`,
 					cx: x,
@@ -1078,7 +1163,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			'bar': (bar_obj, x, y_top, index) => {
 				let start = x - this.avg_unit_width/4;
 				let width = (this.avg_unit_width/2)/this.y.length;
-				let [height, y] = this.get_rect_height_and_y_attr(y_top);
+				let [height, y] = this.get_bar_height_and_y_attr(y_top);
 
 				x = start + (width * index);
 
@@ -1086,6 +1171,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 				// bar.animate({height: args.new_height, y: y_top}, 250, mina.easein);
 			},
 			'dot': (dot_obj, x, y_top) => {
+				console.log(dot_obj, x, y_top);
 				return [dot_obj, {cx: x, cy: y_top}, 250, "easein"];
 				// dot.animate({cy: y_top}, 250, mina.easein);
 			}
@@ -1097,7 +1183,7 @@ frappe.chart.BarChart = class BarChart extends frappe.chart.AxisChart {
 	constructor(args) {
 		super(args);
 
-		this.type = 'bar-graph';
+		this.type = 'bar';
 		this.x_axis_mode = args.x_axis_mode || 'tick';
 		this.y_axis_mode = args.y_axis_mode || 'span';
 		this.setup();
@@ -1164,7 +1250,7 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 			return;
 		}
 
-		this.type = 'line-graph';
+		this.type = 'line';
 		this.region_fill = args.region_fill;
 		this.x_axis_mode = args.x_axis_mode || 'span';
 		this.y_axis_mode = args.y_axis_mode || 'span';
@@ -1250,6 +1336,7 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 frappe.chart.PercentageChart = class PercentageChart extends frappe.chart.FrappeChart {
 	constructor(args) {
 		super(args);
+		this.type = 'percentage';
 
 		this.get_x_label = this.format_lambdas.x_label;
 		this.get_y_label = this.format_lambdas.y_label;
@@ -1811,6 +1898,29 @@ $$.arrays_equal = (arr1, arr2) => {
 	return are_equal;
 }
 
+$$.shuffle = (array) => {
+	// https://stackoverflow.com/a/2450976/6495043
+	// Awesomeness: https://bost.ocks.org/mike/shuffle/
+
+	var currentIndex = array.length, temporaryValue, randomIndex;
+
+	// While there remain elements to shuffle...
+	while (0 !== currentIndex) {
+
+		// Pick a remaining element...
+		randomIndex = Math.floor(Math.random() * currentIndex);
+		currentIndex -= 1;
+
+		// And swap it with the current element.
+		temporaryValue = array[currentIndex];
+		array[currentIndex] = array[randomIndex];
+		array[randomIndex] = temporaryValue;
+	}
+
+	return array;
+
+}
+
 // $$.findNodeIndex = (node) =>
 // {
 // 	var i = 0;
@@ -1913,7 +2023,7 @@ $$.runSVGAnimation = (svg_container, elements) => {
 
 // $$.animateMotion = (element, props, dur, easing_type="linear")
 
-$$.animateSVG = (element, props, dur, easing_type="linear", type=undefined, old_value=undefined) => {
+$$.animateSVG = (element, props, dur, easing_type="linear", type=undefined, old_values={}) => {
 	let easing = {
 		ease: "0.25 0.1 0.25 1",
 		linear: "0 0 1 1",
@@ -1933,7 +2043,7 @@ $$.animateSVG = (element, props, dur, easing_type="linear", type=undefined, old_
 		} else {
 			animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animate");
 		}
-		let current_value = old_value || element.getAttribute(attributeName);
+		let current_value = old_values[attributeName] || element.getAttribute(attributeName);
 		let value = props[attributeName];
 
 		let anim_attr = {
