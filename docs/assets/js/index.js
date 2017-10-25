@@ -153,7 +153,7 @@ let bar_composite_chart = new frappe.chart.FrappeChart ({
 let line_composite_chart = new frappe.chart.FrappeChart ({
 	parent: "#chart-composite-2",
 	data: line_composite_data,
-	type: 'bar',
+	type: 'line',
 	height: 180
 })
 
