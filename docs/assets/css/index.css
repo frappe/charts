@@ -39,11 +39,6 @@ hr {
 	margin-bottom: 2rem;
 }
 
-.graphics-container {
-	border: 1px solid #ddd;
-	border-radius: 3px;
-}
-
 pre.highlight {
 	background: #f7f7f7;
 	border-radius: 3px;
@@ -62,10 +57,26 @@ pre.highlight {
 .hero {
 	/*font-size: 1.4rem;*/
 }
+.data-container {
+	height: 302px;
+	padding: 20px;
+}
+.image-container {
+	padding: 3px;
+}
+.image-container img{
+	width: 170px;
+	height: 120px;
+}
 .margin-vertical-px {
 	margin: 15px 0px;
 }
 
 .margin-vertical-rem {
 	margin: 2em 0 1em 0;
+}
+
+.border {
+	border: 1px solid #ddd;
+	border-radius: 3px;
 }

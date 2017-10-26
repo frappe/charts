@@ -4,7 +4,7 @@ let bar_composite_data = {
 	"labels": ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"],
 	"datasets": [{
 			"color": "orange",
-			"values": [50804, 10000, 20000, 61500, 82936.88, 24010, 40000, 60000, 25840, 50804.82, 116820],
+			"values": [50804, 10000, 20000, 61500, 72936.88, 24010, 40000, 60000, 25840, 50804.82, 16820],
 			"formatted": ["₹ 0.00", "₹ 0.00", "₹ 0.00", "₹ 61,500.00", "₹ 82,936.88", "₹ 24,010.00", "₹ 0.00", "₹ 0.00", "₹ 25,840.00", "₹ 5,08,048.82", "₹ 1,16,820.00", "₹ 0.00"],
 		}
 	]
@@ -189,7 +189,7 @@ let events_chart = new frappe.chart.FrappeChart({
 let aggr_chart = new frappe.chart.FrappeChart({
 	parent: "#chart-aggr",
 	data: aggr_data,
-	type: 'line',
+	type: 'bar',
 	height: 250
 });
 
@@ -221,6 +221,8 @@ Array.prototype.slice.call(
 	});
 });
 
+
+
 let chart_update_buttons = document.querySelector('.chart-update-buttons');
 
 chart_update_buttons.querySelector('[data-update="random"]').addEventListener("click", (e) => {
@@ -244,3 +246,24 @@ chart_update_buttons.querySelector('[data-update="remove"]').addEventListener("c
 	update_chart.remove_data_point();
 });
 
+
+
+document.querySelector('[data-aggregation="sums"]').addEventListener("click", (e) => {
+	if(e.target.innerHTML === "Show Sums") {
+		aggr_chart.show_sums();
+		e.target.innerHTML = "Hide Sums";
+	} else {
+		aggr_chart.hide_sums();
+		e.target.innerHTML = "Show Sums";
+	}
+});
+
+document.querySelector('[data-aggregation="average"]').addEventListener("click", (e) => {
+	if(e.target.innerHTML === "Show Average") {
+		aggr_chart.show_average();
+		e.target.innerHTML = "Hide Average";
+	} else {
+		aggr_chart.hide_average();
+		e.target.innerHTML = "Show Average";
+	}
+});

@@ -1,21 +1,3 @@
-// specific_values = [
-// 	{
-// 		title: "Average",
-// 		line_type: "dashed",	// "dashed" or "solid"
-// 		value: 10
-// 	},
-// ]
-
-// summary = [
-// 	{
-// 		title: "Total",
-// 		color: 'blue',		// Indicator colors: 'grey', 'blue', 'red', 'green', 'orange',
-// 					// 'violet', 'darkgrey', 'black', 'yellow', 'light-blue'
-// 		value: 80
-// 	}
-// ]
-
-// Validate all arguments, check passed data format, set defaults
 "use strict";
 
 let frappe = {chart:{}, chart_types:['line', 'bar', 'percentage', 'heatmap']};
@@ -297,10 +279,9 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		this.x = this.data.labels;
 		this.y = this.data.datasets;
 
-		this.get_x_label = this.format_lambdas.x_label;
 		this.get_y_label = this.format_lambdas.y_label;
-		this.get_x_tooltip = this.format_lambdas.x_tooltip;
 		this.get_y_tooltip = this.format_lambdas.y_tooltip;
+		this.get_x_tooltip = this.format_lambdas.x_tooltip;
 
 		this.colors = ['green', 'blue', 'violet', 'red', 'orange',
 				'yellow', 'light-blue', 'light-green', 'purple', 'magenta'];
@@ -331,10 +312,14 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	}
 
 	setup_y() {
-		const values = this.get_all_y_values();
-
 		if(this.y_axis_values) {
 			this.y_old_axis_values =  this.y_axis_values.slice();
+		}
+
+		let values = this.get_all_y_values();
+
+		if(this.y_sums && this.y_sums.length > 0) {
+			values = values.concat(this.y_sums);
 		}
 
 		this.y_axis_values = this.get_y_axis_points(values);
@@ -342,8 +327,6 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		if(!this.y_old_axis_values) {
 			this.y_old_axis_values = this.y_axis_values.slice();
 		}
-
-		// this.y_axis_values = this.get_y_axis_points(values);
 
 		const y_pts = this.y_axis_values;
 		const value_range = y_pts[y_pts.length-1] - y_pts[0];
@@ -483,7 +466,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		this.y.map((d, i) => {
 			d.svg_units = [];
 			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
-			this.make_new_units_for_dataset(this.x_axis_positions, d.y_tops, d.color || this.colors[i], i, this.y.length);
+			this.make_new_units(d, i);
 		});
 	}
 
@@ -496,7 +479,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			d.svg_units = [];
 
 			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
-			this.make_new_units_for_dataset(this.x_axis_positions, d.y_tops, d.color || this.colors[i], i, this.y.length);
+			this.make_new_units(d, i);
 		});
 
 		setTimeout(() => {
@@ -511,35 +494,41 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		}, 500);
 	}
 
-	make_new_units() {
-		this.y.map((d, i) => {
-			this.make_new_units_for_dataset(this.x_axis_positions, d.y_tops, d.color || this.colors[i], i, this.y.length);
-		});
+	make_new_units(d, i) {
+		this.make_new_units_for_dataset(
+			this.x_axis_positions,
+			d.y_tops,
+			d.color || this.colors[i],
+			i,
+			this.y.length
+		);
 	}
 
-	make_new_units_for_dataset(x_values, y_values, color, dataset_index, no_of_datasets) {
-		let group = this.svg_units_groups[dataset_index];
-		group.textContent = '';
-		this.y[dataset_index].svg_units = [];
+	make_new_units_for_dataset(x_values, y_values, color, dataset_index, no_of_datasets, group, array, unit) {
+		if(!group) group = this.svg_units_groups[dataset_index];
+		if(!array) array = this.y[dataset_index].svg_units;
+		if(!unit) unit = this.unit_args;
 
-		let d = this.unit_args;
+		group.textContent = '';
+		array.length = 0;
+
 		y_values.map((y, i) => {
-			let data_unit = this.draw[d.type](
+			let data_unit = this.draw[unit.type](
 				x_values[i],
 				y,
-				d.args,
+				unit.args,
 				color,
 				dataset_index,
 				no_of_datasets
 			);
 			group.appendChild(data_unit);
-			this.y[dataset_index].svg_units.push(data_unit);
+			array.push(data_unit);
 		});
 	}
 
 	make_y_specifics() {
+		this.specific_y_group.textContent = '';
 		this.specific_values.map(d => {
-			this.specific_y_group.textContent = '';
 			this.specific_y_group.appendChild(
 				this.make_y_line(
 					0,
@@ -598,19 +587,82 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	}
 
 	// API
-
 	show_sums() {
-		// Remake y axis
+		this.updating = true;
 
-		// Make sum units and animate
+		this.y_sums = new Array(this.x_axis_positions.length).fill(0);
+		this.y.map(d => {
+			d.values.map( (value, i) => {
+				this.y_sums[i] += value;
+			});
+		});
+
+		// Remake y axis, animate
+		this.update_values();
+
+		// Then make sum units, don't animate
+		this.sum_units = [];
+
+		this.make_new_units_for_dataset(
+			this.x_axis_positions,
+			this.y_sums.map( val => $$.float_2(this.zero_line - val * this.multiplier)),
+			'light-grey',
+			0,
+			1,
+			this.sum_group,
+			this.sum_units
+		);
+
+		// this.make_path && this.make_path(d, i, old_x, old_y, d.color || this.colors[i]);
+
+		this.updating = false;
 	}
 
 	hide_sums() {
-		//
+		if(this.updating) return;
+		this.y_sums = [];
+		this.sum_group.textContent = '';
+		this.sum_units = [];
+		this.update_values();
 	}
 
 	show_average() {
-		// has to be animated as well
+		this.old_specific_values = this.specific_values.slice();
+		this.y.map((d, i) => {
+			let sum = 0;
+			d.values.map(e => {sum+=e});
+			let average = sum/d.values.length;
+
+			this.specific_values.push({
+				title: "AVG" + " " + (i+1),
+				line_type: "dashed",
+				value: average,
+				auto: 1
+			});
+		});
+
+		console.log(this.specific_values);
+
+		this.update_values();
+	}
+
+	hide_average() {
+		this.old_specific_values = this.specific_values.slice();
+
+		let indices_to_remove = [];
+		this.specific_values.map((d, i) => {
+			if(d.auto) indices_to_remove.unshift(i);
+		});
+
+		console.log(indices_to_remove);
+
+		indices_to_remove.map(index => {
+			this.specific_values.splice(index, 1);
+		});
+
+		console.log(this.specific_values);
+
+		this.update_values();
 	}
 
 	update_values(new_y, new_x) {
@@ -628,7 +680,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		this.no_of_extra_pts = new_x.length - this.x.length;
 
 		// Just update values prop, setup_x/y() will do the rest
-		this.y.map((d, i) => {d.values = new_y[i].values;});
+		if(new_y) this.y.map((d, i) => {d.values = new_y[i].values;});
 		if(new_x) this.x = new_x;
 
 		this.setup_x();
@@ -642,7 +694,10 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			}, 300)
 		}
 
-		if(!$$.arrays_equal(this.y_old_axis_values, this.y_axis_values)) {
+		if(!$$.arrays_equal(this.y_old_axis_values, this.y_axis_values) ||
+			(this.old_specific_values &&
+			!$$.arrays_equal(this.old_specific_values, this.specific_values))) {
+
 			this.make_y_axis(true);
 			setTimeout(() => {
 				if(!this.updating) {
@@ -717,7 +772,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		setTimeout(() => {
 			this.y.map((d, i) => {
 				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
-				this.make_new_units_for_dataset(this.x_axis_positions, d.y_tops, d.color || this.colors[i], i, this.y.length);
+				this.make_new_units(d, i);
 			});
 		}, 300);
 	}
@@ -1145,14 +1200,6 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 				}
 			});
 		});
-
-		// Sums
-		this.y_sums = new Array(this.x_axis_positions.length).fill(0);
-		this.y.map(d => {
-			d.values.map( (value, i) => {
-				this.y_sums[i] += value;
-			});
-		});
 	}
 
 	get_bar_height_and_y_attr(y_top) {
@@ -1251,8 +1298,9 @@ frappe.chart.BarChart = class BarChart extends frappe.chart.AxisChart {
 
 	make_overlay() {
 		// Just make one out of the first element
-		let unit = this.y[0].svg_units[0];
-		this.update_current_data_point(0);
+		let index = this.x.length - 1;
+		let unit = this.y[0].svg_units[index];
+		this.update_current_data_point(index);
 
 		if(this.overlay) {
 			this.overlay.parentNode.removeChild(this.overlay);
@@ -1394,7 +1442,6 @@ frappe.chart.PercentageChart = class PercentageChart extends frappe.chart.Frappe
 		super(args);
 		this.type = 'percentage';
 
-		this.get_x_label = this.format_lambdas.x_label;
 		this.get_y_label = this.format_lambdas.y_label;
 		this.get_x_tooltip = this.format_lambdas.x_tooltip;
 		this.get_y_tooltip = this.format_lambdas.y_tooltip;

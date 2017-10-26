@@ -33,11 +33,11 @@
         </div>
 
         <div class="col-sm-10 push-sm-1 later" style="font-size: 14px;">
-          <div id="chart-composite-1" class="graphics-container"><svg height=225></svg></div>
+          <div id="chart-composite-1" class="border"><svg height=225></svg></div>
           <p class="mt-1">Use arrow keys to navigate data points</p>
         </div>
         <div class="col-sm-10 push-sm-1 later" style="font-size: 14px;">
-          <div id="chart-composite-2" class="graphics-container"><svg height=225></svg></div>
+          <div id="chart-composite-2" class="border"><svg height=225></svg></div>
         </div>
       </div>
 
@@ -51,7 +51,7 @@
                 Create a new chart
               </h6>
               <pre><code class="hljs html">&lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
-              <div id="chart-types" class="graphics-container"></div>
+              <div id="chart-types" class="border"></div>
               <div class="btn-group chart-type-buttons margin-vertical-px mx-auto" role="group">
                 <button type="button" class="btn btn-sm btn-secondary active" data-type='bar'>Bar Chart</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-type='line'>Line Chart</button>
@@ -66,7 +66,7 @@
                 Update Values
               </h6>
               <pre><code class="hljs html">&lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
-              <div id="chart-update" class="graphics-container"></div>
+              <div id="chart-update" class="border"></div>
               <div class="chart-update-buttons mt-1 mx-auto" role="group">
                 <button type="button" class="btn btn-sm btn-secondary" data-update="random">Random Data</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-update="add">Add Value</button>
@@ -81,7 +81,18 @@
               <h6 class="margin-vertical-rem">
                 Listen to state change
               </h6>
-              <div id="chart-events" class="graphics-container"></div>
+              <div class="row">
+                <div class="col-sm-8">
+                  <div id="chart-events" class="border"></div>
+                </div>
+                <div class="col-sm-4">
+                  <div id="chart-events-data" class="border data-container">
+                    <div class="image-container border">
+                      <img src="https://apod.nasa.gov/apod/image/1208/perseids2012_hackmann_2000.jpg">
+                    </div>
+                  </div>
+                </div>
+              </div>
               <pre><code class="hljs html margin-vertical-px">&lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
             </div>
           </div>
@@ -91,10 +102,10 @@
               <h6 class="margin-vertical-rem">
                 Simple Aggregations
               </h6>
-              <div id="chart-aggr" class="graphics-container"></div>
-              <div class="mt-1 mx-auto" role="group">
-                <button type="button" class="btn btn-sm btn-secondary">Show Sums</button>
-                <button type="button" class="btn btn-sm btn-secondary">Show Average</button>
+              <div id="chart-aggr" class="border"></div>
+              <div class="chart-aggr-buttons mt-1 mx-auto" role="group">
+                <button type="button" class="btn btn-sm btn-secondary" data-aggregation="sums">Show Sums</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-aggregation="average">Show Average</button>
               </div>
               <pre><code class="hljs html margin-vertical-px">&lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
             </div>
@@ -105,7 +116,7 @@
               <h6 class="margin-vertical-rem">
                 Oh, and an Annual Heatmap
               </h6>
-              <div id="chart-heatmap" class="graphics-container"
+              <div id="chart-heatmap" class="border"
                 style="overflow: scroll; text-align: center; padding: 20px;"></div>
               <div class="mt-1 mx-auto" role="group">
                 <button type="button" class="btn btn-sm btn-secondary active">Dicrete</button>
@@ -133,8 +144,8 @@
 
     <div class="built-with-frappe text-center" style="margin-top: -20px">
         <img style="padding: 5px; width: 40px; background: #fff" class="frappe-bird" src="https://frappe.github.io/frappe/assets/img/frappe-bird-grey.svg">
-        <p style="margin: 24px 0 0px 0; font-size: 15px">Made with ♥ by <a href="https://github.com/pratu16x7" target="_blank">pratu16x7</a>. Used in <a href="https://erpnext.com" target="_blank">ERPNext</a>.</p>
-        <p style="margin: 24px 0 80px 0; font-size: 12px">Data from <a href="https://api.nasa.gov/index.html" target="_blank">NASA Open APIs</a></p>
+        <p style="margin: 24px 0 80px 0; font-size: 15px">Made with ♥ by <a href="https://github.com/pratu16x7" target="_blank">pratu16x7</a>. Used in <a href="https://erpnext.com" target="_blank">ERPNext</a>.</p>
+        <!--<p style="margin: 24px 0 80px 0; font-size: 12px">Data from <a href="https://api.nasa.gov/index.html" target="_blank">NASA Open APIs</a></p>-->
     </div>
 
     <a href="https://github.com/frappe/charts" target="_blank" class="github-corner" aria-label="View source on Github">
