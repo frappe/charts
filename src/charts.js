@@ -1,5 +1,3 @@
-"use strict";
-
 let frappe = {chart:{}, chart_types:['line', 'bar', 'percentage', 'heatmap']};
 
 frappe.chart.FrappeChart = class {
@@ -1378,7 +1376,7 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 		super.setup_values();
 		this.unit_args = {
 			type: 'dot',
-			args: { radius: 4 }
+			args: { radius: 8 }
 		};
 	}
 
@@ -1389,51 +1387,51 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 	}
 
 	make_path(d, i, x_positions, y_positions, color) {
-		let points_list = y_positions.map((y, i) => (x_positions[i] + ',' + y));
-		let points_str = points_list.join("L");
+		// let points_list = y_positions.map((y, i) => (x_positions[i] + ',' + y));
+		// let points_str = points_list.join("L");
 
-		this.paths_groups[i].textContent = '';
+		// this.paths_groups[i].textContent = '';
 
-		d.path = $$.createSVG('path', {
-			inside: this.paths_groups[i],
-			className: `stroke ${color}`,
-			d: "M"+points_str
-		});
+		// d.path = $$.createSVG('path', {
+		// 	inside: this.paths_groups[i],
+		// 	className: `stroke ${color}`,
+		// 	d: "M"+points_str
+		// });
 
-		if(this.region_fill) {
-			let gradient_id ='path-fill-gradient' + '-' + color;
+		// if(this.region_fill) {
+		// 	let gradient_id ='path-fill-gradient' + '-' + color;
 
-			this.gradient_def = $$.createSVG('linearGradient', {
-				inside: this.svg_defs,
-				id: gradient_id,
-				x1: 0,
-				x2: 0,
-				y1: 0,
-				y2: 1
-			});
+		// 	this.gradient_def = $$.createSVG('linearGradient', {
+		// 		inside: this.svg_defs,
+		// 		id: gradient_id,
+		// 		x1: 0,
+		// 		x2: 0,
+		// 		y1: 0,
+		// 		y2: 1
+		// 	});
 
-			function set_gradient_stop(grad_elem, offset, color, opacity) {
-				$$.createSVG('stop', {
-					'className': 'stop-color ' + color,
-					'inside': grad_elem,
-					'offset': offset,
-					'stop-opacity': opacity
-				});
-			}
+		// 	function set_gradient_stop(grad_elem, offset, color, opacity) {
+		// 		$$.createSVG('stop', {
+		// 			'className': 'stop-color ' + color,
+		// 			'inside': grad_elem,
+		// 			'offset': offset,
+		// 			'stop-opacity': opacity
+		// 		});
+		// 	}
 
-			set_gradient_stop(this.gradient_def, "0%", color, 0.4);
-			set_gradient_stop(this.gradient_def, "50%", color, 0.2);
-			set_gradient_stop(this.gradient_def, "100%", color, 0);
+		// 	set_gradient_stop(this.gradient_def, "0%", color, 0.4);
+		// 	set_gradient_stop(this.gradient_def, "50%", color, 0.2);
+		// 	set_gradient_stop(this.gradient_def, "100%", color, 0);
 
-			d.region_path = $$.createSVG('path', {
-				inside: this.paths_groups[i],
-				className: `region-fill`,
-				d: "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`,
-			});
+		// 	d.region_path = $$.createSVG('path', {
+		// 		inside: this.paths_groups[i],
+		// 		className: `region-fill`,
+		// 		d: "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`,
+		// 	});
 
-			d.region_path.style.stroke = "none";
-			d.region_path.style.fill = `url(#${gradient_id})`;
-		}
+		// 	d.region_path.style.stroke = "none";
+		// 	d.region_path.style.fill = `url(#${gradient_id})`;
+		// }
 	}
 }
 
