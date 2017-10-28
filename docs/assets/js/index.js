@@ -141,7 +141,7 @@ let heatmap_data = {
 
 // Charts
 // ================================================================================
-let bar_composite_chart = new frappe.chart.FrappeChart ({
+let bar_composite_chart = new Chart ({
 	parent: "#chart-composite-1",
 	data: bar_composite_data,
 	type: 'bar',
@@ -150,7 +150,7 @@ let bar_composite_chart = new frappe.chart.FrappeChart ({
 	// region_fill: 1
 })
 
-let line_composite_chart = new frappe.chart.FrappeChart ({
+let line_composite_chart = new Chart ({
 	parent: "#chart-composite-2",
 	data: line_composite_data,
 	type: 'line',
@@ -161,7 +161,7 @@ bar_composite_chart.parent.addEventListener('data-select', (e) => {
 	line_composite_chart.update_values([more_line_data[e.index]]);
 });
 
-let type_chart = new frappe.chart.FrappeChart({
+let type_chart = new Chart({
 	parent: "#chart-types",
 	data: type_data,
 	type: 'bar',
@@ -170,7 +170,7 @@ let type_chart = new frappe.chart.FrappeChart({
 	// y_axis_mode: 'tick'
 });
 
-let update_chart = new frappe.chart.FrappeChart({
+let update_chart = new Chart({
 	parent: "#chart-update",
 	data: update_data,
 	type: 'line',
@@ -178,7 +178,7 @@ let update_chart = new frappe.chart.FrappeChart({
 	region_fill: 1
 });
 
-let events_chart = new frappe.chart.FrappeChart({
+let events_chart = new Chart({
 	parent: "#chart-events",
 	data: events_data,
 	type: 'bar',
@@ -186,14 +186,14 @@ let events_chart = new frappe.chart.FrappeChart({
 	is_navigable: 1,
 });
 
-let aggr_chart = new frappe.chart.FrappeChart({
+let aggr_chart = new Chart({
 	parent: "#chart-aggr",
 	data: aggr_data,
 	type: 'bar',
 	height: 250
 });
 
-let heatmap = new frappe.chart.FrappeChart({
+let heatmap = new Chart({
 	parent: "#chart-heatmap",
 	data: heatmap_data,
 	type: 'heatmap',
@@ -226,7 +226,7 @@ Array.prototype.slice.call(
 let chart_update_buttons = document.querySelector('.chart-update-buttons');
 
 chart_update_buttons.querySelector('[data-update="random"]').addEventListener("click", (e) => {
-	$$.shuffle(update_data_all_indices);
+	shuffle(update_data_all_indices);
 	update_chart.update_values(
 		[{values: get_update_data(update_data_all_values)}],
 		get_update_data(update_data_all_labels)
@@ -267,3 +267,25 @@ document.querySelector('[data-aggregation="average"]').addEventListener("click",
 		e.target.innerHTML = "Show Average";
 	}
 });
+
+function shuffle(array) {
+	// https://stackoverflow.com/a/2450976/6495043
+	// Awesomeness: https://bost.ocks.org/mike/shuffle/
+
+	var currentIndex = array.length, temporaryValue, randomIndex;
+
+	// While there remain elements to shuffle...
+	while (0 !== currentIndex) {
+
+		// Pick a remaining element...
+		randomIndex = Math.floor(Math.random() * currentIndex);
+		currentIndex -= 1;
+
+		// And swap it with the current element.
+		temporaryValue = array[currentIndex];
+		array[currentIndex] = array[randomIndex];
+		array[randomIndex] = temporaryValue;
+	}
+
+	return array;
+}

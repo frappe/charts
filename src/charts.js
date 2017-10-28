@@ -1,6 +1,7 @@
-let frappe = {chart:{}, chart_types:['line', 'bar', 'percentage', 'heatmap']};
+import $ from './dom';
+import { float_2, arrays_equal } from './utils';
 
-frappe.chart.FrappeChart = class {
+export default class Chart {
 	constructor({
 		parent = "",
 		height = 240,
@@ -16,17 +17,17 @@ frappe.chart.FrappeChart = class {
 
 		type = ''
 	}) {
-		if(Object.getPrototypeOf(this) === frappe.chart.FrappeChart.prototype) {
+		if(Object.getPrototypeOf(this) === Chart.prototype) {
 			if(type === 'line') {
-				return new frappe.chart.LineChart(arguments[0]);
+				return new LineChart(arguments[0]);
 			} else if(type === 'bar') {
-				return new frappe.chart.BarChart(arguments[0]);
+				return new BarChart(arguments[0]);
 			} else if(type === 'percentage') {
-				return new frappe.chart.PercentageChart(arguments[0]);
+				return new PercentageChart(arguments[0]);
 			} else if(type === 'heatmap') {
-				return new frappe.chart.HeatMap(arguments[0]);
+				return new HeatMap(arguments[0]);
 			} else {
-				return new frappe.chart.LineChart(arguments[0]);
+				return new LineChart(arguments[0]);
 			}
 		}
 
@@ -47,18 +48,13 @@ frappe.chart.FrappeChart = class {
 			this.current_index = 0;
 		}
 
-		$$.createSVG('svg', {
-			className: 'chart',
-			inside: parent,
-			width: 1000,
-			height: height
-		});
+		this.chart_types = ['line', 'bar', 'percentage', 'heatmap'];
 
 		this.set_margins(height);
 	}
 
 	get_different_chart(type) {
-		if(!frappe.chart_types.includes(type)) {
+		if(!this.chart_types.includes(type)) {
 			console.error(`'${type}' is not a valid chart type.`);
 		}
 		if(type === this.type) return;
@@ -69,16 +65,16 @@ frappe.chart.FrappeChart = class {
 			line: ['bar', 'percentage'],
 			percentage: ['bar', 'line'],
 			heatmap: []
-		}
+		};
 
 		if(!compatible_types[this.type].includes(type)) {
 			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
 		}
 
 		// Okay, this is anticlimactic
-		// this function will need to be 'change_chart_type(type)'
+		// this function will need to actually be 'change_chart_type(type)'
 		// that will update only the required elements, but for now ...
-		return new frappe.chart.FrappeChart({
+		return new Chart({
 			parent: this.raw_chart_args.parent,
 			data: this.raw_chart_args.data,
 			type: type,
@@ -141,7 +137,7 @@ frappe.chart.FrappeChart = class {
 	setup_base_values() {}
 
 	setup_container() {
-		this.container = $$.create('div', {
+		this.container = $.create('div', {
 			className: 'chart-container',
 			innerHTML: `<h6 class="title" style="margin-top: 15px;">${this.title}</h6>
 				<h6 class="sub-title uppercase">${this.subtitle}</h6>
@@ -161,14 +157,14 @@ frappe.chart.FrappeChart = class {
 	}
 
 	make_chart_area() {
-		this.svg = $$.createSVG('svg', {
+		this.svg = $.createSVG('svg', {
 			className: 'chart',
 			inside: this.chart_wrapper,
 			width: this.base_width,
 			height: this.base_height
 		});
 
-		this.svg_defs = $$.createSVG('defs', {
+		this.svg_defs = $.createSVG('defs', {
 			inside: this.svg,
 		});
 
@@ -176,7 +172,7 @@ frappe.chart.FrappeChart = class {
 	}
 
 	make_draw_area() {
-		this.draw_area = $$.createSVG("g", {
+		this.draw_area = $.createSVG("g", {
 			className: this.type + '-chart',
 			inside: this.svg,
 			transform: `translate(${this.translate_x}, ${this.translate_y})`
@@ -186,7 +182,7 @@ frappe.chart.FrappeChart = class {
 	setup_components() { }
 
 	make_tooltip() {
-		this.tip = new frappe.chart.SvgTip({
+		this.tip = new SvgTip({
 			parent: this.chart_wrapper,
 		});
 		this.bind_tooltip();
@@ -196,7 +192,7 @@ frappe.chart.FrappeChart = class {
 	show_summary() {}
 	show_custom_summary() {
 		this.summary.map(d => {
-			let stats = $$.create('div', {
+			let stats = $.create('div', {
 				className: 'stats',
 				innerHTML: `<span class="indicator ${d.color}">${d.title}: ${d.value}</span>`
 			});
@@ -211,7 +207,7 @@ frappe.chart.FrappeChart = class {
 			this.bind_overlay();
 
 			document.addEventListener('keydown', (e) => {
-				if($$.isElementInViewport(this.chart_wrapper)) {
+				if($.isElementInViewport(this.chart_wrapper)) {
 					e = e || window.event;
 
 					if (e.keyCode == '37') {
@@ -258,7 +254,7 @@ frappe.chart.FrappeChart = class {
 		if(index >= this.x.length) index = this.x.length - 1;
 		if(index === this.current_index) return;
 		this.current_index = index;
-		$$.fire(this.parent, "data-select", this.get_data_point());
+		$.fire(this.parent, "data-select", this.get_data_point());
 	}
 
 	// Helpers
@@ -270,7 +266,7 @@ frappe.chart.FrappeChart = class {
 	setup_utils() { }
 }
 
-frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
+class AxisChart extends Chart {
 	constructor(args) {
 		super(args);
 
@@ -282,7 +278,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		this.get_x_tooltip = this.format_lambdas.x_tooltip;
 
 		this.colors = ['green', 'blue', 'violet', 'red', 'orange',
-				'yellow', 'light-blue', 'light-green', 'purple', 'magenta'];
+			'yellow', 'light-blue', 'light-green', 'purple', 'magenta'];
 
 		this.zero_line = this.height;
 	}
@@ -302,7 +298,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			this.x_old_axis_positions =  this.x_axis_positions.slice();
 		}
 		this.x_axis_positions = this.x.map((d, i) =>
-			$$.float_2(this.x_offset + i * this.avg_unit_width));
+			float_2(this.x_offset + i * this.avg_unit_width));
 
 		if(!this.x_old_axis_positions) {
 			this.x_old_axis_positions = this.x_axis_positions.slice();
@@ -350,20 +346,20 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	}
 
 	setup_marker_components() {
-		this.y_axis_group = $$.createSVG('g', {className: 'y axis', inside: this.draw_area});
-		this.x_axis_group = $$.createSVG('g', {className: 'x axis', inside: this.draw_area});
-		this.specific_y_group = $$.createSVG('g', {className: 'specific axis', inside: this.draw_area});
+		this.y_axis_group = $.createSVG('g', {className: 'y axis', inside: this.draw_area});
+		this.x_axis_group = $.createSVG('g', {className: 'x axis', inside: this.draw_area});
+		this.specific_y_group = $.createSVG('g', {className: 'specific axis', inside: this.draw_area});
 	}
 
 	setup_aggregation_components() {
-		this.sum_group = $$.createSVG('g', {className: 'data-points', inside: this.draw_area});
-		this.average_group = $$.createSVG('g', {className: 'chart-area', inside: this.draw_area});
+		this.sum_group = $.createSVG('g', {className: 'data-points', inside: this.draw_area});
+		this.average_group = $.createSVG('g', {className: 'chart-area', inside: this.draw_area});
 	}
 
 	setup_graph_components() {
 		this.svg_units_groups = [];
 		this.y.map((d, i) => {
-			this.svg_units_groups[i] = $$.createSVG('g', {
+			this.svg_units_groups[i] = $.createSVG('g', {
 				className: 'data-points data-points-' + i,
 				inside: this.draw_area
 			});
@@ -546,7 +542,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	bind_tooltip() {
 		// TODO: could be in tooltip itself, as it is a given functionality for its parent
 		this.chart_wrapper.addEventListener('mousemove', (e) => {
-			let offset = $$.offset(this.chart_wrapper);
+			let offset = $.offset(this.chart_wrapper);
 			let relX = e.pageX - offset.left - this.translate_x;
 			let relY = e.pageY - offset.top - this.translate_y;
 
@@ -573,7 +569,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 						title: set.title,
 						value: set.formatted ? set.formatted[i] : set.values[i],
 						color: set.color || this.colors[j],
-					}
+					};
 				});
 
 				// TODO: upside-down tooltips for negative values?
@@ -603,7 +599,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 		this.make_new_units_for_dataset(
 			this.x_axis_positions,
-			this.y_sums.map( val => $$.float_2(this.zero_line - val * this.multiplier)),
+			this.y_sums.map( val => float_2(this.zero_line - val * this.multiplier)),
 			'light-grey',
 			0,
 			1,
@@ -628,7 +624,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		this.old_specific_values = this.specific_values.slice();
 		this.y.map((d, i) => {
 			let sum = 0;
-			d.values.map(e => {sum+=e});
+			d.values.map(e => {sum+=e;});
 			let average = sum/d.values.length;
 
 			this.specific_values.push({
@@ -638,8 +634,6 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 				auto: 1
 			});
 		});
-
-		console.log(this.specific_values);
 
 		this.update_values();
 	}
@@ -652,13 +646,9 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			if(d.auto) indices_to_remove.unshift(i);
 		});
 
-		console.log(indices_to_remove);
-
 		indices_to_remove.map(index => {
 			this.specific_values.splice(index, 1);
 		});
-
-		console.log(this.specific_values);
 
 		this.update_values();
 	}
@@ -685,16 +675,16 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		this.setup_y();
 
 		// Animate only if positions have changed
-		if(!$$.arrays_equal(this.x_old_axis_positions, this.x_axis_positions)) {
+		if(!arrays_equal(this.x_old_axis_positions, this.x_axis_positions)) {
 			this.make_x_axis(true);
 			setTimeout(() => {
 				if(!this.updating) this.make_x_axis();
-			}, 300)
+			}, 300);
 		}
 
-		if(!$$.arrays_equal(this.y_old_axis_values, this.y_axis_values) ||
+		if(!arrays_equal(this.y_old_axis_values, this.y_axis_values) ||
 			(this.old_specific_values &&
-			!$$.arrays_equal(this.old_specific_values, this.specific_values))) {
+			!arrays_equal(this.old_specific_values, this.specific_values))) {
 
 			this.make_y_axis(true);
 			setTimeout(() => {
@@ -702,7 +692,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 					this.make_y_axis();
 					this.make_y_specifics();
 				}
-			}, 300)
+			}, 300);
 		}
 
 		// Change in data, so calculate dependencies
@@ -729,7 +719,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 		if(this.x.length < 3) return;
 
 		let new_y = this.y.map(data_set => { return {values:data_set.values}; });
-		new_y.map((d, i) => { d.values.splice(index, 1); });
+		new_y.map((d) => { d.values.splice(index, 1); });
 		let new_x = this.x.slice();
 		new_x.splice(index, 1);
 
@@ -737,7 +727,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	}
 
 	run_animation() {
-		let anim_svg = $$.runSVGAnimation(this.svg, this.elements_to_animate);
+		let anim_svg = $.runSVGAnimation(this.svg, this.elements_to_animate);
 
 		if(this.svg.parentNode == this.chart_wrapper) {
 			this.chart_wrapper.removeChild(this.svg);
@@ -861,7 +851,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 		const last_line_pos = old_pos[old_pos.length - 1];
 
-		let add_and_animate_line = (value, old_pos, new_pos, i) => {
+		let add_and_animate_line = (value, old_pos, new_pos) => {
 			const x_line = this.make_x_line(
 				height,
 				text_start_at,
@@ -880,7 +870,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 				"translate",
 				{transform: `${ old_pos }, 0`}
 			]);
-		}
+		};
 
 		this.x_axis_group.textContent = '';
 
@@ -922,7 +912,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 	make_anim_y_specifics() {
 		this.specific_y_group.textContent = '';
-		this.specific_values.map((d, i) => {
+		this.specific_values.map((d) => {
 			this.add_and_animate_y_line(
 				d.title,
 				this.old_zero_line - d.value * this.old_multiplier,
@@ -979,14 +969,14 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			point = point.slice(0, allowed_letters-3) + " ...";
 		}
 
-		let line = $$.createSVG('line', {
+		let line = $.createSVG('line', {
 			x1: 0,
 			x2: 0,
 			y1: 0,
 			y2: height
 		});
 
-		let text = $$.createSVG('text', {
+		let text = $.createSVG('text', {
 			className: label_class,
 			x: 0,
 			y: text_start_at,
@@ -994,7 +984,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			innerHTML: point
 		});
 
-		let x_level = $$.createSVG('g', {
+		let x_level = $.createSVG('g', {
 			className: `tick ${axis_line_class}`,
 			transform: `translate(${ x_pos }, 0)`
 		});
@@ -1006,7 +996,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	}
 
 	make_y_line(start_at, width, text_end_at, point, label_class, axis_line_class, y_pos, darker=false, line_type="") {
-		let line = $$.createSVG('line', {
+		let line = $.createSVG('line', {
 			className: line_type === "dashed" ? "dashed": "",
 			x1: start_at,
 			x2: width,
@@ -1014,7 +1004,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			y2: 0
 		});
 
-		let text = $$.createSVG('text', {
+		let text = $.createSVG('text', {
 			className: label_class,
 			x: text_end_at,
 			y: 0,
@@ -1022,7 +1012,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			innerHTML: point+""
 		});
 
-		let y_level = $$.createSVG('g', {
+		let y_level = $.createSVG('g', {
 			className: `tick ${axis_line_class}`,
 			transform: `translate(0, ${y_pos})`
 		});
@@ -1073,7 +1063,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 		// TODO: Fractions
 
-		let max_bound, min_bound, pos_no_of_parts, neg_no_of_parts, part_size;
+		let max_bound, min_bound, pos_no_of_parts, neg_no_of_parts, part_size; // eslint-disable-line no-unused-vars
 
 		// Critical values
 		let max_val = parseInt(Math.max(...array));
@@ -1095,7 +1085,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 			bound2 = no_of_parts_2 * interval_size;
 
 			return [bound1, bound2, no_of_parts_1, no_of_parts_2, interval_size];
-		}
+		};
 
 		const abs_min_val = min_val * -1;
 		if(abs_min_val <= max_val) {
@@ -1191,7 +1181,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	calc_y_dependencies() {
 		this.y_min_tops = new Array(this.x_axis_positions.length).fill(9999);
 		this.y.map(d => {
-			d.y_tops = d.values.map( val => $$.float_2(this.zero_line - val * this.multiplier));
+			d.y_tops = d.values.map( val => float_2(this.zero_line - val * this.multiplier));
 			d.y_tops.map( (y_top, i) => {
 				if(y_top < this.y_min_tops[i]) {
 					this.y_min_tops[i] = y_top;
@@ -1235,7 +1225,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 				let [height, y] = this.get_bar_height_and_y_attr(y_top);
 
-				return $$.createSVG('rect', {
+				return $.createSVG('rect', {
 					className: `bar mini fill ${color}`,
 					x: current_x,
 					y: y,
@@ -1245,7 +1235,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 
 			},
 			'dot': (x, y, args, color) => {
-				return $$.createSVG('circle', {
+				return $.createSVG('circle', {
 					className: `fill ${color}`,
 					cx: x,
 					cy: y,
@@ -1273,7 +1263,7 @@ frappe.chart.AxisChart = class AxisChart extends frappe.chart.FrappeChart {
 	}
 }
 
-frappe.chart.BarChart = class BarChart extends frappe.chart.AxisChart {
+class BarChart extends AxisChart {
 	constructor(args) {
 		super(args);
 
@@ -1342,10 +1332,10 @@ frappe.chart.BarChart = class BarChart extends frappe.chart.AxisChart {
 	}
 }
 
-frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
+class LineChart extends AxisChart {
 	constructor(args) {
 		super(args);
-		if(Object.getPrototypeOf(this) !== frappe.chart.LineChart.prototype) {
+		if(Object.getPrototypeOf(this) !== LineChart.prototype) {
 			return;
 		}
 
@@ -1365,7 +1355,7 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 	setup_path_groups() {
 		this.paths_groups = [];
 		this.y.map((d, i) => {
-			this.paths_groups[i] = $$.createSVG('g', {
+			this.paths_groups[i] = $.createSVG('g', {
 				className: 'path-group path-group-' + i,
 				inside: this.draw_area
 			});
@@ -1387,55 +1377,55 @@ frappe.chart.LineChart = class LineChart extends frappe.chart.AxisChart {
 	}
 
 	make_path(d, i, x_positions, y_positions, color) {
-		// let points_list = y_positions.map((y, i) => (x_positions[i] + ',' + y));
-		// let points_str = points_list.join("L");
+		let points_list = y_positions.map((y, i) => (x_positions[i] + ',' + y));
+		let points_str = points_list.join("L");
 
-		// this.paths_groups[i].textContent = '';
+		this.paths_groups[i].textContent = '';
 
-		// d.path = $$.createSVG('path', {
-		// 	inside: this.paths_groups[i],
-		// 	className: `stroke ${color}`,
-		// 	d: "M"+points_str
-		// });
+		d.path = $.createSVG('path', {
+			inside: this.paths_groups[i],
+			className: `stroke ${color}`,
+			d: "M"+points_str
+		});
 
-		// if(this.region_fill) {
-		// 	let gradient_id ='path-fill-gradient' + '-' + color;
+		if(this.region_fill) {
+			let gradient_id ='path-fill-gradient' + '-' + color;
 
-		// 	this.gradient_def = $$.createSVG('linearGradient', {
-		// 		inside: this.svg_defs,
-		// 		id: gradient_id,
-		// 		x1: 0,
-		// 		x2: 0,
-		// 		y1: 0,
-		// 		y2: 1
-		// 	});
+			this.gradient_def = $.createSVG('linearGradient', {
+				inside: this.svg_defs,
+				id: gradient_id,
+				x1: 0,
+				x2: 0,
+				y1: 0,
+				y2: 1
+			});
 
-		// 	function set_gradient_stop(grad_elem, offset, color, opacity) {
-		// 		$$.createSVG('stop', {
-		// 			'className': 'stop-color ' + color,
-		// 			'inside': grad_elem,
-		// 			'offset': offset,
-		// 			'stop-opacity': opacity
-		// 		});
-		// 	}
+			let set_gradient_stop = (grad_elem, offset, color, opacity) => {
+				$.createSVG('stop', {
+					'className': 'stop-color ' + color,
+					'inside': grad_elem,
+					'offset': offset,
+					'stop-opacity': opacity
+				});
+			};
 
-		// 	set_gradient_stop(this.gradient_def, "0%", color, 0.4);
-		// 	set_gradient_stop(this.gradient_def, "50%", color, 0.2);
-		// 	set_gradient_stop(this.gradient_def, "100%", color, 0);
+			set_gradient_stop(this.gradient_def, "0%", color, 0.4);
+			set_gradient_stop(this.gradient_def, "50%", color, 0.2);
+			set_gradient_stop(this.gradient_def, "100%", color, 0);
 
-		// 	d.region_path = $$.createSVG('path', {
-		// 		inside: this.paths_groups[i],
-		// 		className: `region-fill`,
-		// 		d: "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`,
-		// 	});
+			d.region_path = $.createSVG('path', {
+				inside: this.paths_groups[i],
+				className: `region-fill`,
+				d: "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`,
+			});
 
-		// 	d.region_path.style.stroke = "none";
-		// 	d.region_path.style.fill = `url(#${gradient_id})`;
-		// }
+			d.region_path.style.stroke = "none";
+			d.region_path.style.fill = `url(#${gradient_id})`;
+		}
 	}
 }
 
-frappe.chart.PercentageChart = class PercentageChart extends frappe.chart.FrappeChart {
+class PercentageChart extends Chart {
 	constructor(args) {
 		super(args);
 		this.type = 'percentage';
@@ -1467,21 +1457,21 @@ frappe.chart.PercentageChart = class PercentageChart extends frappe.chart.Frappe
 	}
 
 	make_draw_area() {
-		this.chart_div = $$.create('div', {
+		this.chart_div = $.create('div', {
 			className: 'div',
 			inside: this.chart_wrapper,
 			width: this.base_width,
 			height: this.base_height
 		});
 
-		this.chart = $$.create('div', {
+		this.chart = $.create('div', {
 			className: 'progress-chart',
 			inside: this.chart_div
 		});
 	}
 
 	setup_components() {
-		this.percentage_bar = $$.create('div', {
+		this.percentage_bar = $.create('div', {
 			className: 'progress',
 			inside: this.chart
 		});
@@ -1506,7 +1496,7 @@ frappe.chart.PercentageChart = class PercentageChart extends frappe.chart.Frappe
 			let others = all_totals.slice(this.max_slices-1);
 
 			let sum_of_others = 0;
-			others.map(d => {sum_of_others += d[0]});
+			others.map(d => {sum_of_others += d[0];});
 
 			totals.push([sum_of_others, 'Rest']);
 
@@ -1528,7 +1518,7 @@ frappe.chart.PercentageChart = class PercentageChart extends frappe.chart.Frappe
 		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
 		this.slices = [];
 		this.slice_totals.map((total, i) => {
-			let slice = $$.create('div', {
+			let slice = $.create('div', {
 				className: `progress-bar background ${this.colors[i]}`,
 				style: `width: ${total*100/this.grand_total}%`,
 				inside: this.percentage_bar
@@ -1540,7 +1530,7 @@ frappe.chart.PercentageChart = class PercentageChart extends frappe.chart.Frappe
 	bind_tooltip() {
 		this.slices.map((slice, i) => {
 			slice.addEventListener('mouseenter', () => {
-				let g_off = $$.offset(this.chart_wrapper), p_off = $$.offset(slice);
+				let g_off = $.offset(this.chart_wrapper), p_off = $.offset(slice);
 
 				let x = p_off.left - g_off.left + slice.offsetWidth/2;
 				let y = p_off.top - g_off.top - 6;
@@ -1559,7 +1549,7 @@ frappe.chart.PercentageChart = class PercentageChart extends frappe.chart.Frappe
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {
 			if(d) {
-				let stats = $$.create('div', {
+				let stats = $.create('div', {
 					className: 'stats',
 					inside: this.stats_wrapper
 				});
@@ -1572,7 +1562,7 @@ frappe.chart.PercentageChart = class PercentageChart extends frappe.chart.Frappe
 	}
 }
 
-frappe.chart.HeatMap = class HeatMap extends frappe.chart.FrappeChart {
+class HeatMap extends Chart {
 	constructor({
 		start = '',
 		domain = '',
@@ -1627,11 +1617,11 @@ frappe.chart.HeatMap = class HeatMap extends frappe.chart.FrappeChart {
 	}
 
 	setup_components() {
-		this.domain_label_group = $$.createSVG("g", {
+		this.domain_label_group = $.createSVG("g", {
 			className: "domain-label-group chart-label",
 			inside: this.draw_area
 		});
-		this.data_groups = $$.createSVG("g", {
+		this.data_groups = $.createSVG("g", {
 			className: "data-groups",
 			inside: this.draw_area,
 			transform: `translate(0, 20)`
@@ -1686,7 +1676,7 @@ frappe.chart.HeatMap = class HeatMap extends frappe.chart.FrappeChart {
 		let month_change = 0;
 		let week_col_change = 0;
 
-		let data_group = $$.createSVG("g", {
+		let data_group = $.createSVG("g", {
 			className: "data-group",
 			inside: this.data_groups
 		});
@@ -1709,7 +1699,7 @@ frappe.chart.HeatMap = class HeatMap extends frappe.chart.FrappeChart {
 
 			let x = 13 + (index + week_col_change) * 12;
 
-			$$.createSVG("rect", {
+			$.createSVG("rect", {
 				className: 'day',
 				inside: data_group,
 				x: x,
@@ -1761,7 +1751,7 @@ frappe.chart.HeatMap = class HeatMap extends frappe.chart.FrappeChart {
 		this.month_start_points.map((start, i) => {
 			let month_name =  this.month_names[this.months[i]].substring(0, 3);
 
-			$$.createSVG('text', {
+			$.createSVG('text', {
 				className: 'y-value-text',
 				inside: this.domain_label_group,
 				x: start + 12,
@@ -1873,7 +1863,7 @@ frappe.chart.HeatMap = class HeatMap extends frappe.chart.FrappeChart {
 	get_month_name() {}
 }
 
-frappe.chart.SvgTip = class {
+class SvgTip {
 	constructor({
 		parent = null
 	}) {
@@ -1903,7 +1893,7 @@ frappe.chart.SvgTip = class {
 	}
 
 	make_tooltip() {
-		this.container = $$.create('div', {
+		this.container = $.create('div', {
 			inside: this.parent,
 			className: 'graph-svg-tip comparison',
 			innerHTML: `<span class="title"></span>
@@ -1931,7 +1921,7 @@ frappe.chart.SvgTip = class {
 		this.data_point_list.innerHTML = '';
 
 		this.list_values.map((set) => {
-			let li = $$.create('li', {
+			let li = $.create('li', {
 				className: `border-top ${set.color || 'black'}`,
 				innerHTML: `<strong style="display: block;">${set.value ? set.value : '' }</strong>
 					${set.title ? set.title : '' }`
@@ -1982,259 +1972,3 @@ frappe.chart.SvgTip = class {
 		this.container.style.opacity = '1';
 	}
 }
-
-// Helpers
-frappe.chart.utils = {};
-$$.float_2 = d => parseFloat(d.toFixed(2));
-function $$(expr, con) {
-	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
-}
-
-$$.arrays_equal = (arr1, arr2) => {
-	if(arr1.length !== arr2.length) return false;
-	let are_equal = true;
-	arr1.map((d, i) => {
-		if(arr2[i] !== d) are_equal = false;
-	});
-	return are_equal;
-}
-
-$$.shuffle = (array) => {
-	// https://stackoverflow.com/a/2450976/6495043
-	// Awesomeness: https://bost.ocks.org/mike/shuffle/
-
-	var currentIndex = array.length, temporaryValue, randomIndex;
-
-	// While there remain elements to shuffle...
-	while (0 !== currentIndex) {
-
-		// Pick a remaining element...
-		randomIndex = Math.floor(Math.random() * currentIndex);
-		currentIndex -= 1;
-
-		// And swap it with the current element.
-		temporaryValue = array[currentIndex];
-		array[currentIndex] = array[randomIndex];
-		array[randomIndex] = temporaryValue;
-	}
-
-	return array;
-
-}
-
-// $$.findNodeIndex = (node) =>
-// {
-// 	var i = 0;
-// 	while (node = node.previousSibling) {
-// 		if (node.nodeType === 1) { ++i; }
-// 	}
-// 	return i;
-// }
-
-$$.create = function(tag, o) {
-	var element = document.createElement(tag);
-
-	for (var i in o) {
-		var val = o[i];
-
-		if (i === "inside") {
-			$$(val).appendChild(element);
-		}
-		else if (i === "around") {
-			var ref = $$(val);
-			ref.parentNode.insertBefore(element, ref);
-			element.appendChild(ref);
-		}
-		else if (i in element) {
-			element[i] = val;
-		}
-		else {
-			element.setAttribute(i, val);
-		}
-	}
-
-	return element;
-};
-
-$$.createSVG = function(tag, o) {
-	var element = document.createElementNS("http://www.w3.org/2000/svg", tag);
-
-	for (var i in o) {
-		var val = o[i];
-
-		if (i === "inside") {
-			$$(val).appendChild(element);
-		}
-		else if (i === "around") {
-			var ref = $$(val);
-			ref.parentNode.insertBefore(element, ref);
-			element.appendChild(ref);
-		}
-		else {
-			if(i === "className") { i = "class"; }
-			if(i === "innerHTML") {
-				element['textContent'] = val;
-			} else {
-				element.setAttribute(i, val);
-			}
-		}
-	}
-
-	return element;
-};
-
-$$.runSVGAnimation = (svg_container, elements) => {
-	// let parent = elements[0][0]['unit'].parentNode;
-
-	let new_elements = [];
-	let anim_elements = [];
-
-	elements.map(element => {
-		let obj = element[0];
-		let parent = obj.unit.parentNode;
-		// let index = $$.findNodeIndex(obj.unit);
-
-		let anim_element, new_element;
-
-		element[0] = obj.unit;
-
-		[anim_element, new_element] = $$.animateSVG(...element);
-
-		new_elements.push(new_element);
-		anim_elements.push([anim_element, parent]);
-
-		parent.replaceChild(anim_element, obj.unit);
-
-		if(obj.array) {
-			obj.array[obj.index] = new_element;
-		} else {
-			obj.object[obj.key] = new_element;
-		}
-	});
-
-	let anim_svg = svg_container.cloneNode(true);
-
-	anim_elements.map((anim_element, i) => {
-		anim_element[1].replaceChild(new_elements[i], anim_element[0]);
-		elements[i][0] = new_elements[i];
-	});
-
-	return anim_svg;
-}
-
-// $$.animateMotion = (element, props, dur, easing_type="linear")
-
-$$.animateSVG = (element, props, dur, easing_type="linear", type=undefined, old_values={}) => {
-	let easing = {
-		ease: "0.25 0.1 0.25 1",
-		linear: "0 0 1 1",
-		// easein: "0.42 0 1 1",
-		easein: "0.1 0.8 0.2 1",
-		easeout: "0 0 0.58 1",
-		easeinout: "0.42 0 0.58 1"
-	}
-
-	let anim_element = element.cloneNode(true);
-	let new_element = element.cloneNode(true);
-
-	for(var attributeName in props) {
-		let animate_element;
-		if(attributeName === 'transform') {
-			animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
-		} else {
-			animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animate");
-		}
-		let current_value = old_values[attributeName] || element.getAttribute(attributeName);
-		let value = props[attributeName];
-
-		let anim_attr = {
-			attributeName: attributeName,
-			from: current_value,
-			to: value,
-			begin: "0s",
-			dur: dur/1000 + "s",
-			values: current_value + ";" + value,
-			keySplines: easing[easing_type],
-			keyTimes: "0;1",
-			calcMode: "spline",
-			fill: 'freeze'
-		}
-
-		if(type) {
-			anim_attr["type"] = type;
-		}
-
-		for (var i in anim_attr) {
-			animate_element.setAttribute(i, anim_attr[i]);
-		}
-
-		anim_element.appendChild(animate_element);
-
-		if(type) {
-			new_element.setAttribute(attributeName, `translate(${value})`);
-		} else {
-			new_element.setAttribute(attributeName, value);
-		}
-	}
-
-	return [anim_element, new_element];
-}
-
-$$.offset = (element) => {
-	let rect = element.getBoundingClientRect();
-	return {
-		// https://stackoverflow.com/a/7436602/6495043
-		// rect.top varies with scroll, so we add whatever has been
-		// scrolled to it to get absolute distance from actual page top
-		top: rect.top + (document.documentElement.scrollTop || document.body.scrollTop),
-		left: rect.left + (document.documentElement.scrollLeft || document.body.scrollLeft)
-	}
-};
-
-$$.isElementInViewport = (el) => {
-	// Although straightforward: https://stackoverflow.com/a/7557433/6495043
-    var rect = el.getBoundingClientRect();
-
-    return (
-        rect.top >= 0 &&
-        rect.left >= 0 &&
-        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /*or $(window).height() */
-        rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
-    );
-}
-
-$$.bind = function(element, o) {
-	if (element) {
-		for (var event in o) {
-			var callback = o[event];
-
-			event.split(/\s+/).forEach(function (event) {
-				element.addEventListener(event, callback);
-			});
-		}
-	}
-};
-
-$$.unbind = function(element, o) {
-	if (element) {
-		for (var event in o) {
-			var callback = o[event];
-
-			event.split(/\s+/).forEach(function(event) {
-				element.removeEventListener(event, callback);
-			});
-		}
-	}
-};
-
-$$.fire = function(target, type, properties) {
-	var evt = document.createEvent("HTMLEvents");
-
-	evt.initEvent(type, true, true );
-
-	for (var j in properties) {
-		evt[j] = properties[j];
-	}
-
-	return target.dispatchEvent(evt);
-};
