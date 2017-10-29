@@ -118,13 +118,14 @@
               <pre><code class="hljs javascript">  ...
     x_axis_mode: 'tick',  // for short label ticks
                           // or 'span' for long spanning vertical axis lines
-    y_axis_mode: 'tick',
+    y_axis_mode: 'span',  // for long horizontal lines, or 'tick'
+    is_series: 1,         // to allow for skipping of X values
   ...</code></pre>
               <div id="chart-trends" class="border"></div>
               <div class="btn-group chart-plot-buttons mt-1 mx-auto" role="group">
-                <button type="button" class="btn btn-sm btn-secondary" data-update="line">Line</button>
-                <button type="button" class="btn btn-sm btn-secondary" data-update="heatline">HeatLine</button>
-                <button type="button" class="btn btn-sm btn-secondary" data-update="region">Region</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-type="line">Line</button>
+                <button type="button" class="btn btn-sm btn-secondary active" data-type="heatline">HeatLine</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-type="region">Region</button>
               </div>
               <pre><code class="hljs javascript margin-vertical-px">  ...
     type: 'line',   // Line chart specific properties:

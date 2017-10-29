@@ -9,6 +9,8 @@ export default class AxisChart extends BaseChart {
 		this.x = this.data.labels;
 		this.y = this.data.datasets;
 
+		this.is_series = args.is_series;
+
 		this.get_y_label = this.format_lambdas.y_label;
 		this.get_y_tooltip = this.format_lambdas.y_tooltip;
 		this.get_x_tooltip = this.format_lambdas.x_tooltip;
@@ -130,8 +132,26 @@ export default class AxisChart extends BaseChart {
 			return;
 		}
 
+		let allowed_space = this.avg_unit_width * 1.5;
+		let allowed_letters = allowed_space / 8;
+
 		this.x_axis_group.textContent = '';
 		this.x.map((point, i) => {
+			let space_taken = this.get_strwidth(point);
+			if(space_taken > allowed_space) {
+				if(this.is_series) {
+					// Skip some axis lines if X axis is a series
+					let skips = 1;
+					while((space_taken/skips)*2 > allowed_space) {
+						skips++;
+					}
+					if(i % skips !== 0) {
+						return;
+					}
+				} else {
+					point = point.slice(0, allowed_letters-3) + " ...";
+				}
+			}
 			this.x_axis_group.appendChild(
 				this.make_x_line(
 					height,
@@ -218,10 +238,14 @@ export default class AxisChart extends BaseChart {
 	}
 
 	setup_navigation(init) {
-		// Hack: defer nav till initial update_values
-		setTimeout(() => {
+		if(init) {
+			// Hack: defer nav till initial update_values
+			setTimeout(() => {
+				super.setup_navigation(init);
+			}, 500);
+		} else {
 			super.setup_navigation(init);
-		}, 500);
+		}
 	}
 
 	make_new_units(d, i) {
@@ -705,13 +729,6 @@ export default class AxisChart extends BaseChart {
 	}
 
 	make_x_line(height, text_start_at, point, label_class, axis_line_class, x_pos) {
-		let allowed_space = this.avg_unit_width * 1.5;
-
-		if(this.get_strwidth(point) > allowed_space) {
-			let allowed_letters = allowed_space / 8;
-			point = point.slice(0, allowed_letters-3) + " ...";
-		}
-
 		let line = $.createSVG('line', {
 			x1: 0,
 			x2: 0,
@@ -858,6 +875,12 @@ export default class AxisChart extends BaseChart {
 		if(no_of_parts > 5) {
 			no_of_parts /= 2;
 			part_size *= 2;
+
+			pos_no_of_parts /=2;
+		}
+
+		if (max_val < (pos_no_of_parts - 1) * part_size) {
+			no_of_parts--;
 		}
 
 		return this.get_intervals(

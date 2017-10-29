@@ -82,7 +82,11 @@ export default class BaseChart {
 
 	setup() {
 		this.bind_window_events();
-		this.refresh(true);
+		if(this.raw_chart_args.hasOwnProperty("init") && !this.raw_chart_args.init) {
+			this.refresh();
+		} else {
+			this.refresh(true);
+		}
 	}
 
 	bind_window_events() {
@@ -252,7 +256,7 @@ export default class BaseChart {
 
 	// Helpers
 	get_strwidth(string) {
-		return string.length * 8;
+		return (string+"").length * 8;
 	}
 
 	// Objects
