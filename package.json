@@ -7,7 +7,10 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "mocha --compilers js:babel-core/register --colors -w ./test/*.spec.js"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "rollup -c --watch",
+    "reload": "livereload 'dist/' -d",
+    "dev": "npm-run-all --parallel watch reload"
   },
   "repository": {
     "type": "git",
@@ -28,10 +31,18 @@
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-env": "^1.6.1",
     "babel-preset-latest": "^6.24.1",
+    "cssnano": "^3.10.0",
+    "livereload": "^0.6.3",
+    "npm-run-all": "^4.1.1",
+    "postcss-cssnext": "^3.0.2",
+    "postcss-nested": "^2.1.2",
     "rollup": "^0.50.0",
     "rollup-plugin-babel": "^3.0.2",
     "rollup-plugin-eslint": "^4.0.0",
     "rollup-plugin-node-resolve": "^3.0.0",
-    "rollup-plugin-uglify": "^2.0.1"
+    "rollup-plugin-postcss": "^0.5.5",
+    "rollup-plugin-replace": "^2.0.0",
+    "rollup-plugin-uglify": "^2.0.1",
+    "rollup-watch": "^4.3.1"
   }
 }

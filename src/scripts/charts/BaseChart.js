@@ -14,6 +14,7 @@ export default class BaseChart {
 		summary = [],
 
 		is_navigable = 0,
+		has_legend = 0,
 
 		type = '' // eslint-disable-line no-unused-vars
 	}) {
@@ -33,6 +34,7 @@ export default class BaseChart {
 		if(this.is_navigable) {
 			this.current_index = 0;
 		}
+		this.has_legend = has_legend;
 
 		this.chart_types = ['line', 'bar', 'percentage', 'heatmap'];
 

@@ -1,57 +1,67 @@
-// Data
+// Composite Chart
 // ================================================================================
+let report_count_list = [17, 40, 33, 44, 126, 156,
+	324, 333, 478, 495, 373];
+
 let bar_composite_data = {
-	"labels": ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"],
+	"labels": ["2007", "2008", "2009", "2010", "2011", "2012",
+		"2013", "2014", "2015", "2016", "2017"],
+
 	"datasets": [{
-			"color": "orange",
-			"values": [50804, 10000, 20000, 61500, 72936.88, 24010, 40000, 60000, 25840, 50804.82, 16820],
-			"formatted": ["₹ 0.00", "₹ 0.00", "₹ 0.00", "₹ 61,500.00", "₹ 82,936.88", "₹ 24,010.00", "₹ 0.00", "₹ 0.00", "₹ 25,840.00", "₹ 5,08,048.82", "₹ 1,16,820.00", "₹ 0.00"],
-		}
-	]
-}
+		"title": "Reports",
+		"color": "orange",
+		"values": report_count_list,
+		// "formatted": report_count_list.map(d => d + " reports")
+	}]
+};
 
 let line_composite_data = {
-	"labels": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+	"labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
 	"datasets": [{
-			"color": "green",
-			"values": [25, 40, 30, 35, 48, 52, 17]
-		}
-	]
+		"color": "green",
+		"values": [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 0, 0],
+		// "formatted": ["₹ 0.00", "₹ 0.00", "₹ 0.00", "₹ 61,500.00", "₹ 82,936.88", "₹ 24,010.00", "₹ 0.00", "₹ 0.00", "₹ 25,840.00", "₹ 5,08,048.82", "₹ 1,16,820.00", "₹ 0.00"],
+	}]
 };
 
 let more_line_data = {
-	0: {values: [25, -90, -30, 35, 48, 52, -17]},
-	1: {values: [25, -40, -30, 35, 48, 52, 30]},
-	2: {values: [5, 48, -52, 17, -25, 40, 30]},
-	3: {
-		values: [25, 40, 30, 35, 48, 52, 17]
-	},
-	4: {
-		values: [35, 48, 40, 30, 52, 17, 72]
-	},
-	5: {
-		values: [5, 48, 52, 17, 72, 40, 30]
-	},
-	6: {
-		values: [72, 40, 30, 35, 48, 52, 17]
-	},
-	7: {
-		values: [35, 48, 40, 30, 52, 17, 25]
-	},
-	8: {
-		values: [5, 48, 52, 17, 25, 40, 30]
-	},
-	9: {
-		values: [25, 40, 30, 35, 48, 52, 17]
-	},
-	10: {
-		values: [35, 48, 40, 30, 52, 17, 25]
-	},
-	11: {
-		values: [5, 48, 52, 17, 25, 40, 30]
-	}
-}
+	0: {values: [4, 0, 3, 1, 1, 2, 1, 2, 1, 0, 1, 1]},
+	1: {values: [2, 3, 3, 2, 1, 4, 0, 1, 2, 7, 11, 4]},
+	2: {values: [7, 7, 2, 4, 0, 1, 5, 3, 1, 2, 0, 1]},
+	3: {values: [0, 2, 6, 2, 2, 1, 2, 3, 6, 3, 7, 10]},
+	4: {values: [9, 10, 8, 10, 6, 5, 8, 8, 24, 15, 10, 13]},
+	5: {values: [9, 13, 16, 9, 4, 5, 7, 10, 14, 22, 23, 24]},
+	6: {values: [20, 22, 28, 19, 28, 19, 14, 19, 51, 37, 29, 38]},
+	7: {values: [29, 20, 22, 16, 16, 19, 24, 26, 57, 31, 46, 27]},
+	8: {values: [36, 24, 38, 27, 15, 22, 24, 38, 32, 57, 139, 26]},
+	9: {values: [37, 36, 32, 33, 12, 34, 52, 45, 58, 57, 64, 35]},
+	10: {values: [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 0, 0]}
+};
 
+let bar_composite_chart = new Chart ({
+	parent: "#chart-composite-1",
+	title: "Reposrts",
+	data: bar_composite_data,
+	type: 'bar',
+	height: 180,
+	is_navigable: 1
+	// region_fill: 1
+});
+
+let line_composite_chart = new Chart ({
+	parent: "#chart-composite-2",
+	data: line_composite_data,
+	type: 'line',
+	height: 180
+});
+
+bar_composite_chart.parent.addEventListener('data-select', (e) => {
+	line_composite_chart.update_values([more_line_data[e.index]]);
+});
+
+
+// Demo Chart (bar, linepts, scatter(blobs), percentage)
+// ================================================================================
 let type_data = {
 	"labels": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
 	"datasets": [{
@@ -72,7 +82,7 @@ let type_data = {
 
 let update_data_all_labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
 	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed",
-	 "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"];
+	"Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"];
 let update_data_all_values = [25, 40, 30, 35, 48, 52, 17, 15, 20, -3, -15, 58,
 	12, -17, 35, 48, 40, 30, 52, 17, 25, 5, 48, 52, 17];
 
@@ -82,15 +92,14 @@ let update_data_all_indices = update_data_all_labels.map((d,i) => i);
 let get_update_data = (source_array, length=10) => {
 	let indices = update_data_all_indices.slice(0, length);
 	return indices.map((index) => source_array[index]);
-}
+};
 
 let update_data = {
 	"labels": get_update_data(update_data_all_labels),
 	"datasets": [{
-			"color": "red",
-			"values": get_update_data(update_data_all_values)
-		}
-	],
+		"color": "red",
+		"values": get_update_data(update_data_all_values)
+	}],
 	"specific_values": [
 		{
 			title: "Altitude",
@@ -141,25 +150,7 @@ let heatmap_data = {
 
 // Charts
 // ================================================================================
-let bar_composite_chart = new Chart ({
-	parent: "#chart-composite-1",
-	data: bar_composite_data,
-	type: 'bar',
-	height: 180,
-	is_navigable: 1
-	// region_fill: 1
-})
 
-let line_composite_chart = new Chart ({
-	parent: "#chart-composite-2",
-	data: line_composite_data,
-	type: 'line',
-	height: 180
-})
-
-bar_composite_chart.parent.addEventListener('data-select', (e) => {
-	line_composite_chart.update_values([more_line_data[e.index]]);
-});
 
 let type_chart = new Chart({
 	parent: "#chart-types",
