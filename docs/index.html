@@ -32,7 +32,7 @@
 
         <div class="col-sm-10 push-sm-1 later" style="font-size: 14px;">
           <div id="chart-composite-1" class="border"><svg height=225></svg></div>
-          <p class="mt-1">Use arrow keys to navigate data points</p>
+          <p class="mt-1">Click or use arrow keys to navigate data points</p>
         </div>
         <div class="col-sm-10 push-sm-1 later" style="font-size: 14px;">
           <div id="chart-composite-2" class="border"><svg height=225></svg></div>
@@ -46,15 +46,51 @@
             <div class="dashboard-section">
               <h6 class="margin-vertical-rem">
                 <!--Bars, Lines or <a href="http://www.storytellingwithdata.com/blog/2011/07/death-to-pie-charts" target="_blank">Percentages</a>-->
-                Create a new chart
+                Create a chart
               </h6>
-              <pre><code class="hljs html">&lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
+              <p class="step-explain">Include it in your HTML</p>
+              <pre><code class="hljs html">  &lt;script src="frappe-charts.min.js" /&gt;</code></pre>
+              <p class="step-explain">Make a new Chart</p>
+              <pre><code class="hljs html">  &lt!--HTML--&gt;
+  &lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
+              <pre><code class="hljs javascript">  // Javascript
+  let data = {
+    labels: ["12am-3am", "3am-6am", "6am-9am", "9am-12pm",
+      "12pm-3pm", "3pm-6pm", "6pm-9pm", "9pm-12am"],
+
+    datasets: [
+      {
+        title: "Some Data", color: "light-blue",
+        values: [25, 40, 30, 35, 8, 52, 17, -4]
+      },
+      {
+        title: "Another Set", color: "violet",
+        values: [25, 50, -10, 15, 18, 32, 27, 14]
+      },
+      {
+        title: "Yet Another", color: "blue",
+        values: [15, 20, -3, -15, 58, 12, -17, 37]
+      }
+    ]
+  };
+
+  let chart = new Chart({
+    parent: "#chart",
+    title: "My Awesome Chart",
+    data: data,
+    type: 'bar', // or 'line', 'scatter', 'percentage'
+    height: 250
+  });</code></pre>
               <div id="chart-types" class="border"></div>
               <div class="btn-group chart-type-buttons margin-vertical-px mx-auto" role="group">
                 <button type="button" class="btn btn-sm btn-secondary active" data-type='bar'>Bar Chart</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-type='line'>Line Chart</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-type='scatter'>Scatter Chart</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-type='percentage'>Percentage Chart</button>
               </div>
+              <p class="text-muted">
+                <a target="_blank" href="http://www.storytellingwithdata.com/blog/2011/07/death-to-pie-charts">Why Percentage?</a>
+              </p>
             </div>
           </div>
 
@@ -71,6 +107,32 @@
                 <button type="button" class="btn btn-sm btn-secondary" data-update="remove">Remove Value</button>
               </div>
               <pre><code class="hljs html margin-vertical-px">&lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
+            </div>
+          </div>
+
+          <div class="col-sm-10 push-sm-1">
+            <div class="dashboard-section">
+              <h6 class="margin-vertical-rem">
+                Plot Trends
+              </h6>
+              <pre><code class="hljs javascript">  ...
+    x_axis_mode: 'tick',  // for short label ticks
+                          // or 'span' for long spanning vertical axis lines
+    y_axis_mode: 'tick',
+  ...</code></pre>
+              <div id="chart-trends" class="border"></div>
+              <div class="btn-group chart-plot-buttons mt-1 mx-auto" role="group">
+                <button type="button" class="btn btn-sm btn-secondary" data-update="line">Line</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-update="heatline">HeatLine</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-update="region">Region</button>
+              </div>
+              <pre><code class="hljs javascript margin-vertical-px">  ...
+    type: 'line',   // Line chart specific properties:
+
+    show_dots: 0,   // Show data points on the line; default 1
+    heatline: 1,    // Show a value-wise line gradient; default 0
+    region_fill: 1, // Fill the area under the graph; default 0
+  ...</code></pre>
             </div>
           </div>
 
@@ -102,7 +164,7 @@
               <div id="chart-aggr" class="border"></div>
               <div class="chart-aggr-buttons mt-1 mx-auto" role="group">
                 <button type="button" class="btn btn-sm btn-secondary" data-aggregation="sums">Show Sums</button>
-                <button type="button" class="btn btn-sm btn-secondary" data-aggregation="average">Show Average</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-aggregation="average">Show Averages</button>
               </div>
               <pre><code class="hljs html margin-vertical-px">&lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
             </div>

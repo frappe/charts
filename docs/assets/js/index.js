@@ -8,7 +8,7 @@ let bar_composite_data = {
 		"2013", "2014", "2015", "2016", "2017"],
 
 	"datasets": [{
-		"title": "Reports",
+		"title": "Events",
 		"color": "orange",
 		"values": report_count_list,
 		// "formatted": report_count_list.map(d => d + " reports")
@@ -40,7 +40,7 @@ let more_line_data = {
 
 let bar_composite_chart = new Chart ({
 	parent: "#chart-composite-1",
-	title: "Reposrts",
+	title: "Fireball/Bolide Events - Yearly (more than 5 reports)",
 	data: bar_composite_data,
 	type: 'bar',
 	height: 180,
@@ -63,23 +63,79 @@ bar_composite_chart.parent.addEventListener('data-select', (e) => {
 // Demo Chart (bar, linepts, scatter(blobs), percentage)
 // ================================================================================
 let type_data = {
-	"labels": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-	"datasets": [{
-			"color": "light-blue",
-			"values": [25, 40, 30, 35, 8, 52, 17]
-		},
-		{
-			"color": "violet",
-			"values": [25, 50, -10, 15, 18, 32, 27]
+	"labels": ["12am-3am", "3am-6am", "6am-9am", "9am-12pm",
+		"12pm-3pm", "3pm-6pm", "6pm-9pm", "9pm-12am"],
 
+	"datasets": [
+		{
+			title: "Some Data", color: "light-blue",
+			values: [25, 40, 30, 35, 8, 52, 17, -4]
 		},
 		{
-			"color": "blue",
-			"values": [15, 20, -3, -15, 58, 12, -17]
+			title: "Another Set", color: "violet",
+			values: [25, 50, -10, 15, 18, 32, 27, 14]
+		},
+		{
+			title: "Yet Another", color: "blue",
+			values: [15, 20, -3, -15, 58, 12, -17, 37]
 		}
 	]
 };
 
+let type_chart = new Chart({
+	parent: "#chart-types",
+	title: "My Awesome Chart",
+	data: type_data,
+	type: 'bar',
+	height: 250
+});
+
+Array.prototype.slice.call(
+	document.querySelectorAll('.chart-type-buttons button')
+).map(el => {
+	el.addEventListener('click', (e) => {
+		let btn = e.target;
+		let type = btn.getAttribute('data-type');
+
+		type_chart = type_chart.get_different_chart(type);
+
+		Array.prototype.slice.call(
+			btn.parentNode.querySelectorAll('button')).map(el => {
+			el.classList.remove('active');
+		});
+		btn.classList.add('active');
+	});
+});
+
+// Trends Chart
+// ================================================================================
+let trends_data = {
+	"labels": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
+		"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed",
+		"Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"],
+	"datasets": [
+		{
+			"color": "blue",
+			"values": [25, 40, 30, 35, 48, 52, 17, 15, 20, -3, -15, 58,
+				12, -17, 35, 48, 40, 30, 52, 17, 25, 5, 48, 52, 17]
+		}
+	]
+};
+
+let plot_chart = new Chart({
+	parent: "#chart-trends",
+	data: trends_data,
+	type: 'line',
+	height: 250,
+	show_dots: 0,
+	// region_fill: 1,
+	heatline: 1,
+	x_axis_mode: 'tick',
+	y_axis_mode: 'tick'
+});
+
+// Update values chart
+// ================================================================================
 let update_data_all_labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
 	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed",
 	"Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"];
@@ -103,7 +159,7 @@ let update_data = {
 	"specific_values": [
 		{
 			title: "Altitude",
-			// title: "Altiteragrwst ude",
+			// title: "A very long text",
 			line_type: "dashed",
 			value: 38
 		},
@@ -152,14 +208,7 @@ let heatmap_data = {
 // ================================================================================
 
 
-let type_chart = new Chart({
-	parent: "#chart-types",
-	data: type_data,
-	type: 'bar',
-	height: 250,
-	// region_fill: 1,
-	// y_axis_mode: 'tick'
-});
+
 
 let update_chart = new Chart({
 	parent: "#chart-update",
@@ -194,24 +243,6 @@ let heatmap = new Chart({
 
 // Events
 // ================================================================================
-
-Array.prototype.slice.call(
-	document.querySelectorAll('.chart-type-buttons button')
-).map(el => {
-	el.addEventListener('click', (e) => {
-		btn = e.target;
-		let type = btn.getAttribute('data-type');
-
-		type_chart = type_chart.get_different_chart(type);
-
-		Array.prototype.slice.call(
-			btn.parentNode.querySelectorAll('button')).map(el => {
-				el.classList.remove('active');
-			});
-		btn.classList.add('active');
-	});
-});
-
 
 
 let chart_update_buttons = document.querySelector('.chart-update-buttons');

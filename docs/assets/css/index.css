@@ -39,6 +39,10 @@ hr {
 	margin-bottom: 2rem;
 }
 
+.step-explain {
+	margin-top: 30px;
+}
+
 pre.highlight {
 	background: #f7f7f7;
 	border-radius: 3px;

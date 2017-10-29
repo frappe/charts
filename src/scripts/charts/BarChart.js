@@ -44,6 +44,15 @@ export default class BarChart extends AxisChart {
 		});
 	}
 
+	bind_units(units_array) {
+		units_array.map(unit => {
+			unit.addEventListener('click', () => {
+				let index = unit.getAttribute('data-point-index');
+				this.update_current_data_point(index);
+			});
+		});
+	}
+
 	update_overlay(unit) {
 		let attributes = [];
 		Object.keys(unit.attributes).map(index => {

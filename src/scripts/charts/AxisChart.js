@@ -234,13 +234,15 @@ export default class AxisChart extends BaseChart {
 		);
 	}
 
-	make_new_units_for_dataset(x_values, y_values, color, dataset_index, no_of_datasets, group, array, unit) {
-		if(!group) group = this.svg_units_groups[dataset_index];
-		if(!array) array = this.y[dataset_index].svg_units;
+	make_new_units_for_dataset(x_values, y_values, color, dataset_index,
+		no_of_datasets, units_group, units_array, unit) {
+
+		if(!units_group) units_group = this.svg_units_groups[dataset_index];
+		if(!units_array) units_array = this.y[dataset_index].svg_units;
 		if(!unit) unit = this.unit_args;
 
-		group.textContent = '';
-		array.length = 0;
+		units_group.textContent = '';
+		units_array.length = 0;
 
 		y_values.map((y, i) => {
 			let data_unit = this.draw[unit.type](
@@ -248,12 +250,17 @@ export default class AxisChart extends BaseChart {
 				y,
 				unit.args,
 				color,
+				i,
 				dataset_index,
 				no_of_datasets
 			);
-			group.appendChild(data_unit);
-			array.push(data_unit);
+			units_group.appendChild(data_unit);
+			units_array.push(data_unit);
 		});
+
+		if(this.is_navigable) {
+			this.bind_units(units_array);
+		}
 	}
 
 	make_y_specifics() {
@@ -952,17 +959,18 @@ export default class AxisChart extends BaseChart {
 
 	setup_utils() {
 		this.draw = {
-			'bar': (x, y_top, args, color, index, no_of_datasets) => {
+			'bar': (x, y_top, args, color, index, dataset_index, no_of_datasets) => {
 				let total_width = this.avg_unit_width - args.space_width;
 				let start_x = x - total_width/2;
 
 				let width = total_width / no_of_datasets;
-				let current_x = start_x + width * index;
+				let current_x = start_x + width * dataset_index;
 
 				let [height, y] = this.get_bar_height_and_y_attr(y_top);
 
 				return $.createSVG('rect', {
 					className: `bar mini fill ${color}`,
+					'data-point-index': index,
 					x: current_x,
 					y: y,
 					width: width,
@@ -970,9 +978,10 @@ export default class AxisChart extends BaseChart {
 				});
 
 			},
-			'dot': (x, y, args, color) => {
+			'dot': (x, y, args, color, index) => {
 				return $.createSVG('circle', {
 					className: `fill ${color}`,
+					'data-point-index': index,
 					cx: x,
 					cy: y,
 					r: args.radius

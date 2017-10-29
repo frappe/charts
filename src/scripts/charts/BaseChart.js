@@ -1,5 +1,6 @@
 import SvgTip from '../objects/SvgTip';
 import $ from '../helpers/dom';
+import Chart from '../charts';
 
 export default class BaseChart {
 	constructor({
@@ -36,7 +37,7 @@ export default class BaseChart {
 		}
 		this.has_legend = has_legend;
 
-		this.chart_types = ['line', 'bar', 'percentage', 'heatmap'];
+		this.chart_types = ['line', 'scatter', 'bar', 'percentage', 'heatmap'];
 
 		this.set_margins(height);
 	}
@@ -49,9 +50,10 @@ export default class BaseChart {
 
 		// Only across compatible types
 		let compatible_types = {
-			bar: ['line', 'percentage'],
-			line: ['bar', 'percentage'],
-			percentage: ['bar', 'line'],
+			bar: ['line', 'scatter', 'percentage'],
+			line: ['scatter', 'bar', 'percentage'],
+			scatter: ['line', 'bar', 'percentage'],
+			percentage: ['bar', 'line', 'scatter'],
 			heatmap: []
 		};
 
@@ -62,8 +64,9 @@ export default class BaseChart {
 		// Okay, this is anticlimactic
 		// this function will need to actually be 'change_chart_type(type)'
 		// that will update only the required elements, but for now ...
-		return new BaseChart({
+		return new Chart({
 			parent: this.raw_chart_args.parent,
+			title: this.title,
 			data: this.raw_chart_args.data,
 			type: type,
 			height: this.raw_chart_args.height
@@ -127,7 +130,7 @@ export default class BaseChart {
 	setup_container() {
 		this.container = $.create('div', {
 			className: 'chart-container',
-			innerHTML: `<h6 class="title" style="margin-top: 15px;">${this.title}</h6>
+			innerHTML: `<h6 class="title">${this.title}</h6>
 				<h6 class="sub-title uppercase">${this.subtitle}</h6>
 				<div class="frappe-chart graphics"></div>
 				<div class="graph-stats-container"></div>`
@@ -216,6 +219,7 @@ export default class BaseChart {
 
 	make_overlay() {}
 	bind_overlay() {}
+	bind_units() {}
 
 	on_left_arrow() {}
 	on_right_arrow() {}
@@ -238,6 +242,7 @@ export default class BaseChart {
 	}
 
 	update_current_data_point(index) {
+		index = parseInt(index);
 		if(index < 0) index = 0;
 		if(index >= this.x.length) index = this.x.length - 1;
 		if(index === this.current_index) return;
