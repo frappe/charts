@@ -62,15 +62,19 @@ pre.highlight {
 	/*font-size: 1.4rem;*/
 }
 .data-container {
-	height: 302px;
 	padding: 20px;
+	padding-bottom: 0px;
 }
 .image-container {
 	padding: 3px;
 }
 .image-container img{
-	width: 170px;
-	height: 120px;
+	display: block;
+    width: 100%;
+}
+.data p {
+	margin-bottom: 5px;
+	font-size: 12px;
 }
 .margin-vertical-px {
 	margin: 15px 0px;

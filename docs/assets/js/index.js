@@ -4,10 +4,10 @@ let report_count_list = [17, 40, 33, 44, 126, 156,
 	324, 333, 478, 495, 373];
 
 let bar_composite_data = {
-	"labels": ["2007", "2008", "2009", "2010", "2011", "2012",
+	labels: ["2007", "2008", "2009", "2010", "2011", "2012",
 		"2013", "2014", "2015", "2016", "2017"],
 
-	"datasets": [{
+	datasets: [{
 		"title": "Events",
 		"color": "orange",
 		"values": report_count_list,
@@ -16,8 +16,8 @@ let bar_composite_data = {
 };
 
 let line_composite_data = {
-	"labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-	"datasets": [{
+	labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+	datasets: [{
 		"color": "green",
 		"values": [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 0, 0],
 		// "formatted": ["₹ 0.00", "₹ 0.00", "₹ 0.00", "₹ 61,500.00", "₹ 82,936.88", "₹ 24,010.00", "₹ 0.00", "₹ 0.00", "₹ 25,840.00", "₹ 5,08,048.82", "₹ 1,16,820.00", "₹ 0.00"],
@@ -63,10 +63,10 @@ bar_composite_chart.parent.addEventListener('data-select', (e) => {
 // Demo Chart (bar, linepts, scatter(blobs), percentage)
 // ================================================================================
 let type_data = {
-	"labels": ["12am-3am", "3am-6am", "6am-9am", "9am-12pm",
+	labels: ["12am-3am", "3am-6am", "6am-9am", "9am-12pm",
 		"12pm-3pm", "3pm-6pm", "6pm-9pm", "9pm-12am"],
 
-	"datasets": [
+	datasets: [
 		{
 			title: "Some Data", color: "light-blue",
 			values: [25, 40, 30, 35, 8, 52, 17, -4]
@@ -110,12 +110,12 @@ Array.prototype.slice.call(
 // Trends Chart
 // ================================================================================
 let trends_data = {
-	"labels": [1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976,
+	labels: [1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976,
 		1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986,
 		1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996,
 		1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
 		2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016] ,
-	"datasets": [
+	datasets: [
 		{
 			"color": "blue",
 			"values": [132.9, 150.0, 149.4, 148.0,  94.4,  97.6,  54.1,  49.2,  22.5, 18.4,
@@ -191,8 +191,8 @@ let get_update_data = (source_array, length=10) => {
 };
 
 let update_data = {
-	"labels": get_update_data(update_data_all_labels),
-	"datasets": [{
+	labels: get_update_data(update_data_all_labels),
+	datasets: [{
 		"color": "red",
 		"values": get_update_data(update_data_all_values)
 	}],
@@ -206,18 +206,83 @@ let update_data = {
 	]
 };
 
+let update_chart = new Chart({
+	parent: "#chart-update",
+	data: update_data,
+	type: 'line',
+	height: 250,
+	is_series: 1,
+	region_fill: 1
+});
+
+// Event chart
+// ================================================================================
+let moon_names = ["Ganymede", "Callisto", "Io", "Europa"];
+let masses = [14819000, 10759000, 8931900, 4800000];
+let distances = [1070.412, 1882.709, 421.700, 671.034];
+let diameters = [5262.4, 4820.6, 3637.4, 3121.6];
+
+let jupiter_moons = {
+	'Ganymede': {
+		mass: '14819000 x 10^16 kg',
+		'semi-major-axis': '1070412 km',
+		'diameter': '5262.4 km'
+	},
+	'Callisto': {
+		mass: '10759000 x 10^16 kg',
+		'semi-major-axis': '1882709 km',
+		'diameter': '4820.6 km'
+	},
+	'Io': {
+		mass: '8931900 x 10^16 kg',
+		'semi-major-axis': '421700 km',
+		'diameter': '3637.4 km'
+	},
+	'Europa': {
+		mass: '4800000 x 10^16 kg',
+		'semi-major-axis': '671034 km',
+		'diameter': '3121.6 km'
+	},
+};
+
 let events_data = {
-	"labels": ["Sun", "Mon", "Tue", "Wed", "Thu"],
-	"datasets": [{
+	labels: ["Ganymede", "Callisto", "Io", "Europa"],
+	datasets: [
+		{
+			// "title": "km",
 			"color": "light-green",
-			"values": [25, 40, 30, 35, 48]
+			"values": distances,
+			"formatted": distances.map(d => d*1000 + " km")
 		}
 	]
 };
 
+let events_chart = new Chart({
+	parent: "#chart-events",
+	title: "Jupiter's Moons: Semi-major Axis (1000 km)",
+	data: events_data,
+	type: 'bar',
+	height: 250,
+	is_navigable: 1,
+});
+
+let data_div = document.querySelector('.chart-events-data');
+
+events_chart.parent.addEventListener('data-select', (e) => {
+	let name = moon_names[e.index];
+	data_div.querySelector('.moon-name').innerHTML = name;
+	data_div.querySelector('.semi-major-axis').innerHTML = distances[e.index];
+	data_div.querySelector('.mass').innerHTML = masses[e.index];
+	data_div.querySelector('.diameter').innerHTML = diameters[e.index];
+	data_div.querySelector('img').src = "./assets/img/" + name.toLowerCase() + ".jpg";
+});
+
+// Aggregation chart
+// ================================================================================
 let aggr_data = {
-	"labels": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-	"datasets": [{
+	labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+	datasets: [
+		{
 			"color": "purple",
 			"values": [25, 40, 30, 35, 8, 52, 17]
 		},
@@ -229,87 +294,12 @@ let aggr_data = {
 	]
 };
 
-let heatmap_data = {
-	1479753000.0: 1,
-	1498588200.0: 1,
-	1499193000.0: 1,
-	1499625000.0: 2,
-	1500921000.0: 1,
-	1501612200.0: 1,
-	1502994600.0: 1,
-	1503858600.0: 1,
-	1504809000.0: 3,
-	1505241000.0: 1,
-	1506277800.0: 2
-};
-
-
-// Charts
-// ================================================================================
-
-
-
-
-let update_chart = new Chart({
-	parent: "#chart-update",
-	data: update_data,
-	type: 'line',
-	height: 250,
-	is_series: 1,
-	region_fill: 1
-});
-
-let events_chart = new Chart({
-	parent: "#chart-events",
-	data: events_data,
-	type: 'bar',
-	height: 250,
-	is_navigable: 1,
-});
-
 let aggr_chart = new Chart({
 	parent: "#chart-aggr",
 	data: aggr_data,
 	type: 'bar',
 	height: 250
 });
-
-let heatmap = new Chart({
-	parent: "#chart-heatmap",
-	data: heatmap_data,
-	type: 'heatmap',
-	height: 100,
-	// discrete_domains: 1
-});
-
-// Events
-// ================================================================================
-
-
-let chart_update_buttons = document.querySelector('.chart-update-buttons');
-
-chart_update_buttons.querySelector('[data-update="random"]').addEventListener("click", (e) => {
-	shuffle(update_data_all_indices);
-	update_chart.update_values(
-		[{values: get_update_data(update_data_all_values)}],
-		get_update_data(update_data_all_labels)
-	);
-});
-
-chart_update_buttons.querySelector('[data-update="add"]').addEventListener("click", (e) => {
-	// NOTE: this ought to be problem, labels stay the same after update
-	let index = update_chart.x.length; // last index to add
-	if(index >= update_data_all_indices.length) return;
-	update_chart.add_data_point(
-		[update_data_all_values[index]], update_data_all_labels[index]
-	);
-});
-
-chart_update_buttons.querySelector('[data-update="remove"]').addEventListener("click", (e) => {
-	update_chart.remove_data_point();
-});
-
-
 
 document.querySelector('[data-aggregation="sums"]').addEventListener("click", (e) => {
 	if(e.target.innerHTML === "Show Sums") {
@@ -329,6 +319,57 @@ document.querySelector('[data-aggregation="average"]').addEventListener("click",
 		aggr_chart.hide_average();
 		e.target.innerHTML = "Show Average";
 	}
+});
+
+// Heatmap
+// ================================================================================
+let heatmap_data = {
+	1479753000.0: 1,
+	1498588200.0: 1,
+	1499193000.0: 1,
+	1499625000.0: 2,
+	1500921000.0: 1,
+	1501612200.0: 1,
+	1502994600.0: 1,
+	1503858600.0: 1,
+	1504809000.0: 3,
+	1505241000.0: 1,
+	1506277800.0: 2
+};
+
+let heatmap = new Chart({
+	parent: "#chart-heatmap",
+	data: heatmap_data,
+	type: 'heatmap',
+	height: 100,
+	// discrete_domains: 1
+});
+
+// Events
+// ================================================================================
+
+
+let chart_update_buttons = document.querySelector('.chart-update-buttons');
+
+chart_update_buttons.querySelector('[data-update="random"]').addEventListener("click", (e) => {
+	shuffle(update_data_all_indices);
+	update_chart.update_values(
+		[{values: get_update_data(update_data_all_values)}],
+		update_data_all_labels.slice(0, 10)
+	);
+});
+
+chart_update_buttons.querySelector('[data-update="add"]').addEventListener("click", (e) => {
+	// NOTE: this ought to be problem, labels stay the same after update
+	let index = update_chart.x.length; // last index to add
+	if(index >= update_data_all_indices.length) return;
+	update_chart.add_data_point(
+		[update_data_all_values[index]], update_data_all_labels[index]
+	);
+});
+
+chart_update_buttons.querySelector('[data-update="remove"]').addEventListener("click", (e) => {
+	update_chart.remove_data_point();
 });
 
 function shuffle(array) {

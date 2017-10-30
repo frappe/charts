@@ -619,6 +619,9 @@ export default class AxisChart extends BaseChart {
 		const last_line_pos = old_pos[old_pos.length - 1];
 
 		let add_and_animate_line = (value, old_pos, new_pos) => {
+			if(typeof new_pos === 'string') {
+				new_pos = parseInt(new_pos.substring(0, new_pos.length-1));
+			}
 			const x_line = this.make_x_line(
 				height,
 				text_start_at,
@@ -708,7 +711,7 @@ export default class AxisChart extends BaseChart {
 			const filler_vals = new Array(Math.abs(no_of_extras)).fill("");
 			superimposed_values = new_vals.concat(filler_vals);
 
-			const filler_pos = new Array(Math.abs(no_of_extras)).fill(last_line_pos);
+			const filler_pos = new Array(Math.abs(no_of_extras)).fill(last_line_pos + "F");
 			superimposed_positions = new_pos.concat(filler_pos);
 		}
 
@@ -774,7 +777,8 @@ export default class AxisChart extends BaseChart {
 
 		let y_level = $.createSVG('g', {
 			className: `tick ${axis_line_class}`,
-			transform: `translate(0, ${y_pos})`
+			transform: `translate(0, ${y_pos})`,
+			'stroke-opacity': 1
 		});
 
 		if(darker) {
@@ -788,6 +792,19 @@ export default class AxisChart extends BaseChart {
 	}
 
 	add_and_animate_y_line(value, old_pos, new_pos, i, group, type, specific=false) {
+		let filler = false;
+		if(typeof new_pos === 'string') {
+			new_pos = parseInt(new_pos.substring(0, new_pos.length-1));
+			filler = true;
+		}
+		let new_props = {transform: `0, ${ new_pos }`};
+		let old_props = {transform: `0, ${ old_pos }`};
+
+		if(filler) {
+			new_props['stroke-opacity'] = 0;
+			// old_props['stroke-opacity'] = 1;
+		}
+
 		let [width, text_end_at, axis_line_class, start_at] = this.get_y_axis_line_props(specific);
 		let axis_label_class = !specific ? 'y-value-text' : 'specific-value';
 		value = !specific ? value : (value+"").toUpperCase();
@@ -807,11 +824,11 @@ export default class AxisChart extends BaseChart {
 
 		this.elements_to_animate && this.elements_to_animate.push([
 			{unit: y_line, array: [0], index: 0},
-			{transform: `0, ${ new_pos }`},
+			new_props,
 			250,
 			"easein",
 			"translate",
-			{transform: `0, ${ old_pos }`}
+			old_props
 		]);
 	}
 
