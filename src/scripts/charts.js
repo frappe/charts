@@ -6,13 +6,13 @@ import ScatterChart from './charts/ScatterChart';
 import PercentageChart from './charts/PercentageChart';
 import Heatmap from './charts/Heatmap';
 
-if (ENV !== 'production') {
-	// Enable LiveReload
-	document.write(
-		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
-		':35729/livereload.js?snipver=1"></' + 'script>'
-	);
-}
+// if (ENV !== 'production') {
+// 	// Enable LiveReload
+// 	document.write(
+// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
+// 		':35729/livereload.js?snipver=1"></' + 'script>'
+// 	);
+// }
 
 export default class Chart {
 	constructor(args) {

@@ -331,7 +331,6 @@ export default class AxisChart extends BaseChart {
 	}
 
 	map_tooltip_x_position_and_show(relX) {
-		console.warn(this.y_min_tops);
 		if(!this.y_min_tops) return;
 		for(var i=this.x_axis_positions.length - 1; i >= 0 ; i--) {
 			let x_val = this.x_axis_positions[i];
@@ -570,6 +569,7 @@ export default class AxisChart extends BaseChart {
 		let type = this.unit_args.type;
 
 		d.svg_units.map((unit, i) => {
+			if(!new_x[i] || !new_y[i]) return;
 			this.elements_to_animate.push(this.animate[type](
 				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
 				new_x[i],

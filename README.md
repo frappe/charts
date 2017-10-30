@@ -1,5 +1,5 @@
 # Frappé Charts
-GitHub-inspired simple and modern charts with zero dependencies.
+GitHub-inspired simple and responsive charts with zero dependencies.
 
 https://frappe.github.io/charts
 
