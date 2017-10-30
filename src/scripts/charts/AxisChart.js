@@ -209,6 +209,15 @@ export default class AxisChart extends BaseChart {
 	}
 
 	draw_graph(init=false) {
+		if(this.raw_chart_args.hasOwnProperty("init") && !this.raw_chart_args.init) {
+			this.y.map((d, i) => {
+				d.svg_units = [];
+				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
+				this.make_new_units(d, i);
+				this.calc_y_dependencies();
+			});
+			return;
+		}
 		if(init) {
 			this.draw_new_graph_and_animate();
 			return;
@@ -322,6 +331,8 @@ export default class AxisChart extends BaseChart {
 	}
 
 	map_tooltip_x_position_and_show(relX) {
+		console.warn(this.y_min_tops);
+		if(!this.y_min_tops) return;
 		for(var i=this.x_axis_positions.length - 1; i >= 0 ; i--) {
 			let x_val = this.x_axis_positions[i];
 			// let delta = i === 0 ? this.avg_unit_width : x_val - this.x_axis_positions[i-1];
@@ -387,7 +398,7 @@ export default class AxisChart extends BaseChart {
 		this.update_values();
 	}
 
-	show_average() {
+	show_averages() {
 		this.old_specific_values = this.specific_values.slice();
 		this.y.map((d, i) => {
 			let sum = 0;
@@ -405,7 +416,7 @@ export default class AxisChart extends BaseChart {
 		this.update_values();
 	}
 
-	hide_average() {
+	hide_averages() {
 		this.old_specific_values = this.specific_values.slice();
 
 		let indices_to_remove = [];
@@ -971,6 +982,8 @@ export default class AxisChart extends BaseChart {
 				}
 			});
 		});
+		// this.chart_wrapper.removeChild(this.tip.container);
+		// this.make_tooltip();
 	}
 
 	get_bar_height_and_y_attr(y_top) {

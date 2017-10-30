@@ -176,11 +176,10 @@ Array.prototype.slice.call(
 
 // Update values chart
 // ================================================================================
-let update_data_all_labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
-	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed",
-	"Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"];
-let update_data_all_values = [25, 40, 30, 35, 48, 52, 17, 15, 20, -3, -15, 58,
-	12, -17, 35, 48, 40, 30, 52, 17, 25, 5, 48, 52, 17];
+let update_data_all_labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue",
+	"Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri",
+	"Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon"];
+let update_data_all_values = Array.from({length: 30}, () => Math.floor(Math.random() * 75 - 15));
 
 // We're gonna be shuffling this
 let update_data_all_indices = update_data_all_labels.map((d,i) => i);
@@ -214,6 +213,30 @@ let update_chart = new Chart({
 	is_series: 1,
 	region_fill: 1
 });
+
+let chart_update_buttons = document.querySelector('.chart-update-buttons');
+
+chart_update_buttons.querySelector('[data-update="random"]').addEventListener("click", (e) => {
+	shuffle(update_data_all_indices);
+	update_chart.update_values(
+		[{values: get_update_data(update_data_all_values)}],
+		update_data_all_labels.slice(0, 10)
+	);
+});
+
+chart_update_buttons.querySelector('[data-update="add"]').addEventListener("click", (e) => {
+	// NOTE: this ought to be problem, labels stay the same after update
+	let index = update_chart.x.length; // last index to add
+	if(index >= update_data_all_indices.length) return;
+	update_chart.add_data_point(
+		[update_data_all_values[index]], update_data_all_labels[index]
+	);
+});
+
+chart_update_buttons.querySelector('[data-update="remove"]').addEventListener("click", (e) => {
+	update_chart.remove_data_point();
+});
+
 
 // Event chart
 // ================================================================================
@@ -250,7 +273,7 @@ let events_data = {
 	datasets: [
 		{
 			// "title": "km",
-			"color": "light-green",
+			"color": "grey",
 			"values": distances,
 			"formatted": distances.map(d => d*1000 + " km")
 		}
@@ -313,10 +336,10 @@ document.querySelector('[data-aggregation="sums"]').addEventListener("click", (e
 
 document.querySelector('[data-aggregation="average"]').addEventListener("click", (e) => {
 	if(e.target.innerHTML === "Show Average") {
-		aggr_chart.show_average();
+		aggr_chart.show_averages();
 		e.target.innerHTML = "Hide Average";
 	} else {
-		aggr_chart.hide_average();
+		aggr_chart.hide_averages();
 		e.target.innerHTML = "Show Average";
 	}
 });
@@ -342,36 +365,30 @@ let heatmap = new Chart({
 	data: heatmap_data,
 	type: 'heatmap',
 	height: 100,
-	// discrete_domains: 1
+	discrete_domains: 1  // default 0
 });
 
-// Events
+document.querySelector('[data-heatmap="discrete"]').addEventListener("click", (e) => {
+	heatmap = new Chart({
+		parent: "#chart-heatmap",
+		data: heatmap_data,
+		type: 'heatmap',
+		height: 100,
+		discrete_domains: 1  // default 0
+	});
+});
+
+document.querySelector('[data-heatmap="continuous"]').addEventListener("click", (e) => {
+	heatmap = new Chart({
+		parent: "#chart-heatmap",
+		data: heatmap_data,
+		type: 'heatmap',
+		height: 100
+	});
+});
+
+// Helpers
 // ================================================================================
-
-
-let chart_update_buttons = document.querySelector('.chart-update-buttons');
-
-chart_update_buttons.querySelector('[data-update="random"]').addEventListener("click", (e) => {
-	shuffle(update_data_all_indices);
-	update_chart.update_values(
-		[{values: get_update_data(update_data_all_values)}],
-		update_data_all_labels.slice(0, 10)
-	);
-});
-
-chart_update_buttons.querySelector('[data-update="add"]').addEventListener("click", (e) => {
-	// NOTE: this ought to be problem, labels stay the same after update
-	let index = update_chart.x.length; // last index to add
-	if(index >= update_data_all_indices.length) return;
-	update_chart.add_data_point(
-		[update_data_all_values[index]], update_data_all_labels[index]
-	);
-});
-
-chart_update_buttons.querySelector('[data-update="remove"]').addEventListener("click", (e) => {
-	update_chart.remove_data_point();
-});
-
 function shuffle(array) {
 	// https://stackoverflow.com/a/2450976/6495043
 	// Awesomeness: https://bost.ocks.org/mike/shuffle/

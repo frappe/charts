@@ -82,11 +82,7 @@ export default class BaseChart {
 
 	setup() {
 		this.bind_window_events();
-		if(this.raw_chart_args.hasOwnProperty("init") && !this.raw_chart_args.init) {
-			this.refresh();
-		} else {
-			this.refresh(true);
-		}
+		this.refresh(true);
 	}
 
 	bind_window_events() {
