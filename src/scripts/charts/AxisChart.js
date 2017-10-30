@@ -456,7 +456,7 @@ export default class AxisChart extends BaseChart {
 			this.make_x_axis(true);
 			setTimeout(() => {
 				if(!this.updating) this.make_x_axis();
-			}, 300);
+			}, 350);
 		}
 
 		if(!arrays_equal(this.y_old_axis_values, this.y_axis_values) ||
@@ -469,7 +469,7 @@ export default class AxisChart extends BaseChart {
 					this.make_y_axis();
 					this.make_y_specifics();
 				}
-			}, 300);
+			}, 350);
 		}
 
 		// Change in data, so calculate dependencies
@@ -518,7 +518,7 @@ export default class AxisChart extends BaseChart {
 				this.chart_wrapper.removeChild(anim_svg);
 				this.chart_wrapper.appendChild(this.svg);
 			}
-		}, 200);
+		}, 250);
 	}
 
 	animate_graphs() {
@@ -539,7 +539,7 @@ export default class AxisChart extends BaseChart {
 				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
 				this.make_new_units(d, i);
 			});
-		}, 300);
+		}, 400);
 	}
 
 	animate_path(d, i, old_x, old_y, new_x, new_y) {
@@ -547,7 +547,7 @@ export default class AxisChart extends BaseChart {
 		const new_points_list = new_y.map((y, i) => (new_x[i] + ',' + y));
 		const new_path_str = new_points_list.join("L");
 
-		const path_args = [{unit: d.path, object: d, key: 'path'}, {d:"M"+new_path_str}, 250, "easein"];
+		const path_args = [{unit: d.path, object: d, key: 'path'}, {d:"M"+new_path_str}, 350, "easein"];
 		this.elements_to_animate.push(path_args);
 
 		// Animate region
@@ -558,7 +558,7 @@ export default class AxisChart extends BaseChart {
 			const region_args = [
 				{unit: d.region_path, object: d, key: 'region_path'},
 				{d:"M" + reg_start_pt + new_path_str + reg_end_pt},
-				250,
+				350,
 				"easein"
 			];
 			this.elements_to_animate.push(region_args);
@@ -569,7 +569,7 @@ export default class AxisChart extends BaseChart {
 		let type = this.unit_args.type;
 
 		d.svg_units.map((unit, i) => {
-			if(!new_x[i] || !new_y[i]) return;
+			if(new_x[i] === undefined || new_y[i] === undefined) return;
 			this.elements_to_animate.push(this.animate[type](
 				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
 				new_x[i],
@@ -646,7 +646,7 @@ export default class AxisChart extends BaseChart {
 			this.elements_to_animate && this.elements_to_animate.push([
 				{unit: x_line, array: [0], index: 0},
 				{transform: `${ new_pos }, 0`},
-				250,
+				350,
 				"easein",
 				"translate",
 				{transform: `${ old_pos }, 0`}
@@ -836,7 +836,7 @@ export default class AxisChart extends BaseChart {
 		this.elements_to_animate && this.elements_to_animate.push([
 			{unit: y_line, array: [0], index: 0},
 			new_props,
-			250,
+			350,
 			"easein",
 			"translate",
 			old_props
@@ -1050,12 +1050,12 @@ export default class AxisChart extends BaseChart {
 
 				x = start + (width * index);
 
-				return [bar_obj, {width: width, height: height, x: x, y: y}, 250, "easein"];
-				// bar.animate({height: args.new_height, y: y_top}, 250, mina.easein);
+				return [bar_obj, {width: width, height: height, x: x, y: y}, 350, "easein"];
+				// bar.animate({height: args.new_height, y: y_top}, 350, mina.easein);
 			},
 			'dot': (dot_obj, x, y_top) => {
-				return [dot_obj, {cx: x, cy: y_top}, 300, "easein"];
-				// dot.animate({cy: y_top}, 250, mina.easein);
+				return [dot_obj, {cx: x, cy: y_top}, 350, "easein"];
+				// dot.animate({cy: y_top}, 350, mina.easein);
 			}
 		};
 	}

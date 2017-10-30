@@ -148,19 +148,19 @@ Array.prototype.slice.call(
 	el.addEventListener('click', (e) => {
 		let btn = e.target;
 		let type = btn.getAttribute('data-type');
-		let conf = [];
+		let config = [];
 
 		if(type === 'line') {
-			conf = [0, 0, 0];
+			config = [0, 0, 0];
 		} else if(type === 'region') {
-			conf = [0, 0, 1];
+			config = [0, 0, 1];
 		} else {
-			conf = [0, 1, 0];
+			config = [0, 1, 0];
 		}
 
-		plot_chart_args.show_dots = conf[0];
-		plot_chart_args.heatline = conf[1];
-		plot_chart_args.region_fill = conf[2];
+		plot_chart_args.show_dots = config[0];
+		plot_chart_args.heatline = config[1];
+		plot_chart_args.region_fill = config[2];
 
 		plot_chart_args.init = false;
 
@@ -294,7 +294,7 @@ let data_div = document.querySelector('.chart-events-data');
 events_chart.parent.addEventListener('data-select', (e) => {
 	let name = moon_names[e.index];
 	data_div.querySelector('.moon-name').innerHTML = name;
-	data_div.querySelector('.semi-major-axis').innerHTML = distances[e.index];
+	data_div.querySelector('.semi-major-axis').innerHTML = distances[e.index] * 1000;
 	data_div.querySelector('.mass').innerHTML = masses[e.index];
 	data_div.querySelector('.diameter').innerHTML = diameters[e.index];
 	data_div.querySelector('img').src = "./assets/img/" + name.toLowerCase() + ".jpg";
@@ -335,12 +335,12 @@ document.querySelector('[data-aggregation="sums"]').addEventListener("click", (e
 });
 
 document.querySelector('[data-aggregation="average"]').addEventListener("click", (e) => {
-	if(e.target.innerHTML === "Show Average") {
+	if(e.target.innerHTML === "Show Averages") {
 		aggr_chart.show_averages();
-		e.target.innerHTML = "Hide Average";
+		e.target.innerHTML = "Hide Averages";
 	} else {
 		aggr_chart.hide_averages();
-		e.target.innerHTML = "Show Average";
+		e.target.innerHTML = "Show Averages";
 	}
 });
 
@@ -360,7 +360,7 @@ let heatmap_data = {
 	1506277800.0: 2
 };
 
-let heatmap = new Chart({
+new Chart({
 	parent: "#chart-heatmap",
 	data: heatmap_data,
 	type: 'heatmap',
@@ -368,22 +368,35 @@ let heatmap = new Chart({
 	discrete_domains: 1  // default 0
 });
 
-document.querySelector('[data-heatmap="discrete"]').addEventListener("click", (e) => {
-	heatmap = new Chart({
-		parent: "#chart-heatmap",
-		data: heatmap_data,
-		type: 'heatmap',
-		height: 100,
-		discrete_domains: 1  // default 0
-	});
-});
+Array.prototype.slice.call(
+	document.querySelectorAll('.heatmap-mode-buttons button')
+).map(el => {
+	el.addEventListener('click', (e) => {
+		let btn = e.target;
+		let mode = btn.getAttribute('data-mode');
 
-document.querySelector('[data-heatmap="continuous"]').addEventListener("click", (e) => {
-	heatmap = new Chart({
-		parent: "#chart-heatmap",
-		data: heatmap_data,
-		type: 'heatmap',
-		height: 100
+		if(mode === 'discrete') {
+			new Chart({
+				parent: "#chart-heatmap",
+				data: heatmap_data,
+				type: 'heatmap',
+				height: 100,
+				discrete_domains: 1  // default 0
+			});
+		} else {
+			new Chart({
+				parent: "#chart-heatmap",
+				data: heatmap_data,
+				type: 'heatmap',
+				height: 100
+			});
+		}
+
+		Array.prototype.slice.call(
+			btn.parentNode.querySelectorAll('button')).map(el => {
+			el.classList.remove('active');
+		});
+		btn.classList.add('active');
 	});
 });
 

@@ -205,9 +205,9 @@
               </h6>
               <div id="chart-heatmap" class="border"
                 style="overflow: scroll; text-align: center; padding: 20px;"></div>
-              <div class="mt-1 mx-auto" role="group">
-                <button type="button" class="btn btn-sm btn-secondary active" data-heatmap="discrete">Discrete</button>
-                <button type="button" class="btn btn-sm btn-secondary" data-heatmap="continuous">Continuous</button>
+              <div class="heatmap-mode-buttons btn-group mt-1 mx-auto" role="group">
+                <button type="button" class="btn btn-sm btn-secondary active" data-mode="discrete">Discrete</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-mode="continuous">Continuous</button>
               </div>
               <pre><code class="hljs javascript margin-vertical-px">  let heatmap = new Chart({
     parent: "#heatmap",
@@ -249,8 +249,8 @@
       </svg>
     </a>
 
-    <!--<script src="../dist/frappe-charts.min.js"></script>-->
-    <script src="assets/js/frappe-charts.min.js"></script>
+    <script src="../dist/frappe-charts.min.js"></script>
+    <!--<script src="assets/js/frappe-charts.min.js"></script>-->
     <script src="assets/js/index.js"></script>
   </body>
 </html>
