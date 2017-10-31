@@ -1,3 +1,6 @@
+
+<img src="https://github.com/frappe/design/blob/master/logos/frappe-charts-symbol.svg" width="50px" height="auto">
+
 # Frappé Charts
 GitHub-inspired simple and responsive charts with zero dependencies.
 
