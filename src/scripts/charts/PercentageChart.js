@@ -35,9 +35,7 @@ export default class PercentageChart extends BaseChart {
 	make_draw_area() {
 		this.chart_div = $.create('div', {
 			className: 'div',
-			inside: this.chart_wrapper,
-			width: this.base_width,
-			height: this.base_height
+			inside: this.chart_wrapper
 		});
 
 		this.chart = $.create('div', {
@@ -96,8 +94,10 @@ export default class PercentageChart extends BaseChart {
 		this.slice_totals.map((total, i) => {
 			let slice = $.create('div', {
 				className: `progress-bar background ${this.colors[i]}`,
-				style: `width: ${total*100/this.grand_total}%`,
-				inside: this.percentage_bar
+				inside: this.percentage_bar,
+				styles: {
+					width: total*100/this.grand_total + "%"
+				}
 			});
 			this.slices.push(slice);
 		});

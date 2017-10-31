@@ -44,7 +44,8 @@ let bar_composite_chart = new Chart ({
 	data: bar_composite_data,
 	type: 'bar',
 	height: 180,
-	is_navigable: 1
+	is_navigable: 1,
+	is_series: 1
 	// region_fill: 1
 });
 
@@ -52,7 +53,8 @@ let line_composite_chart = new Chart ({
 	parent: "#chart-composite-2",
 	data: line_composite_data,
 	type: 'line',
-	height: 180
+	height: 180,
+	is_series: 1
 });
 
 bar_composite_chart.parent.addEventListener('data-select', (e) => {
@@ -87,7 +89,8 @@ let type_chart = new Chart({
 	title: "My Awesome Chart",
 	data: type_data,
 	type: 'bar',
-	height: 250
+	height: 250,
+	// is_series: 1
 });
 
 Array.prototype.slice.call(

@@ -137,7 +137,7 @@ export default class AxisChart extends BaseChart {
 
 		this.x_axis_group.textContent = '';
 		this.x.map((point, i) => {
-			let space_taken = this.get_strwidth(point);
+			let space_taken = this.get_strwidth(point) + 2;
 			if(space_taken > allowed_space) {
 				if(this.is_series) {
 					// Skip some axis lines if X axis is a series

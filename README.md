@@ -14,6 +14,12 @@
 More information at the website: https://frappe.github.io/charts
 
 ### Usage
+
+Install
+```
+npm install frappe-charts
+```
+
 Include it in your html:
 ```
 <script src="frappe-charts.min.js"></script>

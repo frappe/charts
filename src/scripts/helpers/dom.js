@@ -25,8 +25,13 @@ $.create = (tag, o) => {
 			var ref = $(val);
 			ref.parentNode.insertBefore(element, ref);
 			element.appendChild(ref);
-		}
-		else if (i in element) {
+		} else if (i === "styles") {
+			if(typeof val === "object") {
+				Object.keys(val).map(prop => {
+					element.style[prop] = val[prop];
+				});
+			}
+		} else if (i in element ) {
 			element[i] = val;
 		}
 		else {

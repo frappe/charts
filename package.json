@@ -1,5 +1,5 @@
 {
-  "name": "charts",
+  "name": "frappe-charts",
   "version": "0.0.1",
   "description": "https://frappe.github.io/charts",
   "main": "dist/frappe-charts.js",
