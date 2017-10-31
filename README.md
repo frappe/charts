@@ -48,4 +48,4 @@ If you want to contribute:
 License: MIT
 
 ------------------
-Project maintained by [frappe](https://github.com/frappe)
+Made with ♥ by [pratu16x7](https://github.com/pratu16x7). Project maintained by [frappe](https://github.com/frappe)
