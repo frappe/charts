@@ -1,9 +1,17 @@
-# Frappé Charts
-GitHub-inspired simple and responsive charts with zero dependencies.
+<div align="center">
+    <img src="https://github.com/frappe/design/blob/master/logos/frappe-charts-symbol.svg" width="100px" height="auto">
+    <h1>
+      <a href="https://frappe.github.io/charts">
+        Frappé Charts
+      </a>
+    </h1>
+    <p>
+        GitHub-inspired simple and responsive charts with zero dependencies.
+    </p>
+    <img src="https://user-images.githubusercontent.com/5196925/32153733-4a747898-bd52-11e7-9248-15ba307d3142.gif">
+</div>
 
-https://frappe.github.io/charts
-
-![graphs](https://user-images.githubusercontent.com/5196925/32153733-4a747898-bd52-11e7-9248-15ba307d3142.gif)
+More information at the website: https://frappe.github.io/charts
 
 ### Usage
 Include it in your html:
