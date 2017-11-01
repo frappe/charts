@@ -116,7 +116,7 @@ export default class BaseChart {
 
 	set_width() {
 		let special_values_width = 0;
-		this.specific_values.map(val => {
+		this.specific_values.forEach(val => {
 			if(this.get_strwidth(val.title) > special_values_width) {
 				special_values_width = this.get_strwidth(val.title) - 40;
 			}
@@ -182,7 +182,7 @@ export default class BaseChart {
 
 	show_summary() {}
 	show_custom_summary() {
-		this.summary.map(d => {
+		this.summary.forEach(d => {
 			let stats = $.create('div', {
 				className: 'stats',
 				innerHTML: `<span class="indicator ${d.color}">${d.title}: ${d.value}</span>`
@@ -233,7 +233,7 @@ export default class BaseChart {
 			index: index
 		};
 		let y = this.y[0];
-		['svg_units', 'y_tops', 'values'].map(key => {
+		['svg_units', 'y_tops', 'values'].forEach(key => {
 			let data_key = key.slice(0, key.length-1);
 			data_point[data_key] = y[key][index];
 		});

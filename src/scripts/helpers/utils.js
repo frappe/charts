@@ -5,7 +5,7 @@ export function float_2(d) {
 export function arrays_equal(arr1, arr2) {
 	if(arr1.length !== arr2.length) return false;
 	let are_equal = true;
-	arr1.map((d, i) => {
+	arr1.forEach((d, i) => {
 		if(arr2[i] !== d) are_equal = false;
 	});
 	return are_equal;

@@ -187,7 +187,7 @@ export default class Heatmap extends BaseChart {
 		this.months.pop();
 		this.month_start_points.pop();
 
-		this.month_start_points.map((start, i) => {
+		this.month_start_points.forEach((start, i) => {
 			let month_name =  this.month_names[this.months[i]].substring(0, 3);
 
 			$.createSVG('text', {
@@ -205,7 +205,7 @@ export default class Heatmap extends BaseChart {
 	make_graph_components() {
 		Array.prototype.slice.call(
 			this.container.querySelectorAll('.graph-stats-container, .sub-title, .title')
-		).map(d => {
+		).forEach(d => {
 			d.style.display = 'None';
 		});
 		this.chart_wrapper.style.marginTop = '0px';
@@ -215,7 +215,7 @@ export default class Heatmap extends BaseChart {
 	bind_tooltip() {
 		Array.prototype.slice.call(
 			document.querySelectorAll(".data-group .day")
-		).map(el => {
+		).forEach(el => {
 			el.addEventListener('mouseenter', (e) => {
 				let count = e.target.getAttribute('data-value');
 				let date_parts = e.target.getAttribute('data-date').split('-');
@@ -249,7 +249,7 @@ export default class Heatmap extends BaseChart {
 		let distribution_step = 1 / (mapper_array.length - 1);
 		let distribution = [];
 
-		mapper_array.map((color, i) => {
+		mapper_array.forEach((color, i) => {
 			let checkpoint = data_max_value * (distribution_step * i);
 			distribution.push(checkpoint);
 		});

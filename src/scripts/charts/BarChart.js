@@ -45,7 +45,7 @@ export default class BarChart extends AxisChart {
 	}
 
 	bind_units(units_array) {
-		units_array.map(unit => {
+		units_array.forEach(unit => {
 			unit.addEventListener('click', () => {
 				let index = unit.getAttribute('data-point-index');
 				this.update_current_data_point(index);
@@ -55,11 +55,11 @@ export default class BarChart extends AxisChart {
 
 	update_overlay(unit) {
 		let attributes = [];
-		Object.keys(unit.attributes).map(index => {
+		Object.keys(unit.attributes).forEach(index => {
 			attributes.push(unit.attributes[index]);
 		});
 
-		attributes.filter(attr => attr.specified).map(attr => {
+		attributes.filter(attr => attr.specified).forEach(attr => {
 			this.overlay.setAttribute(attr.name, attr.nodeValue);
 		});
 	}

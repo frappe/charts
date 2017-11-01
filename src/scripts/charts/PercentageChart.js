@@ -55,7 +55,7 @@ export default class PercentageChart extends BaseChart {
 		this.slice_totals = [];
 		let all_totals = this.data.labels.map((d, i) => {
 			let total = 0;
-			this.data.datasets.map(e => {
+			this.data.datasets.forEach(e => {
 				total += e.values[i];
 			});
 			return [total, d];
@@ -70,7 +70,7 @@ export default class PercentageChart extends BaseChart {
 			let others = all_totals.slice(this.max_slices-1);
 
 			let sum_of_others = 0;
-			others.map(d => {sum_of_others += d[0];});
+			others.forEach(d => {sum_of_others += d[0];});
 
 			totals.push([sum_of_others, 'Rest']);
 
@@ -78,7 +78,7 @@ export default class PercentageChart extends BaseChart {
 		}
 
 		this.labels = [];
-		totals.map(d => {
+		totals.forEach(d => {
 			this.slice_totals.push(d[0]);
 			this.labels.push(d[1]);
 		});
@@ -91,7 +91,7 @@ export default class PercentageChart extends BaseChart {
 	make_graph_components() {
 		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
 		this.slices = [];
-		this.slice_totals.map((total, i) => {
+		this.slice_totals.forEach((total, i) => {
 			let slice = $.create('div', {
 				className: `progress-bar background ${this.colors[i]}`,
 				inside: this.percentage_bar,
@@ -104,7 +104,7 @@ export default class PercentageChart extends BaseChart {
 	}
 
 	bind_tooltip() {
-		this.slices.map((slice, i) => {
+		this.slices.forEach((slice, i) => {
 			slice.addEventListener('mouseenter', () => {
 				let g_off = $.offset(this.chart_wrapper), p_off = $.offset(slice);
 
@@ -123,7 +123,7 @@ export default class PercentageChart extends BaseChart {
 	show_summary() {
 		let x_values = this.formatted_labels && this.formatted_labels.length > 0
 			? this.formatted_labels : this.labels;
-		this.legend_totals.map((d, i) => {
+		this.legend_totals.forEach((d, i) => {
 			if(d) {
 				let stats = $.create('div', {
 					className: 'stats',

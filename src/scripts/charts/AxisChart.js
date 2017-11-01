@@ -22,7 +22,7 @@ export default class AxisChart extends BaseChart {
 	}
 
 	setup_values() {
-		this.data.datasets.map(d => {
+		this.data.datasets.forEach(d => {
 			d.values = d.values.map(val => (!isNaN(val) ? val : 0));
 		});
 		this.setup_x();
@@ -96,7 +96,7 @@ export default class AxisChart extends BaseChart {
 
 	setup_graph_components() {
 		this.svg_units_groups = [];
-		this.y.map((d, i) => {
+		this.y.forEach((d, i) => {
 			this.svg_units_groups[i] = $.createSVG('g', {
 				className: 'data-points data-points-' + i,
 				inside: this.draw_area
@@ -136,7 +136,7 @@ export default class AxisChart extends BaseChart {
 		let allowed_letters = allowed_space / 8;
 
 		this.x_axis_group.textContent = '';
-		this.x.map((point, i) => {
+		this.x.forEach((point, i) => {
 			let space_taken = this.get_strwidth(point) + 2;
 			if(space_taken > allowed_space) {
 				if(this.is_series) {
@@ -176,7 +176,7 @@ export default class AxisChart extends BaseChart {
 		let [width, text_end_at, axis_line_class, start_at] = this.get_y_axis_line_props();
 
 		this.y_axis_group.textContent = '';
-		this.y_axis_values.map((value, i) => {
+		this.y_axis_values.forEach((value, i) => {
 			this.y_axis_group.appendChild(
 				this.make_y_line(
 					start_at,
@@ -210,7 +210,7 @@ export default class AxisChart extends BaseChart {
 
 	draw_graph(init=false) {
 		if(this.raw_chart_args.hasOwnProperty("init") && !this.raw_chart_args.init) {
-			this.y.map((d, i) => {
+			this.y.forEach((d, i) => {
 				d.svg_units = [];
 				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
 				this.make_new_units(d, i);
@@ -222,7 +222,7 @@ export default class AxisChart extends BaseChart {
 			this.draw_new_graph_and_animate();
 			return;
 		}
-		this.y.map((d, i) => {
+		this.y.forEach((d, i) => {
 			d.svg_units = [];
 			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
 			this.make_new_units(d, i);
@@ -231,7 +231,7 @@ export default class AxisChart extends BaseChart {
 
 	draw_new_graph_and_animate() {
 		let data = [];
-		this.y.map((d, i) => {
+		this.y.forEach((d, i) => {
 			// Anim: Don't draw initial values, store them and update later
 			d.y_tops = new Array(d.values.length).fill(this.zero_line); // no value
 			data.push({values: d.values});
@@ -277,7 +277,7 @@ export default class AxisChart extends BaseChart {
 		units_group.textContent = '';
 		units_array.length = 0;
 
-		y_values.map((y, i) => {
+		y_values.forEach((y, i) => {
 			let data_unit = this.draw[unit.type](
 				x_values[i],
 				y,
@@ -298,7 +298,7 @@ export default class AxisChart extends BaseChart {
 
 	make_y_specifics() {
 		this.specific_y_group.textContent = '';
-		this.specific_values.map(d => {
+		this.specific_values.forEach(d => {
 			this.specific_y_group.appendChild(
 				this.make_y_line(
 					0,
@@ -362,8 +362,8 @@ export default class AxisChart extends BaseChart {
 		this.updating = true;
 
 		this.y_sums = new Array(this.x_axis_positions.length).fill(0);
-		this.y.map(d => {
-			d.values.map( (value, i) => {
+		this.y.forEach(d => {
+			d.values.forEach( (value, i) => {
 				this.y_sums[i] += value;
 			});
 		});
@@ -399,9 +399,9 @@ export default class AxisChart extends BaseChart {
 
 	show_averages() {
 		this.old_specific_values = this.specific_values.slice();
-		this.y.map((d, i) => {
+		this.y.forEach((d, i) => {
 			let sum = 0;
-			d.values.map(e => {sum+=e;});
+			d.values.forEach(e => {sum+=e;});
 			let average = sum/d.values.length;
 
 			this.specific_values.push({
@@ -419,11 +419,11 @@ export default class AxisChart extends BaseChart {
 		this.old_specific_values = this.specific_values.slice();
 
 		let indices_to_remove = [];
-		this.specific_values.map((d, i) => {
+		this.specific_values.forEach((d, i) => {
 			if(d.auto) indices_to_remove.unshift(i);
 		});
 
-		indices_to_remove.map(index => {
+		indices_to_remove.forEach(index => {
 			this.specific_values.splice(index, 1);
 		});
 
@@ -445,7 +445,7 @@ export default class AxisChart extends BaseChart {
 		this.no_of_extra_pts = new_x.length - this.x.length;
 
 		// Just update values prop, setup_x/y() will do the rest
-		if(new_y) this.y.map((d, i) => {d.values = new_y[i].values;});
+		if(new_y) this.y.forEach((d, i) => {d.values = new_y[i].values;});
 		if(new_x) this.x = new_x;
 
 		this.setup_x();
@@ -485,7 +485,7 @@ export default class AxisChart extends BaseChart {
 
 	add_data_point(y_point, x_point, index=this.x.length) {
 		let new_y = this.y.map(data_set => { return {values:data_set.values}; });
-		new_y.map((d, i) => { d.values.splice(index, 0, y_point[i]); });
+		new_y.forEach((d, i) => { d.values.splice(index, 0, y_point[i]); });
 		let new_x = this.x.slice();
 		new_x.splice(index, 0, x_point);
 
@@ -496,7 +496,7 @@ export default class AxisChart extends BaseChart {
 		if(this.x.length < 3) return;
 
 		let new_y = this.y.map(data_set => { return {values:data_set.values}; });
-		new_y.map((d) => { d.values.splice(index, 1); });
+		new_y.forEach((d) => { d.values.splice(index, 1); });
 		let new_x = this.x.slice();
 		new_x.splice(index, 1);
 
@@ -522,7 +522,7 @@ export default class AxisChart extends BaseChart {
 	}
 
 	animate_graphs() {
-		this.y.map((d, i) => {
+		this.y.forEach((d, i) => {
 			// Pre-prep, equilize no of positions between old and new
 			let [old_x, old_y, new_x, new_y] = this.calc_old_and_new_postions(d, i);
 			if(this.no_of_extra_pts >= 0) {
@@ -535,7 +535,7 @@ export default class AxisChart extends BaseChart {
 
 		// TODO: replace with real units
 		setTimeout(() => {
-			this.y.map((d, i) => {
+			this.y.forEach((d, i) => {
 				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
 				this.make_new_units(d, i);
 			});
@@ -568,7 +568,7 @@ export default class AxisChart extends BaseChart {
 	animate_units(d, index, old_x, old_y, new_x, new_y) {
 		let type = this.unit_args.type;
 
-		d.svg_units.map((unit, i) => {
+		d.svg_units.forEach((unit, i) => {
 			if(new_x[i] === undefined || new_y[i] === undefined) return;
 			this.elements_to_animate.push(this.animate[type](
 				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
@@ -693,7 +693,7 @@ export default class AxisChart extends BaseChart {
 
 	make_anim_y_specifics() {
 		this.specific_y_group.textContent = '';
-		this.specific_values.map((d) => {
+		this.specific_values.forEach((d) => {
 			this.add_and_animate_y_line(
 				d.title,
 				this.old_zero_line - d.value * this.old_multiplier,
@@ -726,7 +726,7 @@ export default class AxisChart extends BaseChart {
 			superimposed_positions = new_pos.concat(filler_pos);
 		}
 
-		superimposed_values.map((value, i) => {
+		superimposed_values.forEach((value, i) => {
 			add_and_animate_line(value, old_pos[i], superimposed_positions[i], i, group);
 		});
 
@@ -736,7 +736,7 @@ export default class AxisChart extends BaseChart {
 			const extra_values = new_vals.slice(old_vals.length);
 			const extra_positions = new_pos.slice(old_pos.length);
 
-			extra_values.map((value, i) => {
+			extra_values.forEach((value, i) => {
 				add_and_animate_line(value, last_line_pos, extra_positions[i], i, group);
 			});
 		}
@@ -964,7 +964,7 @@ export default class AxisChart extends BaseChart {
 		let all_values = [];
 
 		// Add in all the y values in the datasets
-		this.y.map(d => {
+		this.y.forEach(d => {
 			all_values = all_values.concat(d.values);
 		});
 
@@ -974,9 +974,9 @@ export default class AxisChart extends BaseChart {
 
 	calc_y_dependencies() {
 		this.y_min_tops = new Array(this.x_axis_positions.length).fill(9999);
-		this.y.map(d => {
+		this.y.forEach(d => {
 			d.y_tops = d.values.map( val => float_2(this.zero_line - val * this.multiplier));
-			d.y_tops.map( (y_top, i) => {
+			d.y_tops.forEach( (y_top, i) => {
 				if(y_top < this.y_min_tops[i]) {
 					this.y_min_tops[i] = y_top;
 				}
