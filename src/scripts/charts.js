@@ -16,18 +16,13 @@ import Heatmap from './charts/Heatmap';
 
 export default class Chart {
 	constructor(args) {
-		if(args.type === 'line') {
-			return new LineChart(arguments[0]);
-		} else if(args.type === 'bar') {
-			return new BarChart(arguments[0]);
-		} else if(args.type === 'scatter') {
-			return new ScatterChart(arguments[0]);
-		} else if(args.type === 'percentage') {
-			return new PercentageChart(arguments[0]);
-		} else if(args.type === 'heatmap') {
-			return new Heatmap(arguments[0]);
-		} else {
-			return new LineChart(arguments[0]);
+		switch (args.type) {
+			case 'line': return new LineChart(arguments[0]);
+			case 'bar': return new BarChart(arguments[0]);
+			case 'scatter': return new ScatterChart(arguments[0]);
+			case 'percentage': return new PercentageChart(arguments[0]);
+			case 'heatmap': return new Heatmap(arguments[0]);
+			default: return new LineChart(arguments[0]);
 		}
 	}
 }
