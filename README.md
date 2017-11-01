@@ -22,7 +22,7 @@ npm install frappe-charts
 ```
 
 Include it in your html:
-```
+```html
 <script src="frappe-charts.min.js"></script>
 ```
 
