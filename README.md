@@ -11,7 +11,8 @@
     <img src="https://user-images.githubusercontent.com/5196925/32153733-4a747898-bd52-11e7-9248-15ba307d3142.gif">
 </div>
 
-More information at the website: https://frappe.github.io/charts
+More information at the website: https://frappe.github.io/charts<br>
+Core build: ~14kb gzipped
 
 ### Usage
 
