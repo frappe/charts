@@ -21,9 +21,9 @@ Install
 npm install frappe-charts
 ```
 
-Include it in your html:
+Include it in your app:
 ```
-<script src="frappe-charts.min.js"></script>
+import Chart from 'frappe-charts';
 ```
 
 Make a new Chart:
