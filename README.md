@@ -4,7 +4,7 @@
     <p align="center">
         <p>A <b>zero-dependency</b> GitHub-inspired modern, intuitive and responsive charting library</p>
         <a href="https://frappe.github.io/charts">
-            Explore the Demos »
+            <b>Explore the Demos »</b>
         </a>
     </p>
 </div>
@@ -25,9 +25,6 @@
     <a href="https://saythanks.io/to/frappe">
         <img src="https://img.shields.io/badge/Say%20Thanks-🦉-1EAEDB.svg?style=flat-square">
     </a>
-    <a href="https://paypal.me/erpnext">
-        <img src="https://img.shields.io/badge/donate-💵-f44336.svg?style=flat-square">
-    </a>
 </p>
 
 <p align="center">
@@ -43,20 +40,22 @@
 
 #### Installation
 * Install via [`npm`](https://www.npmjs.com/get-npm):
+
   ```console
   $ npm install frappe-charts
   ```
-* ... or include in your HTML
-```html
-  <script src="https://raw.githubusercontent.com/frappe/charts/master/dist/frappe-charts.min.js"></script>
-```
+* ...or include within your HTML
+
+  ```html
+    <script src="https://raw.githubusercontent.com/frappe/charts/master/dist/frappe-charts.min.js"></script>
+  ```
 
 ### Usage
 ```js
 const data = {
-    labels: ["12 A.M. - 3 A.M.", "3 A.M. - 6 P.M.", "6 A.M. - 9 A.M",
-        "9 A.M. - 12 A.M.", "12 P.M. - 3 P.M.", "3 P.M. - 6 P.M.",
-        "6 P.M. - 9 P.M.", "9 A.M. - 12 A.M."
+    labels: ["12am - 3am", "3am - 6pm", "6am - 9 A.M",
+        "9am - 12am", "12pm - 3pm", "3pm - 6pm",
+        "6pm - 9pm", "9am - 12am"
     ],
     datasets: [
         {
