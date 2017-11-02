@@ -30,24 +30,15 @@ export function lightenDarkenColor(col,amt) {
 	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
 }
 
+/**
+ * Shuffles array in place. ES6 version
+ * @param {Array} a items An array containing the items.
+ */
 export function shuffle(array) {
-	// https://stackoverflow.com/a/2450976/6495043
-	// Awesomeness: https://bost.ocks.org/mike/shuffle/
+	//https://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array?noredirect=1&lq=1
 
-	var currentIndex = array.length, temporaryValue, randomIndex;
-
-	// While there remain elements to shuffle...
-	while (0 !== currentIndex) {
-
-		// Pick a remaining element...
-		randomIndex = Math.floor(Math.random() * currentIndex);
-		currentIndex -= 1;
-
-		// And swap it with the current element.
-		temporaryValue = array[currentIndex];
-		array[currentIndex] = array[randomIndex];
-		array[randomIndex] = temporaryValue;
+	for (let i = array.length - 1; i > 0; i--) {
+		let j = Math.floor(Math.random() * (i + 1));
+		[array[i], array[j]] = [array[j], array[i]];
 	}
-
-	return array;
 }
