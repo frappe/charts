@@ -1,56 +1,84 @@
 <div align="center">
-    <img src="https://github.com/frappe/design/blob/master/logos/frappe-charts-symbol.svg" width="100px" height="auto">
-    <h1>
-      <a href="https://frappe.github.io/charts">
-        Frappé Charts
-      </a>
-    </h1>
-    <p>
-        GitHub-inspired simple and responsive charts with zero dependencies.
+    <img src=".github/logo.png" height="256">
+    <h2>Frappé Charts</h2>
+    <p align="center">
+        <h3>A <b>zero-dependency</b> GitHub-inspired modern, intuitive and responsive charting library</h3>
+        <a href="https://frappe.github.io/charts">
+            Explore the Demos »
+        </a>
     </p>
-    <img src="https://user-images.githubusercontent.com/5196925/32153733-4a747898-bd52-11e7-9248-15ba307d3142.gif">
 </div>
 
-More information at the website: https://frappe.github.io/charts<br>
-Core build: ~14kb gzipped
+<p align="center">
+    <a href="https://www.npmjs.com/package/frappe-charts">
+        <img src="https://img.shields.io/npm/v/frappe-charts.svg?maxAge=2592000">
+    </a>
+    <a href="https://www.npmjs.com/package/frappe-charts">
+        <img src="https://img.shields.io/npm/dm/frappe-charts.svg?maxAge=2592000">
+    </a>
+    <a href="https://www.npmjs.com/package/frappe-charts">
+        <img src="https://img.shields.io/npm/dt/frappe-charts.svg?maxAge=2592000">
+    </a>
+    <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.js">
+        <img src="http://img.badgesize.io/frappe/charts/master/dist/js/frappe-charts.min.js?compression=gzip&label=size">
+    </a>
+    <a href="https://saythanks.io/to/frappe">
+        <img src="https://img.shields.io/badge/Say%20Thanks-🦉-1EAEDB.svg?style=flat-square">
+    </a>
+    <a href="https://paypal.me/erpnext">
+        <img src="https://img.shields.io/badge/donate-💵-f44336.svg?style=flat-square">
+    </a>
+</p>
+
+<p align="center">
+    <a href="https://frappe.github.io/charts">
+        <img src=".github/example.gif" height="300">
+    </a>
+</p>
+
+### Table of Contents
+* [Installation](#installation)
+* [Usage](#usage)
+* [License](#license)
+
+#### Installation
+* Install via [`npm`](https://www.npmjs.com/get-npm):
+  ```console
+  $ npm install frappe-charts
+  ```
+* ... or include in your HTML
+```html
+  <script src="https://raw.githubusercontent.com/frappe/charts/master/dist/frappe-charts.min.js"></script>
+```
 
 ### Usage
-
-Install
-```
-npm install frappe-charts
-```
-
-Include it in your html:
-```html
-<script src="frappe-charts.min.js"></script>
-```
-
-Make a new Chart:
 ```js
-let data = {
-  labels: ["12am-3am", "3am-6am", "6am-9am", "9am-12pm",
-    "12pm-3pm", "3pm-6pm", "6pm-9pm", "9pm-12am"],
+const data = {
+    labels: ["12 A.M. - 3 A.M.", "3 A.M. - 6 P.M.", "6 A.M. - 9 A.M",
+        "9 A.M. - 12 A.M.", "12 P.M. - 3 P.M.", "3 P.M. - 6 P.M.",
+        "6 P.M. - 9 P.M.", "9 A.M. - 12 A.M."
+    ],
+    datasets: [
+        {
+            title: "Some Data",
+            color: "light-blue",
+            values: [25, 40, 30, 35, 8, 52, 17, -4]
+        },
+        {
+            title: "Another Set",
+            color: "violet",
+            values: [25, 50, -10, 15, 18, 32, 27, 14]
+        }
+    ]
+}
 
-  datasets: [
-    {
-      title: "Some Data", color: "light-blue",
-      values: [25, 40, 30, 35, 8, 52, 17, -4]
-    },
-    {
-      title: "Another Set", color: "violet",
-      values: [25, 50, -10, 15, 18, 32, 27, 14]
-    }
-  ]
-};
-
-let chart = new Chart({
-  parent: "#chart",
-  title: "My Awesome Chart",
-  data: data,
-  type: 'bar', // or 'line', 'scatter', 'percentage'
-  height: 250
-});
+const chart = new Chart({
+    parent: '#chart',
+    title: "My Awesome Chart",
+    data: data,
+    type: 'bar', // or 'line', 'scatter', 'percentage'
+    height: 250
+})
 ```
 
 If you want to contribute:
@@ -60,7 +88,8 @@ If you want to contribute:
 3. `npm install`
 4. `npm run dev`
 
-License: MIT
+#### License
+This repository has been released under the [MIT License](LICENSE)
 
 ------------------
 Made with ♥ by [pratu16x7](https://github.com/pratu16x7). Project maintained by [frappe](https://github.com/frappe)
