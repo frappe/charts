@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="https://raw.githubusercontent.com/frappe/design/master/logos/frappe-charts-symbol.svg" height="128">
+    <img src="https://github.com/frappe/design/blob/master/logos/frappe-charts-symbol.svg" height="128">
     <h2>Frappé Charts</h2>
     <p align="center">
         <p>GitHub-inspired modern, intuitive and responsive charts with zero-dependency</p>
