@@ -20,7 +20,7 @@
         <img src="https://img.shields.io/npm/dt/frappe-charts.svg?maxAge=2592000">
     </a>
     <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.js">
-        <img src="http://img.badgesize.io/frappe/charts/master/dist/js/frappe-charts.min.js?compression=gzip&label=size">
+        <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.js.svg?compression=gzip">
     </a>
     <a href="https://saythanks.io/to/frappe">
         <img src="https://img.shields.io/badge/Say%20Thanks-🦉-1EAEDB.svg?style=flat-square">
