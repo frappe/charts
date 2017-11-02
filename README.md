@@ -2,7 +2,7 @@
     <img src=".github/logo.png" height="256">
     <h2>Frappé Charts</h2>
     <p align="center">
-        <h3>A <b>zero-dependency</b> GitHub-inspired modern, intuitive and responsive charting library</h3>
+        <p>A <b>zero-dependency</b> GitHub-inspired modern, intuitive and responsive charting library</p>
         <a href="https://frappe.github.io/charts">
             Explore the Demos »
         </a>
