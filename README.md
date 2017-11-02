@@ -29,7 +29,7 @@
 
 <p align="center">
     <a href="https://frappe.github.io/charts">
-        <img src=".github/example.gif" height="300">
+        <img src=".github/example.gif">
     </a>
 </p>
 
@@ -50,7 +50,7 @@
     <script src="https://raw.githubusercontent.com/frappe/charts/master/dist/frappe-charts.min.js"></script>
   ```
 
-### Usage
+#### Usage
 ```js
 const data = {
     labels: ["12am - 3am", "3am - 6pm", "6am - 9 A.M",
