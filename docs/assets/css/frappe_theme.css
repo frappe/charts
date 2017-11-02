@@ -4,7 +4,7 @@ Custom CSS
 
 ---------------------------------------*/
 body {
-  font-family: "Rubik", sans-serif;
+  font-family: "proxima-nova", sans-serif;
   font-size: 15px;
   color: #6c7680;
   text-rendering: optimizeLegibility !important;
@@ -13,7 +13,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 p.lead {
-  font-family: "Rubik", sans-serif;
+  font-family: "proxima-nova", sans-serif;
 }
 h1,
 h2,
@@ -28,13 +28,13 @@ h6,
 .h6,
 .sans,
 blockquote {
-  font-family: "Rubik", sans-serif;
+  font-family: "proxima-nova", sans-serif;
   color: #36414C;
 }
 button,
 .button,
 .btn {
-  font-family: "Rubik", sans-serif;
+  font-family: "proxima-nova", sans-serif;
 }
 .page-header-block,
 .page-header-actions {
@@ -98,7 +98,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-weight: 500;
+  font-weight: 700;
 }
 p.description,
 p.description a {
@@ -184,7 +184,9 @@ blockquote p {
   padding: 130px 0px 100px;
   margin-top: -60px;
 }
-
+h1 {
+  font-size: 2.13em;
+}
 .navbar {
   background-color: transparent;
 }
@@ -243,7 +245,7 @@ blockquote p {
 }
 .hero {
   padding: 70px 0;
-  font-size: 1em;
+  font-size: 1.6em;
   font-weight: 300;
   text-align: center;
 }
