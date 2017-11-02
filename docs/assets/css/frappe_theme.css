@@ -184,9 +184,7 @@ blockquote p {
   padding: 130px 0px 100px;
   margin-top: -60px;
 }
-h1 {
-  font-size: 2.13em;
-}
+
 .navbar {
   background-color: transparent;
 }
@@ -245,7 +243,7 @@ h1 {
 }
 .hero {
   padding: 70px 0;
-  font-size: 1.6em;
+  font-size: 1em;
   font-weight: 300;
   text-align: center;
 }
