@@ -53,6 +53,8 @@ let chart = new Chart({
 });
 ```
 
+For IE11 you may use this http://jsbin.com/guvuvav/1/edit?html,js,output
+
 If you want to contribute:
 
 1. Clone this repo.
