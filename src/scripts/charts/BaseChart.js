@@ -4,12 +4,10 @@ import Chart from '../charts';
 
 export default class BaseChart {
 	constructor({
-		parent = "",
 		height = 240,
 
 		title = '', subtitle = '',
 
-		data = {},
 		format_lambdas = {},
 
 		summary = [],
@@ -17,7 +15,10 @@ export default class BaseChart {
 		is_navigable = 0,
 		has_legend = 0,
 
-		type = '' // eslint-disable-line no-unused-vars
+		type = '', // eslint-disable-line no-unused-vars
+
+		parent,
+		data
 	}) {
 		this.raw_chart_args = arguments[0];
 
@@ -81,6 +82,10 @@ export default class BaseChart {
 	}
 
 	setup() {
+		if(!this.parent) {
+			console.error("No parent element to render on was provided.");
+			return;
+		}
 		this.bind_window_events();
 		this.refresh(true);
 	}
