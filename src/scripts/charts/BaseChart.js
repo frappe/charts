@@ -38,7 +38,7 @@ export default class BaseChart {
 		}
 		this.has_legend = has_legend;
 
-		this.chart_types = ['line', 'scatter', 'bar', 'percentage', 'heatmap'];
+		this.chart_types = ['line', 'scatter', 'bar', 'percentage', 'heatmap','pie'];
 
 		this.set_margins(height);
 	}
@@ -51,10 +51,11 @@ export default class BaseChart {
 
 		// Only across compatible types
 		let compatible_types = {
-			bar: ['line', 'scatter', 'percentage'],
-			line: ['scatter', 'bar', 'percentage'],
-			scatter: ['line', 'bar', 'percentage'],
-			percentage: ['bar', 'line', 'scatter'],
+			bar: ['line', 'scatter', 'percentage','pie'],
+			line: ['scatter', 'bar', 'percentage','pie'],
+			pie: ['line', 'scatter', 'percentage','bar'],
+			scatter: ['line', 'bar', 'percentage','pie'],
+			percentage: ['bar', 'line', 'scatter','pie'],
 			heatmap: []
 		};
 
