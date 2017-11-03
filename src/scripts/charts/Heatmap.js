@@ -124,7 +124,8 @@ export default class Heatmap extends BaseChart {
 			let data_value = 0;
 			let color_index = 0;
 
-			let timestamp = Math.floor(current_date.getTime()/1000).toFixed(1);
+			let current_timestamp = current_date.getTime()/1000;
+			let timestamp = Math.floor(current_timestamp - (current_timestamp % 86400)).toFixed(1);
 
 			if(this.data[timestamp]) {
 				data_value = this.data[timestamp];
