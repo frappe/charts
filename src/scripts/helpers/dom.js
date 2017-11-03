@@ -124,14 +124,6 @@ $.transform = (element, style)=>{
 	element.style.oTransform = style;
 };
 $.animateSVG = (element, props, dur, easing_type="linear", type=undefined, old_values={}) => {
-	let easing = {
-		ease: "0.25 0.1 0.25 1",
-		linear: "0 0 1 1",
-		// easein: "0.42 0 1 1",
-		easein: "0.1 0.8 0.2 1",
-		easeout: "0 0 0.58 1",
-		easeinout: "0.42 0 0.58 1"
-	};
 
 	let anim_element = element.cloneNode(true);
 	let new_element = element.cloneNode(true);

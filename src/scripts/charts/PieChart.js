@@ -18,7 +18,7 @@ export default class PieChart extends BaseChart {
 		this.isAnimate = false;
 		this.colors = args.colors;
 		this.startAngle = args.startAngle || 0;
-		this.clockWise = args.clockWise || true;
+		this.clockWise = args.clockWise || false;
 		if(!this.colors || this.colors.length < this.data.labels.length) {
 			this.colors = ['#7cd6fd', '#5e64ff', '#743ee2', '#ff5858', '#ffa00a',
 				'#FEEF72', '#28a745', '#98d85b', '#b554ff', '#ffa3ef'];
@@ -86,8 +86,9 @@ export default class PieChart extends BaseChart {
 		let curAngle = 180 - this.startAngle;
 		this.slice_totals.map((total, i) => {
 			const startAngle = curAngle;
-			const diffAngle = (total / this.grand_total) * FULL_ANGLE;
-			const endAngle = curAngle = clockWise ? curAngle - diffAngle : curAngle + diffAngle;
+			const originDiffAngle = (total / this.grand_total) * FULL_ANGLE;
+			const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
+			const endAngle = curAngle = curAngle + diffAngle;
 			const startPosition = PieChart.getPositionByAngle(startAngle,radius);
 			const endPosition = PieChart.getPositionByAngle(endAngle,radius);
 			const prevProperty = init && prevSlicesProperties[i];
