@@ -4,7 +4,7 @@
     <p align="center">
         <p>GitHub-inspired modern, intuitive and responsive charts with zero dependencies</p>
         <a href="https://frappe.github.io/charts">
-            <b>Explore the Demos »</b>
+            <b>Explore Demos »</b>
         </a>
     </p>
 </div>
@@ -36,7 +36,7 @@
     </a>
 </p>
 
-### Table of Contents
+### Contents
 * [Installation](#installation)
 * [Usage](#usage)
 * [License](#license)
@@ -56,9 +56,8 @@
 #### Usage
 ```js
 const data = {
-    labels: ["12am - 3am", "3am - 6pm", "6am - 9 A.M",
-        "9am - 12am", "12pm - 3pm", "3pm - 6pm",
-        "6pm - 9pm", "9am - 12am"
+    labels: ["12am-3am", "3am-6pm", "6am-9am", "9am-12am",
+        "12pm-3pm", "3pm-6pm", "6pm-9pm", "9am-12am"
     ],
     datasets: [
         {
