@@ -10,15 +10,6 @@
 </div>
 
 <p align="center">
-    <a href="https://www.npmjs.com/package/frappe-charts">
-        <img src="https://img.shields.io/npm/v/frappe-charts.svg?maxAge=2592000">
-    </a>
-    <a href="https://www.npmjs.com/package/frappe-charts">
-        <img src="https://img.shields.io/npm/dm/frappe-charts.svg?maxAge=2592000">
-    </a>
-    <a href="https://www.npmjs.com/package/frappe-charts">
-        <img src="https://img.shields.io/npm/dt/frappe-charts.svg?maxAge=2592000">
-    </a>
     <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.js">
         <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.js.svg?compression=gzip">
     </a>
