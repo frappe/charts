@@ -22,12 +22,6 @@
     <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.js">
         <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.js.svg?compression=gzip">
     </a>
-    <a href="https://saythanks.io/to/frappe">
-        <img src="https://img.shields.io/badge/Say%20Thanks-🦉-1EAEDB.svg?style=flat-square">
-    </a>
-    <a href="https://www.paypal.me/ERPNext">
-        <img src="https://img.shields.io/badge/donate-💵-f44336.svg?style=flat-square">
-    </a>
 </p>
 
 <p align="center">
