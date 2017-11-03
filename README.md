@@ -44,7 +44,7 @@
 * ...or include within your HTML
 
   ```html
-    <script src="https://raw.githubusercontent.com/frappe/charts/master/dist/frappe-charts.min.js"></script>
+    <script src="https://unpkg.com/frappe-charts@0.0.1/dist/frappe-charts.min.js"></script>
   ```
 
 #### Usage
