@@ -48,7 +48,7 @@ export default class Heatmap extends BaseChart {
 	}
 
 	set_width() {
-		this.base_width = (this.no_of_cols) * 12;
+		this.base_width = (this.no_of_cols + 3) * 12 ;
 
 		if(this.discrete_domains) {
 			this.base_width += (12 * 12);

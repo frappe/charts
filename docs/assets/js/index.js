@@ -373,23 +373,19 @@ Array.prototype.slice.call(
 	el.addEventListener('click', (e) => {
 		let btn = e.target;
 		let mode = btn.getAttribute('data-mode');
+		let discrete_domains = 0;
 
 		if(mode === 'discrete') {
-			new Chart({
-				parent: "#chart-heatmap",
-				data: heatmap_data,
-				type: 'heatmap',
-				height: 100,
-				discrete_domains: 1  // default 0
-			});
-		} else {
-			new Chart({
-				parent: "#chart-heatmap",
-				data: heatmap_data,
-				type: 'heatmap',
-				height: 100
-			});
+			discrete_domains = 1;
 		}
+
+		new Chart({
+			parent: "#chart-heatmap",
+			data: heatmap_data,
+			type: 'heatmap',
+			height: 115,
+			discrete_domains: discrete_domains
+		});
 
 		Array.prototype.slice.call(
 			btn.parentNode.querySelectorAll('button')).map(el => {
