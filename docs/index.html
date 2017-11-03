@@ -125,6 +125,18 @@
                 <button type="button" class="btn btn-sm btn-secondary" data-update="add">Add Value</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-update="remove">Remove Value</button>
               </div>
+              <pre><code class="hljs javascript margin-vertical-px">  ...
+    // Include specific Y values in input data to be displayed as lines
+    // (before passing data to a new chart):
+
+    data.specific_values = [
+      {
+        title: "Altitude",
+        line_type: "dashed", // or "solid"
+        value: 38
+      }
+    ]
+  ...</code></pre>
             </div>
           </div>
 
