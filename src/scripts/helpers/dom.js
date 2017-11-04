@@ -116,6 +116,7 @@ $.runSVGAnimation = (svg_container, elements) => {
 
 	return anim_svg;
 };
+
 $.transform = (element, style)=>{
 	element.style.transform = style;
 	element.style.webkitTransform = style;
@@ -123,10 +124,12 @@ $.transform = (element, style)=>{
 	element.style.mozTransform = style;
 	element.style.oTransform = style;
 };
+
 $.animateSVG = (element, props, dur, easing_type="linear", type=undefined, old_values={}) => {
 
 	let anim_element = element.cloneNode(true);
 	let new_element = element.cloneNode(true);
+
 	for(var attributeName in props) {
 		let animate_element;
 		if(attributeName === 'transform') {
@@ -136,6 +139,7 @@ $.animateSVG = (element, props, dur, easing_type="linear", type=undefined, old_v
 		}
 		let current_value = old_values[attributeName] || element.getAttribute(attributeName);
 		let value = props[attributeName];
+
 		let anim_attr = {
 			attributeName: attributeName,
 			from: current_value,

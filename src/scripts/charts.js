@@ -21,7 +21,7 @@ const chartTypes = {
 	scatter: ScatterChart,
 	percentage: PercentageChart,
 	heatmap: Heatmap,
-	pie:PieChart
+	pie: PieChart
 };
 
 function getChartByType(chartType = 'line', options) {

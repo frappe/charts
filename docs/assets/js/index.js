@@ -88,7 +88,7 @@ let type_chart = new Chart({
 	parent: "#chart-types",
 	title: "My Awesome Chart",
 	data: type_data,
-	type: 'pie',
+	type: 'bar',
 	height: 250,
 	// is_series: 1
 });

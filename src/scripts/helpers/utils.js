@@ -17,7 +17,7 @@ function limitColor(r){
 	return r;
 }
 
-export function LightenDarkenColor(col,amt) {
+export function lightenDarkenColor(col,amt) {
 	let usePound = false;
 	if (col[0] == "#") {
 		col = col.slice(1);

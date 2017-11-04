@@ -1,6 +1,6 @@
 import BaseChart from './BaseChart';
 import $ from '../helpers/dom';
-import {LightenDarkenColor} from '../helpers/utils';
+import { lightenDarkenColor } from '../helpers/utils';
 const ANGLE_RATIO = Math.PI / 180;
 const FULL_ANGLE = 360;
 
@@ -119,13 +119,13 @@ export default class PieChart extends BaseChart {
 				angle:diffAngle
 			});
 			if(init){
-				this.elements_to_animate.push([{unit: slice, array: this.slices, index: this.slices.length - 1}, 
-					{d:this.makeArcPath(startPosition,endPosition)}, 
+				this.elements_to_animate.push([{unit: slice, array: this.slices, index: this.slices.length - 1},
+					{d:this.makeArcPath(startPosition,endPosition)},
 					650, "easein",null,{
 						d:curPath
 					}]);
 			}
-			
+
 		});
 		if(init){
 			this.run_animation();
@@ -152,7 +152,7 @@ export default class PieChart extends BaseChart {
 			}
 		}, 650);
 	}
-	
+
 	calTranslateByAngle(property){
 		const{radius,hoverRadio} = this;
 		const position = PieChart.getPositionByAngle(property.startAngle+(property.angle / 2),radius);
@@ -162,7 +162,7 @@ export default class PieChart extends BaseChart {
 		if(!path) return;
 		if(flag){
 			$.transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
-			path.setAttribute('fill',LightenDarkenColor(this.colors[i],50));
+			path.setAttribute('fill',lightenDarkenColor(this.colors[i],50));
 			let g_off = $.offset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
