@@ -28,6 +28,7 @@ export default [
 		plugins: [
 			postcss({
 				extensions: [ '.less' ],
+				extract: 'dist/frappe-charts.min.css',
 				plugins: [
 					nested(),
 					cssnext({ warnForDuplicates: false }),

@@ -22,7 +22,7 @@ export default class BaseChart {
 	}) {
 		this.raw_chart_args = arguments[0];
 
-		this.parent = document.querySelector(parent);
+		this.parent = typeof parent === 'String' ? document.querySelector(parent) : parent;
 		this.title = title;
 		this.subtitle = subtitle;
 
