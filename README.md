@@ -62,7 +62,7 @@ const chart = new Chart({
     parent: '#chart',
     title: "My Awesome Chart",
     data: data,
-    type: 'bar', // or 'line', 'scatter', 'percentage'
+    type: 'bar', // or 'line', 'scatter', 'pie', 'percentage'
     height: 250
 })
 ```
