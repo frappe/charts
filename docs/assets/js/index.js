@@ -100,8 +100,10 @@ Array.prototype.slice.call(
 		let btn = e.target;
 		let type = btn.getAttribute('data-type');
 
-		type_chart = type_chart.get_different_chart(type);
-
+		let newChart = type_chart.get_different_chart(type);
+		if(newChart){
+			type_chart = newChart;
+		}
 		Array.prototype.slice.call(
 			btn.parentNode.querySelectorAll('button')).map(el => {
 			el.classList.remove('active');
@@ -418,3 +420,5 @@ function shuffle(array) {
 
 	return array;
 }
+
+
