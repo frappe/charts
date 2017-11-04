@@ -400,8 +400,7 @@ export default class AxisChart extends BaseChart {
 	show_averages() {
 		this.old_specific_values = this.specific_values.slice();
 		this.y.forEach((d, i) => {
-			let sum = 0;
-			d.values.forEach(e => {sum+=e;});
+			let sum = d.values.reduce((a, b) => a + b, 0);
 			let average = sum/d.values.length;
 
 			this.specific_values.push({

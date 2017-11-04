@@ -54,10 +54,7 @@ export default class PercentageChart extends BaseChart {
 	setup_values() {
 		this.slice_totals = [];
 		let all_totals = this.data.labels.map((d, i) => {
-			let total = 0;
-			this.data.datasets.forEach(e => {
-				total += e.values[i];
-			});
+			let total = this.data.datasets.reduce((a, b) => a + b.values[i], 0);
 			return [total, d];
 		}).filter(d => { return d[0] > 0; }); // keep only positive results
 
@@ -69,8 +66,7 @@ export default class PercentageChart extends BaseChart {
 			totals = all_totals.slice(0, this.max_slices-1);
 			let others = all_totals.slice(this.max_slices-1);
 
-			let sum_of_others = 0;
-			others.forEach(d => {sum_of_others += d[0];});
+			let sum_of_others = others.reduce((a, b) => a + b[0], 0);
 
 			totals.push([sum_of_others, 'Rest']);
 
