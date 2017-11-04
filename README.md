@@ -10,8 +10,8 @@
 </div>
 
 <p align="center">
-    <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.js">
-        <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.js.svg?compression=gzip">
+    <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.iife.js">
+        <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.iife.js.svg?compression=gzip">
     </a>
 </p>
 
@@ -35,7 +35,7 @@
 * ...or include within your HTML
 
   ```html
-    <script src="https://unpkg.com/frappe-charts@0.0.1/dist/frappe-charts.min.js"></script>
+    <script src="https://unpkg.com/frappe-charts@0.0.2/dist/frappe-charts.min.iife.js"></script>
   ```
 
 #### Usage
