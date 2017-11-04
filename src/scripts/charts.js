@@ -4,6 +4,7 @@ import BarChart from './charts/BarChart';
 import LineChart from './charts/LineChart';
 import ScatterChart from './charts/ScatterChart';
 import PercentageChart from './charts/PercentageChart';
+import PieChart from './charts/PieChart';
 import Heatmap from './charts/Heatmap';
 
 // if (ENV !== 'production') {
@@ -19,7 +20,8 @@ const chartTypes = {
 	bar: BarChart,
 	scatter: ScatterChart,
 	percentage: PercentageChart,
-	heatmap: Heatmap
+	heatmap: Heatmap,
+	pie: PieChart
 };
 
 function getChartByType(chartType = 'line', options) {

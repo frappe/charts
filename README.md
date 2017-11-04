@@ -10,20 +10,8 @@
 </div>
 
 <p align="center">
-    <a href="https://www.npmjs.com/package/frappe-charts">
-        <img src="https://img.shields.io/npm/v/frappe-charts.svg?maxAge=2592000">
-    </a>
-    <a href="https://www.npmjs.com/package/frappe-charts">
-        <img src="https://img.shields.io/npm/dm/frappe-charts.svg?maxAge=2592000">
-    </a>
-    <a href="https://www.npmjs.com/package/frappe-charts">
-        <img src="https://img.shields.io/npm/dt/frappe-charts.svg?maxAge=2592000">
-    </a>
-    <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.js">
-        <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.js.svg?compression=gzip">
-    </a>
-    <a href="https://saythanks.io/to/frappe">
-        <img src="https://img.shields.io/badge/Say%20Thanks-🦉-1EAEDB.svg?style=flat-square">
+    <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.iife.js">
+        <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.iife.js.svg?compression=gzip">
     </a>
 </p>
 
@@ -47,7 +35,7 @@
 * ...or include within your HTML
 
   ```html
-    <script src="https://raw.githubusercontent.com/frappe/charts/master/dist/frappe-charts.min.js"></script>
+    <script src="https://unpkg.com/frappe-charts@0.0.3/dist/frappe-charts.min.iife.js"></script>
   ```
 
 #### Usage
@@ -74,7 +62,7 @@ const chart = new Chart({
     parent: '#chart',
     title: "My Awesome Chart",
     data: data,
-    type: 'bar', // or 'line', 'scatter', 'percentage'
+    type: 'bar', // or 'line', 'scatter', 'pie', 'percentage'
     height: 250
 })
 ```
