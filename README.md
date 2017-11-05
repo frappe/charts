@@ -32,12 +32,12 @@
   ```console
   $ npm install frappe-charts
   ```
-  
+
   and include in your project:
   ```js
-  import Chart from "frappe-charts"
+  import Chart from "frappe-charts/dist/frappe-charts.min.esm"
   ```
-  
+
 * ...or include within your HTML
 
   ```html
@@ -84,5 +84,5 @@ If you want to contribute:
 This repository has been released under the [MIT License](LICENSE)
 
 ------------------
-Made with ♥ by [pratu16x7](https://github.com/pratu16x7). Awesome logo by [raghukamath](https://github.com/raghukamath). 
+Made with ♥ by [pratu16x7](https://github.com/pratu16x7). Awesome logo by [raghukamath](https://github.com/raghukamath).
 Project maintained by [frappe](https://github.com/frappe).
