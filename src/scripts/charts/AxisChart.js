@@ -1,5 +1,5 @@
 import $ from '../helpers/dom';
-import { float_2, arrays_equal } from '../helpers/utils';
+import { float_2, arrays_equal, get_string_width, get_bar_height_and_y_attr } from '../helpers/utils';
 import BaseChart from './BaseChart';
 
 export default class AxisChart extends BaseChart {
@@ -19,6 +19,8 @@ export default class AxisChart extends BaseChart {
 			'yellow', 'light-blue', 'light-green', 'purple', 'magenta'];
 
 		this.zero_line = this.height;
+
+		this.old_values = {};
 	}
 
 	setup_values() {
@@ -113,6 +115,7 @@ export default class AxisChart extends BaseChart {
 
 	// make VERTICAL lines for x values
 	make_x_axis(animate=false) {
+		let char_width = 8;
 		let start_at, height, text_start_at, axis_line_class = '';
 		if(this.x_axis_mode === 'span') {		// long spanning lines
 			start_at = -7;
@@ -137,7 +140,7 @@ export default class AxisChart extends BaseChart {
 
 		this.x_axis_group.textContent = '';
 		this.x.map((point, i) => {
-			let space_taken = this.get_strwidth(point) + 2;
+			let space_taken = get_string_width(point, char_width) + 2;
 			if(space_taken > allowed_space) {
 				if(this.is_series) {
 					// Skip some axis lines if X axis is a series
@@ -986,30 +989,6 @@ export default class AxisChart extends BaseChart {
 		// this.make_tooltip();
 	}
 
-	get_bar_height_and_y_attr(y_top) {
-		let height, y;
-		if (y_top <= this.zero_line) {
-			height = this.zero_line - y_top;
-			y = y_top;
-
-			// In case of invisible bars
-			if(height === 0) {
-				height = this.height * 0.01;
-				y -= height;
-			}
-		} else {
-			height = y_top - this.zero_line;
-			y = this.zero_line;
-
-			// In case of invisible bars
-			if(height === 0) {
-				height = this.height * 0.01;
-			}
-		}
-
-		return [height, y];
-	}
-
 	setup_utils() {
 		this.draw = {
 			'bar': (x, y_top, args, color, index, dataset_index, no_of_datasets) => {
@@ -1019,7 +998,7 @@ export default class AxisChart extends BaseChart {
 				let width = total_width / no_of_datasets;
 				let current_x = start_x + width * dataset_index;
 
-				let [height, y] = this.get_bar_height_and_y_attr(y_top);
+				let [height, y] = get_bar_height_and_y_attr(y_top, this.zero_line, this.height);
 
 				return $.createSVG('rect', {
 					className: `bar mini fill ${color}`,
@@ -1046,7 +1025,7 @@ export default class AxisChart extends BaseChart {
 			'bar': (bar_obj, x, y_top, index) => {
 				let start = x - this.avg_unit_width/4;
 				let width = (this.avg_unit_width/2)/this.y.length;
-				let [height, y] = this.get_bar_height_and_y_attr(y_top);
+				let [height, y] = get_bar_height_and_y_attr(y_top, this.zero_line, this.height);
 
 				x = start + (width * index);
 

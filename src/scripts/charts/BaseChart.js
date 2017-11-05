@@ -1,5 +1,6 @@
 import SvgTip from '../objects/SvgTip';
 import $ from '../helpers/dom';
+import { get_string_width } from '../helpers/utils';
 import Chart from '../charts';
 
 export default class BaseChart {
@@ -122,9 +123,11 @@ export default class BaseChart {
 
 	set_width() {
 		let special_values_width = 0;
+		let char_width = 8;
 		this.specific_values.map(val => {
-			if(this.get_strwidth(val.title) > special_values_width) {
-				special_values_width = this.get_strwidth(val.title) - 40;
+			let str_width = get_string_width((val.title + ""), char_width);
+			if(str_width > special_values_width) {
+				special_values_width = str_width - 40;
 			}
 		});
 		this.base_width = this.parent.offsetWidth - special_values_width;
@@ -254,11 +257,6 @@ export default class BaseChart {
 		if(index === this.current_index) return;
 		this.current_index = index;
 		$.fire(this.parent, "data-select", this.get_data_point());
-	}
-
-	// Helpers
-	get_strwidth(string) {
-		return (string+"").length * 8;
 	}
 
 	// Objects
