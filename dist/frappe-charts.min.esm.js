@@ -548,6 +548,11 @@ function lightenDarkenColor(col, amt) {
 	return (usePound ? "#" : "") + (g | b << 8 | r << 16).toString(16);
 }
 
+/**
+ * Shuffles array in place. ES6 version
+ * @param {Array} a items An array containing the items.
+ */
+
 var SvgTip = function () {
 	function SvgTip(_ref) {
 		var _ref$parent = _ref.parent,
@@ -3227,6 +3232,14 @@ var Heatmap = function (_BaseChart) {
 	}]);
 	return Heatmap;
 }(BaseChart);
+
+// if ("development" !== 'production') {
+// 	// Enable LiveReload
+// 	document.write(
+// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
+// 		':35729/livereload.js?snipver=1"></' + 'script>'
+// 	);
+// }
 
 var chartTypes = {
 	line: LineChart,
