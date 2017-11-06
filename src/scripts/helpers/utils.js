@@ -2,13 +2,17 @@ export function float_2(d) {
 	return parseFloat(d.toFixed(2));
 }
 
+/**
+ * Tests if two arrays are the same. Checks elementy by element.
+ * @param {Array} arr1 
+ * @param {Array} arr2 
+ * @returns {boolean}
+ */
 export function arrays_equal(arr1, arr2) {
-	if(arr1.length !== arr2.length) return false;
-	let are_equal = true;
-	arr1.forEach((d, i) => {
-		if(arr2[i] !== d) are_equal = false;
-	});
-	return are_equal;
+	if (arr1.length !== arr2.length) return false;
+	return !arr1.some((element, index) => {
+		return element !== arr2[index];
+	})
 }
 
 export function shuffle(array) {
