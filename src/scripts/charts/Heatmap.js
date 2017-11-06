@@ -48,7 +48,7 @@ export default class Heatmap extends BaseChart {
 	}
 
 	set_width() {
-		this.base_width = (this.no_of_cols) * 12;
+		this.base_width = (this.no_of_cols + 3) * 12 ;
 
 		if(this.discrete_domains) {
 			this.base_width += (12 * 12);
@@ -124,7 +124,8 @@ export default class Heatmap extends BaseChart {
 			let data_value = 0;
 			let color_index = 0;
 
-			let timestamp = Math.floor(current_date.getTime()/1000).toFixed(1);
+			let current_timestamp = current_date.getTime()/1000;
+			let timestamp = Math.floor(current_timestamp - (current_timestamp % 86400)).toFixed(1);
 
 			if(this.data[timestamp]) {
 				data_value = this.data[timestamp];

@@ -1,11 +1,16 @@
 {
   "name": "frappe-charts",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "https://frappe.github.io/charts",
-  "main": "dist/frappe-charts.js",
+  "main": "dist/frappe-charts.min.cjs.js",
+  "module": "dist/frappe-charts.min.esm.js",
+  "browser": "dist/frappe-charts.min.iife.js",
   "directories": {
     "doc": "docs"
   },
+  "files":[
+    "dist"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "rollup -c --watch",

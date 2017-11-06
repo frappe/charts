@@ -2,6 +2,16 @@ export default function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
+const EASING = {
+	ease: "0.25 0.1 0.25 1",
+	linear: "0 0 1 1",
+	// easein: "0.42 0 1 1",
+	easein: "0.1 0.8 0.2 1",
+	easeout: "0 0 0.58 1",
+	easeinout: "0.42 0 0.58 1"
+};
+
+
 $.findNodeIndex = (node) =>
 {
 	var i = 0;
@@ -83,7 +93,6 @@ $.runSVGAnimation = (svg_container, elements) => {
 		let anim_element, new_element;
 
 		element[0] = obj.unit;
-
 		[anim_element, new_element] = $.animateSVG(...element);
 
 		new_elements.push(new_element);
@@ -108,15 +117,15 @@ $.runSVGAnimation = (svg_container, elements) => {
 	return anim_svg;
 };
 
+$.transform = (element, style)=>{
+	element.style.transform = style;
+	element.style.webkitTransform = style;
+	element.style.msTransform = style;
+	element.style.mozTransform = style;
+	element.style.oTransform = style;
+};
+
 $.animateSVG = (element, props, dur, easing_type="linear", type=undefined, old_values={}) => {
-	let easing = {
-		ease: "0.25 0.1 0.25 1",
-		linear: "0 0 1 1",
-		// easein: "0.42 0 1 1",
-		easein: "0.1 0.8 0.2 1",
-		easeout: "0 0 0.58 1",
-		easeinout: "0.42 0 0.58 1"
-	};
 
 	let anim_element = element.cloneNode(true);
 	let new_element = element.cloneNode(true);
@@ -138,7 +147,7 @@ $.animateSVG = (element, props, dur, easing_type="linear", type=undefined, old_v
 			begin: "0s",
 			dur: dur/1000 + "s",
 			values: current_value + ";" + value,
-			keySplines: easing[easing_type],
+			keySplines: EASING[easing_type],
 			keyTimes: "0;1",
 			calcMode: "spline",
 			fill: 'freeze'

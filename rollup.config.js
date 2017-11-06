@@ -10,18 +10,25 @@ import nested from 'postcss-nested';
 import cssnext from 'postcss-cssnext';
 import cssnano from 'cssnano';
 
+import pkg from './package.json';
+
 export default [
 	{
 		input: 'src/scripts/charts.js',
-		output: {
-			file: 'dist/frappe-charts.min.js',
-			format: 'iife',
-		},
-		name: 'Chart',
-		sourcemap: 'true',
+		output: [
+			{
+				file: pkg.main,
+				format: 'cjs',
+			},
+			{
+				file: pkg.module,
+				format: 'es',
+			}
+		],
 		plugins: [
 			postcss({
 				extensions: [ '.less' ],
+				extract: 'dist/frappe-charts.min.css',
 				plugins: [
 					nested(),
 					cssnext({ warnForDuplicates: false }),
@@ -39,18 +46,23 @@ export default [
 			replace({
 				exclude: 'node_modules/**',
 				ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
-			}),
-			uglify()
+			})
+			// uglify()
 		],
 	},
 	{
 		input: 'src/scripts/charts.js',
-		output: {
-			file: 'docs/assets/js/frappe-charts.min.js',
-			format: 'iife',
-		},
+		output: [
+			{
+				file: 'docs/assets/js/frappe-charts.min.js',
+				format: 'iife',
+			},
+			{
+				file: pkg.browser,
+				format: 'iife',
+			}
+		],
 		name: 'Chart',
-		sourcemap: 'false',
 		plugins: [
 			postcss({
 				extensions: [ '.less' ],
