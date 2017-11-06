@@ -960,12 +960,10 @@ export default class AxisChart extends BaseChart {
 	}
 
 	get_all_y_values() {
-		let all_values = [];
-
-		// Add in all the y values in the datasets
-		this.y.forEach(d => {
-			all_values = all_values.concat(d.values);
-		});
+		let all_values = this.y.reduce((acc, current, i) => {
+			current
+			return acc.concat(current.values);
+		}, []);
 
 		// Add in all the specific values
 		return all_values.concat(this.specific_values.map(d => d.value));
