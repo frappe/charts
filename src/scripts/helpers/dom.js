@@ -37,7 +37,7 @@ $.create = (tag, o) => {
 			element.appendChild(ref);
 		} else if (i === "styles") {
 			if(typeof val === "object") {
-				Object.keys(val).map(prop => {
+				Object.keys(val).forEach(prop => {
 					element.style[prop] = val[prop];
 				});
 			}
@@ -85,7 +85,7 @@ $.runSVGAnimation = (svg_container, elements) => {
 	let new_elements = [];
 	let anim_elements = [];
 
-	elements.map(element => {
+	elements.forEach(element => {
 		let obj = element[0];
 		let parent = obj.unit.parentNode;
 		// let index = let findNodeIndex(obj.unit);
@@ -109,7 +109,7 @@ $.runSVGAnimation = (svg_container, elements) => {
 
 	let anim_svg = svg_container.cloneNode(true);
 
-	anim_elements.map((anim_element, i) => {
+	anim_elements.forEach((anim_element, i) => {
 		anim_element[1].replaceChild(new_elements[i], anim_element[0]);
 		elements[i][0] = new_elements[i];
 	});

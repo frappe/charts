@@ -32,7 +32,7 @@ export default class LineChart extends AxisChart {
 
 	setup_path_groups() {
 		this.paths_groups = [];
-		this.y.map((d, i) => {
+		this.y.forEach((d, i) => {
 			this.paths_groups[i] = $.createSVG('g', {
 				className: 'path-group path-group-' + i,
 				inside: this.draw_area
@@ -57,7 +57,7 @@ export default class LineChart extends AxisChart {
 	}
 
 	make_paths() {
-		this.y.map((d, i) => {
+		this.y.forEach((d, i) => {
 			this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
 		});
 	}

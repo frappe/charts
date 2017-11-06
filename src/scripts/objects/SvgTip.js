@@ -57,7 +57,7 @@ export default class SvgTip {
 		this.title.innerHTML = title;
 		this.data_point_list.innerHTML = '';
 
-		this.list_values.map((set) => {
+		this.list_values.forEach((set) => {
 			let li = $.create('li', {
 				className: `border-top ${set.color || 'black'}`,
 				innerHTML: `<strong style="display: block;">${ isNaN(set.value) ? '' : set.value }</strong>
