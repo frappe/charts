@@ -96,6 +96,10 @@
               <p class="text-muted">
                 <a target="_blank" href="http://www.storytellingwithdata.com/blog/2011/07/death-to-pie-charts">Why Percentage?</a>
               </p>
+
+              <pre><code class="hljs javascript margin-vertical-px">  // colors: 'green', 'blue', 'violet', 'red', 'orange',
+  //         'yellow', 'light-blue', 'light-green', 'purple',
+  //         'magenta', 'grey', 'dark-grey'</code></pre>
             </div>
           </div>
 
@@ -193,7 +197,12 @@
                   </div>
                 </div>
               </div>
-              <pre><code class="hljs javascript margin-vertical-px">  chart.parent.addEventListener('data-select', (e) => {
+              <pre><code class="hljs javascript margin-vertical-px">  ...
+    type: 'bar',     // Bar Chart specific properties:
+    is_navigable: 1, // Navigate across bars; default 0
+  ...
+
+  chart.parent.addEventListener('data-select', (e) => {
     update_moon_data(e.index); // e contains index and value of current datapoint
   });</code></pre>
             </div>

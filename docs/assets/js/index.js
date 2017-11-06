@@ -90,7 +90,7 @@ let type_chart = new Chart({
 	data: type_data,
 	type: 'bar',
 	height: 250,
-	// is_series: 1
+	is_series: 1
 });
 
 Array.prototype.slice.call(

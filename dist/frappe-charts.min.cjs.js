@@ -3235,6 +3235,14 @@ var Heatmap = function (_BaseChart) {
 	return Heatmap;
 }(BaseChart);
 
+// if ("development" !== 'production') {
+// 	// Enable LiveReload
+// 	document.write(
+// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
+// 		':35729/livereload.js?snipver=1"></' + 'script>'
+// 	);
+// }
+
 var chartTypes = {
 	line: LineChart,
 	bar: BarChart,
