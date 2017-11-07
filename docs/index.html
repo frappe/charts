@@ -238,6 +238,12 @@
               <pre><code class="hljs javascript margin-vertical-px">  let heatmap = new Chart({
     parent: "#heatmap",
     data: heatmap_data,  // object with date/timestamp-value pairs
+    legend_colors: [     // optional
+      '#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'
+    ],
+    legend_scale: [      // optional, calculated linearly if not provided
+      0, 1, 2, 4, 5      // starting values for each color
+    ],
     type: 'heatmap',
     height: 115,
     discrete_domains: 1  // default 0

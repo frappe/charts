@@ -9,7 +9,9 @@ export default class Heatmap extends BaseChart {
 		subdomain = '',
 		data = {},
 		discrete_domains = 0,
-		count_label = ''
+		count_label = '',
+		legend_colors = null,
+		legend_scale = []
 	}) {
 		super(arguments[0]);
 
@@ -22,9 +24,10 @@ export default class Heatmap extends BaseChart {
 		this.count_label = count_label;
 
 		let today = new Date();
-		this.start = start || add_days(today, 365);
+		this.start = start || this.add_days(today, 365);
 
-		this.legend_colors = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+		this.legend_colors = legend_colors || ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+		this.legend_scale = legend_scale;
 
 		this.translate_x = 0;
 		this.setup();
@@ -71,7 +74,13 @@ export default class Heatmap extends BaseChart {
 	setup_values() {
 		this.domain_label_group.textContent = '';
 		this.data_groups.textContent = '';
-		this.distribution = this.get_distribution(this.data, this.legend_colors);
+
+		if (this.legend_scale.length !== this.legend_colors.length) {
+			this.distribution = this.get_distribution(this.data, this.legend_colors);
+		} else {
+			this.distribution = this.legend_scale;
+		}
+
 		this.month_names = ["January", "February", "March", "April", "May", "June",
 			"July", "August", "September", "October", "November", "December"
 		];
@@ -264,11 +273,6 @@ export default class Heatmap extends BaseChart {
 	}
 
 	get_max_checkpoint(value, distribution) {
-		return distribution.filter((d, i) => {
-			if(i === 1) {
-				return distribution[0] < value;
-			}
-			return d <= value;
-		}).length - 1;
+		return distribution.filter((d) => d <= value).length - 1;
 	}
 }

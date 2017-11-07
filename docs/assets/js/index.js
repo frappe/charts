@@ -368,6 +368,7 @@ new Chart({
 	parent: "#chart-heatmap",
 	data: heatmap_data,
 	type: 'heatmap',
+	legend_scale: [0, 1, 2, 4, 5],
 	height: 115,
 	discrete_domains: 1  // default 0
 });
@@ -388,6 +389,7 @@ Array.prototype.slice.call(
 			parent: "#chart-heatmap",
 			data: heatmap_data,
 			type: 'heatmap',
+			legend_scale: [0, 1, 2, 4, 5],
 			height: 115,
 			discrete_domains: discrete_domains
 		});
