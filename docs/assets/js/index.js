@@ -90,7 +90,7 @@ let type_chart = new Chart({
 	data: type_data,
 	type: 'bar',
 	height: 250,
-	// is_series: 1
+	is_series: 1
 });
 
 Array.prototype.slice.call(
@@ -100,8 +100,10 @@ Array.prototype.slice.call(
 		let btn = e.target;
 		let type = btn.getAttribute('data-type');
 
-		type_chart = type_chart.get_different_chart(type);
-
+		let newChart = type_chart.get_different_chart(type);
+		if(newChart){
+			type_chart = newChart;
+		}
 		Array.prototype.slice.call(
 			btn.parentNode.querySelectorAll('button')).map(el => {
 			el.classList.remove('active');
@@ -349,25 +351,21 @@ document.querySelector('[data-aggregation="average"]').addEventListener("click",
 
 // Heatmap
 // ================================================================================
-let heatmap_data = {
-	1479753000.0: 1,
-	1498588200.0: 1,
-	1499193000.0: 1,
-	1499625000.0: 2,
-	1500921000.0: 1,
-	1501612200.0: 1,
-	1502994600.0: 1,
-	1503858600.0: 1,
-	1504809000.0: 3,
-	1505241000.0: 1,
-	1506277800.0: 2
-};
+
+let heatmap_data = {};
+let current_date = new Date();
+let timestamp = current_date.getTime()/1000;
+timestamp = Math.floor(timestamp - (timestamp % 86400)).toFixed(1); // convert to midnight
+for (var i = 0; i< 375; i++) {
+	heatmap_data[parseInt(timestamp)] = Math.floor(Math.random() * 6);
+	timestamp = Math.floor(timestamp - 86400).toFixed(1);
+}
 
 new Chart({
 	parent: "#chart-heatmap",
 	data: heatmap_data,
 	type: 'heatmap',
-	height: 100,
+	height: 115,
 	discrete_domains: 1  // default 0
 });
 
@@ -377,23 +375,19 @@ Array.prototype.slice.call(
 	el.addEventListener('click', (e) => {
 		let btn = e.target;
 		let mode = btn.getAttribute('data-mode');
+		let discrete_domains = 0;
 
 		if(mode === 'discrete') {
-			new Chart({
-				parent: "#chart-heatmap",
-				data: heatmap_data,
-				type: 'heatmap',
-				height: 100,
-				discrete_domains: 1  // default 0
-			});
-		} else {
-			new Chart({
-				parent: "#chart-heatmap",
-				data: heatmap_data,
-				type: 'heatmap',
-				height: 100
-			});
+			discrete_domains = 1;
 		}
+
+		new Chart({
+			parent: "#chart-heatmap",
+			data: heatmap_data,
+			type: 'heatmap',
+			height: 115,
+			discrete_domains: discrete_domains
+		});
 
 		Array.prototype.slice.call(
 			btn.parentNode.querySelectorAll('button')).map(el => {
@@ -426,3 +420,5 @@ function shuffle(array) {
 
 	return array;
 }
+
+

@@ -1,56 +1,76 @@
 <div align="center">
-    <img src="https://github.com/frappe/design/blob/master/logos/frappe-charts-symbol.svg" width="100px" height="auto">
-    <h1>
-      <a href="https://frappe.github.io/charts">
-        Frappé Charts
-      </a>
-    </h1>
-    <p>
-        GitHub-inspired simple and responsive charts with zero dependencies.
+    <img src="https://github.com/frappe/design/blob/master/logos/frappe-charts-symbol.svg" height="128">
+    <h2>Frappé Charts</h2>
+    <p align="center">
+        <p>GitHub-inspired modern, intuitive and responsive charts with zero dependencies</p>
+        <a href="https://frappe.github.io/charts">
+            <b>Explore Demos »</b>
+        </a>
     </p>
-    <img src="https://user-images.githubusercontent.com/5196925/32153733-4a747898-bd52-11e7-9248-15ba307d3142.gif">
 </div>
 
-More information at the website: https://frappe.github.io/charts<br>
-Core build: ~14kb gzipped
+<p align="center">
+    <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.iife.js">
+        <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.iife.js.svg?compression=gzip">
+    </a>
+</p>
 
-### Usage
+<p align="center">
+    <a href="https://frappe.github.io/charts">
+        <img src=".github/example.gif">
+    </a>
+</p>
 
-Install
-```
-npm install frappe-charts
-```
+### Contents
+* [Installation](#installation)
+* [Usage](#usage)
+* [License](#license)
 
-Include it in your html:
-```
-<script src="frappe-charts.min.js"></script>
-```
+#### Installation
+* Install via [`npm`](https://www.npmjs.com/get-npm):
 
-Make a new Chart:
+  ```console
+  $ npm install frappe-charts
+  ```
+
+  and include in your project:
+  ```js
+  import Chart from "frappe-charts/dist/frappe-charts.min.esm"
+  ```
+
+* ...or include within your HTML
+
+  ```html
+    <script src="https://unpkg.com/frappe-charts@0.0.4/dist/frappe-charts.min.iife.js"></script>
+  ```
+
+#### Usage
 ```js
-let data = {
-  labels: ["12am-3am", "3am-6am", "6am-9am", "9am-12pm",
-    "12pm-3pm", "3pm-6pm", "6pm-9pm", "9pm-12am"],
+const data = {
+    labels: ["12am-3am", "3am-6pm", "6am-9am", "9am-12am",
+        "12pm-3pm", "3pm-6pm", "6pm-9pm", "9am-12am"
+    ],
+    datasets: [
+        {
+            title: "Some Data",
+            color: "light-blue",
+            values: [25, 40, 30, 35, 8, 52, 17, -4]
+        },
+        {
+            title: "Another Set",
+            color: "violet",
+            values: [25, 50, -10, 15, 18, 32, 27, 14]
+        }
+    ]
+}
 
-  datasets: [
-    {
-      title: "Some Data", color: "light-blue",
-      values: [25, 40, 30, 35, 8, 52, 17, -4]
-    },
-    {
-      title: "Another Set", color: "violet",
-      values: [25, 50, -10, 15, 18, 32, 27, 14]
-    }
-  ]
-};
-
-let chart = new Chart({
-  parent: "#chart",
-  title: "My Awesome Chart",
-  data: data,
-  type: 'bar', // or 'line', 'scatter', 'percentage'
-  height: 250
-});
+const chart = new Chart({
+    parent: '#chart',
+    title: "My Awesome Chart",
+    data: data,
+    type: 'bar', // or 'line', 'scatter', 'pie', 'percentage'
+    height: 250
+})
 ```
 
 For IE11 you may use this http://jsbin.com/guvuvav/1/edit?html,js,output
@@ -62,7 +82,9 @@ If you want to contribute:
 3. `npm install`
 4. `npm run dev`
 
-License: MIT
+#### License
+This repository has been released under the [MIT License](LICENSE)
 
 ------------------
-Made with ♥ by [pratu16x7](https://github.com/pratu16x7). Project maintained by [frappe](https://github.com/frappe)
+Made with ♥ by [pratu16x7](https://github.com/pratu16x7). Awesome logo by [raghukamath](https://github.com/raghukamath).
+Project maintained by [frappe](https://github.com/frappe).

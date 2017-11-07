@@ -49,9 +49,11 @@
                 Create a chart
               </h6>
               <p class="step-explain">Install</p>
-              <pre><code class="hljs html">  npm install frappe-charts</code></pre>
-              <p class="step-explain">Include it in your HTML</p>
-              <pre><code class="hljs html">  &lt;script src="frappe-charts.min.js" /&gt;</code></pre>
+              <pre><code class="hljs console">  npm install frappe-charts</code></pre>
+              <p class="step-explain">And include it in your project</p>
+              <pre><code class="hljs javascript">  import Chart from "frappe-charts/dist/frappe-charts.min.esm"</code></pre>
+              <p class="step-explain">... or include it directly in your HTML</p>
+              <pre><code class="hljs html">  &lt;script src="https://unpkg.com/frappe-charts@0.0.3/dist/frappe-charts.min.iife.js" /&gt;</code></pre>
               <p class="step-explain">Make a new Chart</p>
               <pre><code class="hljs html">  &lt!--HTML--&gt;
   &lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
@@ -80,7 +82,7 @@
     parent: "#chart",
     title: "My Awesome Chart",
     data: data,
-    type: 'bar', // or 'line', 'scatter', 'percentage'
+    type: 'bar', // or 'line', 'scatter', 'pie', 'percentage'
     height: 250
   });</code></pre>
               <div id="chart-types" class="border"></div>
@@ -88,11 +90,16 @@
                 <button type="button" class="btn btn-sm btn-secondary active" data-type='bar'>Bar Chart</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-type='line'>Line Chart</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-type='scatter'>Scatter Chart</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-type='pie'>Pie Chart</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-type='percentage'>Percentage Chart</button>
               </div>
               <p class="text-muted">
                 <a target="_blank" href="http://www.storytellingwithdata.com/blog/2011/07/death-to-pie-charts">Why Percentage?</a>
               </p>
+
+              <pre><code class="hljs javascript margin-vertical-px">  // colors: 'green', 'blue', 'violet', 'red', 'orange',
+  //         'yellow', 'light-blue', 'light-green', 'purple',
+  //         'magenta', 'grey', 'dark-grey'</code></pre>
             </div>
           </div>
 
@@ -125,6 +132,18 @@
                 <button type="button" class="btn btn-sm btn-secondary" data-update="add">Add Value</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-update="remove">Remove Value</button>
               </div>
+              <pre><code class="hljs javascript margin-vertical-px">  ...
+    // Include specific Y values in input data to be displayed as lines
+    // (before passing data to a new chart):
+
+    data.specific_values = [
+      {
+        title: "Altitude",
+        line_type: "dashed", // or "solid"
+        value: 38
+      }
+    ]
+  ...</code></pre>
             </div>
           </div>
 
@@ -178,7 +197,12 @@
                   </div>
                 </div>
               </div>
-              <pre><code class="hljs javascript margin-vertical-px">  chart.parent.addEventListener('data-select', (e) => {
+              <pre><code class="hljs javascript margin-vertical-px">  ...
+    type: 'bar',     // Bar Chart specific properties:
+    is_navigable: 1, // Navigate across bars; default 0
+  ...
+
+  chart.parent.addEventListener('data-select', (e) => {
     update_moon_data(e.index); // e contains index and value of current datapoint
   });</code></pre>
             </div>
@@ -215,7 +239,7 @@
     parent: "#heatmap",
     data: heatmap_data,  // object with date/timestamp-value pairs
     type: 'heatmap',
-    height: 100,
+    height: 115,
     discrete_domains: 1  // default 0
   });</code></pre>
             </div>
@@ -226,7 +250,8 @@
               <!-- Closing -->
               <div class="text-center" style="margin-top: 70px">
                 <a href="https://github.com/frappe/charts/archive/master.zip"><button class="large blue button">Download</button></a>
-                <p class="mt-2"><a href="https://github.com/frappe/charts" target="_blank">View on GitHub</a></p>
+                <p style="margin-top: 3rem;margin-bottom: 1.5rem;"><a href="https://github.com/frappe/charts" target="_blank">View on GitHub</a></p>
+                <p style="margin-top: 1rem;"><iframe src="https://ghbtns.com/github-btn.html?user=frappe&repo=charts&type=star&count=true" frameborder="0" scrolling="0" width="94px" height="20px"></iframe></p>
                 <p>License: MIT</p>
               </div>
             </div>
