@@ -1,7 +1,16 @@
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 export function float_2(d) {
 	return parseFloat(d.toFixed(2));
 }
 
+/**
+ * Returns whether or not two given arrays are equal.
+ * @param {Array} arr1 First array
+ * @param {Array} arr2 Second array
+ */
 export function arrays_equal(arr1, arr2) {
 	if(arr1.length !== arr2.length) return false;
 	let are_equal = true;
@@ -11,28 +20,9 @@ export function arrays_equal(arr1, arr2) {
 	return are_equal;
 }
 
-function limitColor(r){
-	if (r > 255) return 255;
-	else if (r < 0) return 0;
-	return r;
-}
-
-export function lightenDarkenColor(col,amt) {
-	let usePound = false;
-	if (col[0] == "#") {
-		col = col.slice(1);
-		usePound = true;
-	}
-	let num = parseInt(col,16);
-	let r = limitColor((num >> 16) + amt);
-	let b = limitColor(((num >> 8) & 0x00FF) + amt);
-	let g = limitColor((num & 0x0000FF) + amt);
-	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
-}
-
 /**
  * Shuffles array in place. ES6 version
- * @param {Array} a items An array containing the items.
+ * @param {Array} array An array containing the items.
  */
 export function shuffle(array) {
 	// Awesomeness: https://bost.ocks.org/mike/shuffle/
@@ -43,4 +33,15 @@ export function shuffle(array) {
 		let j = Math.floor(Math.random() * (i + 1));
 		[array[i], array[j]] = [array[j], array[i]];
 	}
+
+	return array;
+}
+
+/**
+ * Returns pixel width of string.
+ * @param {String} string
+ * @param {Number} char_width Width of single char in pixels
+ */
+export function get_string_width(string, char_width) {
+	return (string+"").length * char_width;
 }

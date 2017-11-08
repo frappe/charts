@@ -1,15 +1,16 @@
 import SvgTip from '../objects/SvgTip';
-import $ from '../helpers/dom';
+import $ from '../utils/dom';
+import { get_string_width } from '../utils/helpers';
 import Chart from '../charts';
 
 export default class BaseChart {
 	constructor({
 		height = 240,
 
-		title = '', subtitle = '',
-
+		title = '',
+		subtitle = '',
+		colors = [],
 		format_lambdas = {},
-
 		summary = [],
 
 		is_navigable = 0,
@@ -37,6 +38,12 @@ export default class BaseChart {
 			this.current_index = 0;
 		}
 		this.has_legend = has_legend;
+
+		this.colors = colors;
+		if(!this.colors || (this.data.labels && this.colors.length < this.data.labels.length)) {
+			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange',
+				'yellow', 'green', 'light-green', 'purple', 'magenta'];
+		}
 
 		this.chart_types = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
 
@@ -122,9 +129,11 @@ export default class BaseChart {
 
 	set_width() {
 		let special_values_width = 0;
+		let char_width = 8;
 		this.specific_values.map(val => {
-			if(this.get_strwidth(val.title) > special_values_width) {
-				special_values_width = this.get_strwidth(val.title) - 40;
+			let str_width = get_string_width((val.title + ""), char_width);
+			if(str_width > special_values_width) {
+				special_values_width = str_width - 40;
 			}
 		});
 		this.base_width = this.parent.offsetWidth - special_values_width;
@@ -254,11 +263,6 @@ export default class BaseChart {
 		if(index === this.current_index) return;
 		this.current_index = index;
 		$.fire(this.parent, "data-select", this.get_data_point());
-	}
-
-	// Helpers
-	get_strwidth(string) {
-		return (string+"").length * 8;
 	}
 
 	// Objects

@@ -1,5 +1,5 @@
 import BaseChart from './BaseChart';
-import $ from '../helpers/dom';
+import $ from '../utils/dom';
 
 export default class PercentageChart extends BaseChart {
 	constructor(args) {
@@ -12,13 +12,6 @@ export default class PercentageChart extends BaseChart {
 
 		this.max_slices = 10;
 		this.max_legend_points = 6;
-
-		this.colors = args.colors;
-
-		if(!this.colors || this.colors.length < this.data.labels.length) {
-			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange',
-				'yellow', 'green', 'light-green', 'purple', 'magenta'];
-		}
 
 		this.setup();
 	}
@@ -85,8 +78,6 @@ export default class PercentageChart extends BaseChart {
 
 		this.legend_totals = this.slice_totals.slice(0, this.max_legend_points);
 	}
-
-	setup_utils() { }
 
 	make_graph_components() {
 		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
