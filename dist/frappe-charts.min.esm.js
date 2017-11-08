@@ -631,9 +631,11 @@ var SvgTip = function () {
 	}, {
 		key: 'calc_position',
 		value: function calc_position() {
+			var width = this.container.offsetWidth;
+
 			this.top = this.y - this.container.offsetHeight;
-			this.left = this.x - this.container.offsetWidth / 2;
-			var max_left = this.parent.offsetWidth - this.container.offsetWidth;
+			this.left = this.x - width / 2;
+			var max_left = this.parent.offsetWidth - width;
 
 			var pointer = this.container.querySelector('.svg-pointer');
 
@@ -642,7 +644,9 @@ var SvgTip = function () {
 				this.left = 0;
 			} else if (this.left > max_left) {
 				var delta = this.left - max_left;
-				pointer.style.left = 'calc(50% + ' + delta + 'px)';
+				var pointer_offset = 'calc(50% + ' + delta + 'px)';
+				pointer.style.left = pointer_offset;
+
 				this.left = max_left;
 			} else {
 				pointer.style.left = '50%';
@@ -3022,6 +3026,7 @@ var Heatmap = function (_BaseChart) {
 			var square_side = 10;
 			var cell_padding = 2;
 			var step = 1;
+			var today_time = this.today.getTime();
 
 			var month_change = 0;
 			var week_col_change = 0;
@@ -3065,6 +3070,8 @@ var Heatmap = function (_BaseChart) {
 
 				var next_date = new Date(current_date);
 				this.add_days(next_date, 1);
+				if (next_date.getTime() > today_time) break;
+
 				if (next_date.getMonth() - current_date.getMonth()) {
 					month_change = 1;
 					if (this.discrete_domains) {
@@ -3232,14 +3239,6 @@ var Heatmap = function (_BaseChart) {
 	}]);
 	return Heatmap;
 }(BaseChart);
-
-// if ("development" !== 'production') {
-// 	// Enable LiveReload
-// 	document.write(
-// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
-// 		':35729/livereload.js?snipver=1"></' + 'script>'
-// 	);
-// }
 
 var chartTypes = {
 	line: LineChart,

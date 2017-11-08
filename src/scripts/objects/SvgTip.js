@@ -69,9 +69,11 @@ export default class SvgTip {
 	}
 
 	calc_position() {
+		let width = this.container.offsetWidth;
+
 		this.top = this.y - this.container.offsetHeight;
-		this.left = this.x - this.container.offsetWidth/2;
-		let max_left = this.parent.offsetWidth - this.container.offsetWidth;
+		this.left = this.x - width/2;
+		let max_left = this.parent.offsetWidth - width;
 
 		let pointer = this.container.querySelector('.svg-pointer');
 
@@ -80,7 +82,9 @@ export default class SvgTip {
 			this.left = 0;
 		} else if(this.left > max_left) {
 			let delta = this.left - max_left;
-			pointer.style.left = `calc(50% + ${delta}px)`;
+			let pointer_offset = `calc(50% + ${delta}px)`;
+			pointer.style.left = pointer_offset;
+
 			this.left = max_left;
 		} else {
 			pointer.style.left = `50%`;

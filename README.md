@@ -65,7 +65,7 @@ const data = {
 }
 
 const chart = new Chart({
-    parent: '#chart',
+    parent: '#chart', // or a DOM element
     title: "My Awesome Chart",
     data: data,
     type: 'bar', // or 'line', 'scatter', 'pie', 'percentage'
