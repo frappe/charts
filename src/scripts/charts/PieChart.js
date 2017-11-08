@@ -1,6 +1,7 @@
 import BaseChart from './BaseChart';
-import $ from '../helpers/dom';
-import { lightenDarkenColor } from '../helpers/utils';
+import $ from '../utils/dom';
+import { lighten_darken_color } from '../utils/colors';
+import { runSVGAnimation, transform } from '../utils/animate';
 const ANGLE_RATIO = Math.PI / 180;
 const FULL_ANGLE = 360;
 
@@ -135,7 +136,7 @@ export default class PieChart extends BaseChart {
 		// if(this.isAnimate) return ;
 		// this.isAnimate = true;
 		if(!this.elements_to_animate || this.elements_to_animate.length === 0) return;
-		let anim_svg = $.runSVGAnimation(this.svg, this.elements_to_animate);
+		let anim_svg = runSVGAnimation(this.svg, this.elements_to_animate);
 
 		if(this.svg.parentNode == this.chart_wrapper) {
 			this.chart_wrapper.removeChild(this.svg);
@@ -161,8 +162,8 @@ export default class PieChart extends BaseChart {
 	hoverSlice(path,i,flag,e){
 		if(!path) return;
 		if(flag){
-			$.transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
-			path.setAttribute('fill',lightenDarkenColor(this.colors[i],50));
+			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
+			path.setAttribute('fill',lighten_darken_color(this.colors[i],50));
 			let g_off = $.offset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
@@ -172,7 +173,7 @@ export default class PieChart extends BaseChart {
 			this.tip.set_values(x, y, title, percent + "%");
 			this.tip.show_tip();
 		}else{
-			$.transform(path,'translate3d(0,0,0)');
+			transform(path,'translate3d(0,0,0)');
 			this.tip.hide_tip();
 			path.setAttribute('fill',this.colors[i]);
 		}

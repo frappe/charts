@@ -282,15 +282,6 @@ function $(expr, con) {
 	return typeof expr === "string" ? (con || document).querySelector(expr) : expr || null;
 }
 
-var EASING = {
-	ease: "0.25 0.1 0.25 1",
-	linear: "0 0 1 1",
-	// easein: "0.42 0 1 1",
-	easein: "0.1 0.8 0.2 1",
-	easeout: "0 0 0.58 1",
-	easeinout: "0.42 0 0.58 1"
-};
-
 $.findNodeIndex = function (node) {
 	var i = 0;
 	while (node.previousSibling) {
@@ -355,112 +346,6 @@ $.createSVG = function (tag, o) {
 	return element;
 };
 
-$.runSVGAnimation = function (svg_container, elements) {
-	// let parent = elements[0][0]['unit'].parentNode;
-
-	var new_elements = [];
-	var anim_elements = [];
-
-	elements.map(function (element) {
-		var obj = element[0];
-		var parent = obj.unit.parentNode;
-		// let index = let findNodeIndex(obj.unit);
-
-		var anim_element = void 0,
-		    new_element = void 0;
-
-		element[0] = obj.unit;
-
-		var _$$animateSVG = $.animateSVG.apply($, toConsumableArray(element));
-
-		var _$$animateSVG2 = slicedToArray(_$$animateSVG, 2);
-
-		anim_element = _$$animateSVG2[0];
-		new_element = _$$animateSVG2[1];
-
-
-		new_elements.push(new_element);
-		anim_elements.push([anim_element, parent]);
-
-		parent.replaceChild(anim_element, obj.unit);
-
-		if (obj.array) {
-			obj.array[obj.index] = new_element;
-		} else {
-			obj.object[obj.key] = new_element;
-		}
-	});
-
-	var anim_svg = svg_container.cloneNode(true);
-
-	anim_elements.map(function (anim_element, i) {
-		anim_element[1].replaceChild(new_elements[i], anim_element[0]);
-		elements[i][0] = new_elements[i];
-	});
-
-	return anim_svg;
-};
-
-$.transform = function (element, style) {
-	element.style.transform = style;
-	element.style.webkitTransform = style;
-	element.style.msTransform = style;
-	element.style.mozTransform = style;
-	element.style.oTransform = style;
-};
-
-$.animateSVG = function (element, props, dur) {
-	var easing_type = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "linear";
-	var type = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : undefined;
-	var old_values = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : {};
-
-
-	var anim_element = element.cloneNode(true);
-	var new_element = element.cloneNode(true);
-
-	for (var attributeName in props) {
-		var animate_element = void 0;
-		if (attributeName === 'transform') {
-			animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
-		} else {
-			animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animate");
-		}
-		var current_value = old_values[attributeName] || element.getAttribute(attributeName);
-		var value = props[attributeName];
-
-		var anim_attr = {
-			attributeName: attributeName,
-			from: current_value,
-			to: value,
-			begin: "0s",
-			dur: dur / 1000 + "s",
-			values: current_value + ";" + value,
-			keySplines: EASING[easing_type],
-			keyTimes: "0;1",
-			calcMode: "spline",
-			fill: 'freeze'
-		};
-
-		if (type) {
-			anim_attr["type"] = type;
-		}
-
-		for (var i in anim_attr) {
-			animate_element.setAttribute(i, anim_attr[i]);
-		}
-
-		anim_element.appendChild(animate_element);
-
-		if (type) {
-			new_element.setAttribute(attributeName, "translate(" + value + ")");
-		} else {
-			new_element.setAttribute(attributeName, value);
-		}
-	}
-
-	return [anim_element, new_element];
-};
-
 $.offset = function (element) {
 	var rect = element.getBoundingClientRect();
 	return {
@@ -517,10 +402,223 @@ $.fire = function (target, type, properties) {
 	return target.dispatchEvent(evt);
 };
 
+var UnitRenderer = function () {
+	var UnitRenderer = function UnitRenderer(total_height, zero_line, avg_unit_width) {
+		this.total_height = total_height;
+		this.zero_line = zero_line;
+		this.avg_unit_width = avg_unit_width;
+	};
+
+	function get_bar_height_and_y_attr(y_top, zero_line, total_height) {
+		var height = void 0,
+		    y = void 0;
+		if (y_top <= zero_line) {
+			height = zero_line - y_top;
+			y = y_top;
+
+			// In case of invisible bars
+			if (height === 0) {
+				height = total_height * 0.01;
+				y -= height;
+			}
+		} else {
+			height = y_top - zero_line;
+			y = zero_line;
+
+			// In case of invisible bars
+			if (height === 0) {
+				height = total_height * 0.01;
+			}
+		}
+
+		return [height, y];
+	}
+
+	UnitRenderer.prototype = {
+		draw_bar: function draw_bar(x, y_top, args, color, index, dataset_index, no_of_datasets) {
+			var total_width = this.avg_unit_width - args.space_width;
+			var start_x = x - total_width / 2;
+
+			var width = total_width / no_of_datasets;
+			var current_x = start_x + width * dataset_index;
+
+			var _get_bar_height_and_y = get_bar_height_and_y_attr(y_top, this.zero_line, this.total_height),
+			    _get_bar_height_and_y2 = slicedToArray(_get_bar_height_and_y, 2),
+			    height = _get_bar_height_and_y2[0],
+			    y = _get_bar_height_and_y2[1];
+
+			return $.createSVG('rect', {
+				className: 'bar mini fill ' + color,
+				'data-point-index': index,
+				x: current_x,
+				y: y,
+				width: width,
+				height: height
+			});
+		},
+
+		draw_dot: function draw_dot(x, y, args, color, index) {
+			return $.createSVG('circle', {
+				className: 'fill ' + color,
+				'data-point-index': index,
+				cx: x,
+				cy: y,
+				r: args.radius
+			});
+		},
+
+		animate_bar: function animate_bar(bar_obj, x, y_top, index, no_of_datasets) {
+			var start = x - this.avg_unit_width / 4;
+			var width = this.avg_unit_width / 2 / no_of_datasets;
+
+			var _get_bar_height_and_y3 = get_bar_height_and_y_attr(y_top, this.zero_line, this.total_height),
+			    _get_bar_height_and_y4 = slicedToArray(_get_bar_height_and_y3, 2),
+			    height = _get_bar_height_and_y4[0],
+			    y = _get_bar_height_and_y4[1];
+
+			x = start + width * index;
+
+			return [bar_obj, { width: width, height: height, x: x, y: y }, 350, "easein"];
+			// bar.animate({height: args.new_height, y: y_top}, 350, mina.easein);
+		},
+
+		animate_dot: function animate_dot(dot_obj, x, y_top) {
+			return [dot_obj, { cx: x, cy: y_top }, 350, "easein"];
+			// dot.animate({cy: y_top}, 350, mina.easein);
+		}
+	};
+
+	return UnitRenderer;
+}();
+
+// Leveraging SMIL Animations
+
+var EASING = {
+	ease: "0.25 0.1 0.25 1",
+	linear: "0 0 1 1",
+	// easein: "0.42 0 1 1",
+	easein: "0.1 0.8 0.2 1",
+	easeout: "0 0 0.58 1",
+	easeinout: "0.42 0 0.58 1"
+};
+
+function animateSVG(element, props, dur) {
+	var easing_type = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "linear";
+	var type = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : undefined;
+	var old_values = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : {};
+
+
+	var anim_element = element.cloneNode(true);
+	var new_element = element.cloneNode(true);
+
+	for (var attributeName in props) {
+		var animate_element = void 0;
+		if (attributeName === 'transform') {
+			animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+		} else {
+			animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+		}
+		var current_value = old_values[attributeName] || element.getAttribute(attributeName);
+		var value = props[attributeName];
+
+		var anim_attr = {
+			attributeName: attributeName,
+			from: current_value,
+			to: value,
+			begin: "0s",
+			dur: dur / 1000 + "s",
+			values: current_value + ";" + value,
+			keySplines: EASING[easing_type],
+			keyTimes: "0;1",
+			calcMode: "spline",
+			fill: 'freeze'
+		};
+
+		if (type) {
+			anim_attr["type"] = type;
+		}
+
+		for (var i in anim_attr) {
+			animate_element.setAttribute(i, anim_attr[i]);
+		}
+
+		anim_element.appendChild(animate_element);
+
+		if (type) {
+			new_element.setAttribute(attributeName, "translate(" + value + ")");
+		} else {
+			new_element.setAttribute(attributeName, value);
+		}
+	}
+
+	return [anim_element, new_element];
+}
+
+function transform(element, style) {
+	// eslint-disable-line no-unused-vars
+	element.style.transform = style;
+	element.style.webkitTransform = style;
+	element.style.msTransform = style;
+	element.style.mozTransform = style;
+	element.style.oTransform = style;
+}
+
+function runSVGAnimation(svg_container, elements) {
+	var new_elements = [];
+	var anim_elements = [];
+
+	elements.map(function (element) {
+		var obj = element[0];
+		var parent = obj.unit.parentNode;
+
+		var anim_element = void 0,
+		    new_element = void 0;
+
+		element[0] = obj.unit;
+
+		var _animateSVG = animateSVG.apply(undefined, toConsumableArray(element));
+
+		var _animateSVG2 = slicedToArray(_animateSVG, 2);
+
+		anim_element = _animateSVG2[0];
+		new_element = _animateSVG2[1];
+
+
+		new_elements.push(new_element);
+		anim_elements.push([anim_element, parent]);
+
+		parent.replaceChild(anim_element, obj.unit);
+
+		if (obj.array) {
+			obj.array[obj.index] = new_element;
+		} else {
+			obj.object[obj.key] = new_element;
+		}
+	});
+
+	var anim_svg = svg_container.cloneNode(true);
+
+	anim_elements.map(function (anim_element, i) {
+		anim_element[1].replaceChild(new_elements[i], anim_element[0]);
+		elements[i][0] = new_elements[i];
+	});
+
+	return anim_svg;
+}
+
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function float_2(d) {
 	return parseFloat(d.toFixed(2));
 }
 
+/**
+ * Returns whether or not two given arrays are equal.
+ * @param {Array} arr1 First array
+ * @param {Array} arr2 Second array
+ */
 function arrays_equal(arr1, arr2) {
 	if (arr1.length !== arr2.length) return false;
 	var are_equal = true;
@@ -530,28 +628,20 @@ function arrays_equal(arr1, arr2) {
 	return are_equal;
 }
 
-function limitColor(r) {
-	if (r > 255) return 255;else if (r < 0) return 0;
-	return r;
-}
-
-function lightenDarkenColor(col, amt) {
-	var usePound = false;
-	if (col[0] == "#") {
-		col = col.slice(1);
-		usePound = true;
-	}
-	var num = parseInt(col, 16);
-	var r = limitColor((num >> 16) + amt);
-	var b = limitColor((num >> 8 & 0x00FF) + amt);
-	var g = limitColor((num & 0x0000FF) + amt);
-	return (usePound ? "#" : "") + (g | b << 8 | r << 16).toString(16);
-}
-
 /**
  * Shuffles array in place. ES6 version
- * @param {Array} a items An array containing the items.
+ * @param {Array} array An array containing the items.
  */
+
+
+/**
+ * Returns pixel width of string.
+ * @param {String} string
+ * @param {Number} char_width Width of single char in pixels
+ */
+function get_string_width(string, char_width) {
+	return (string + "").length * char_width;
+}
 
 var SvgTip = function () {
 	function SvgTip(_ref) {
@@ -824,12 +914,12 @@ var BaseChart = function () {
 	}, {
 		key: 'set_width',
 		value: function set_width() {
-			var _this2 = this;
-
 			var special_values_width = 0;
+			var char_width = 8;
 			this.specific_values.map(function (val) {
-				if (_this2.get_strwidth(val.title) > special_values_width) {
-					special_values_width = _this2.get_strwidth(val.title) - 40;
+				var str_width = get_string_width(val.title + "", char_width);
+				if (str_width > special_values_width) {
+					special_values_width = str_width - 40;
 				}
 			});
 			this.base_width = this.parent.offsetWidth - special_values_width;
@@ -898,20 +988,20 @@ var BaseChart = function () {
 	}, {
 		key: 'show_custom_summary',
 		value: function show_custom_summary() {
-			var _this3 = this;
+			var _this2 = this;
 
 			this.summary.map(function (d) {
 				var stats = $.create('div', {
 					className: 'stats',
 					innerHTML: '<span class="indicator ' + d.color + '">' + d.title + ': ' + d.value + '</span>'
 				});
-				_this3.stats_wrapper.appendChild(stats);
+				_this2.stats_wrapper.appendChild(stats);
 			});
 		}
 	}, {
 		key: 'setup_navigation',
 		value: function setup_navigation() {
-			var _this4 = this;
+			var _this3 = this;
 
 			var init = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
@@ -921,19 +1011,19 @@ var BaseChart = function () {
 				this.bind_overlay();
 
 				document.addEventListener('keydown', function (e) {
-					if ($.isElementInViewport(_this4.chart_wrapper)) {
+					if ($.isElementInViewport(_this3.chart_wrapper)) {
 						e = e || window.event;
 
 						if (e.keyCode == '37') {
-							_this4.on_left_arrow();
+							_this3.on_left_arrow();
 						} else if (e.keyCode == '39') {
-							_this4.on_right_arrow();
+							_this3.on_right_arrow();
 						} else if (e.keyCode == '38') {
-							_this4.on_up_arrow();
+							_this3.on_up_arrow();
 						} else if (e.keyCode == '40') {
-							_this4.on_down_arrow();
+							_this3.on_down_arrow();
 						} else if (e.keyCode == '13') {
-							_this4.on_enter_key();
+							_this3.on_enter_key();
 						}
 					}
 				});
@@ -991,14 +1081,6 @@ var BaseChart = function () {
 			$.fire(this.parent, "data-select", this.get_data_point());
 		}
 
-		// Helpers
-
-	}, {
-		key: 'get_strwidth',
-		value: function get_strwidth(string) {
-			return (string + "").length * 8;
-		}
-
 		// Objects
 
 	}, {
@@ -1028,6 +1110,8 @@ var AxisChart = function (_BaseChart) {
 		_this.colors = ['green', 'blue', 'violet', 'red', 'orange', 'yellow', 'light-blue', 'light-green', 'purple', 'magenta'];
 
 		_this.zero_line = _this.height;
+
+		_this.old_values = {};
 		return _this;
 	}
 
@@ -1148,6 +1232,7 @@ var AxisChart = function (_BaseChart) {
 
 			var animate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
+			var char_width = 8;
 			var start_at = void 0,
 			    height = void 0,
 			    text_start_at = void 0,
@@ -1177,7 +1262,7 @@ var AxisChart = function (_BaseChart) {
 
 			this.x_axis_group.textContent = '';
 			this.x.map(function (point, i) {
-				var space_taken = _this4.get_strwidth(point) + 2;
+				var space_taken = get_string_width(point, char_width) + 2;
 				if (space_taken > allowed_space) {
 					if (_this4.is_series) {
 						// Skip some axis lines if X axis is a series
@@ -1326,7 +1411,7 @@ var AxisChart = function (_BaseChart) {
 			units_array.length = 0;
 
 			y_values.map(function (y, i) {
-				var data_unit = _this9.draw[unit.type](x_values[i], y, unit.args, color, i, dataset_index, no_of_datasets);
+				var data_unit = _this9.UnitRenderer['draw_' + unit.type](x_values[i], y, unit.args, color, i, dataset_index, no_of_datasets);
 				units_group.appendChild(data_unit);
 				units_array.push(data_unit);
 			});
@@ -1572,7 +1657,7 @@ var AxisChart = function (_BaseChart) {
 		value: function run_animation() {
 			var _this17 = this;
 
-			var anim_svg = $.runSVGAnimation(this.svg, this.elements_to_animate);
+			var anim_svg = runSVGAnimation(this.svg, this.elements_to_animate);
 
 			if (this.svg.parentNode == this.chart_wrapper) {
 				this.chart_wrapper.removeChild(this.svg);
@@ -1647,8 +1732,8 @@ var AxisChart = function (_BaseChart) {
 
 			d.svg_units.map(function (unit, i) {
 				if (new_x[i] === undefined || new_y[i] === undefined) return;
-				_this19.elements_to_animate.push(_this19.animate[type]({ unit: unit, array: d.svg_units, index: i }, // unit, with info to replace where it came from in the data
-				new_x[i], new_y[i], index));
+				_this19.elements_to_animate.push(_this19.UnitRenderer['animate_' + type]({ unit: unit, array: d.svg_units, index: i }, // unit, with info to replace where it came from in the data
+				new_x[i], new_y[i], index, _this19.y.length));
 			});
 		}
 	}, {
@@ -1794,7 +1879,7 @@ var AxisChart = function (_BaseChart) {
 		}
 	}, {
 		key: 'make_x_line',
-		value: function make_x_line(height, text_start_at, point, label_class, axis_line_class, x_pos) {
+		value: function make_x_line$$1(height, text_start_at, point, label_class, axis_line_class, x_pos) {
 			var line = $.createSVG('line', {
 				x1: 0,
 				x2: 0,
@@ -1822,7 +1907,7 @@ var AxisChart = function (_BaseChart) {
 		}
 	}, {
 		key: 'make_y_line',
-		value: function make_y_line(start_at, width, text_end_at, point, label_class, axis_line_class, y_pos) {
+		value: function make_y_line$$1(start_at, width, text_end_at, point, label_class, axis_line_class, y_pos) {
 			var darker = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : false;
 			var line_type = arguments.length > 8 && arguments[8] !== undefined ? arguments[8] : "";
 
@@ -2077,89 +2162,9 @@ var AxisChart = function (_BaseChart) {
 			// this.make_tooltip();
 		}
 	}, {
-		key: 'get_bar_height_and_y_attr',
-		value: function get_bar_height_and_y_attr(y_top) {
-			var height = void 0,
-			    y = void 0;
-			if (y_top <= this.zero_line) {
-				height = this.zero_line - y_top;
-				y = y_top;
-
-				// In case of invisible bars
-				if (height === 0) {
-					height = this.height * 0.01;
-					y -= height;
-				}
-			} else {
-				height = y_top - this.zero_line;
-				y = this.zero_line;
-
-				// In case of invisible bars
-				if (height === 0) {
-					height = this.height * 0.01;
-				}
-			}
-
-			return [height, y];
-		}
-	}, {
 		key: 'setup_utils',
 		value: function setup_utils() {
-			var _this25 = this;
-
-			this.draw = {
-				'bar': function bar(x, y_top, args, color, index, dataset_index, no_of_datasets) {
-					var total_width = _this25.avg_unit_width - args.space_width;
-					var start_x = x - total_width / 2;
-
-					var width = total_width / no_of_datasets;
-					var current_x = start_x + width * dataset_index;
-
-					var _get_bar_height_and_y = _this25.get_bar_height_and_y_attr(y_top),
-					    _get_bar_height_and_y2 = slicedToArray(_get_bar_height_and_y, 2),
-					    height = _get_bar_height_and_y2[0],
-					    y = _get_bar_height_and_y2[1];
-
-					return $.createSVG('rect', {
-						className: 'bar mini fill ' + color,
-						'data-point-index': index,
-						x: current_x,
-						y: y,
-						width: width,
-						height: height
-					});
-				},
-				'dot': function dot(x, y, args, color, index) {
-					return $.createSVG('circle', {
-						className: 'fill ' + color,
-						'data-point-index': index,
-						cx: x,
-						cy: y,
-						r: args.radius
-					});
-				}
-			};
-
-			this.animate = {
-				'bar': function bar(bar_obj, x, y_top, index) {
-					var start = x - _this25.avg_unit_width / 4;
-					var width = _this25.avg_unit_width / 2 / _this25.y.length;
-
-					var _get_bar_height_and_y3 = _this25.get_bar_height_and_y_attr(y_top),
-					    _get_bar_height_and_y4 = slicedToArray(_get_bar_height_and_y3, 2),
-					    height = _get_bar_height_and_y4[0],
-					    y = _get_bar_height_and_y4[1];
-
-					x = start + width * index;
-
-					return [bar_obj, { width: width, height: height, x: x, y: y }, 350, "easein"];
-					// bar.animate({height: args.new_height, y: y_top}, 350, mina.easein);
-				},
-				'dot': function dot(dot_obj, x, y_top) {
-					return [dot_obj, { cx: x, cy: y_top }, 350, "easein"];
-					// dot.animate({cy: y_top}, 350, mina.easein);
-				}
-			};
+			this.UnitRenderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
 		}
 	}]);
 	return AxisChart;
@@ -2633,6 +2638,24 @@ var PercentageChart = function (_BaseChart) {
 	return PercentageChart;
 }(BaseChart);
 
+function limit_color(r) {
+	if (r > 255) return 255;else if (r < 0) return 0;
+	return r;
+}
+
+function lighten_darken_color(col, amt) {
+	var usePound = false;
+	if (col[0] == "#") {
+		col = col.slice(1);
+		usePound = true;
+	}
+	var num = parseInt(col, 16);
+	var r = limit_color((num >> 16) + amt);
+	var b = limit_color((num >> 8 & 0x00FF) + amt);
+	var g = limit_color((num & 0x0000FF) + amt);
+	return (usePound ? "#" : "") + (g | b << 8 | r << 16).toString(16);
+}
+
 var ANGLE_RATIO = Math.PI / 180;
 var FULL_ANGLE = 360;
 
@@ -2794,7 +2817,7 @@ var PieChart = function (_BaseChart) {
 			// if(this.isAnimate) return ;
 			// this.isAnimate = true;
 			if (!this.elements_to_animate || this.elements_to_animate.length === 0) return;
-			var anim_svg = $.runSVGAnimation(this.svg, this.elements_to_animate);
+			var anim_svg = runSVGAnimation(this.svg, this.elements_to_animate);
 
 			if (this.svg.parentNode == this.chart_wrapper) {
 				this.chart_wrapper.removeChild(this.svg);
@@ -2824,8 +2847,8 @@ var PieChart = function (_BaseChart) {
 		value: function hoverSlice(path, i, flag, e) {
 			if (!path) return;
 			if (flag) {
-				$.transform(path, this.calTranslateByAngle(this.slicesProperties[i]));
-				path.setAttribute('fill', lightenDarkenColor(this.colors[i], 50));
+				transform(path, this.calTranslateByAngle(this.slicesProperties[i]));
+				path.setAttribute('fill', lighten_darken_color(this.colors[i], 50));
 				var g_off = $.offset(this.svg);
 				var x = e.pageX - g_off.left + 10;
 				var y = e.pageY - g_off.top - 10;
@@ -2834,7 +2857,7 @@ var PieChart = function (_BaseChart) {
 				this.tip.set_values(x, y, title, percent + "%");
 				this.tip.show_tip();
 			} else {
-				$.transform(path, 'translate3d(0,0,0)');
+				transform(path, 'translate3d(0,0,0)');
 				this.tip.hide_tip();
 				path.setAttribute('fill', this.colors[i]);
 			}
@@ -3239,6 +3262,14 @@ var Heatmap = function (_BaseChart) {
 	}]);
 	return Heatmap;
 }(BaseChart);
+
+// if ("development" !== 'production') {
+// 	// Enable LiveReload
+// 	document.write(
+// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
+// 		':35729/livereload.js?snipver=1"></' + 'script>'
+// 	);
+// }
 
 var chartTypes = {
 	line: LineChart,

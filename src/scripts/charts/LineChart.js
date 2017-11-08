@@ -1,5 +1,5 @@
 import AxisChart from './AxisChart';
-import $ from '../helpers/dom';
+import $ from '../utils/dom';
 
 export default class LineChart extends AxisChart {
 	constructor(args) {

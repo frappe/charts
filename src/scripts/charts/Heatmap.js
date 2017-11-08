@@ -1,5 +1,5 @@
 import BaseChart from './BaseChart';
-import $ from '../helpers/dom';
+import $ from '../utils/dom';
 
 export default class Heatmap extends BaseChart {
 	constructor({

@@ -1,4 +1,4 @@
-import $ from '../helpers/dom';
+import $ from '../utils/dom';
 
 export default class SvgTip {
 	constructor({

@@ -1,5 +1,7 @@
-import $ from '../helpers/dom';
-import { float_2, arrays_equal, get_string_width, get_bar_height_and_y_attr } from '../helpers/utils';
+import $ from '../utils/dom';
+import { UnitRenderer } from '../utils/draw';
+import { runSVGAnimation } from '../utils/animate';
+import { float_2, arrays_equal, get_string_width } from '../utils/helpers';
 import BaseChart from './BaseChart';
 
 export default class AxisChart extends BaseChart {
@@ -281,7 +283,7 @@ export default class AxisChart extends BaseChart {
 		units_array.length = 0;
 
 		y_values.map((y, i) => {
-			let data_unit = this.draw[unit.type](
+			let data_unit = this.UnitRenderer['draw_' + unit.type](
 				x_values[i],
 				y,
 				unit.args,
@@ -507,7 +509,7 @@ export default class AxisChart extends BaseChart {
 	}
 
 	run_animation() {
-		let anim_svg = $.runSVGAnimation(this.svg, this.elements_to_animate);
+		let anim_svg = runSVGAnimation(this.svg, this.elements_to_animate);
 
 		if(this.svg.parentNode == this.chart_wrapper) {
 			this.chart_wrapper.removeChild(this.svg);
@@ -573,11 +575,12 @@ export default class AxisChart extends BaseChart {
 
 		d.svg_units.map((unit, i) => {
 			if(new_x[i] === undefined || new_y[i] === undefined) return;
-			this.elements_to_animate.push(this.animate[type](
+			this.elements_to_animate.push(this.UnitRenderer['animate_' + type](
 				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
 				new_x[i],
 				new_y[i],
-				index
+				index,
+				this.y.length
 			));
 		});
 	}
@@ -990,52 +993,6 @@ export default class AxisChart extends BaseChart {
 	}
 
 	setup_utils() {
-		this.draw = {
-			'bar': (x, y_top, args, color, index, dataset_index, no_of_datasets) => {
-				let total_width = this.avg_unit_width - args.space_width;
-				let start_x = x - total_width/2;
-
-				let width = total_width / no_of_datasets;
-				let current_x = start_x + width * dataset_index;
-
-				let [height, y] = get_bar_height_and_y_attr(y_top, this.zero_line, this.height);
-
-				return $.createSVG('rect', {
-					className: `bar mini fill ${color}`,
-					'data-point-index': index,
-					x: current_x,
-					y: y,
-					width: width,
-					height: height
-				});
-
-			},
-			'dot': (x, y, args, color, index) => {
-				return $.createSVG('circle', {
-					className: `fill ${color}`,
-					'data-point-index': index,
-					cx: x,
-					cy: y,
-					r: args.radius
-				});
-			}
-		};
-
-		this.animate = {
-			'bar': (bar_obj, x, y_top, index) => {
-				let start = x - this.avg_unit_width/4;
-				let width = (this.avg_unit_width/2)/this.y.length;
-				let [height, y] = get_bar_height_and_y_attr(y_top, this.zero_line, this.height);
-
-				x = start + (width * index);
-
-				return [bar_obj, {width: width, height: height, x: x, y: y}, 350, "easein"];
-				// bar.animate({height: args.new_height, y: y_top}, 350, mina.easein);
-			},
-			'dot': (dot_obj, x, y_top) => {
-				return [dot_obj, {cx: x, cy: y_top}, 350, "easein"];
-				// dot.animate({cy: y_top}, 350, mina.easein);
-			}
-		};
+		this.UnitRenderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
 	}
 }

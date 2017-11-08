@@ -1,6 +1,6 @@
 import SvgTip from '../objects/SvgTip';
-import $ from '../helpers/dom';
-import { get_string_width } from '../helpers/utils';
+import $ from '../utils/dom';
+import { get_string_width } from '../utils/helpers';
 import Chart from '../charts';
 
 export default class BaseChart {
