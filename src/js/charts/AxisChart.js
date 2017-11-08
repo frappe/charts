@@ -369,7 +369,7 @@ export default class AxisChart extends BaseChart {
 			// let delta = i === 0 ? this.avg_unit_width : x_val - this.x_axis_positions[i-1];
 			if(relX > x_val - this.avg_unit_width/2) {
 				let x = x_val + this.translate_x;
-				let y = this.y_min_tops[i] + this.translate_y;
+				let y = this.y_min_tops[i] + this.translate_y * 2;
 
 				let title = titles[i];
 				let values = this.y.map((set, j) => {
@@ -380,6 +380,10 @@ export default class AxisChart extends BaseChart {
 					};
 				});
 
+				const chartPosition = this.chart_wrapper.getBoundingClientRect();
+				const MARGIN_TOP = 15;
+				x += chartPosition.left;
+				y += chartPosition.top - MARGIN_TOP;
 				this.tip.set_values(x, y, title, '', values);
 				this.tip.show_tip();
 				break;

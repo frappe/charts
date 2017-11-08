@@ -118,7 +118,7 @@
 	}
 
 	.graph-svg-tip {
-		position: absolute;
+		position: fixed;
 		z-index: 99999;
 		padding: 10px;
 		font-size: 12px;
