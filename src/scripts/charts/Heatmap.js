@@ -111,6 +111,7 @@ export default class Heatmap extends BaseChart {
 		const square_side = 10;
 		const cell_padding = 2;
 		const step = 1;
+		const today_time = this.today.getTime();
 
 		let month_change = 0;
 		let week_col_change = 0;
@@ -154,6 +155,9 @@ export default class Heatmap extends BaseChart {
 
 			let next_date = new Date(current_date);
 			this.add_days(next_date, 1);
+			if(next_date.getTime() > today_time) break;
+
+
 			if(next_date.getMonth() - current_date.getMonth()) {
 				month_change = 1;
 				if(this.discrete_domains) {

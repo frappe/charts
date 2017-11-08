@@ -38,8 +38,11 @@ let more_line_data = {
 	10: {values: [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 0, 0]}
 };
 
+let c1 = document.querySelector("#chart-composite-1");
+let c2 = document.querySelector("#chart-composite-2");
+
 let bar_composite_chart = new Chart ({
-	parent: "#chart-composite-1",
+	parent: c1,
 	title: "Fireball/Bolide Events - Yearly (more than 5 reports)",
 	data: bar_composite_data,
 	type: 'bar',
@@ -50,7 +53,7 @@ let bar_composite_chart = new Chart ({
 });
 
 let line_composite_chart = new Chart ({
-	parent: "#chart-composite-2",
+	parent: c2,
 	data: line_composite_data,
 	type: 'line',
 	height: 180,
