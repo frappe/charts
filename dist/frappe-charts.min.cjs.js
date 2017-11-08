@@ -624,7 +624,7 @@ var SvgTip = function () {
 			this.list_values.map(function (set$$1) {
 				var li = $.create('li', {
 					className: 'border-top ' + (set$$1.color || 'black'),
-					innerHTML: '<strong style="display: block;">' + (isNaN(set$$1.value) ? '' : set$$1.value) + '</strong>\n\t\t\t\t\t' + (set$$1.title ? set$$1.title : '')
+					innerHTML: '<strong style="display: block;">' + (set$$1.value === 0 || set$$1.value ? set$$1.value : '') + '</strong>\n\t\t\t\t\t' + (set$$1.title ? set$$1.title : '')
 				});
 
 				_this2.data_point_list.appendChild(li);
