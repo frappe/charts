@@ -493,6 +493,69 @@ var UnitRenderer = function () {
 	return UnitRenderer;
 }();
 
+function make_x_line(height, text_start_at, point, label_class, axis_line_class, x_pos) {
+	var line = $.createSVG('line', {
+		x1: 0,
+		x2: 0,
+		y1: 0,
+		y2: height
+	});
+
+	var text = $.createSVG('text', {
+		className: label_class,
+		x: 0,
+		y: text_start_at,
+		dy: '.71em',
+		innerHTML: point
+	});
+
+	var x_line = $.createSVG('g', {
+		className: 'tick ' + axis_line_class,
+		transform: 'translate(' + x_pos + ', 0)'
+	});
+
+	x_line.appendChild(line);
+	x_line.appendChild(text);
+
+	return x_line;
+}
+
+function make_y_line(start_at, width, text_end_at, point, label_class, axis_line_class, y_pos) {
+	var darker = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : false;
+	var line_type = arguments.length > 8 && arguments[8] !== undefined ? arguments[8] : "";
+
+	var line = $.createSVG('line', {
+		className: line_type === "dashed" ? "dashed" : "",
+		x1: start_at,
+		x2: width,
+		y1: 0,
+		y2: 0
+	});
+
+	var text = $.createSVG('text', {
+		className: label_class,
+		x: text_end_at,
+		y: 0,
+		dy: '.32em',
+		innerHTML: point + ""
+	});
+
+	var y_line = $.createSVG('g', {
+		className: 'tick ' + axis_line_class,
+		transform: 'translate(0, ' + y_pos + ')',
+		'stroke-opacity': 1
+	});
+
+	if (darker) {
+		line.style.stroke = "rgba(27, 31, 35, 0.6)";
+	}
+
+	y_line.appendChild(line);
+	y_line.appendChild(text);
+
+	return y_line;
+}
+
 // Leveraging SMIL Animations
 
 var EASING = {
@@ -606,6 +669,141 @@ function runSVGAnimation(svg_container, elements) {
 	});
 
 	return anim_svg;
+}
+
+// export function calc_intervals() {
+// 	//
+// }
+
+function calc_y_intervals(array) {
+	//*** Where the magic happens ***
+
+	// Calculates best-fit y intervals from given values
+	// and returns the interval array
+
+	// TODO: Fractions
+
+	var max_bound = void 0,
+	    min_bound = void 0,
+	    pos_no_of_parts = void 0,
+	    neg_no_of_parts = void 0,
+	    part_size = void 0; // eslint-disable-line no-unused-vars
+
+	// Critical values
+	var max_val = parseInt(Math.max.apply(Math, toConsumableArray(array)));
+	var min_val = parseInt(Math.min.apply(Math, toConsumableArray(array)));
+	if (min_val >= 0) {
+		min_val = 0;
+	}
+
+	var get_params = function get_params(value1, value2) {
+		var bound1 = void 0,
+		    bound2 = void 0,
+		    no_of_parts_1 = void 0,
+		    no_of_parts_2 = void 0,
+		    interval_size = void 0;
+		if ((value1 + "").length <= 1) {
+			bound1 = 10;
+			no_of_parts_1 = 5;
+		} else {
+			var _calc_upper_bound_and = calc_upper_bound_and_no_of_parts(value1);
+
+			var _calc_upper_bound_and2 = slicedToArray(_calc_upper_bound_and, 2);
+
+			bound1 = _calc_upper_bound_and2[0];
+			no_of_parts_1 = _calc_upper_bound_and2[1];
+		}
+
+		interval_size = bound1 / no_of_parts_1;
+		no_of_parts_2 = calc_no_of_parts(value2, interval_size);
+		bound2 = no_of_parts_2 * interval_size;
+
+		return [bound1, bound2, no_of_parts_1, no_of_parts_2, interval_size];
+	};
+
+	var abs_min_val = min_val * -1;
+	if (abs_min_val <= max_val) {
+		var _get_params = get_params(max_val, abs_min_val);
+		// Get the positive region intervals
+		// then calc negative ones accordingly
+
+
+		var _get_params2 = slicedToArray(_get_params, 5);
+
+		min_bound = _get_params2[1];
+		pos_no_of_parts = _get_params2[2];
+		neg_no_of_parts = _get_params2[3];
+		part_size = _get_params2[4];
+
+		if (abs_min_val === 0) {
+			min_bound = 0;neg_no_of_parts = 0;
+		}
+	} else {
+		var _get_params3 = get_params(abs_min_val, max_val);
+		// Get the negative region here first
+
+
+		var _get_params4 = slicedToArray(_get_params3, 5);
+
+		min_bound = _get_params4[0];
+		neg_no_of_parts = _get_params4[2];
+		pos_no_of_parts = _get_params4[3];
+		part_size = _get_params4[4];
+	}
+
+	// Make both region parts even
+	if (pos_no_of_parts % 2 !== 0 && neg_no_of_parts > 0) pos_no_of_parts++;
+	if (neg_no_of_parts % 2 !== 0) {
+		// every increase in no_of_parts entails an increase in corresponding bound
+		// except here, it happens implicitly after every calc_no_of_parts() call
+		neg_no_of_parts++;
+		min_bound += part_size;
+	}
+
+	var no_of_parts = pos_no_of_parts + neg_no_of_parts;
+	if (no_of_parts > 5) {
+		no_of_parts /= 2;
+		part_size *= 2;
+
+		pos_no_of_parts /= 2;
+	}
+
+	if (max_val < (pos_no_of_parts - 1) * part_size) {
+		no_of_parts--;
+	}
+
+	return get_intervals(-1 * min_bound, part_size, no_of_parts);
+}
+
+function get_intervals(start, interval_size, count) {
+	var intervals = [];
+	for (var i = 0; i <= count; i++) {
+		intervals.push(start);
+		start += interval_size;
+	}
+	return intervals;
+}
+
+function calc_upper_bound_and_no_of_parts(max_val) {
+	// Given a positive value, calculates a nice-number upper bound
+	// and a consequent optimal number of parts
+
+	var part_size = Math.pow(10, (max_val + "").length - 1);
+	var no_of_parts = calc_no_of_parts(max_val, part_size);
+
+	// Use it to get a nice even upper bound
+	var upper_bound = part_size * no_of_parts;
+
+	return [upper_bound, no_of_parts];
+}
+
+function calc_no_of_parts(value, divisor) {
+	// value should be a positive number, divisor should be greater than 0
+	// returns an even no of parts
+	var no_of_parts = Math.ceil(value / divisor);
+	if (no_of_parts % 2 !== 0) no_of_parts++; // Make it an even number
+
+	return no_of_parts;
 }
 
 /**
@@ -786,6 +984,8 @@ var BaseChart = function () {
 		    title = _ref$title === undefined ? '' : _ref$title,
 		    _ref$subtitle = _ref.subtitle,
 		    subtitle = _ref$subtitle === undefined ? '' : _ref$subtitle,
+		    _ref$colors = _ref.colors,
+		    colors = _ref$colors === undefined ? [] : _ref$colors,
 		    _ref$format_lambdas = _ref.format_lambdas,
 		    format_lambdas = _ref$format_lambdas === undefined ? {} : _ref$format_lambdas,
 		    _ref$summary = _ref.summary,
@@ -817,6 +1017,11 @@ var BaseChart = function () {
 			this.current_index = 0;
 		}
 		this.has_legend = has_legend;
+
+		this.colors = colors;
+		if (!this.colors || this.data.labels && this.colors.length < this.data.labels.length) {
+			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange', 'yellow', 'green', 'light-green', 'purple', 'magenta'];
+		}
 
 		this.chart_types = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
 
@@ -1109,8 +1314,6 @@ var AxisChart = function (_BaseChart) {
 		_this.get_y_tooltip = _this.format_lambdas.y_tooltip;
 		_this.get_x_tooltip = _this.format_lambdas.x_tooltip;
 
-		_this.colors = ['green', 'blue', 'violet', 'red', 'orange', 'yellow', 'light-blue', 'light-green', 'purple', 'magenta'];
-
 		_this.zero_line = _this.height;
 
 		_this.old_values = {};
@@ -1159,7 +1362,7 @@ var AxisChart = function (_BaseChart) {
 				values = values.concat(this.y_sums);
 			}
 
-			this.y_axis_values = this.get_y_axis_points(values);
+			this.y_axis_values = calc_y_intervals(values);
 
 			if (!this.y_old_axis_values) {
 				this.y_old_axis_values = this.y_axis_values.slice();
@@ -1279,7 +1482,7 @@ var AxisChart = function (_BaseChart) {
 						point = point.slice(0, allowed_letters - 3) + " ...";
 					}
 				}
-				_this4.x_axis_group.appendChild(_this4.make_x_line(height, text_start_at, point, 'x-value-text', axis_line_class, _this4.x_axis_positions[i]));
+				_this4.x_axis_group.appendChild(make_x_line(height, text_start_at, point, 'x-value-text', axis_line_class, _this4.x_axis_positions[i]));
 			});
 		}
 
@@ -1307,7 +1510,7 @@ var AxisChart = function (_BaseChart) {
 
 			this.y_axis_group.textContent = '';
 			this.y_axis_values.map(function (value, i) {
-				_this5.y_axis_group.appendChild(_this5.make_y_line(start_at, width, text_end_at, value, 'y-value-text', axis_line_class, _this5.zero_line - value * _this5.multiplier, value === 0 && i !== 0 // Non-first Zero line
+				_this5.y_axis_group.appendChild(make_y_line(start_at, width, text_end_at, value, 'y-value-text', axis_line_class, _this5.zero_line - value * _this5.multiplier, value === 0 && i !== 0 // Non-first Zero line
 				));
 			});
 		}
@@ -1403,7 +1606,6 @@ var AxisChart = function (_BaseChart) {
 	}, {
 		key: 'make_new_units_for_dataset',
 		value: function make_new_units_for_dataset(x_values, y_values, color, dataset_index, no_of_datasets, units_group, units_array, unit) {
-			var _this9 = this;
 
 			if (!units_group) units_group = this.svg_units_groups[dataset_index];
 			if (!units_array) units_array = this.y[dataset_index].svg_units;
@@ -1412,8 +1614,10 @@ var AxisChart = function (_BaseChart) {
 			units_group.textContent = '';
 			units_array.length = 0;
 
+			var unit_renderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
+
 			y_values.map(function (y, i) {
-				var data_unit = _this9.UnitRenderer['draw_' + unit.type](x_values[i], y, unit.args, color, i, dataset_index, no_of_datasets);
+				var data_unit = unit_renderer['draw_' + unit.type](x_values[i], y, unit.args, color, i, dataset_index, no_of_datasets);
 				units_group.appendChild(data_unit);
 				units_array.push(data_unit);
 			});
@@ -1425,35 +1629,35 @@ var AxisChart = function (_BaseChart) {
 	}, {
 		key: 'make_y_specifics',
 		value: function make_y_specifics() {
-			var _this10 = this;
+			var _this9 = this;
 
 			this.specific_y_group.textContent = '';
 			this.specific_values.map(function (d) {
-				_this10.specific_y_group.appendChild(_this10.make_y_line(0, _this10.width, _this10.width + 5, d.title.toUpperCase(), 'specific-value', 'specific-value', _this10.zero_line - d.value * _this10.multiplier, false, d.line_type));
+				_this9.specific_y_group.appendChild(make_y_line(0, _this9.width, _this9.width + 5, d.title.toUpperCase(), 'specific-value', 'specific-value', _this9.zero_line - d.value * _this9.multiplier, false, d.line_type));
 			});
 		}
 	}, {
 		key: 'bind_tooltip',
 		value: function bind_tooltip() {
-			var _this11 = this;
+			var _this10 = this;
 
 			// TODO: could be in tooltip itself, as it is a given functionality for its parent
 			this.chart_wrapper.addEventListener('mousemove', function (e) {
-				var offset = $.offset(_this11.chart_wrapper);
-				var relX = e.pageX - offset.left - _this11.translate_x;
-				var relY = e.pageY - offset.top - _this11.translate_y;
+				var offset = $.offset(_this10.chart_wrapper);
+				var relX = e.pageX - offset.left - _this10.translate_x;
+				var relY = e.pageY - offset.top - _this10.translate_y;
 
-				if (relY < _this11.height + _this11.translate_y * 2) {
-					_this11.map_tooltip_x_position_and_show(relX);
+				if (relY < _this10.height + _this10.translate_y * 2) {
+					_this10.map_tooltip_x_position_and_show(relX);
 				} else {
-					_this11.tip.hide_tip();
+					_this10.tip.hide_tip();
 				}
 			});
 		}
 	}, {
 		key: 'map_tooltip_x_position_and_show',
 		value: function map_tooltip_x_position_and_show(relX) {
-			var _this12 = this;
+			var _this11 = this;
 
 			if (!this.y_min_tops) return;
 			for (var i = this.x_axis_positions.length - 1; i >= 0; i--) {
@@ -1468,7 +1672,7 @@ var AxisChart = function (_BaseChart) {
 						return {
 							title: set$$1.title,
 							value: set$$1.formatted ? set$$1.formatted[i] : set$$1.values[i],
-							color: set$$1.color || _this12.colors[j]
+							color: set$$1.color || _this11.colors[j]
 						};
 					});
 
@@ -1485,14 +1689,14 @@ var AxisChart = function (_BaseChart) {
 	}, {
 		key: 'show_sums',
 		value: function show_sums() {
-			var _this13 = this;
+			var _this12 = this;
 
 			this.updating = true;
 
 			this.y_sums = new Array(this.x_axis_positions.length).fill(0);
 			this.y.map(function (d) {
 				d.values.map(function (value, i) {
-					_this13.y_sums[i] += value;
+					_this12.y_sums[i] += value;
 				});
 			});
 
@@ -1503,7 +1707,7 @@ var AxisChart = function (_BaseChart) {
 			this.sum_units = [];
 
 			this.make_new_units_for_dataset(this.x_axis_positions, this.y_sums.map(function (val) {
-				return float_2(_this13.zero_line - val * _this13.multiplier);
+				return float_2(_this12.zero_line - val * _this12.multiplier);
 			}), 'light-grey', 0, 1, this.sum_group, this.sum_units);
 
 			// this.make_path && this.make_path(d, i, old_x, old_y, d.color || this.colors[i]);
@@ -1522,7 +1726,7 @@ var AxisChart = function (_BaseChart) {
 	}, {
 		key: 'show_averages',
 		value: function show_averages() {
-			var _this14 = this;
+			var _this13 = this;
 
 			this.old_specific_values = this.specific_values.slice();
 			this.y.map(function (d, i) {
@@ -1532,7 +1736,7 @@ var AxisChart = function (_BaseChart) {
 				});
 				var average = sum / d.values.length;
 
-				_this14.specific_values.push({
+				_this13.specific_values.push({
 					title: "AVG" + " " + (i + 1),
 					line_type: "dashed",
 					value: average,
@@ -1545,7 +1749,7 @@ var AxisChart = function (_BaseChart) {
 	}, {
 		key: 'hide_averages',
 		value: function hide_averages() {
-			var _this15 = this;
+			var _this14 = this;
 
 			this.old_specific_values = this.specific_values.slice();
 
@@ -1555,7 +1759,7 @@ var AxisChart = function (_BaseChart) {
 			});
 
 			indices_to_remove.map(function (index) {
-				_this15.specific_values.splice(index, 1);
+				_this14.specific_values.splice(index, 1);
 			});
 
 			this.update_values();
@@ -1563,7 +1767,7 @@ var AxisChart = function (_BaseChart) {
 	}, {
 		key: 'update_values',
 		value: function update_values(new_y, new_x) {
-			var _this16 = this;
+			var _this15 = this;
 
 			if (!new_x) {
 				new_x = this.x;
@@ -1595,7 +1799,7 @@ var AxisChart = function (_BaseChart) {
 			if (!arrays_equal(this.x_old_axis_positions, this.x_axis_positions)) {
 				this.make_x_axis(true);
 				setTimeout(function () {
-					if (!_this16.updating) _this16.make_x_axis();
+					if (!_this15.updating) _this15.make_x_axis();
 				}, 350);
 			}
 
@@ -1603,9 +1807,9 @@ var AxisChart = function (_BaseChart) {
 
 				this.make_y_axis(true);
 				setTimeout(function () {
-					if (!_this16.updating) {
-						_this16.make_y_axis();
-						_this16.make_y_specifics();
+					if (!_this15.updating) {
+						_this15.make_y_axis();
+						_this15.make_y_specifics();
 					}
 				}, 350);
 			}
@@ -1657,7 +1861,7 @@ var AxisChart = function (_BaseChart) {
 	}, {
 		key: 'run_animation',
 		value: function run_animation() {
-			var _this17 = this;
+			var _this16 = this;
 
 			var anim_svg = runSVGAnimation(this.svg, this.elements_to_animate);
 
@@ -1668,39 +1872,39 @@ var AxisChart = function (_BaseChart) {
 
 			// Replace the new svg (data has long been replaced)
 			setTimeout(function () {
-				if (anim_svg.parentNode == _this17.chart_wrapper) {
-					_this17.chart_wrapper.removeChild(anim_svg);
-					_this17.chart_wrapper.appendChild(_this17.svg);
+				if (anim_svg.parentNode == _this16.chart_wrapper) {
+					_this16.chart_wrapper.removeChild(anim_svg);
+					_this16.chart_wrapper.appendChild(_this16.svg);
 				}
 			}, 250);
 		}
 	}, {
 		key: 'animate_graphs',
 		value: function animate_graphs() {
-			var _this18 = this;
+			var _this17 = this;
 
 			this.y.map(function (d, i) {
 				// Pre-prep, equilize no of positions between old and new
-				var _calc_old_and_new_pos = _this18.calc_old_and_new_postions(d, i),
+				var _calc_old_and_new_pos = _this17.calc_old_and_new_postions(d, i),
 				    _calc_old_and_new_pos2 = slicedToArray(_calc_old_and_new_pos, 4),
 				    old_x = _calc_old_and_new_pos2[0],
 				    old_y = _calc_old_and_new_pos2[1],
 				    new_x = _calc_old_and_new_pos2[2],
 				    new_y = _calc_old_and_new_pos2[3];
 
-				if (_this18.no_of_extra_pts >= 0) {
-					_this18.make_path && _this18.make_path(d, i, old_x, old_y, d.color || _this18.colors[i]);
-					_this18.make_new_units_for_dataset(old_x, old_y, d.color || _this18.colors[i], i, _this18.y.length);
+				if (_this17.no_of_extra_pts >= 0) {
+					_this17.make_path && _this17.make_path(d, i, old_x, old_y, d.color || _this17.colors[i]);
+					_this17.make_new_units_for_dataset(old_x, old_y, d.color || _this17.colors[i], i, _this17.y.length);
 				}
-				d.path && _this18.animate_path(d, i, old_x, old_y, new_x, new_y);
-				_this18.animate_units(d, i, old_x, old_y, new_x, new_y);
+				d.path && _this17.animate_path(d, i, old_x, old_y, new_x, new_y);
+				_this17.animate_units(d, i, old_x, old_y, new_x, new_y);
 			});
 
 			// TODO: replace with real units
 			setTimeout(function () {
-				_this18.y.map(function (d, i) {
-					_this18.make_path && _this18.make_path(d, i, _this18.x_axis_positions, d.y_tops, d.color || _this18.colors[i]);
-					_this18.make_new_units(d, i);
+				_this17.y.map(function (d, i) {
+					_this17.make_path && _this17.make_path(d, i, _this17.x_axis_positions, d.y_tops, d.color || _this17.colors[i]);
+					_this17.make_new_units(d, i);
 				});
 			}, 400);
 		}
@@ -1728,14 +1932,15 @@ var AxisChart = function (_BaseChart) {
 	}, {
 		key: 'animate_units',
 		value: function animate_units(d, index, old_x, old_y, new_x, new_y) {
-			var _this19 = this;
+			var _this18 = this;
 
 			var type = this.unit_args.type;
+			var unit_renderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
 
 			d.svg_units.map(function (unit, i) {
 				if (new_x[i] === undefined || new_y[i] === undefined) return;
-				_this19.elements_to_animate.push(_this19.UnitRenderer['animate_' + type]({ unit: unit, array: d.svg_units, index: i }, // unit, with info to replace where it came from in the data
-				new_x[i], new_y[i], index, _this19.y.length));
+				_this18.elements_to_animate.push(unit_renderer['animate_' + type]({ unit: unit, array: d.svg_units, index: i }, // unit, with info to replace where it came from in the data
+				new_x[i], new_y[i], index, _this18.y.length));
 			});
 		}
 	}, {
@@ -1780,7 +1985,7 @@ var AxisChart = function (_BaseChart) {
 	}, {
 		key: 'make_anim_x_axis',
 		value: function make_anim_x_axis(height, text_start_at, axis_line_class) {
-			var _this20 = this;
+			var _this19 = this;
 
 			// Animate X AXIS to account for more or less axis lines
 
@@ -1796,12 +2001,12 @@ var AxisChart = function (_BaseChart) {
 				if (typeof new_pos === 'string') {
 					new_pos = parseInt(new_pos.substring(0, new_pos.length - 1));
 				}
-				var x_line = _this20.make_x_line(height, text_start_at, value, // new value
+				var x_line = make_x_line(height, text_start_at, value, // new value
 				'x-value-text', axis_line_class, old_pos // old position
 				);
-				_this20.x_axis_group.appendChild(x_line);
+				_this19.x_axis_group.appendChild(x_line);
 
-				_this20.elements_to_animate && _this20.elements_to_animate.push([{ unit: x_line, array: [0], index: 0 }, { transform: new_pos + ', 0' }, 350, "easein", "translate", { transform: old_pos + ', 0' }]);
+				_this19.elements_to_animate && _this19.elements_to_animate.push([{ unit: x_line, array: [0], index: 0 }, { transform: new_pos + ', 0' }, 350, "easein", "translate", { transform: old_pos + ', 0' }]);
 			};
 
 			this.x_axis_group.textContent = '';
@@ -1811,15 +2016,15 @@ var AxisChart = function (_BaseChart) {
 	}, {
 		key: 'make_anim_y_axis',
 		value: function make_anim_y_axis() {
-			var _this21 = this;
+			var _this20 = this;
 
 			// Animate Y AXIS to account for more or less axis lines
 
 			var old_pos = this.y_old_axis_values.map(function (value) {
-				return _this21.zero_line - value * _this21.multiplier;
+				return _this20.zero_line - value * _this20.multiplier;
 			});
 			var new_pos = this.y_axis_values.map(function (value) {
-				return _this21.zero_line - value * _this21.multiplier;
+				return _this20.zero_line - value * _this20.multiplier;
 			});
 
 			var old_vals = this.y_old_axis_values;
@@ -1834,11 +2039,11 @@ var AxisChart = function (_BaseChart) {
 	}, {
 		key: 'make_anim_y_specifics',
 		value: function make_anim_y_specifics() {
-			var _this22 = this;
+			var _this21 = this;
 
 			this.specific_y_group.textContent = '';
 			this.specific_values.map(function (d) {
-				_this22.add_and_animate_y_line(d.title, _this22.old_zero_line - d.value * _this22.old_multiplier, _this22.zero_line - d.value * _this22.multiplier, 0, _this22.specific_y_group, d.line_type, true);
+				_this21.add_and_animate_y_line(d.title, _this21.old_zero_line - d.value * _this21.old_multiplier, _this21.zero_line - d.value * _this21.multiplier, 0, _this21.specific_y_group, d.line_type, true);
 			});
 		}
 	}, {
@@ -1880,71 +2085,6 @@ var AxisChart = function (_BaseChart) {
 			}
 		}
 	}, {
-		key: 'make_x_line',
-		value: function make_x_line$$1(height, text_start_at, point, label_class, axis_line_class, x_pos) {
-			var line = $.createSVG('line', {
-				x1: 0,
-				x2: 0,
-				y1: 0,
-				y2: height
-			});
-
-			var text = $.createSVG('text', {
-				className: label_class,
-				x: 0,
-				y: text_start_at,
-				dy: '.71em',
-				innerHTML: point
-			});
-
-			var x_level = $.createSVG('g', {
-				className: 'tick ' + axis_line_class,
-				transform: 'translate(' + x_pos + ', 0)'
-			});
-
-			x_level.appendChild(line);
-			x_level.appendChild(text);
-
-			return x_level;
-		}
-	}, {
-		key: 'make_y_line',
-		value: function make_y_line$$1(start_at, width, text_end_at, point, label_class, axis_line_class, y_pos) {
-			var darker = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : false;
-			var line_type = arguments.length > 8 && arguments[8] !== undefined ? arguments[8] : "";
-
-			var line = $.createSVG('line', {
-				className: line_type === "dashed" ? "dashed" : "",
-				x1: start_at,
-				x2: width,
-				y1: 0,
-				y2: 0
-			});
-
-			var text = $.createSVG('text', {
-				className: label_class,
-				x: text_end_at,
-				y: 0,
-				dy: '.32em',
-				innerHTML: point + ""
-			});
-
-			var y_level = $.createSVG('g', {
-				className: 'tick ' + axis_line_class,
-				transform: 'translate(0, ' + y_pos + ')',
-				'stroke-opacity': 1
-			});
-
-			if (darker) {
-				line.style.stroke = "rgba(27, 31, 35, 0.6)";
-			}
-
-			y_level.appendChild(line);
-			y_level.appendChild(text);
-
-			return y_level;
-		}
-	}, {
 		key: 'add_and_animate_y_line',
 		value: function add_and_animate_y_line(value, old_pos, new_pos, i, group, type) {
 			var specific = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : false;
@@ -1971,156 +2111,13 @@ var AxisChart = function (_BaseChart) {
 
 			var axis_label_class = !specific ? 'y-value-text' : 'specific-value';
 			value = !specific ? value : (value + "").toUpperCase();
-			var y_line = this.make_y_line(start_at, width, text_end_at, value, axis_label_class, axis_line_class, old_pos, // old position
+			var y_line = make_y_line(start_at, width, text_end_at, value, axis_label_class, axis_line_class, old_pos, // old position
 			value === 0 && i !== 0, // Non-first Zero line
 			type);
 
 			group.appendChild(y_line);
 
 			this.elements_to_animate && this.elements_to_animate.push([{ unit: y_line, array: [0], index: 0 }, new_props, 350, "easein", "translate", old_props]);
-		}
-	}, {
-		key: 'get_y_axis_points',
-		value: function get_y_axis_points(array) {
-			var _this23 = this;
-
-			//*** Where the magic happens ***
-
-			// Calculates best-fit y intervals from given values
-			// and returns the interval array
-
-			// TODO: Fractions
-
-			var max_bound = void 0,
-			    min_bound = void 0,
-			    pos_no_of_parts = void 0,
-			    neg_no_of_parts = void 0,
-			    part_size = void 0; // eslint-disable-line no-unused-vars
-
-			// Critical values
-			var max_val = parseInt(Math.max.apply(Math, toConsumableArray(array)));
-			var min_val = parseInt(Math.min.apply(Math, toConsumableArray(array)));
-			if (min_val >= 0) {
-				min_val = 0;
-			}
-
-			var get_params = function get_params(value1, value2) {
-				var bound1 = void 0,
-				    bound2 = void 0,
-				    no_of_parts_1 = void 0,
-				    no_of_parts_2 = void 0,
-				    interval_size = void 0;
-				if ((value1 + "").length <= 1) {
-					bound1 = 10;
-					no_of_parts_1 = 5;
-				} else {
-					var _calc_upper_bound_and = _this23.calc_upper_bound_and_no_of_parts(value1);
-
-					var _calc_upper_bound_and2 = slicedToArray(_calc_upper_bound_and, 2);
-
-					bound1 = _calc_upper_bound_and2[0];
-					no_of_parts_1 = _calc_upper_bound_and2[1];
-				}
-
-				interval_size = bound1 / no_of_parts_1;
-				no_of_parts_2 = _this23.calc_no_of_parts(value2, interval_size);
-				bound2 = no_of_parts_2 * interval_size;
-
-				return [bound1, bound2, no_of_parts_1, no_of_parts_2, interval_size];
-			};
-
-			var abs_min_val = min_val * -1;
-			if (abs_min_val <= max_val) {
-				var _get_params = get_params(max_val, abs_min_val);
-				// Get the positive region intervals
-				// then calc negative ones accordingly
-
-
-				var _get_params2 = slicedToArray(_get_params, 5);
-
-				min_bound = _get_params2[1];
-				pos_no_of_parts = _get_params2[2];
-				neg_no_of_parts = _get_params2[3];
-				part_size = _get_params2[4];
-
-				if (abs_min_val === 0) {
-					min_bound = 0;neg_no_of_parts = 0;
-				}
-			} else {
-				var _get_params3 = get_params(abs_min_val, max_val);
-				// Get the negative region here first
-
-
-				var _get_params4 = slicedToArray(_get_params3, 5);
-
-				min_bound = _get_params4[0];
-				neg_no_of_parts = _get_params4[2];
-				pos_no_of_parts = _get_params4[3];
-				part_size = _get_params4[4];
-			}
-
-			// Make both region parts even
-			if (pos_no_of_parts % 2 !== 0 && neg_no_of_parts > 0) pos_no_of_parts++;
-			if (neg_no_of_parts % 2 !== 0) {
-				// every increase in no_of_parts entails an increase in corresponding bound
-				// except here, it happens implicitly after every calc_no_of_parts() call
-				neg_no_of_parts++;
-				min_bound += part_size;
-			}
-
-			var no_of_parts = pos_no_of_parts + neg_no_of_parts;
-			if (no_of_parts > 5) {
-				no_of_parts /= 2;
-				part_size *= 2;
-
-				pos_no_of_parts /= 2;
-			}
-
-			if (max_val < (pos_no_of_parts - 1) * part_size) {
-				no_of_parts--;
-			}
-
-			return this.get_intervals(-1 * min_bound, part_size, no_of_parts);
-		}
-	}, {
-		key: 'get_intervals',
-		value: function get_intervals(start, interval_size, count) {
-			var intervals = [];
-			for (var i = 0; i <= count; i++) {
-				intervals.push(start);
-				start += interval_size;
-			}
-			return intervals;
-		}
-	}, {
-		key: 'calc_upper_bound_and_no_of_parts',
-		value: function calc_upper_bound_and_no_of_parts(max_val) {
-			// Given a positive value, calculates a nice-number upper bound
-			// and a consequent optimal number of parts
-
-			var part_size = Math.pow(10, (max_val + "").length - 1);
-			var no_of_parts = this.calc_no_of_parts(max_val, part_size);
-
-			// Use it to get a nice even upper bound
-			var upper_bound = part_size * no_of_parts;
-
-			return [upper_bound, no_of_parts];
-		}
-	}, {
-		key: 'calc_no_of_parts',
-		value: function calc_no_of_parts(value, divisor) {
-			// value should be a positive number, divisor should be greater than 0
-			// returns an even no of parts
-			var no_of_parts = Math.ceil(value / divisor);
-			if (no_of_parts % 2 !== 0) no_of_parts++; // Make it an even number
-
-			return no_of_parts;
-		}
-	}, {
-		key: 'get_optimal_no_of_parts',
-		value: function get_optimal_no_of_parts(no_of_parts) {
-			// aka Divide by 2 if too large
-			return no_of_parts < 5 ? no_of_parts : no_of_parts / 2;
 		}
 	}, {
 		key: 'set_avg_unit_width_and_x_offset',
@@ -2147,26 +2144,21 @@ var AxisChart = function (_BaseChart) {
 	}, {
 		key: 'calc_y_dependencies',
 		value: function calc_y_dependencies() {
-			var _this24 = this;
+			var _this22 = this;
 
 			this.y_min_tops = new Array(this.x_axis_positions.length).fill(9999);
 			this.y.map(function (d) {
 				d.y_tops = d.values.map(function (val) {
-					return float_2(_this24.zero_line - val * _this24.multiplier);
+					return float_2(_this22.zero_line - val * _this22.multiplier);
 				});
 				d.y_tops.map(function (y_top, i) {
-					if (y_top < _this24.y_min_tops[i]) {
-						_this24.y_min_tops[i] = y_top;
+					if (y_top < _this22.y_min_tops[i]) {
+						_this22.y_min_tops[i] = y_top;
 					}
 				});
 			});
 			// this.chart_wrapper.removeChild(this.tip.container);
 			// this.make_tooltip();
-		}
-	}, {
-		key: 'setup_utils',
-		value: function setup_utils() {
-			this.UnitRenderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
 		}
 	}]);
 	return AxisChart;
@@ -2492,12 +2484,6 @@ var PercentageChart = function (_BaseChart) {
 		_this.max_slices = 10;
 		_this.max_legend_points = 6;
 
-		_this.colors = args.colors;
-
-		if (!_this.colors || _this.colors.length < _this.data.labels.length) {
-			_this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange', 'yellow', 'green', 'light-green', 'purple', 'magenta'];
-		}
-
 		_this.setup();
 		return _this;
 	}
@@ -2577,9 +2563,6 @@ var PercentageChart = function (_BaseChart) {
 
 			this.legend_totals = this.slice_totals.slice(0, this.max_legend_points);
 		}
-	}, {
-		key: 'setup_utils',
-		value: function setup_utils() {}
 	}, {
 		key: 'make_graph_components',
 		value: function make_graph_components() {
@@ -2737,9 +2720,6 @@ var PieChart = function (_BaseChart) {
 
 			this.legend_totals = this.slice_totals.slice(0, this.max_legend_points);
 		}
-	}, {
-		key: 'setup_utils',
-		value: function setup_utils() {}
 	}, {
 		key: 'makeArcPath',
 		value: function makeArcPath(startPosition, endPosition) {
@@ -2919,6 +2899,37 @@ var PieChart = function (_BaseChart) {
 	return PieChart;
 }(BaseChart);
 
+// Playing around with dates
+
+// https://stackoverflow.com/a/11252167/6495043
+function treat_as_utc(date_str) {
+	var result = new Date(date_str);
+	result.setMinutes(result.getMinutes() - result.getTimezoneOffset());
+	return result;
+}
+
+function get_dd_mm_yyyy(date) {
+	var dd = date.getDate();
+	var mm = date.getMonth() + 1; // getMonth() is zero-based
+	return [(dd > 9 ? '' : '0') + dd, (mm > 9 ? '' : '0') + mm, date.getFullYear()].join('-');
+}
+
+function get_weeks_between(start_date_str, end_date_str) {
+	return Math.ceil(get_days_between(start_date_str, end_date_str) / 7);
+}
+
+function get_days_between(start_date_str, end_date_str) {
+	var milliseconds_per_day = 24 * 60 * 60 * 1000;
+	return (treat_as_utc(end_date_str) - treat_as_utc(start_date_str)) / milliseconds_per_day;
+}
+
+// mutates
+function add_days(date, number_of_days) {
+	date.setDate(date.getDate() + number_of_days);
+}
+
+// export function get_month_name() {}
+
 var Heatmap = function (_BaseChart) {
 	inherits(Heatmap, _BaseChart);
 
@@ -2948,7 +2959,7 @@ var Heatmap = function (_BaseChart) {
 		_this.count_label = count_label;
 
 		var today = new Date();
-		_this.start = start || _this.add_days(today, 365);
+		_this.start = start || add_days(today, 365);
 
 		_this.legend_colors = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
 
@@ -2969,12 +2980,12 @@ var Heatmap = function (_BaseChart) {
 			this.first_week_start = new Date(this.start.toDateString());
 			this.last_week_start = new Date(this.today.toDateString());
 			if (this.first_week_start.getDay() !== 7) {
-				this.add_days(this.first_week_start, -1 * this.first_week_start.getDay());
+				add_days(this.first_week_start, -1 * this.first_week_start.getDay());
 			}
 			if (this.last_week_start.getDay() !== 7) {
-				this.add_days(this.last_week_start, -1 * this.last_week_start.getDay());
+				add_days(this.last_week_start, -1 * this.last_week_start.getDay());
 			}
-			this.no_of_cols = this.get_weeks_between(this.first_week_start + '', this.last_week_start + '') + 1;
+			this.no_of_cols = get_weeks_between(this.first_week_start + '', this.last_week_start + '') + 1;
 		}
 	}, {
 		key: 'set_width',
@@ -3040,7 +3051,7 @@ var Heatmap = function (_BaseChart) {
 					this.months.push(this.current_month + '');
 					this.month_weeks[this.current_month] = 1;
 				}
-				this.add_days(current_week_sunday, 7);
+				add_days(current_week_sunday, 7);
 			}
 			this.render_month_labels();
 		}
@@ -3088,13 +3099,13 @@ var Heatmap = function (_BaseChart) {
 					width: square_side,
 					height: square_side,
 					fill: this.legend_colors[color_index],
-					'data-date': this.get_dd_mm_yyyy(current_date),
+					'data-date': get_dd_mm_yyyy(current_date),
 					'data-value': data_value,
 					'data-day': current_date.getDay()
 				});
 
 				var next_date = new Date(current_date);
-				this.add_days(next_date, 1);
+				add_days(next_date, 1);
 				if (next_date.getTime() > today_time) break;
 
 				if (next_date.getMonth() - current_date.getMonth()) {
@@ -3220,58 +3231,9 @@ var Heatmap = function (_BaseChart) {
 				return d <= value;
 			}).length - 1;
 		}
-
-		// TODO: date utils, move these out
-
-		// https://stackoverflow.com/a/11252167/6495043
-
-	}, {
-		key: 'treat_as_utc',
-		value: function treat_as_utc(date_str) {
-			var result = new Date(date_str);
-			result.setMinutes(result.getMinutes() - result.getTimezoneOffset());
-			return result;
-		}
-	}, {
-		key: 'get_dd_mm_yyyy',
-		value: function get_dd_mm_yyyy(date) {
-			var dd = date.getDate();
-			var mm = date.getMonth() + 1; // getMonth() is zero-based
-			return [(dd > 9 ? '' : '0') + dd, (mm > 9 ? '' : '0') + mm, date.getFullYear()].join('-');
-		}
-	}, {
-		key: 'get_weeks_between',
-		value: function get_weeks_between(start_date_str, end_date_str) {
-			return Math.ceil(this.get_days_between(start_date_str, end_date_str) / 7);
-		}
-	}, {
-		key: 'get_days_between',
-		value: function get_days_between(start_date_str, end_date_str) {
-			var milliseconds_per_day = 24 * 60 * 60 * 1000;
-			return (this.treat_as_utc(end_date_str) - this.treat_as_utc(start_date_str)) / milliseconds_per_day;
-		}
-
-		// mutates
-
-	}, {
-		key: 'add_days',
-		value: function add_days(date, number_of_days) {
-			date.setDate(date.getDate() + number_of_days);
-		}
-	}, {
-		key: 'get_month_name',
-		value: function get_month_name() {}
 	}]);
 	return Heatmap;
 }(BaseChart);
-
-// if ("development" !== 'production') {
-// 	// Enable LiveReload
-// 	document.write(
-// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
-// 		':35729/livereload.js?snipver=1"></' + 'script>'
-// 	);
-// }
 
 var chartTypes = {
 	line: LineChart,

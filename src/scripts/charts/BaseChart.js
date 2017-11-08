@@ -7,10 +7,10 @@ export default class BaseChart {
 	constructor({
 		height = 240,
 
-		title = '', subtitle = '',
-
+		title = '',
+		subtitle = '',
+		colors = [],
 		format_lambdas = {},
-
 		summary = [],
 
 		is_navigable = 0,
@@ -38,6 +38,12 @@ export default class BaseChart {
 			this.current_index = 0;
 		}
 		this.has_legend = has_legend;
+
+		this.colors = colors;
+		if(!this.colors || (this.data.labels && this.colors.length < this.data.labels.length)) {
+			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange',
+				'yellow', 'green', 'light-green', 'purple', 'magenta'];
+		}
 
 		this.chart_types = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
 

@@ -1,5 +1,6 @@
 import BaseChart from './BaseChart';
 import $ from '../utils/dom';
+import { add_days, get_dd_mm_yyyy, get_weeks_between } from '../utils/date-utils';
 
 export default class Heatmap extends BaseChart {
 	constructor({
@@ -21,7 +22,7 @@ export default class Heatmap extends BaseChart {
 		this.count_label = count_label;
 
 		let today = new Date();
-		this.start = start || this.add_days(today, 365);
+		this.start = start || add_days(today, 365);
 
 		this.legend_colors = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
 
@@ -39,12 +40,12 @@ export default class Heatmap extends BaseChart {
 		this.first_week_start = new Date(this.start.toDateString());
 		this.last_week_start = new Date(this.today.toDateString());
 		if(this.first_week_start.getDay() !== 7) {
-			this.add_days(this.first_week_start, (-1) * this.first_week_start.getDay());
+			add_days(this.first_week_start, (-1) * this.first_week_start.getDay());
 		}
 		if(this.last_week_start.getDay() !== 7) {
-			this.add_days(this.last_week_start, (-1) * this.last_week_start.getDay());
+			add_days(this.last_week_start, (-1) * this.last_week_start.getDay());
 		}
-		this.no_of_cols = this.get_weeks_between(this.first_week_start + '', this.last_week_start + '') + 1;
+		this.no_of_cols = get_weeks_between(this.first_week_start + '', this.last_week_start + '') + 1;
 	}
 
 	set_width() {
@@ -101,7 +102,7 @@ export default class Heatmap extends BaseChart {
 				this.months.push(this.current_month + '');
 				this.month_weeks[this.current_month] = 1;
 			}
-			this.add_days(current_week_sunday, 7);
+			add_days(current_week_sunday, 7);
 		}
 		this.render_month_labels();
 	}
@@ -148,13 +149,13 @@ export default class Heatmap extends BaseChart {
 				width: square_side,
 				height: square_side,
 				fill:  this.legend_colors[color_index],
-				'data-date': this.get_dd_mm_yyyy(current_date),
+				'data-date': get_dd_mm_yyyy(current_date),
 				'data-value': data_value,
 				'data-day': current_date.getDay()
 			});
 
 			let next_date = new Date(current_date);
-			this.add_days(next_date, 1);
+			add_days(next_date, 1);
 			if(next_date.getTime() > today_time) break;
 
 
@@ -270,39 +271,4 @@ export default class Heatmap extends BaseChart {
 			return d <= value;
 		}).length - 1;
 	}
-
-	// TODO: date utils, move these out
-
-	// https://stackoverflow.com/a/11252167/6495043
-	treat_as_utc(date_str) {
-		let result = new Date(date_str);
-		result.setMinutes(result.getMinutes() - result.getTimezoneOffset());
-		return result;
-	}
-
-	get_dd_mm_yyyy(date) {
-		let dd = date.getDate();
-		let mm = date.getMonth() + 1; // getMonth() is zero-based
-		return [
-			(dd>9 ? '' : '0') + dd,
-			(mm>9 ? '' : '0') + mm,
-			date.getFullYear()
-		].join('-');
-	}
-
-	get_weeks_between(start_date_str, end_date_str) {
-		return Math.ceil(this.get_days_between(start_date_str, end_date_str) / 7);
-	}
-
-	get_days_between(start_date_str, end_date_str) {
-		let milliseconds_per_day = 24 * 60 * 60 * 1000;
-		return (this.treat_as_utc(end_date_str) - this.treat_as_utc(start_date_str)) / milliseconds_per_day;
-	}
-
-	// mutates
-	add_days(date, number_of_days) {
-		date.setDate(date.getDate() + number_of_days);
-	}
-
-	get_month_name() {}
 }

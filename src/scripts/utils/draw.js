@@ -83,18 +83,64 @@ export var UnitRenderer = (function() {
 
 
 export function make_x_line(height, text_start_at, point, label_class, axis_line_class, x_pos) {
+	let line = $.createSVG('line', {
+		x1: 0,
+		x2: 0,
+		y1: 0,
+		y2: height
+	});
 
+	let text = $.createSVG('text', {
+		className: label_class,
+		x: 0,
+		y: text_start_at,
+		dy: '.71em',
+		innerHTML: point
+	});
+
+	let x_line = $.createSVG('g', {
+		className: `tick ${axis_line_class}`,
+		transform: `translate(${ x_pos }, 0)`
+	});
+
+	x_line.appendChild(line);
+	x_line.appendChild(text);
+
+	return x_line;
 }
 
-export function make_y_line() {}
+export function make_y_line(start_at, width, text_end_at, point, label_class, axis_line_class, y_pos, darker=false, line_type="") {
+	let line = $.createSVG('line', {
+		className: line_type === "dashed" ? "dashed": "",
+		x1: start_at,
+		x2: width,
+		y1: 0,
+		y2: 0
+	});
 
-export function draw_x_line() {}
+	let text = $.createSVG('text', {
+		className: label_class,
+		x: text_end_at,
+		y: 0,
+		dy: '.32em',
+		innerHTML: point+""
+	});
 
-export function draw_y_line() {}
+	let y_line = $.createSVG('g', {
+		className: `tick ${axis_line_class}`,
+		transform: `translate(0, ${y_pos})`,
+		'stroke-opacity': 1
+	});
 
-export function label_x_line() {}
+	if(darker) {
+		line.style.stroke = "rgba(27, 31, 35, 0.6)";
+	}
 
-export function label_y_line() {}
+	y_line.appendChild(line);
+	y_line.appendChild(text);
+
+	return y_line;
+}
 
 export function get_anim_x_line() {}
 

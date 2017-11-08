@@ -1,6 +1,7 @@
 import $ from '../utils/dom';
-import { UnitRenderer } from '../utils/draw';
+import { UnitRenderer, make_x_line, make_y_line } from '../utils/draw';
 import { runSVGAnimation } from '../utils/animate';
+import { calc_y_intervals } from '../utils/intervals';
 import { float_2, arrays_equal, get_string_width } from '../utils/helpers';
 import BaseChart from './BaseChart';
 
@@ -16,9 +17,6 @@ export default class AxisChart extends BaseChart {
 		this.get_y_label = this.format_lambdas.y_label;
 		this.get_y_tooltip = this.format_lambdas.y_tooltip;
 		this.get_x_tooltip = this.format_lambdas.x_tooltip;
-
-		this.colors = ['green', 'blue', 'violet', 'red', 'orange',
-			'yellow', 'light-blue', 'light-green', 'purple', 'magenta'];
 
 		this.zero_line = this.height;
 
@@ -58,7 +56,7 @@ export default class AxisChart extends BaseChart {
 			values = values.concat(this.y_sums);
 		}
 
-		this.y_axis_values = this.get_y_axis_points(values);
+		this.y_axis_values = calc_y_intervals(values);
 
 		if(!this.y_old_axis_values) {
 			this.y_old_axis_values = this.y_axis_values.slice();
@@ -158,7 +156,7 @@ export default class AxisChart extends BaseChart {
 				}
 			}
 			this.x_axis_group.appendChild(
-				this.make_x_line(
+				make_x_line(
 					height,
 					text_start_at,
 					point,
@@ -183,7 +181,7 @@ export default class AxisChart extends BaseChart {
 		this.y_axis_group.textContent = '';
 		this.y_axis_values.map((value, i) => {
 			this.y_axis_group.appendChild(
-				this.make_y_line(
+				make_y_line(
 					start_at,
 					width,
 					text_end_at,
@@ -282,8 +280,10 @@ export default class AxisChart extends BaseChart {
 		units_group.textContent = '';
 		units_array.length = 0;
 
+		let unit_renderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
+
 		y_values.map((y, i) => {
-			let data_unit = this.UnitRenderer['draw_' + unit.type](
+			let data_unit = unit_renderer['draw_' + unit.type](
 				x_values[i],
 				y,
 				unit.args,
@@ -305,7 +305,7 @@ export default class AxisChart extends BaseChart {
 		this.specific_y_group.textContent = '';
 		this.specific_values.map(d => {
 			this.specific_y_group.appendChild(
-				this.make_y_line(
+				make_y_line(
 					0,
 					this.width,
 					this.width + 5,
@@ -572,10 +572,11 @@ export default class AxisChart extends BaseChart {
 
 	animate_units(d, index, old_x, old_y, new_x, new_y) {
 		let type = this.unit_args.type;
+		let unit_renderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
 
 		d.svg_units.map((unit, i) => {
 			if(new_x[i] === undefined || new_y[i] === undefined) return;
-			this.elements_to_animate.push(this.UnitRenderer['animate_' + type](
+			this.elements_to_animate.push(unit_renderer['animate_' + type](
 				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
 				new_x[i],
 				new_y[i],
@@ -639,7 +640,7 @@ export default class AxisChart extends BaseChart {
 			if(typeof new_pos === 'string') {
 				new_pos = parseInt(new_pos.substring(0, new_pos.length-1));
 			}
-			const x_line = this.make_x_line(
+			const x_line = make_x_line(
 				height,
 				text_start_at,
 				value, // new value
@@ -748,66 +749,6 @@ export default class AxisChart extends BaseChart {
 		}
 	}
 
-	make_x_line(height, text_start_at, point, label_class, axis_line_class, x_pos) {
-		let line = $.createSVG('line', {
-			x1: 0,
-			x2: 0,
-			y1: 0,
-			y2: height
-		});
-
-		let text = $.createSVG('text', {
-			className: label_class,
-			x: 0,
-			y: text_start_at,
-			dy: '.71em',
-			innerHTML: point
-		});
-
-		let x_level = $.createSVG('g', {
-			className: `tick ${axis_line_class}`,
-			transform: `translate(${ x_pos }, 0)`
-		});
-
-		x_level.appendChild(line);
-		x_level.appendChild(text);
-
-		return x_level;
-	}
-
-	make_y_line(start_at, width, text_end_at, point, label_class, axis_line_class, y_pos, darker=false, line_type="") {
-		let line = $.createSVG('line', {
-			className: line_type === "dashed" ? "dashed": "",
-			x1: start_at,
-			x2: width,
-			y1: 0,
-			y2: 0
-		});
-
-		let text = $.createSVG('text', {
-			className: label_class,
-			x: text_end_at,
-			y: 0,
-			dy: '.32em',
-			innerHTML: point+""
-		});
-
-		let y_level = $.createSVG('g', {
-			className: `tick ${axis_line_class}`,
-			transform: `translate(0, ${y_pos})`,
-			'stroke-opacity': 1
-		});
-
-		if(darker) {
-			line.style.stroke = "rgba(27, 31, 35, 0.6)";
-		}
-
-		y_level.appendChild(line);
-		y_level.appendChild(text);
-
-		return y_level;
-	}
-
 	add_and_animate_y_line(value, old_pos, new_pos, i, group, type, specific=false) {
 		let filler = false;
 		if(typeof new_pos === 'string') {
@@ -825,7 +766,7 @@ export default class AxisChart extends BaseChart {
 		let [width, text_end_at, axis_line_class, start_at] = this.get_y_axis_line_props(specific);
 		let axis_label_class = !specific ? 'y-value-text' : 'specific-value';
 		value = !specific ? value : (value+"").toUpperCase();
-		const y_line = this.make_y_line(
+		const y_line = make_y_line(
 			start_at,
 			width,
 			text_end_at,
@@ -847,117 +788,6 @@ export default class AxisChart extends BaseChart {
 			"translate",
 			old_props
 		]);
-	}
-
-	get_y_axis_points(array) {
-		//*** Where the magic happens ***
-
-		// Calculates best-fit y intervals from given values
-		// and returns the interval array
-
-		// TODO: Fractions
-
-		let max_bound, min_bound, pos_no_of_parts, neg_no_of_parts, part_size; // eslint-disable-line no-unused-vars
-
-		// Critical values
-		let max_val = parseInt(Math.max(...array));
-		let min_val = parseInt(Math.min(...array));
-		if(min_val >= 0) {
-			min_val = 0;
-		}
-
-		let get_params = (value1, value2) => {
-			let bound1, bound2, no_of_parts_1, no_of_parts_2, interval_size;
-			if((value1+"").length <= 1) {
-				[bound1, no_of_parts_1] = [10, 5];
-			} else {
-				[bound1, no_of_parts_1] = this.calc_upper_bound_and_no_of_parts(value1);
-			}
-
-			interval_size = bound1 / no_of_parts_1;
-			no_of_parts_2 = this.calc_no_of_parts(value2, interval_size);
-			bound2 = no_of_parts_2 * interval_size;
-
-			return [bound1, bound2, no_of_parts_1, no_of_parts_2, interval_size];
-		};
-
-		const abs_min_val = min_val * -1;
-		if(abs_min_val <= max_val) {
-			// Get the positive region intervals
-			// then calc negative ones accordingly
-			[max_bound, min_bound, pos_no_of_parts, neg_no_of_parts, part_size]
-				= get_params(max_val, abs_min_val);
-			if(abs_min_val === 0) {
-				min_bound = 0; neg_no_of_parts = 0;
-			}
-		} else {
-			// Get the negative region here first
-			[min_bound, max_bound, neg_no_of_parts, pos_no_of_parts, part_size]
-				= get_params(abs_min_val, max_val);
-		}
-
-		// Make both region parts even
-		if(pos_no_of_parts % 2 !== 0 && neg_no_of_parts > 0) pos_no_of_parts++;
-		if(neg_no_of_parts % 2 !== 0) {
-			// every increase in no_of_parts entails an increase in corresponding bound
-			// except here, it happens implicitly after every calc_no_of_parts() call
-			neg_no_of_parts++;
-			min_bound += part_size;
-		}
-
-		let no_of_parts = pos_no_of_parts + neg_no_of_parts;
-		if(no_of_parts > 5) {
-			no_of_parts /= 2;
-			part_size *= 2;
-
-			pos_no_of_parts /=2;
-		}
-
-		if (max_val < (pos_no_of_parts - 1) * part_size) {
-			no_of_parts--;
-		}
-
-		return this.get_intervals(
-			(-1) * min_bound,
-			part_size,
-			no_of_parts
-		);
-	}
-
-	get_intervals(start, interval_size, count) {
-		let intervals = [];
-		for(var i = 0; i <= count; i++){
-			intervals.push(start);
-			start += interval_size;
-		}
-		return intervals;
-	}
-
-	calc_upper_bound_and_no_of_parts(max_val) {
-		// Given a positive value, calculates a nice-number upper bound
-		// and a consequent optimal number of parts
-
-		const part_size = Math.pow(10, ((max_val+"").length - 1));
-		const no_of_parts = this.calc_no_of_parts(max_val, part_size);
-
-		// Use it to get a nice even upper bound
-		const upper_bound = part_size * no_of_parts;
-
-		return [upper_bound, no_of_parts];
-	}
-
-	calc_no_of_parts(value, divisor) {
-		// value should be a positive number, divisor should be greater than 0
-		// returns an even no of parts
-		let no_of_parts = Math.ceil(value / divisor);
-		if(no_of_parts % 2 !== 0) no_of_parts++; // Make it an even number
-
-		return no_of_parts;
-	}
-
-	get_optimal_no_of_parts(no_of_parts) {
-		// aka Divide by 2 if too large
-		return (no_of_parts < 5) ? no_of_parts : no_of_parts / 2;
 	}
 
 	set_avg_unit_width_and_x_offset() {
@@ -990,9 +820,5 @@ export default class AxisChart extends BaseChart {
 		});
 		// this.chart_wrapper.removeChild(this.tip.container);
 		// this.make_tooltip();
-	}
-
-	setup_utils() {
-		this.UnitRenderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
 	}
 }

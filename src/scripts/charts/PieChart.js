@@ -66,7 +66,6 @@ export default class PieChart extends BaseChart {
 		this.legend_totals = this.slice_totals.slice(0, this.max_legend_points);
 	}
 
-	setup_utils() { }
 	static getPositionByAngle(angle,radius){
 		return {
 			x:Math.sin(angle * ANGLE_RATIO) * radius,
