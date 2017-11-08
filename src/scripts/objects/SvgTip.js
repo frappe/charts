@@ -1,4 +1,4 @@
-import $ from '../helpers/dom';
+import $ from '../utils/dom';
 
 export default class SvgTip {
 	constructor({
@@ -60,7 +60,7 @@ export default class SvgTip {
 		this.list_values.map((set) => {
 			let li = $.create('li', {
 				className: `border-top ${set.color || 'black'}`,
-				innerHTML: `<strong style="display: block;">${ isNaN(set.value) ? '' : set.value }</strong>
+				innerHTML: `<strong style="display: block;">${ set.value === 0 || set.value ? set.value : '' }</strong>
 					${set.title ? set.title : '' }`
 			});
 
