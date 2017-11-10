@@ -40,7 +40,7 @@ export default class BaseChart {
 		this.has_legend = has_legend;
 
 		this.colors = colors;
-		if(!this.colors || (this.data.labels && this.colors.length < this.data.labels.length)) {
+		if(!this.colors || (this.data.datasets && this.colors.length < this.data.datasets.length)) {
 			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange',
 				'yellow', 'green', 'light-green', 'purple', 'magenta'];
 		}
