@@ -1019,7 +1019,7 @@ var BaseChart = function () {
 		this.has_legend = has_legend;
 
 		this.colors = colors;
-		if (!this.colors || this.data.labels && this.colors.length < this.data.labels.length) {
+		if (!this.colors || this.data.datasets && this.colors.length < this.data.datasets.length) {
 			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange', 'yellow', 'green', 'light-green', 'purple', 'magenta'];
 		}
 
@@ -3234,6 +3234,14 @@ var Heatmap = function (_BaseChart) {
 	}]);
 	return Heatmap;
 }(BaseChart);
+
+// if ("development" !== 'production') {
+// 	// Enable LiveReload
+// 	document.write(
+// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
+// 		':35729/livereload.js?snipver=1"></' + 'script>'
+// 	);
+// }
 
 var chartTypes = {
 	line: LineChart,
