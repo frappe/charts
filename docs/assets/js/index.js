@@ -358,7 +358,7 @@ document.querySelector('[data-aggregation="average"]').addEventListener("click",
 let heatmap_data = {};
 let start_date = new Date();
 let end_date = new Date();
-start_date.setMonth(end_date.getMonth() - 12);
+end_date.setFullYear(end_date.getFullYear() + 1);
 let tmp_date = new Date(start_date);
 while (tmp_date < end_date) {
 	tmp_date.setDate(tmp_date.getDate() + 1);

@@ -2960,9 +2960,8 @@ var Heatmap = function (_BaseChart) {
 		_this.discrete_domains = discrete_domains;
 		_this.count_label = count_label;
 
-		var today = new Date();
-		_this.start = start || add_days(today, 365);
-		_this.end = end || today;
+		_this.start = start;
+		_this.end = end;
 
 		_this.start_monday = start_monday;
 
@@ -2974,20 +2973,29 @@ var Heatmap = function (_BaseChart) {
 	}
 
 	createClass(Heatmap, [{
+		key: 'setup_start_end',
+		value: function setup_start_end() {
+			if (!this.start) {
+				var anchor_date = this.end ? this.end : new Date();
+				var year_before = new Date(anchor_date);
+				year_before.setFullYear(year_before.getFullYear() - 1);
+				this.start = year_before;
+			}
+
+			if (!this.end) {
+				var year_after = new Date(this.start);
+				year_after.setFullYear(year_after.getFullYear() + 1);
+				this.end = year_after;
+			}
+		}
+	}, {
 		key: 'setup_base_values',
 		value: function setup_base_values() {
+			this.setup_start_end();
 			this.today = new Date();
-			if (!this.start) {
-				this.start = new Date();
-				this.start.setFullYear(this.start.getFullYear() - 1);
-			}
 			this.first_week_start = new Date(this.start.toDateString());
 			if (this.first_week_start.getDay() !== 7) {
 				add_days(this.first_week_start, -1 * this.first_week_start.getDay() + this.start_monday);
-			}
-			if (!this.end) {
-				this.end = new Date(this.start);
-				this.end.setMonth(this.end.getMonth() + 12);
 			}
 			this.last_week_start = new Date(this.end.toDateString());
 			if (this.last_week_start.getDay() !== 7) {
@@ -3242,6 +3250,14 @@ var Heatmap = function (_BaseChart) {
 	}]);
 	return Heatmap;
 }(BaseChart);
+
+// if ("development" !== 'production') {
+// 	// Enable LiveReload
+// 	document.write(
+// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
+// 		':35729/livereload.js?snipver=1"></' + 'script>'
+// 	);
+// }
 
 var chartTypes = {
 	line: LineChart,

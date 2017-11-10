@@ -23,9 +23,8 @@ export default class Heatmap extends BaseChart {
 		this.discrete_domains = discrete_domains;
 		this.count_label = count_label;
 
-		let today = new Date();
-		this.start = start || add_days(today, 365);
-		this.end = end || today;
+		this.start = start;
+		this.end = end;
 		
 		this.start_monday = start_monday;
 		
@@ -35,19 +34,28 @@ export default class Heatmap extends BaseChart {
 		this.setup();
 	}
 
-	setup_base_values() {
-		this.today = new Date();
-		if(!this.start) {
-			this.start = new Date();
-			this.start.setFullYear( this.start.getFullYear() - 1 );
+	setup_start_end() {
+		if (!this.start) {
+			let anchor_date = this.end ? this.end : new Date();
+			let year_before = new Date(anchor_date);
+			year_before.setFullYear(year_before.getFullYear() - 1);
+			this.start = year_before;
 		}
+		
+		if (!this.end) {
+			let year_after = new Date(this.start);
+			year_after.setFullYear(year_after.getFullYear() + 1);
+			this.end = year_after;
+		}
+		
+	}
+
+	setup_base_values() {
+		this.setup_start_end();
+		this.today = new Date();
 		this.first_week_start = new Date(this.start.toDateString());
 		if(this.first_week_start.getDay() !== 7) {
 			add_days(this.first_week_start, (-1) * this.first_week_start.getDay() + this.start_monday);
-		}
-		if(!this.end) {
-			this.end = new Date(this.start);
-			this.end.setMonth( this.end.getMonth() + 12 );
 		}
 		this.last_week_start = new Date(this.end.toDateString());
 		if(this.last_week_start.getDay() !== 7) {
