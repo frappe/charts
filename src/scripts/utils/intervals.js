@@ -16,7 +16,7 @@ export function calc_part_size(value) {
 }
 
 export function calc_upper_bound(value) {
-	//
+	return value;
 }
 
 export function clump_intervals(start, interval_size, count) {
@@ -136,9 +136,4 @@ function calc_no_of_parts(value, divisor) {
 	if(no_of_parts % 2 !== 0) no_of_parts++; // Make it an even number
 
 	return no_of_parts;
-}
-
-function get_optimal_no_of_parts(no_of_parts) {
-	// aka Divide by 2 if too large
-	return (no_of_parts < 5) ? no_of_parts : no_of_parts / 2;
 }

@@ -238,6 +238,9 @@
               <pre><code class="hljs javascript margin-vertical-px">  let heatmap = new Chart({
     parent: "#heatmap",
     data: heatmap_data,  // object with date/timestamp-value pairs
+    start: start_date,   // Defaults to Date() - 12 months
+    end: end_date,       // Defaults to Date()
+    start_monday: 1,     // default 0 (= Sunday)
     type: 'heatmap',
     height: 115,
     discrete_domains: 1  // default 0

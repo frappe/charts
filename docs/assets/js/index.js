@@ -356,17 +356,23 @@ document.querySelector('[data-aggregation="average"]').addEventListener("click",
 // ================================================================================
 
 let heatmap_data = {};
-let current_date = new Date();
-let timestamp = current_date.getTime()/1000;
-timestamp = Math.floor(timestamp - (timestamp % 86400)).toFixed(1); // convert to midnight
-for (var i = 0; i< 375; i++) {
+let start_date = new Date();
+let end_date = new Date();
+start_date.setMonth(end_date.getMonth() - 12);
+let tmp_date = new Date(start_date);
+while (tmp_date < end_date) {
+	tmp_date.setDate(tmp_date.getDate() + 1);
+	let timestamp = tmp_date.getTime()/1000;
+	timestamp = Math.floor(timestamp - (timestamp % 86400)).toFixed(1); // convert to midnight
 	heatmap_data[parseInt(timestamp)] = Math.floor(Math.random() * 6);
-	timestamp = Math.floor(timestamp - 86400).toFixed(1);
 }
 
 new Chart({
 	parent: "#chart-heatmap",
 	data: heatmap_data,
+	start: start_date,
+	end: end_date,
+	start_monday: 1,
 	type: 'heatmap',
 	height: 115,
 	discrete_domains: 1  // default 0
@@ -387,6 +393,9 @@ Array.prototype.slice.call(
 		new Chart({
 			parent: "#chart-heatmap",
 			data: heatmap_data,
+			start: start_date,
+			start_monday: 1,
+			end: end_date,
 			type: 'heatmap',
 			height: 115,
 			discrete_domains: discrete_domains

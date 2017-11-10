@@ -2936,6 +2936,10 @@ var Heatmap = function (_BaseChart) {
 	function Heatmap(_ref) {
 		var _ref$start = _ref.start,
 		    start = _ref$start === undefined ? '' : _ref$start,
+		    _ref$end = _ref.end,
+		    end = _ref$end === undefined ? '' : _ref$end,
+		    _ref$start_monday = _ref.start_monday,
+		    start_monday = _ref$start_monday === undefined ? 0 : _ref$start_monday,
 		    _ref$domain = _ref.domain,
 		    domain = _ref$domain === undefined ? '' : _ref$domain,
 		    _ref$subdomain = _ref.subdomain,
@@ -2960,6 +2964,9 @@ var Heatmap = function (_BaseChart) {
 
 		var today = new Date();
 		_this.start = start || add_days(today, 365);
+		_this.end = end || today;
+
+		_this.start_monday = start_monday;
 
 		_this.legend_colors = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
 
@@ -2972,18 +2979,21 @@ var Heatmap = function (_BaseChart) {
 		key: 'setup_base_values',
 		value: function setup_base_values() {
 			this.today = new Date();
-
 			if (!this.start) {
 				this.start = new Date();
 				this.start.setFullYear(this.start.getFullYear() - 1);
 			}
 			this.first_week_start = new Date(this.start.toDateString());
-			this.last_week_start = new Date(this.today.toDateString());
 			if (this.first_week_start.getDay() !== 7) {
-				add_days(this.first_week_start, -1 * this.first_week_start.getDay());
+				add_days(this.first_week_start, -1 * this.first_week_start.getDay() + this.start_monday);
 			}
+			if (!this.end) {
+				this.end = new Date(this.start);
+				this.end.setMonth(this.end.getMonth() + 12);
+			}
+			this.last_week_start = new Date(this.end.toDateString());
 			if (this.last_week_start.getDay() !== 7) {
-				add_days(this.last_week_start, -1 * this.last_week_start.getDay());
+				add_days(this.last_week_start, -1 * this.last_week_start.getDay() + this.start_monday);
 			}
 			this.no_of_cols = get_weeks_between(this.first_week_start + '', this.last_week_start + '') + 1;
 		}
@@ -3022,9 +3032,9 @@ var Heatmap = function (_BaseChart) {
 	}, {
 		key: 'render_all_weeks_and_store_x_values',
 		value: function render_all_weeks_and_store_x_values(no_of_weeks) {
-			var current_week_sunday = new Date(this.first_week_start);
+			var first_week_start_day = new Date(this.first_week_start);
 			this.week_col = 0;
-			this.current_month = current_week_sunday.getMonth();
+			this.current_month = first_week_start_day.getMonth();
 
 			this.months = [this.current_month + ''];
 			this.month_weeks = {}, this.month_start_points = [];
@@ -3034,7 +3044,7 @@ var Heatmap = function (_BaseChart) {
 			for (var i = 0; i < no_of_weeks; i++) {
 				var data_group = void 0,
 				    month_change = 0;
-				var day = new Date(current_week_sunday);
+				var day = new Date(first_week_start_day);
 
 				var _get_week_squares_gro = this.get_week_squares_group(day, this.week_col);
 
@@ -3051,7 +3061,7 @@ var Heatmap = function (_BaseChart) {
 					this.months.push(this.current_month + '');
 					this.month_weeks[this.current_month] = 1;
 				}
-				add_days(current_week_sunday, 7);
+				add_days(first_week_start_day, 7);
 			}
 			this.render_month_labels();
 		}
@@ -3062,7 +3072,7 @@ var Heatmap = function (_BaseChart) {
 			var square_side = 10;
 			var cell_padding = 2;
 			var step = 1;
-			var today_time = this.today.getTime();
+			var end_time = this.end.getTime();
 
 			var month_change = 0;
 			var week_col_change = 0;
@@ -3106,7 +3116,7 @@ var Heatmap = function (_BaseChart) {
 
 				var next_date = new Date(current_date);
 				add_days(next_date, 1);
-				if (next_date.getTime() > today_time) break;
+				if (next_date.getTime() > end_time) break;
 
 				if (next_date.getMonth() - current_date.getMonth()) {
 					month_change = 1;
