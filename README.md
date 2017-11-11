@@ -84,5 +84,4 @@ If you want to contribute:
 This repository has been released under the [MIT License](LICENSE)
 
 ------------------
-Made with ♥ by [pratu16x7](https://github.com/pratu16x7). Awesome logo by [raghukamath](https://github.com/raghukamath).
-Project maintained by [frappe](https://github.com/frappe).
+Project maintained by [Frappe](https://frappe.io).
