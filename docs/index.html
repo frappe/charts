@@ -227,7 +227,7 @@
           <div class="col-sm-10 push-sm-1">
             <div class="dashboard-section">
               <h6 class="margin-vertical-rem">
-                And an Annual Heatmap
+                And a Month-wise Heatmap
               </h6>
               <div id="chart-heatmap" class="border"
                 style="overflow: scroll; text-align: center; padding: 20px;"></div>
@@ -237,16 +237,22 @@
               </div>
               <pre><code class="hljs javascript margin-vertical-px">  let heatmap = new Chart({
     parent: "#heatmap",
-    data: heatmap_data,  // object with date/timestamp-value pairs
-    legend_colors: [     // optional
-      '#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'
-    ],
-    legend_scale: [      // optional, calculated linearly if not provided
-      0, 1, 2, 4, 5      // starting values for each color
-    ],
     type: 'heatmap',
     height: 115,
-    discrete_domains: 1  // default 0
+    data: heatmap_data,  // object with date/timestamp-value pairs
+
+    discrete_domains: 1  // default: 0
+
+    start: start_date,
+                  // A Date object;
+                  // default: today's date in past year
+                  //          for an annual heatmap
+
+    legend_colors: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'],
+                  // Set of five incremental colors,
+                  // beginning with a muted color for zero data;
+                  // default: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127']
+
   });</code></pre>
             </div>
           </div>

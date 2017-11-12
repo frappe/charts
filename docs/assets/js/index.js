@@ -360,7 +360,7 @@ let current_date = new Date();
 let timestamp = current_date.getTime()/1000;
 timestamp = Math.floor(timestamp - (timestamp % 86400)).toFixed(1); // convert to midnight
 for (var i = 0; i< 375; i++) {
-	heatmap_data[parseInt(timestamp)] = Math.floor(Math.random() * 6);
+	heatmap_data[parseInt(timestamp)] = Math.floor(Math.random() * 5);
 	timestamp = Math.floor(timestamp - 86400).toFixed(1);
 }
 
