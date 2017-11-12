@@ -385,13 +385,61 @@ Array.prototype.slice.call(
 			discrete_domains = 1;
 		}
 
+		let colors = [];
+		let colors_mode = document
+			.querySelector('.heatmap-color-buttons .active')
+			.getAttribute('data-color');
+		if(colors_mode === 'halloween') {
+			colors = ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'];
+		}
+
 		new Chart({
 			parent: "#chart-heatmap",
 			data: heatmap_data,
 			type: 'heatmap',
 			legend_scale: [0, 1, 2, 4, 5],
 			height: 115,
-			discrete_domains: discrete_domains
+			discrete_domains: discrete_domains,
+			legend_colors: colors
+		});
+
+		Array.prototype.slice.call(
+			btn.parentNode.querySelectorAll('button')).map(el => {
+			el.classList.remove('active');
+		});
+		btn.classList.add('active');
+	});
+});
+
+Array.prototype.slice.call(
+	document.querySelectorAll('.heatmap-color-buttons button')
+).map(el => {
+	el.addEventListener('click', (e) => {
+		let btn = e.target;
+		let colors_mode = btn.getAttribute('data-color');
+		let colors = [];
+
+		if(colors_mode === 'halloween') {
+			colors = ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'];
+		}
+
+		let discrete_domains = 1;
+
+		let view_mode = document
+			.querySelector('.heatmap-mode-buttons .active')
+			.getAttribute('data-mode');
+		if(view_mode === 'continuous') {
+			discrete_domains = 0;
+		}
+
+		new Chart({
+			parent: "#chart-heatmap",
+			data: heatmap_data,
+			type: 'heatmap',
+			legend_scale: [0, 1, 2, 4, 5],
+			height: 115,
+			discrete_domains: discrete_domains,
+			legend_colors: colors
 		});
 
 		Array.prototype.slice.call(

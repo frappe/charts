@@ -235,6 +235,10 @@
                 <button type="button" class="btn btn-sm btn-secondary active" data-mode="discrete">Discrete</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-mode="continuous">Continuous</button>
               </div>
+              <div class="heatmap-color-buttons btn-group mt-1 mx-auto" role="group">
+                <button type="button" class="btn btn-sm btn-secondary active" data-color="default">Default green</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-color="halloween">GitHub's Halloween</button>
+              </div>
               <pre><code class="hljs javascript margin-vertical-px">  let heatmap = new Chart({
     parent: "#heatmap",
     type: 'heatmap',
@@ -248,9 +252,9 @@
                   // default: today's date in past year
                   //          for an annual heatmap
 
-    legend_colors: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'],
+    legend_colors: ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'],
                   // Set of five incremental colors,
-                  // beginning with a muted color for zero data;
+                  // beginning with a low-saturation color for zero data;
                   // default: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127']
 
   });</code></pre>
