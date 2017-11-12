@@ -673,6 +673,29 @@ function runSVGAnimation(svg_container, elements) {
 // 	//
 // }
 
+function calc_distribution(values, distribution_size) {
+	// Assume non-negative values,
+	// implying distribution minimum at zero
+
+	var data_max_value = Math.max.apply(Math, toConsumableArray(values));
+
+	var distribution_step = 1 / (distribution_size - 1);
+	var distribution = [];
+
+	for (var i = 0; i < distribution_size; i++) {
+		var checkpoint = data_max_value * (distribution_step * i);
+		distribution.push(checkpoint);
+	}
+
+	return distribution;
+}
+
+function get_max_checkpoint(value, distribution) {
+	return distribution.filter(function (d) {
+		return d < value;
+	}).length;
+}
+
 function calc_y_intervals(array) {
 	//*** Where the magic happens ***
 
@@ -2639,6 +2662,12 @@ function lighten_darken_color(col, amt) {
 	return (usePound ? "#" : "") + (g | b << 8 | r << 16).toString(16);
 }
 
+function is_valid_color(string) {
+	// https://stackoverflow.com/a/8027444/6495043
+	return (/(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string)
+	);
+}
+
 var ANGLE_RATIO = Math.PI / 180;
 var FULL_ANGLE = 360;
 
@@ -2943,7 +2972,9 @@ var Heatmap = function (_BaseChart) {
 		    _ref$discrete_domains = _ref.discrete_domains,
 		    discrete_domains = _ref$discrete_domains === undefined ? 0 : _ref$discrete_domains,
 		    _ref$count_label = _ref.count_label,
-		    count_label = _ref$count_label === undefined ? '' : _ref$count_label;
+		    count_label = _ref$count_label === undefined ? '' : _ref$count_label,
+		    _ref$legend_colors = _ref.legend_colors,
+		    legend_colors = _ref$legend_colors === undefined ? [] : _ref$legend_colors;
 		classCallCheck(this, Heatmap);
 
 		var _this = possibleConstructorReturn(this, (Heatmap.__proto__ || Object.getPrototypeOf(Heatmap)).call(this, arguments[0]));
@@ -2959,7 +2990,12 @@ var Heatmap = function (_BaseChart) {
 		var today = new Date();
 		_this.start = start || add_days(today, 365);
 
-		_this.legend_colors = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+		legend_colors = legend_colors.slice(0, 5);
+		_this.legend_colors = _this.validate_colors(legend_colors) ? legend_colors : ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+
+		// Hardcoded for a fixed 5-color theme,
+		// More colors are difficult to parse visually
+		_this.distribution_size = 5;
 
 		_this.translate_x = 0;
 		_this.setup();
@@ -2967,6 +3003,21 @@ var Heatmap = function (_BaseChart) {
 	}
 
 	createClass(Heatmap, [{
+		key: 'validate_colors',
+		value: function validate_colors(colors) {
+			if (colors.length < 5) return 0;
+
+			var valid = 1;
+			colors.forEach(function (string) {
+				if (!is_valid_color(string)) {
+					valid = 0;
+					console.warn('"' + string + '" is not a valid color.');
+				}
+			}, this);
+
+			return valid;
+		}
+	}, {
 		key: 'setup_base_values',
 		value: function setup_base_values() {
 			this.today = new Date();
@@ -3010,9 +3061,16 @@ var Heatmap = function (_BaseChart) {
 	}, {
 		key: 'setup_values',
 		value: function setup_values() {
+			var _this2 = this;
+
 			this.domain_label_group.textContent = '';
 			this.data_groups.textContent = '';
-			this.distribution = this.get_distribution(this.data, this.legend_colors);
+
+			var data_values = Object.keys(this.data).map(function (key) {
+				return _this2.data[key];
+			});
+			this.distribution = calc_distribution(data_values, this.distribution_size);
+
 			this.month_names = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 			this.render_all_weeks_and_store_x_values(this.no_of_cols);
@@ -3079,12 +3137,14 @@ var Heatmap = function (_BaseChart) {
 
 				if (this.data[timestamp]) {
 					data_value = this.data[timestamp];
-					color_index = this.get_max_checkpoint(data_value, this.distribution);
 				}
 
 				if (this.data[Math.round(timestamp)]) {
 					data_value = this.data[Math.round(timestamp)];
-					color_index = this.get_max_checkpoint(data_value, this.distribution);
+				}
+
+				if (data_value) {
+					color_index = get_max_checkpoint(data_value, this.distribution);
 				}
 
 				var x = 13 + (index + week_col_change) * 12;
@@ -3122,7 +3182,7 @@ var Heatmap = function (_BaseChart) {
 	}, {
 		key: 'render_month_labels',
 		value: function render_month_labels() {
-			var _this2 = this;
+			var _this3 = this;
 
 			// this.first_month_label = 1;
 			// if (this.first_week_start.getDate() > 8) {
@@ -3144,11 +3204,11 @@ var Heatmap = function (_BaseChart) {
 			this.month_start_points.pop();
 
 			this.month_start_points.map(function (start, i) {
-				var month_name = _this2.month_names[_this2.months[i]].substring(0, 3);
+				var month_name = _this3.month_names[_this3.months[i]].substring(0, 3);
 
 				$.createSVG('text', {
 					className: 'y-value-text',
-					inside: _this2.domain_label_group,
+					inside: _this3.domain_label_group,
 					x: start + 12,
 					y: 10,
 					dy: '.32em',
@@ -3168,26 +3228,26 @@ var Heatmap = function (_BaseChart) {
 	}, {
 		key: 'bind_tooltip',
 		value: function bind_tooltip() {
-			var _this3 = this;
+			var _this4 = this;
 
 			Array.prototype.slice.call(document.querySelectorAll(".data-group .day")).map(function (el) {
 				el.addEventListener('mouseenter', function (e) {
 					var count = e.target.getAttribute('data-value');
 					var date_parts = e.target.getAttribute('data-date').split('-');
 
-					var month = _this3.month_names[parseInt(date_parts[1]) - 1].substring(0, 3);
+					var month = _this4.month_names[parseInt(date_parts[1]) - 1].substring(0, 3);
 
-					var g_off = _this3.chart_wrapper.getBoundingClientRect(),
+					var g_off = _this4.chart_wrapper.getBoundingClientRect(),
 					    p_off = e.target.getBoundingClientRect();
 
 					var width = parseInt(e.target.getAttribute('width'));
 					var x = p_off.left - g_off.left + (width + 2) / 2;
 					var y = p_off.top - g_off.top - (width + 2) / 2;
-					var value = count + ' ' + _this3.count_label;
+					var value = count + ' ' + _this4.count_label;
 					var name = ' on ' + month + ' ' + date_parts[0] + ', ' + date_parts[2];
 
-					_this3.tip.set_values(x, y, name, value, [], 1);
-					_this3.tip.show_tip();
+					_this4.tip.set_values(x, y, name, value, [], 1);
+					_this4.tip.show_tip();
 				});
 			});
 		}
@@ -3197,37 +3257,6 @@ var Heatmap = function (_BaseChart) {
 			this.data = data;
 			this.setup_values();
 			this.bind_tooltip();
-		}
-	}, {
-		key: 'get_distribution',
-		value: function get_distribution() {
-			var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-			var mapper_array = arguments[1];
-
-			var data_values = Object.keys(data).map(function (key) {
-				return data[key];
-			});
-			var data_max_value = Math.max.apply(Math, toConsumableArray(data_values));
-
-			var distribution_step = 1 / (mapper_array.length - 1);
-			var distribution = [];
-
-			mapper_array.map(function (color, i) {
-				var checkpoint = data_max_value * (distribution_step * i);
-				distribution.push(checkpoint);
-			});
-
-			return distribution;
-		}
-	}, {
-		key: 'get_max_checkpoint',
-		value: function get_max_checkpoint(value, distribution) {
-			return distribution.filter(function (d, i) {
-				if (i === 1) {
-					return distribution[0] < value;
-				}
-				return d <= value;
-			}).length - 1;
 		}
 	}]);
 	return Heatmap;

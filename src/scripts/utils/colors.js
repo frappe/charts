@@ -16,3 +16,8 @@ export function lighten_darken_color(col, amt) {
 	let g = limit_color((num & 0x0000FF) + amt);
 	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
 }
+
+export function is_valid_color(string) {
+	// https://stackoverflow.com/a/8027444/6495043
+	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
+}

@@ -32,6 +32,27 @@ export function clump_intervals(start, interval_size, count) {
 // 	//
 // }
 
+export function calc_distribution(values, distribution_size) {
+	// Assume non-negative values,
+	// implying distribution minimum at zero
+
+	let data_max_value = Math.max(...values);
+
+	let distribution_step = 1 / (distribution_size - 1);
+	let distribution = [];
+
+	for(var i = 0; i < distribution_size; i++) {
+		let checkpoint = data_max_value * (distribution_step * i);
+		distribution.push(checkpoint);
+	}
+
+	return distribution;
+}
+
+export function get_max_checkpoint(value, distribution) {
+	return distribution.filter(d => d < value).length;
+}
+
 export function calc_y_intervals(array) {
 	//*** Where the magic happens ***
 

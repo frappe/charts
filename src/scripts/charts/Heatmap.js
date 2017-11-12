@@ -1,6 +1,8 @@
 import BaseChart from './BaseChart';
 import $ from '../utils/dom';
 import { add_days, get_dd_mm_yyyy, get_weeks_between } from '../utils/date-utils';
+import { calc_distribution, get_max_checkpoint } from '../utils/intervals';
+import { is_valid_color } from '../utils/colors';
 
 export default class Heatmap extends BaseChart {
 	constructor({
@@ -9,7 +11,8 @@ export default class Heatmap extends BaseChart {
 		subdomain = '',
 		data = {},
 		discrete_domains = 0,
-		count_label = ''
+		count_label = '',
+		legend_colors = []
 	}) {
 		super(arguments[0]);
 
@@ -24,10 +27,31 @@ export default class Heatmap extends BaseChart {
 		let today = new Date();
 		this.start = start || add_days(today, 365);
 
-		this.legend_colors = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+		legend_colors = legend_colors.slice(0, 5);
+		this.legend_colors = this.validate_colors(legend_colors)
+			? legend_colors
+			: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+
+		// Hardcoded for a fixed 5-color theme,
+		// More colors are difficult to parse visually
+		this.distribution_size = 5;
 
 		this.translate_x = 0;
 		this.setup();
+	}
+
+	validate_colors(colors) {
+		if(colors.length < 5) return 0;
+
+		let valid = 1;
+		colors.forEach(function(string) {
+			if(!is_valid_color(string)) {
+				valid = 0;
+				console.warn('"' + string + '" is not a valid color.');
+			}
+		}, this);
+
+		return valid;
 	}
 
 	setup_base_values() {
@@ -71,7 +95,10 @@ export default class Heatmap extends BaseChart {
 	setup_values() {
 		this.domain_label_group.textContent = '';
 		this.data_groups.textContent = '';
-		this.distribution = this.get_distribution(this.data, this.legend_colors);
+
+		let data_values = Object.keys(this.data).map(key => this.data[key]);
+		this.distribution = calc_distribution(data_values, this.distribution_size);
+
 		this.month_names = ["January", "February", "March", "April", "May", "June",
 			"July", "August", "September", "October", "November", "December"
 		];
@@ -131,12 +158,14 @@ export default class Heatmap extends BaseChart {
 
 			if(this.data[timestamp]) {
 				data_value = this.data[timestamp];
-				color_index = this.get_max_checkpoint(data_value, this.distribution);
 			}
 
 			if(this.data[Math.round(timestamp)]) {
 				data_value = this.data[Math.round(timestamp)];
-				color_index = this.get_max_checkpoint(data_value, this.distribution);
+			}
+
+			if(data_value) {
+				color_index = get_max_checkpoint(data_value, this.distribution);
 			}
 
 			let x = 13 + (index + week_col_change) * 12;
@@ -204,7 +233,6 @@ export default class Heatmap extends BaseChart {
 				dy: '.32em',
 				innerHTML: month_name
 			});
-
 		});
 	}
 
@@ -246,29 +274,5 @@ export default class Heatmap extends BaseChart {
 		this.data = data;
 		this.setup_values();
 		this.bind_tooltip();
-	}
-
-	get_distribution(data={}, mapper_array) {
-		let data_values = Object.keys(data).map(key => data[key]);
-		let data_max_value = Math.max(...data_values);
-
-		let distribution_step = 1 / (mapper_array.length - 1);
-		let distribution = [];
-
-		mapper_array.map((color, i) => {
-			let checkpoint = data_max_value * (distribution_step * i);
-			distribution.push(checkpoint);
-		});
-
-		return distribution;
-	}
-
-	get_max_checkpoint(value, distribution) {
-		return distribution.filter((d, i) => {
-			if(i === 1) {
-				return distribution[0] < value;
-			}
-			return d <= value;
-		}).length - 1;
 	}
 }
