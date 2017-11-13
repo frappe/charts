@@ -1,7 +1,7 @@
 import $ from '../utils/dom';
 import { UnitRenderer, make_x_line, make_y_line } from '../utils/draw';
 import { runSVGAnimation } from '../utils/animate';
-import { calc_y_intervals } from '../utils/intervals';
+import { calc_intervals } from '../utils/intervals';
 import { float_2, arrays_equal, get_string_width } from '../utils/helpers';
 import BaseChart from './BaseChart';
 
@@ -56,7 +56,7 @@ export default class AxisChart extends BaseChart {
 			values = values.concat(this.y_sums);
 		}
 
-		this.y_axis_values = calc_y_intervals(values);
+		this.y_axis_values = calc_intervals(values, this.type === 'line');
 
 		if(!this.y_old_axis_values) {
 			this.y_old_axis_values = this.y_axis_values.slice();
@@ -69,9 +69,20 @@ export default class AxisChart extends BaseChart {
 		this.multiplier = this.height / value_range;
 		if(!this.old_multiplier) this.old_multiplier = this.multiplier;
 
-		const zero_index = y_pts.indexOf(0);
 		const interval = y_pts[1] - y_pts[0];
 		const interval_height = interval * this.multiplier;
+
+		let zero_index;
+
+		if(y_pts.indexOf(0) >= 0) {
+			zero_index = y_pts.indexOf(0);
+		} else if(y_pts[0] > 0) {
+			let min = y_pts[0];
+			zero_index = (-1) * min / interval;
+		} else {
+			let max = y_pts[y_pts.length - 1];
+			zero_index = (-1) * max / interval + (y_pts.length - 1);
+		}
 
 		if(this.zero_line) this.old_zero_line = this.zero_line;
 		this.zero_line = this.height - (zero_index * interval_height);

@@ -671,9 +671,176 @@ function runSVGAnimation(svg_container, elements) {
 	return anim_svg;
 }
 
-// export function calc_intervals() {
-// 	//
-// }
+function normalize(x) {
+	// Calculates mantissa and exponent of a number
+	// Returns normalized number and exponent
+	// https://stackoverflow.com/q/9383593/6495043
+
+	if (x === 0) {
+		return [0, 0];
+	}
+	if (isNaN(x)) {
+		return { mantissa: -6755399441055744, exponent: 972 };
+	}
+	var sig = x > 0 ? 1 : -1;
+	if (!isFinite(x)) {
+		return { mantissa: sig * 4503599627370496, exponent: 972 };
+	}
+
+	x = Math.abs(x);
+	var exp = Math.floor(Math.log10(x));
+	var man = x / Math.pow(10, exp);
+
+	return [sig * man, exp];
+}
+
+// function get_commafied_or_powered_number(number) {}
+
+function get_actual_pretty_num(number, exponent) {
+	return number;
+}
+
+function get_range_intervals(max) {
+	var min = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
+	var upper_bound = Math.ceil(max);
+	var lower_bound = Math.floor(min);
+	var range = upper_bound - lower_bound;
+
+	var no_of_parts = range;
+	var part_size = 1;
+
+	if (range > 5) {
+		if (range % 2 !== 0) {
+			upper_bound++;
+			// Recalc range
+			range = upper_bound - lower_bound;
+		}
+		no_of_parts = range / 2;
+		part_size = 2;
+	}
+
+	if (range <= 2) {
+		no_of_parts = 4;
+		part_size = range / no_of_parts;
+	}
+
+	var intervals = [];
+	for (var i = 0; i <= no_of_parts; i++) {
+		intervals.push(lower_bound + part_size * i);
+	}
+	return intervals;
+}
+
+function get_intervals(max_value) {
+	var min_value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
+	var _normalize = normalize(max_value),
+	    _normalize2 = slicedToArray(_normalize, 2),
+	    normal_max_value = _normalize2[0],
+	    exponent = _normalize2[1];
+
+	var normal_min_value = min_value ? min_value / Math.pow(10, exponent) : 0;
+
+	// Allow only 7 significant digits
+	normal_max_value = normal_max_value.toFixed(6);
+
+	var intervals = get_range_intervals(normal_max_value, normal_min_value);
+	intervals = intervals.map(function (value) {
+		return value * Math.pow(10, exponent);
+	});
+	return intervals;
+}
+
+function calc_intervals(values) {
+	var with_minimum = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+	//*** Where the magic happens ***
+
+	// Calculates best-fit y intervals from given values
+	// and returns the interval array
+
+	var max_value = Math.max.apply(Math, toConsumableArray(values));
+	var min_value = Math.min.apply(Math, toConsumableArray(values));
+
+	var exponent = 0,
+	    intervals = [];
+
+	// CASE I: Both non-negative
+
+	if (max_value >= 0 && min_value >= 0) {
+		exponent = normalize(max_value)[1];
+		if (!with_minimum) {
+			intervals = get_intervals(max_value);
+		} else {
+			intervals = get_intervals(max_value, min_value);
+		}
+	}
+
+	// CASE II: Only min_value negative
+
+	if (max_value > 0 && min_value < 0) {
+		// `with_minimum` irrelevant in this case,
+		// We'll be handling both sides of zero separately
+		// (both starting from zero)
+		// Because ceil() and floor() behave differently
+		// in those two regions
+
+		var get_positive_first_intervals = function get_positive_first_intervals(max_value, abs_min_value) {
+			var intervals = get_intervals(max_value);
+
+			var interval_size = intervals[1] - intervals[0];
+
+			// Then unshift the negative values
+			var value = 0;
+			for (var i = 1; value < abs_min_value; i++) {
+				value += interval_size;
+				intervals.unshift(-1 * value);
+			}
+			return intervals;
+		};
+
+		var abs_min_value = Math.abs(min_value);
+
+		if (max_value >= abs_min_value) {
+			exponent = normalize(max_value)[1];
+			intervals = get_positive_first_intervals(max_value, abs_min_value);
+		} else {
+			// Mirror: max_value => abs_min_value, then change sign
+			exponent = normalize(abs_min_value)[1];
+			var pos_intervals = get_positive_first_intervals(abs_min_value, max_value);
+			intervals = pos_intervals.map(function (d) {
+				return d * -1;
+			});
+		}
+	}
+
+	// CASE III: Both non-positive
+
+	if (max_value <= 0 && min_value <= 0) {
+		// Mirrored Case I:
+		// Work with positives, then reverse the sign and array
+
+		var pseudo_max_value = Math.abs(min_value);
+		var pseudo_min_value = Math.abs(max_value);
+
+		exponent = normalize(pseudo_max_value)[1];
+		if (!with_minimum) {
+			intervals = get_intervals(pseudo_max_value);
+		} else {
+			intervals = get_intervals(pseudo_max_value, pseudo_min_value);
+		}
+
+		intervals = intervals.reverse().map(function (d) {
+			return d * -1;
+		});
+	}
+
+	intervals = intervals.map(function (value) {
+		return get_actual_pretty_num(value, exponent);
+	});
+	return intervals;
+}
 
 function calc_distribution(values, distribution_size) {
 	// Assume non-negative values,
@@ -696,137 +863,6 @@ function get_max_checkpoint(value, distribution) {
 	return distribution.filter(function (d) {
 		return d < value;
 	}).length;
-}
-
-function calc_y_intervals(array) {
-	//*** Where the magic happens ***
-
-	// Calculates best-fit y intervals from given values
-	// and returns the interval array
-
-	// TODO: Fractions
-
-	var max_bound = void 0,
-	    min_bound = void 0,
-	    pos_no_of_parts = void 0,
-	    neg_no_of_parts = void 0,
-	    part_size = void 0; // eslint-disable-line no-unused-vars
-
-	// Critical values
-	var max_val = parseInt(Math.max.apply(Math, toConsumableArray(array)));
-	var min_val = parseInt(Math.min.apply(Math, toConsumableArray(array)));
-	if (min_val >= 0) {
-		min_val = 0;
-	}
-
-	var get_params = function get_params(value1, value2) {
-		var bound1 = void 0,
-		    bound2 = void 0,
-		    no_of_parts_1 = void 0,
-		    no_of_parts_2 = void 0,
-		    interval_size = void 0;
-		if ((value1 + "").length <= 1) {
-			bound1 = 10;
-			no_of_parts_1 = 5;
-		} else {
-			var _calc_upper_bound_and = calc_upper_bound_and_no_of_parts(value1);
-
-			var _calc_upper_bound_and2 = slicedToArray(_calc_upper_bound_and, 2);
-
-			bound1 = _calc_upper_bound_and2[0];
-			no_of_parts_1 = _calc_upper_bound_and2[1];
-		}
-
-		interval_size = bound1 / no_of_parts_1;
-		no_of_parts_2 = calc_no_of_parts(value2, interval_size);
-		bound2 = no_of_parts_2 * interval_size;
-
-		return [bound1, bound2, no_of_parts_1, no_of_parts_2, interval_size];
-	};
-
-	var abs_min_val = min_val * -1;
-	if (abs_min_val <= max_val) {
-		var _get_params = get_params(max_val, abs_min_val);
-		// Get the positive region intervals
-		// then calc negative ones accordingly
-
-
-		var _get_params2 = slicedToArray(_get_params, 5);
-
-		min_bound = _get_params2[1];
-		pos_no_of_parts = _get_params2[2];
-		neg_no_of_parts = _get_params2[3];
-		part_size = _get_params2[4];
-
-		if (abs_min_val === 0) {
-			min_bound = 0;neg_no_of_parts = 0;
-		}
-	} else {
-		var _get_params3 = get_params(abs_min_val, max_val);
-		// Get the negative region here first
-
-
-		var _get_params4 = slicedToArray(_get_params3, 5);
-
-		min_bound = _get_params4[0];
-		neg_no_of_parts = _get_params4[2];
-		pos_no_of_parts = _get_params4[3];
-		part_size = _get_params4[4];
-	}
-
-	// Make both region parts even
-	if (pos_no_of_parts % 2 !== 0 && neg_no_of_parts > 0) pos_no_of_parts++;
-	if (neg_no_of_parts % 2 !== 0) {
-		// every increase in no_of_parts entails an increase in corresponding bound
-		// except here, it happens implicitly after every calc_no_of_parts() call
-		neg_no_of_parts++;
-		min_bound += part_size;
-	}
-
-	var no_of_parts = pos_no_of_parts + neg_no_of_parts;
-	if (no_of_parts > 5) {
-		no_of_parts /= 2;
-		part_size *= 2;
-
-		pos_no_of_parts /= 2;
-	}
-
-	if (max_val < (pos_no_of_parts - 1) * part_size) {
-		no_of_parts--;
-	}
-
-	return get_intervals(-1 * min_bound, part_size, no_of_parts);
-}
-
-function get_intervals(start, interval_size, count) {
-	var intervals = [];
-	for (var i = 0; i <= count; i++) {
-		intervals.push(start);
-		start += interval_size;
-	}
-	return intervals;
-}
-
-function calc_upper_bound_and_no_of_parts(max_val) {
-	// Given a positive value, calculates a nice-number upper bound
-	// and a consequent optimal number of parts
-
-	var part_size = Math.pow(10, (max_val + "").length - 1);
-	var no_of_parts = calc_no_of_parts(max_val, part_size);
-
-	// Use it to get a nice even upper bound
-	var upper_bound = part_size * no_of_parts;
-
-	return [upper_bound, no_of_parts];
-}
-
-function calc_no_of_parts(value, divisor) {
-	// value should be a positive number, divisor should be greater than 0
-	// returns an even no of parts
-	var no_of_parts = Math.ceil(value / divisor);
-	if (no_of_parts % 2 !== 0) no_of_parts++; // Make it an even number
-
-	return no_of_parts;
 }
 
 /**
@@ -1385,7 +1421,7 @@ var AxisChart = function (_BaseChart) {
 				values = values.concat(this.y_sums);
 			}
 
-			this.y_axis_values = calc_y_intervals(values);
+			this.y_axis_values = calc_intervals(values, this.type === 'line');
 
 			if (!this.y_old_axis_values) {
 				this.y_old_axis_values = this.y_axis_values.slice();
@@ -1398,9 +1434,20 @@ var AxisChart = function (_BaseChart) {
 			this.multiplier = this.height / value_range;
 			if (!this.old_multiplier) this.old_multiplier = this.multiplier;
 
-			var zero_index = y_pts.indexOf(0);
 			var interval = y_pts[1] - y_pts[0];
 			var interval_height = interval * this.multiplier;
+
+			var zero_index = void 0;
+
+			if (y_pts.indexOf(0) >= 0) {
+				zero_index = y_pts.indexOf(0);
+			} else if (y_pts[0] > 0) {
+				var min = y_pts[0];
+				zero_index = -1 * min / interval;
+			} else {
+				var max = y_pts[y_pts.length - 1];
+				zero_index = -1 * max / interval + (y_pts.length - 1);
+			}
 
 			if (this.zero_line) this.old_zero_line = this.zero_line;
 			this.zero_line = this.height - zero_index * interval_height;
