@@ -83,7 +83,9 @@
     title: "My Awesome Chart",
     data: data,
     type: 'bar', // or 'line', 'scatter', 'pie', 'percentage'
-    height: 250
+    height: 250,
+    format_tooltip_x: d => (d + '').toUpperCase(),
+    format_tooltip_y: d => d + ' pts'
   });</code></pre>
               <div id="chart-types" class="border"></div>
               <div class="btn-group chart-type-buttons margin-vertical-px mx-auto" role="group">

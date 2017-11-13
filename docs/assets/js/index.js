@@ -22,7 +22,6 @@ let line_composite_data = {
 		"values": [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 0, 0],
 		// "values": [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 40, 40],
 		// "values": [-36, -46, -45, -32, -27, -31, -30, -36, -39, -49, -40, -40],
-		// "formatted": ["₹ 0.00", "₹ 0.00", "₹ 0.00", "₹ 61,500.00", "₹ 82,936.88", "₹ 24,010.00", "₹ 0.00", "₹ 0.00", "₹ 25,840.00", "₹ 5,08,048.82", "₹ 1,16,820.00", "₹ 0.00"],
 	}]
 };
 
@@ -97,7 +96,9 @@ let type_chart = new Chart({
 	data: type_data,
 	type: 'bar',
 	height: 250,
-	is_series: 1
+	is_series: 1,
+    format_tooltip_x: d => (d + '').toUpperCase(),
+    format_tooltip_y: d => d + ' pts'
 });
 
 Array.prototype.slice.call(

@@ -10,7 +10,6 @@ export default class BaseChart {
 		title = '',
 		subtitle = '',
 		colors = [],
-		format_lambdas = {},
 		summary = [],
 
 		is_navigable = 0,
@@ -28,7 +27,6 @@ export default class BaseChart {
 		this.subtitle = subtitle;
 
 		this.data = data;
-		this.format_lambdas = format_lambdas;
 
 		this.specific_values = data.specific_values || [];
 		this.summary = summary;

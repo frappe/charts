@@ -14,9 +14,8 @@ export default class AxisChart extends BaseChart {
 
 		this.is_series = args.is_series;
 
-		this.get_y_label = this.format_lambdas.y_label;
-		this.get_y_tooltip = this.format_lambdas.y_tooltip;
-		this.get_x_tooltip = this.format_lambdas.x_tooltip;
+		this.format_tooltip_y = args.format_tooltip_y;
+		this.format_tooltip_x = args.format_tooltip_x;
 
 		this.zero_line = this.height;
 
@@ -348,6 +347,14 @@ export default class AxisChart extends BaseChart {
 
 	map_tooltip_x_position_and_show(relX) {
 		if(!this.y_min_tops) return;
+
+		let titles = this.x;
+		if(this.format_tooltip_x && this.format_tooltip_x(this.x[0])) {
+			titles = this.x.map(d=>this.format_tooltip_x(d));
+		}
+
+		let y_format = this.format_tooltip_y && this.format_tooltip_y(this.y[0].values[0]);
+
 		for(var i=this.x_axis_positions.length - 1; i >= 0 ; i--) {
 			let x_val = this.x_axis_positions[i];
 			// let delta = i === 0 ? this.avg_unit_width : x_val - this.x_axis_positions[i-1];
@@ -355,17 +362,15 @@ export default class AxisChart extends BaseChart {
 				let x = x_val + this.translate_x;
 				let y = this.y_min_tops[i] + this.translate_y;
 
-				let title = this.x.formatted && this.x.formatted.length>0
-					? this.x.formatted[i] : this.x[i];
+				let title = titles[i];
 				let values = this.y.map((set, j) => {
 					return {
 						title: set.title,
-						value: set.formatted ? set.formatted[i] : set.values[i],
+						value: y_format ? this.format_tooltip_y(set.values[i]) : set.values[i],
 						color: set.color || this.colors[j],
 					};
 				});
 
-				// TODO: upside-down tooltips for negative values?
 				this.tip.set_values(x, y, title, '', values);
 				this.tip.show_tip();
 				break;

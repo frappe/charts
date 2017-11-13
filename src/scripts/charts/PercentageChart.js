@@ -6,10 +6,6 @@ export default class PercentageChart extends BaseChart {
 		super(args);
 		this.type = 'percentage';
 
-		this.get_y_label = this.format_lambdas.y_label;
-		this.get_x_tooltip = this.format_lambdas.x_tooltip;
-		this.get_y_tooltip = this.format_lambdas.y_tooltip;
-
 		this.max_slices = 10;
 		this.max_legend_points = 6;
 

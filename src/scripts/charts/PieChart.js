@@ -9,9 +9,6 @@ export default class PieChart extends BaseChart {
 	constructor(args) {
 		super(args);
 		this.type = 'pie';
-		this.get_y_label = this.format_lambdas.y_label;
-		this.get_x_tooltip = this.format_lambdas.x_tooltip;
-		this.get_y_tooltip = this.format_lambdas.y_tooltip;
 		this.elements_to_animate = null;
 		this.hoverRadio = args.hoverRadio || 0.1;
 		this.max_slices = 10;

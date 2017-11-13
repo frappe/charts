@@ -1045,8 +1045,6 @@ var BaseChart = function () {
 		    subtitle = _ref$subtitle === undefined ? '' : _ref$subtitle,
 		    _ref$colors = _ref.colors,
 		    colors = _ref$colors === undefined ? [] : _ref$colors,
-		    _ref$format_lambdas = _ref.format_lambdas,
-		    format_lambdas = _ref$format_lambdas === undefined ? {} : _ref$format_lambdas,
 		    _ref$summary = _ref.summary,
 		    summary = _ref$summary === undefined ? [] : _ref$summary,
 		    _ref$is_navigable = _ref.is_navigable,
@@ -1066,7 +1064,6 @@ var BaseChart = function () {
 		this.subtitle = subtitle;
 
 		this.data = data;
-		this.format_lambdas = format_lambdas;
 
 		this.specific_values = data.specific_values || [];
 		this.summary = summary;
@@ -1369,9 +1366,8 @@ var AxisChart = function (_BaseChart) {
 
 		_this.is_series = args.is_series;
 
-		_this.get_y_label = _this.format_lambdas.y_label;
-		_this.get_y_tooltip = _this.format_lambdas.y_tooltip;
-		_this.get_x_tooltip = _this.format_lambdas.x_tooltip;
+		_this.format_tooltip_y = args.format_tooltip_y;
+		_this.format_tooltip_x = args.format_tooltip_x;
 
 		_this.zero_line = _this.height;
 
@@ -1730,6 +1726,16 @@ var AxisChart = function (_BaseChart) {
 			var _this11 = this;
 
 			if (!this.y_min_tops) return;
+
+			var titles = this.x;
+			if (this.format_tooltip_x && this.format_tooltip_x(this.x[0])) {
+				titles = this.x.map(function (d) {
+					return _this11.format_tooltip_x(d);
+				});
+			}
+
+			var y_format = this.format_tooltip_y && this.format_tooltip_y(this.y[0].values[0]);
+
 			for (var i = this.x_axis_positions.length - 1; i >= 0; i--) {
 				var x_val = this.x_axis_positions[i];
 				// let delta = i === 0 ? this.avg_unit_width : x_val - this.x_axis_positions[i-1];
@@ -1737,16 +1743,15 @@ var AxisChart = function (_BaseChart) {
 					var x = x_val + this.translate_x;
 					var y = this.y_min_tops[i] + this.translate_y;
 
-					var title = this.x.formatted && this.x.formatted.length > 0 ? this.x.formatted[i] : this.x[i];
+					var title = titles[i];
 					var values = this.y.map(function (set$$1, j) {
 						return {
 							title: set$$1.title,
-							value: set$$1.formatted ? set$$1.formatted[i] : set$$1.values[i],
+							value: y_format ? _this11.format_tooltip_y(set$$1.values[i]) : set$$1.values[i],
 							color: set$$1.color || _this11.colors[j]
 						};
 					});
 
-					// TODO: upside-down tooltips for negative values?
 					this.tip.set_values(x, y, title, '', values);
 					this.tip.show_tip();
 					break;
@@ -2547,10 +2552,6 @@ var PercentageChart = function (_BaseChart) {
 
 		_this.type = 'percentage';
 
-		_this.get_y_label = _this.format_lambdas.y_label;
-		_this.get_x_tooltip = _this.format_lambdas.x_tooltip;
-		_this.get_y_tooltip = _this.format_lambdas.y_tooltip;
-
 		_this.max_slices = 10;
 		_this.max_legend_points = 6;
 
@@ -2729,9 +2730,6 @@ var PieChart = function (_BaseChart) {
 		var _this = possibleConstructorReturn(this, (PieChart.__proto__ || Object.getPrototypeOf(PieChart)).call(this, args));
 
 		_this.type = 'pie';
-		_this.get_y_label = _this.format_lambdas.y_label;
-		_this.get_x_tooltip = _this.format_lambdas.x_tooltip;
-		_this.get_y_tooltip = _this.format_lambdas.y_tooltip;
 		_this.elements_to_animate = null;
 		_this.hoverRadio = args.hoverRadio || 0.1;
 		_this.max_slices = 10;
