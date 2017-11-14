@@ -30,7 +30,6 @@ export default class BarChart extends AxisChart {
 		if(this.overlay) {
 			this.overlay.parentNode.removeChild(this.overlay);
 		}
-
 		this.overlay = unit.cloneNode();
 		this.overlay.style.fill = '#000000';
 		this.overlay.style.opacity = '0.4';
@@ -62,6 +61,9 @@ export default class BarChart extends AxisChart {
 		attributes.filter(attr => attr.specified).map(attr => {
 			this.overlay.setAttribute(attr.name, attr.nodeValue);
 		});
+
+		this.overlay.style.fill = '#000000';
+		this.overlay.style.opacity = '0.4';
 	}
 
 	on_left_arrow() {

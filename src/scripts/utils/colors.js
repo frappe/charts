@@ -4,7 +4,8 @@ function limit_color(r){
 	return r;
 }
 
-export function lighten_darken_color(col, amt) {
+export function lighten_darken_color(color, amt) {
+	let col = get_color(color);
 	let usePound = false;
 	if (col[0] == "#") {
 		col = col.slice(1);
@@ -21,3 +22,24 @@ export function is_valid_color(string) {
 	// https://stackoverflow.com/a/8027444/6495043
 	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
 }
+
+export const color_map = {
+	'light-blue': '#7cd6fd',
+	blue: '#5e64ff',
+	violet: '#743ee2',
+	red: '#ff5858',
+	orange: '#ffa00a',
+	yellow: '#feef72',
+	green: '#28a745',
+	'light-green': '#98d85b',
+	purple: '#b554ff',
+	magenta: '#ffa3ef',
+	black: '#36114C',
+	grey: '#bdd3e6',
+	'light-grey': '#f0f4f7',
+	'dark-grey': '#b8c2cc'
+};
+
+export const get_color = (color) => {
+	return color_map[color] || color;
+};

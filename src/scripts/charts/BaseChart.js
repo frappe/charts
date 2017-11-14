@@ -38,7 +38,11 @@ export default class BaseChart {
 		this.has_legend = has_legend;
 
 		this.colors = colors;
-		if(!this.colors || (this.data.labels && this.colors.length < this.data.labels.length)) {
+		const list = type === 'percentage' || type === 'pie'
+			? this.data.labels
+			: this.data.datasets;
+
+		if(!this.colors || (list && this.colors.length < list.length)) {
 			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange',
 				'yellow', 'green', 'light-green', 'purple', 'magenta'];
 		}
@@ -76,7 +80,8 @@ export default class BaseChart {
 			title: this.title,
 			data: this.raw_chart_args.data,
 			type: type,
-			height: this.raw_chart_args.height
+			height: this.raw_chart_args.height,
+			colors: this.colors
 		});
 	}
 
@@ -204,7 +209,10 @@ export default class BaseChart {
 		this.summary.map(d => {
 			let stats = $.create('div', {
 				className: 'stats',
-				innerHTML: `<span class="indicator ${d.color}">${d.title}: ${d.value}</span>`
+				styles: {
+					background: d.color
+				},
+				innerHTML: `<span class="indicator">${d.title}: ${d.value}</span>`
 			});
 			this.stats_wrapper.appendChild(stats);
 		});

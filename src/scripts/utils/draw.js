@@ -1,4 +1,5 @@
 import $ from './dom';
+import { get_color } from './colors';
 
 export var UnitRenderer = (function() {
 	var UnitRenderer = function(total_height, zero_line, avg_unit_width) {
@@ -42,7 +43,8 @@ export var UnitRenderer = (function() {
 			let [height, y] = get_bar_height_and_y_attr(y_top, this.zero_line, this.total_height);
 
 			return $.createSVG('rect', {
-				className: `bar mini fill ${color}`,
+				className: `bar mini`,
+				style: `fill: ${get_color(color)}`,
 				'data-point-index': index,
 				x: current_x,
 				y: y,
@@ -53,7 +55,7 @@ export var UnitRenderer = (function() {
 
 		draw_dot: function(x, y, args, color, index) {
 			return $.createSVG('circle', {
-				className: `fill ${color}`,
+				style: `fill: ${get_color(color)}`,
 				'data-point-index': index,
 				cx: x,
 				cy: y,

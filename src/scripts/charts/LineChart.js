@@ -1,5 +1,6 @@
 import AxisChart from './AxisChart';
 import $ from '../utils/dom';
+import { get_color } from '../utils/colors';
 
 export default class LineChart extends AxisChart {
 	constructor(args) {
@@ -70,7 +71,7 @@ export default class LineChart extends AxisChart {
 
 		d.path = $.createSVG('path', {
 			inside: this.paths_groups[i],
-			className: `stroke ${color}`,
+			style: `stroke: ${get_color(color)}`,
 			d: "M"+points_str
 		});
 
@@ -111,8 +112,8 @@ export default class LineChart extends AxisChart {
 
 		let set_gradient_stop = (grad_elem, offset, color, opacity) => {
 			$.createSVG('stop', {
-				'className': 'stop-color ' + color,
-				'inside': grad_elem,
+				style: `stop-color: ${color}`,
+				inside: grad_elem,
 				'offset': offset,
 				'stop-opacity': opacity
 			});

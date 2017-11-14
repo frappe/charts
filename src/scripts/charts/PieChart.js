@@ -1,6 +1,6 @@
 import BaseChart from './BaseChart';
 import $ from '../utils/dom';
-import { lighten_darken_color } from '../utils/colors';
+import { get_color, lighten_darken_color } from '../utils/colors';
 import { runSVGAnimation, transform } from '../utils/animate';
 const ANGLE_RATIO = Math.PI / 180;
 const FULL_ANGLE = 360;
@@ -17,10 +17,6 @@ export default class PieChart extends BaseChart {
 		this.colors = args.colors;
 		this.startAngle = args.startAngle || 0;
 		this.clockWise = args.clockWise || false;
-		if(!this.colors || this.colors.length < this.data.labels.length) {
-			this.colors = ['#7cd6fd', '#5e64ff', '#743ee2', '#ff5858', '#ffa00a',
-				'#FEEF72', '#28a745', '#98d85b', '#b554ff', '#ffa3ef'];
-		}
 		this.mouseMove = this.mouseMove.bind(this);
 		this.mouseLeave = this.mouseLeave.bind(this);
 		this.setup();
@@ -103,7 +99,7 @@ export default class PieChart extends BaseChart {
 				className:'pie-path',
 				style:'transition:transform .3s;',
 				d:curPath,
-				fill:this.colors[i]
+				fill:get_color(this.colors[i])
 			});
 			this.slices.push(slice);
 			this.slicesProperties.push({
@@ -157,9 +153,10 @@ export default class PieChart extends BaseChart {
 	}
 	hoverSlice(path,i,flag,e){
 		if(!path) return;
+		const color = get_color(this.colors[i]);
 		if(flag){
 			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
-			path.setAttribute('fill',lighten_darken_color(this.colors[i],50));
+			path.setAttribute('fill',lighten_darken_color(color,50));
 			let g_off = $.offset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
@@ -171,7 +168,7 @@ export default class PieChart extends BaseChart {
 		}else{
 			transform(path,'translate3d(0,0,0)');
 			this.tip.hide_tip();
-			path.setAttribute('fill',this.colors[i]);
+			path.setAttribute('fill',color);
 		}
 	}
 
@@ -201,13 +198,15 @@ export default class PieChart extends BaseChart {
 		let x_values = this.formatted_labels && this.formatted_labels.length > 0
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {
+			const color = get_color(this.colors[i]);
+
 			if(d) {
 				let stats = $.create('div', {
 					className: 'stats',
 					inside: this.stats_wrapper
 				});
 				stats.innerHTML = `<span class="indicator">
-					<i style="background-color:${this.colors[i]};"></i>
+					<i style="background-color:${color};"></i>
 					<span class="text-muted">${x_values[i]}:</span>
 					${d}
 				</span>`;

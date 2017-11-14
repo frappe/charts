@@ -1,4 +1,5 @@
 import $ from '../utils/dom';
+import { get_color } from '../utils/colors';
 
 export default class SvgTip {
 	constructor({
@@ -58,8 +59,12 @@ export default class SvgTip {
 		this.data_point_list.innerHTML = '';
 
 		this.list_values.map((set) => {
+			const color = set.color ? get_color(set.color) : 'black';
+
 			let li = $.create('li', {
-				className: `border-top ${set.color || 'black'}`,
+				styles: {
+					'border-top': `3px solid ${color}`
+				},
 				innerHTML: `<strong style="display: block;">${ set.value === 0 || set.value ? set.value : '' }</strong>
 					${set.title ? set.title : '' }`
 			});

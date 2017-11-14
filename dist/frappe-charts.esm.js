@@ -128,6 +128,52 @@ $.fire = (target, type, properties) => {
 	return target.dispatchEvent(evt);
 };
 
+function limit_color(r){
+	if (r > 255) return 255;
+	else if (r < 0) return 0;
+	return r;
+}
+
+function lighten_darken_color(color, amt) {
+	let col = get_color(color);
+	let usePound = false;
+	if (col[0] == "#") {
+		col = col.slice(1);
+		usePound = true;
+	}
+	let num = parseInt(col,16);
+	let r = limit_color((num >> 16) + amt);
+	let b = limit_color(((num >> 8) & 0x00FF) + amt);
+	let g = limit_color((num & 0x0000FF) + amt);
+	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
+}
+
+function is_valid_color(string) {
+	// https://stackoverflow.com/a/8027444/6495043
+	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
+}
+
+const color_map = {
+	'light-blue': '#7cd6fd',
+	blue: '#5e64ff',
+	violet: '#743ee2',
+	red: '#ff5858',
+	orange: '#ffa00a',
+	yellow: '#feef72',
+	green: '#28a745',
+	'light-green': '#98d85b',
+	purple: '#b554ff',
+	magenta: '#ffa3ef',
+	black: '#36114C',
+	grey: '#bdd3e6',
+	'light-grey': '#f0f4f7',
+	'dark-grey': '#b8c2cc'
+};
+
+const get_color = (color) => {
+	return color_map[color] || color;
+};
+
 var UnitRenderer = (function() {
 	var UnitRenderer = function(total_height, zero_line, avg_unit_width) {
 		this.total_height = total_height;
@@ -170,7 +216,8 @@ var UnitRenderer = (function() {
 			let [height, y] = get_bar_height_and_y_attr(y_top, this.zero_line, this.total_height);
 
 			return $.createSVG('rect', {
-				className: `bar mini fill ${color}`,
+				className: `bar mini`,
+				style: `fill: ${get_color(color)}`,
 				'data-point-index': index,
 				x: current_x,
 				y: y,
@@ -181,7 +228,7 @@ var UnitRenderer = (function() {
 
 		draw_dot: function(x, y, args, color, index) {
 			return $.createSVG('circle', {
-				className: `fill ${color}`,
+				style: `fill: ${get_color(color)}`,
 				'data-point-index': index,
 				cx: x,
 				cy: y,
@@ -643,8 +690,12 @@ class SvgTip {
 		this.data_point_list.innerHTML = '';
 
 		this.list_values.map((set) => {
+			const color = set.color ? get_color(set.color) : 'black';
+
 			let li = $.create('li', {
-				className: `border-top ${set.color || 'black'}`,
+				styles: {
+					'border-top': `3px solid ${color}`
+				},
 				innerHTML: `<strong style="display: block;">${ set.value === 0 || set.value ? set.value : '' }</strong>
 					${set.title ? set.title : '' }`
 			});
@@ -734,7 +785,11 @@ class BaseChart {
 		this.has_legend = has_legend;
 
 		this.colors = colors;
-		if(!this.colors || (this.data.labels && this.colors.length < this.data.labels.length)) {
+		const list = type === 'percentage' || type === 'pie'
+			? this.data.labels
+			: this.data.datasets;
+
+		if(!this.colors || (list && this.colors.length < list.length)) {
 			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange',
 				'yellow', 'green', 'light-green', 'purple', 'magenta'];
 		}
@@ -772,7 +827,8 @@ class BaseChart {
 			title: this.title,
 			data: this.raw_chart_args.data,
 			type: type,
-			height: this.raw_chart_args.height
+			height: this.raw_chart_args.height,
+			colors: this.colors
 		});
 	}
 
@@ -900,7 +956,10 @@ class BaseChart {
 		this.summary.map(d => {
 			let stats = $.create('div', {
 				className: 'stats',
-				innerHTML: `<span class="indicator ${d.color}">${d.title}: ${d.value}</span>`
+				styles: {
+					background: d.color
+				},
+				innerHTML: `<span class="indicator">${d.title}: ${d.value}</span>`
 			});
 			this.stats_wrapper.appendChild(stats);
 		});
@@ -1843,7 +1902,6 @@ class BarChart extends AxisChart {
 		if(this.overlay) {
 			this.overlay.parentNode.removeChild(this.overlay);
 		}
-
 		this.overlay = unit.cloneNode();
 		this.overlay.style.fill = '#000000';
 		this.overlay.style.opacity = '0.4';
@@ -1875,6 +1933,9 @@ class BarChart extends AxisChart {
 		attributes.filter(attr => attr.specified).map(attr => {
 			this.overlay.setAttribute(attr.name, attr.nodeValue);
 		});
+
+		this.overlay.style.fill = '#000000';
+		this.overlay.style.opacity = '0.4';
 	}
 
 	on_left_arrow() {
@@ -1960,7 +2021,7 @@ class LineChart extends AxisChart {
 
 		d.path = $.createSVG('path', {
 			inside: this.paths_groups[i],
-			className: `stroke ${color}`,
+			style: `stroke: ${get_color(color)}`,
 			d: "M"+points_str
 		});
 
@@ -2001,8 +2062,8 @@ class LineChart extends AxisChart {
 
 		let set_gradient_stop = (grad_elem, offset, color, opacity) => {
 			$.createSVG('stop', {
-				'className': 'stop-color ' + color,
-				'inside': grad_elem,
+				style: `stop-color: ${color}`,
+				inside: grad_elem,
 				'offset': offset,
 				'stop-opacity': opacity
 			});
@@ -2135,9 +2196,10 @@ class PercentageChart extends BaseChart {
 		this.slices = [];
 		this.slice_totals.map((total, i) => {
 			let slice = $.create('div', {
-				className: `progress-bar background ${this.colors[i]}`,
+				className: `progress-bar`,
 				inside: this.percentage_bar,
 				styles: {
+					background: get_color(this.colors[i]),
 					width: total*100/this.grand_total + "%"
 				}
 			});
@@ -2171,37 +2233,14 @@ class PercentageChart extends BaseChart {
 					className: 'stats',
 					inside: this.stats_wrapper
 				});
-				stats.innerHTML = `<span class="indicator ${this.colors[i]}">
+				stats.innerHTML = `<span class="indicator">
+					<i style="background: ${get_color(this.colors[i])}"></i>
 					<span class="text-muted">${x_values[i]}:</span>
 					${d}
 				</span>`;
 			}
 		});
 	}
-}
-
-function limit_color(r){
-	if (r > 255) return 255;
-	else if (r < 0) return 0;
-	return r;
-}
-
-function lighten_darken_color(col, amt) {
-	let usePound = false;
-	if (col[0] == "#") {
-		col = col.slice(1);
-		usePound = true;
-	}
-	let num = parseInt(col,16);
-	let r = limit_color((num >> 16) + amt);
-	let b = limit_color(((num >> 8) & 0x00FF) + amt);
-	let g = limit_color((num & 0x0000FF) + amt);
-	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
-}
-
-function is_valid_color(string) {
-	// https://stackoverflow.com/a/8027444/6495043
-	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
 }
 
 const ANGLE_RATIO = Math.PI / 180;
@@ -2219,10 +2258,6 @@ class PieChart extends BaseChart {
 		this.colors = args.colors;
 		this.startAngle = args.startAngle || 0;
 		this.clockWise = args.clockWise || false;
-		if(!this.colors || this.colors.length < this.data.labels.length) {
-			this.colors = ['#7cd6fd', '#5e64ff', '#743ee2', '#ff5858', '#ffa00a',
-				'#FEEF72', '#28a745', '#98d85b', '#b554ff', '#ffa3ef'];
-		}
 		this.mouseMove = this.mouseMove.bind(this);
 		this.mouseLeave = this.mouseLeave.bind(this);
 		this.setup();
@@ -2305,7 +2340,7 @@ class PieChart extends BaseChart {
 				className:'pie-path',
 				style:'transition:transform .3s;',
 				d:curPath,
-				fill:this.colors[i]
+				fill:get_color(this.colors[i])
 			});
 			this.slices.push(slice);
 			this.slicesProperties.push({
@@ -2359,9 +2394,10 @@ class PieChart extends BaseChart {
 	}
 	hoverSlice(path,i,flag,e){
 		if(!path) return;
+		const color = get_color(this.colors[i]);
 		if(flag){
 			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
-			path.setAttribute('fill',lighten_darken_color(this.colors[i],50));
+			path.setAttribute('fill',lighten_darken_color(color,50));
 			let g_off = $.offset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
@@ -2373,7 +2409,7 @@ class PieChart extends BaseChart {
 		}else{
 			transform(path,'translate3d(0,0,0)');
 			this.tip.hide_tip();
-			path.setAttribute('fill',this.colors[i]);
+			path.setAttribute('fill',color);
 		}
 	}
 
@@ -2403,13 +2439,15 @@ class PieChart extends BaseChart {
 		let x_values = this.formatted_labels && this.formatted_labels.length > 0
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {
+			const color = get_color(this.colors[i]);
+
 			if(d) {
 				let stats = $.create('div', {
 					className: 'stats',
 					inside: this.stats_wrapper
 				});
 				stats.innerHTML = `<span class="indicator">
-					<i style="background-color:${this.colors[i]};"></i>
+					<i style="background-color:${color};"></i>
 					<span class="text-muted">${x_values[i]}:</span>
 					${d}
 				</span>`;
