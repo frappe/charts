@@ -788,12 +788,15 @@ class BaseChart {
 			console.error("No parent element to render on was provided.");
 			return;
 		}
-		this.validate_and_prepare_data();
-		this.bind_window_events();
-		this.refresh(true);
+		if(this.validate_and_prepare_data()) {
+			this.bind_window_events();
+			this.refresh(true);
+		}
 	}
 
-	validate_and_prepare_data() {}
+	validate_and_prepare_data() {
+		return true;
+	}
 
 	bind_window_events() {
 		window.addEventListener('resize', () => this.refresh());
@@ -970,8 +973,8 @@ class AxisChart extends BaseChart {
 	constructor(args) {
 		super(args);
 
-		this.x = this.data.labels;
-		this.y = this.data.datasets;
+		this.x = this.data.labels || [];
+		this.y = this.data.datasets || [];
 
 		this.is_series = args.is_series;
 
@@ -980,7 +983,11 @@ class AxisChart extends BaseChart {
 
 		this.zero_line = this.height;
 
-		this.old_values = {};
+		// this.old_values = {};
+	}
+
+	validate_and_prepare_data() {
+		return true;
 	}
 
 	setup_values() {
@@ -2718,14 +2725,6 @@ class Heatmap extends BaseChart {
 		this.bind_tooltip();
 	}
 }
-
-// if ("development" !== 'production') {
-// 	// Enable LiveReload
-// 	document.write(
-// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
-// 		':35729/livereload.js?snipver=1"></' + 'script>'
-// 	);
-// }
 
 const chartTypes = {
 	line: LineChart,

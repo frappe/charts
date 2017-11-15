@@ -9,8 +9,8 @@ export default class AxisChart extends BaseChart {
 	constructor(args) {
 		super(args);
 
-		this.x = this.data.labels;
-		this.y = this.data.datasets;
+		this.x = this.data.labels || [];
+		this.y = this.data.datasets || [];
 
 		this.is_series = args.is_series;
 
@@ -19,7 +19,11 @@ export default class AxisChart extends BaseChart {
 
 		this.zero_line = this.height;
 
-		this.old_values = {};
+		// this.old_values = {};
+	}
+
+	validate_and_prepare_data() {
+		return true;
 	}
 
 	setup_values() {

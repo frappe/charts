@@ -1,6 +1,6 @@
 {
   "name": "frappe-charts",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "https://frappe.github.io/charts",
   "main": "dist/frappe-charts.min.cjs.js",
   "module": "dist/frappe-charts.min.esm.js",
