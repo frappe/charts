@@ -692,12 +692,6 @@ function normalize(x) {
 	return [sig * man, exp];
 }
 
-// function get_commafied_or_powered_number(number) {}
-
-function get_actual_pretty_num(number, exponent) {
-	return number;
-}
-
 function get_range_intervals(max) {
 	var min = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
@@ -708,6 +702,7 @@ function get_range_intervals(max) {
 	var no_of_parts = range;
 	var part_size = 1;
 
+	// To avoid too many partitions
 	if (range > 5) {
 		if (range % 2 !== 0) {
 			upper_bound++;
@@ -718,9 +713,16 @@ function get_range_intervals(max) {
 		part_size = 2;
 	}
 
+	// Special case: 1 and 2
 	if (range <= 2) {
 		no_of_parts = 4;
 		part_size = range / no_of_parts;
+	}
+
+	// Special case: 0
+	if (range === 0) {
+		no_of_parts = 5;
+		part_size = 1;
 	}
 
 	var intervals = [];
@@ -761,8 +763,23 @@ function calc_intervals(values) {
 	var max_value = Math.max.apply(Math, toConsumableArray(values));
 	var min_value = Math.min.apply(Math, toConsumableArray(values));
 
+	// Exponent to be used for pretty print
 	var exponent = 0,
-	    intervals = [];
+	    intervals = []; // eslint-disable-line no-unused-vars
+
+	function get_positive_first_intervals(max_value, abs_min_value) {
+		var intervals = get_intervals(max_value);
+
+		var interval_size = intervals[1] - intervals[0];
+
+		// Then unshift the negative values
+		var value = 0;
+		for (var i = 1; value < abs_min_value; i++) {
+			value += interval_size;
+			intervals.unshift(-1 * value);
+		}
+		return intervals;
+	}
 
 	// CASE I: Both non-negative
 
@@ -777,66 +794,49 @@ function calc_intervals(values) {
 
 	// CASE II: Only min_value negative
 
-	if (max_value > 0 && min_value < 0) {
-		// `with_minimum` irrelevant in this case,
-		// We'll be handling both sides of zero separately
-		// (both starting from zero)
-		// Because ceil() and floor() behave differently
-		// in those two regions
+	else if (max_value > 0 && min_value < 0) {
+			// `with_minimum` irrelevant in this case,
+			// We'll be handling both sides of zero separately
+			// (both starting from zero)
+			// Because ceil() and floor() behave differently
+			// in those two regions
 
-		var get_positive_first_intervals = function get_positive_first_intervals(max_value, abs_min_value) {
-			var intervals = get_intervals(max_value);
+			var abs_min_value = Math.abs(min_value);
 
-			var interval_size = intervals[1] - intervals[0];
-
-			// Then unshift the negative values
-			var value = 0;
-			for (var i = 1; value < abs_min_value; i++) {
-				value += interval_size;
-				intervals.unshift(-1 * value);
+			if (max_value >= abs_min_value) {
+				exponent = normalize(max_value)[1];
+				intervals = get_positive_first_intervals(max_value, abs_min_value);
+			} else {
+				// Mirror: max_value => abs_min_value, then change sign
+				exponent = normalize(abs_min_value)[1];
+				var pos_intervals = get_positive_first_intervals(abs_min_value, max_value);
+				intervals = pos_intervals.map(function (d) {
+					return d * -1;
+				});
 			}
-			return intervals;
-		};
-
-		var abs_min_value = Math.abs(min_value);
-
-		if (max_value >= abs_min_value) {
-			exponent = normalize(max_value)[1];
-			intervals = get_positive_first_intervals(max_value, abs_min_value);
-		} else {
-			// Mirror: max_value => abs_min_value, then change sign
-			exponent = normalize(abs_min_value)[1];
-			var pos_intervals = get_positive_first_intervals(abs_min_value, max_value);
-			intervals = pos_intervals.map(function (d) {
-				return d * -1;
-			});
-		}
-	}
-
-	// CASE III: Both non-positive
-
-	if (max_value <= 0 && min_value <= 0) {
-		// Mirrored Case I:
-		// Work with positives, then reverse the sign and array
-
-		var pseudo_max_value = Math.abs(min_value);
-		var pseudo_min_value = Math.abs(max_value);
-
-		exponent = normalize(pseudo_max_value)[1];
-		if (!with_minimum) {
-			intervals = get_intervals(pseudo_max_value);
-		} else {
-			intervals = get_intervals(pseudo_max_value, pseudo_min_value);
 		}
 
-		intervals = intervals.reverse().map(function (d) {
-			return d * -1;
-		});
-	}
+		// CASE III: Both non-positive
 
-	intervals = intervals.map(function (value) {
-		return get_actual_pretty_num(value, exponent);
-	});
+		else if (max_value <= 0 && min_value <= 0) {
+				// Mirrored Case I:
+				// Work with positives, then reverse the sign and array
+
+				var pseudo_max_value = Math.abs(min_value);
+				var pseudo_min_value = Math.abs(max_value);
+
+				exponent = normalize(pseudo_max_value)[1];
+				if (!with_minimum) {
+					intervals = get_intervals(pseudo_max_value);
+				} else {
+					intervals = get_intervals(pseudo_max_value, pseudo_min_value);
+				}
+
+				intervals = intervals.reverse().map(function (d) {
+					return d * -1;
+				});
+			}
+
 	return intervals;
 }
 
@@ -1130,9 +1130,13 @@ var BaseChart = function () {
 				console.error("No parent element to render on was provided.");
 				return;
 			}
+			this.validate_and_prepare_data();
 			this.bind_window_events();
 			this.refresh(true);
 		}
+	}, {
+		key: 'validate_and_prepare_data',
+		value: function validate_and_prepare_data() {}
 	}, {
 		key: 'bind_window_events',
 		value: function bind_window_events() {
@@ -1434,11 +1438,17 @@ var AxisChart = function (_BaseChart) {
 			var zero_index = void 0;
 
 			if (y_pts.indexOf(0) >= 0) {
+				// the range has a given zero
+				// zero-line on the chart
 				zero_index = y_pts.indexOf(0);
 			} else if (y_pts[0] > 0) {
+				// Minimum value is positive
+				// zero-line is off the chart: below
 				var min = y_pts[0];
 				zero_index = -1 * min / interval;
 			} else {
+				// Maximum value is negative
+				// zero-line is off the chart: above
 				var max = y_pts[y_pts.length - 1];
 				zero_index = -1 * max / interval + (y_pts.length - 1);
 			}

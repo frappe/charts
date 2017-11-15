@@ -74,11 +74,17 @@ export default class AxisChart extends BaseChart {
 		let zero_index;
 
 		if(y_pts.indexOf(0) >= 0) {
+			// the range has a given zero
+			// zero-line on the chart
 			zero_index = y_pts.indexOf(0);
 		} else if(y_pts[0] > 0) {
+			// Minimum value is positive
+			// zero-line is off the chart: below
 			let min = y_pts[0];
 			zero_index = (-1) * min / interval;
 		} else {
+			// Maximum value is negative
+			// zero-line is off the chart: above
 			let max = y_pts[y_pts.length - 1];
 			zero_index = (-1) * max / interval + (y_pts.length - 1);
 		}

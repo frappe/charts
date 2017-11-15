@@ -21,12 +21,6 @@ function normalize(x) {
 	return [sig * man, exp];
 }
 
-// function get_commafied_or_powered_number(number) {}
-
-function get_actual_pretty_num(number, exponent) {
-	return number;
-}
-
 function get_range_intervals(max, min=0) {
 	let upper_bound = Math.ceil(max);
 	let lower_bound = Math.floor(min);
@@ -35,6 +29,7 @@ function get_range_intervals(max, min=0) {
 	let no_of_parts = range;
 	let part_size = 1;
 
+	// To avoid too many partitions
 	if(range > 5) {
 		if(range % 2 !== 0) {
 			upper_bound++;
@@ -45,9 +40,16 @@ function get_range_intervals(max, min=0) {
 		part_size = 2;
 	}
 
+	// Special case: 1 and 2
 	if(range <= 2) {
 		no_of_parts = 4;
 		part_size = range/no_of_parts;
+	}
+
+	// Special case: 0
+	if(range === 0) {
+		no_of_parts = 5;
+		part_size = 1;
 	}
 
 	let intervals = [];
@@ -78,7 +80,22 @@ export function calc_intervals(values, with_minimum=false) {
 	let max_value = Math.max(...values);
 	let min_value = Math.min(...values);
 
-	let exponent = 0, intervals = [];
+	// Exponent to be used for pretty print
+	let exponent = 0, intervals = []; // eslint-disable-line no-unused-vars
+
+	function get_positive_first_intervals(max_value, abs_min_value) {
+		let intervals = get_intervals(max_value);
+
+		let interval_size = intervals[1] - intervals[0];
+
+		// Then unshift the negative values
+		let value = 0;
+		for(var i = 1; value < abs_min_value; i++) {
+			value += interval_size;
+			intervals.unshift((-1) * value);
+		}
+		return intervals;
+	}
 
 	// CASE I: Both non-negative
 
@@ -93,26 +110,12 @@ export function calc_intervals(values, with_minimum=false) {
 
 	// CASE II: Only min_value negative
 
-	if(max_value > 0 && min_value < 0) {
+	else if(max_value > 0 && min_value < 0) {
 		// `with_minimum` irrelevant in this case,
 		// We'll be handling both sides of zero separately
 		// (both starting from zero)
 		// Because ceil() and floor() behave differently
 		// in those two regions
-
-		function get_positive_first_intervals(max_value, abs_min_value) {
-			let intervals = get_intervals(max_value);
-
-			let interval_size = intervals[1] - intervals[0];
-
-			// Then unshift the negative values
-			let value = 0;
-			for(var i = 1; value < abs_min_value; i++) {
-				value += interval_size;
-				intervals.unshift((-1) * value)
-			}
-			return intervals;
-		}
 
 		let abs_min_value = Math.abs(min_value);
 
@@ -130,7 +133,7 @@ export function calc_intervals(values, with_minimum=false) {
 
 	// CASE III: Both non-positive
 
-	if(max_value <= 0 && min_value <= 0) {
+	else if(max_value <= 0 && min_value <= 0) {
 		// Mirrored Case I:
 		// Work with positives, then reverse the sign and array
 
@@ -147,7 +150,6 @@ export function calc_intervals(values, with_minimum=false) {
 		intervals = intervals.reverse().map(d => d * (-1));
 	}
 
-	intervals = intervals.map(value => get_actual_pretty_num(value, exponent));
 	return intervals;
 }
 

@@ -92,9 +92,12 @@ export default class BaseChart {
 			console.error("No parent element to render on was provided.");
 			return;
 		}
+		this.validate_and_prepare_data();
 		this.bind_window_events();
 		this.refresh(true);
 	}
+
+	validate_and_prepare_data() {}
 
 	bind_window_events() {
 		window.addEventListener('resize', () => this.refresh());
