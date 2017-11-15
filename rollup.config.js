@@ -2,7 +2,7 @@
 import babel from 'rollup-plugin-babel';
 import eslint from 'rollup-plugin-eslint';
 import replace from 'rollup-plugin-replace';
-import uglify from 'rollup-plugin-uglify';
+import uglify from 'rollup-plugin-uglify-es';
 import postcss from 'rollup-plugin-postcss';
 
 // PostCSS plugins
@@ -46,8 +46,37 @@ export default [
 			replace({
 				exclude: 'node_modules/**',
 				ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
+			}),
+			uglify()
+		],
+	},
+	{
+		input: 'src/scripts/charts.js',
+		output: [
+			{
+				file: pkg.src,
+				format: 'es',
+			}
+		],
+		plugins: [
+			postcss({
+				extensions: [ '.less' ],
+				extract: 'dist/frappe-charts.min.css',
+				plugins: [
+					nested(),
+					cssnext({ warnForDuplicates: false }),
+					cssnano()
+				]
+			}),
+			eslint({
+				exclude: [
+					'src/styles/**',
+				]
+			}),
+			replace({
+				exclude: 'node_modules/**',
+				ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
 			})
-			// uglify()
 		],
 	},
 	{
