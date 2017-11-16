@@ -14,7 +14,6 @@ export default class PieChart extends BaseChart {
 		this.max_slices = 10;
 		this.max_legend_points = 6;
 		this.isAnimate = false;
-		this.colors = args.colors;
 		this.startAngle = args.startAngle || 0;
 		this.clockWise = args.clockWise || false;
 		this.mouseMove = this.mouseMove.bind(this);

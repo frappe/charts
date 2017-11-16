@@ -36,8 +36,8 @@ export default class BaseChart {
 			this.current_index = 0;
 		}
 		this.has_legend = has_legend;
-
 		this.colors = colors;
+
 		const list = type === 'percentage' || type === 'pie'
 			? this.data.labels
 			: this.data.datasets;
@@ -68,9 +68,22 @@ export default class BaseChart {
 			heatmap: []
 		};
 
+		// Only across compatible colors types
+		let color_compatible_types = {
+			bar: ['line', 'scatter'],
+			line: ['scatter', 'bar'],
+			pie: ['percentage'],
+			scatter: ['line', 'bar'],
+			percentage: ['pie'],
+			heatmap: []
+		};
+
 		if(!compatible_types[this.type].includes(type)) {
 			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
 		}
+
+		// whether the new chart can use the existing colors
+		const use_color = color_compatible_types[this.type].includes(type);
 
 		// Okay, this is anticlimactic
 		// this function will need to actually be 'change_chart_type(type)'
@@ -81,7 +94,7 @@ export default class BaseChart {
 			data: this.raw_chart_args.data,
 			type: type,
 			height: this.raw_chart_args.height,
-			colors: this.colors
+			colors: use_color ? this.colors : undefined
 		});
 	}
 
