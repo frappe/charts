@@ -1,6 +1,7 @@
 import SvgTip from '../objects/SvgTip';
 import $ from '../utils/dom';
 import { get_string_width } from '../utils/helpers';
+import { get_color } from '../utils/colors';
 import Chart from '../charts';
 
 export default class BaseChart {
@@ -36,12 +37,17 @@ export default class BaseChart {
 			this.current_index = 0;
 		}
 		this.has_legend = has_legend;
-
 		this.colors = colors;
-		if(!this.colors || (this.data.labels && this.colors.length < this.data.labels.length)) {
+
+		const list = type === 'percentage' || type === 'pie'
+			? this.data.labels
+			: this.data.datasets;
+
+		if(!this.colors || (list && this.colors.length < list.length)) {
 			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange',
 				'yellow', 'green', 'light-green', 'purple', 'magenta'];
 		}
+		this.colors = this.colors.map(color => get_color(color));
 
 		this.chart_types = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
 
@@ -64,9 +70,22 @@ export default class BaseChart {
 			heatmap: []
 		};
 
+		// Only across compatible colors types
+		let color_compatible_types = {
+			bar: ['line', 'scatter'],
+			line: ['scatter', 'bar'],
+			pie: ['percentage'],
+			scatter: ['line', 'bar'],
+			percentage: ['pie'],
+			heatmap: []
+		};
+
 		if(!compatible_types[this.type].includes(type)) {
 			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
 		}
+
+		// whether the new chart can use the existing colors
+		const use_color = color_compatible_types[this.type].includes(type);
 
 		// Okay, this is anticlimactic
 		// this function will need to actually be 'change_chart_type(type)'
@@ -76,7 +95,8 @@ export default class BaseChart {
 			title: this.title,
 			data: this.raw_chart_args.data,
 			type: type,
-			height: this.raw_chart_args.height
+			height: this.raw_chart_args.height,
+			colors: use_color ? this.colors : undefined
 		});
 	}
 
@@ -194,6 +214,7 @@ export default class BaseChart {
 	make_tooltip() {
 		this.tip = new SvgTip({
 			parent: this.chart_wrapper,
+			colors: this.colors
 		});
 		this.bind_tooltip();
 	}
@@ -204,7 +225,10 @@ export default class BaseChart {
 		this.summary.map(d => {
 			let stats = $.create('div', {
 				className: 'stats',
-				innerHTML: `<span class="indicator ${d.color}">${d.title}: ${d.value}</span>`
+				styles: {
+					background: d.color
+				},
+				innerHTML: `<span class="indicator">${d.title}: ${d.value}</span>`
 			});
 			this.stats_wrapper.appendChild(stats);
 		});
