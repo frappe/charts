@@ -1,6 +1,7 @@
 import SvgTip from '../objects/SvgTip';
 import $ from '../utils/dom';
 import { get_string_width } from '../utils/helpers';
+import { get_color } from '../utils/colors';
 import Chart from '../charts';
 
 export default class BaseChart {
@@ -46,6 +47,7 @@ export default class BaseChart {
 			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange',
 				'yellow', 'green', 'light-green', 'purple', 'magenta'];
 		}
+		this.colors = this.colors.map(color => get_color(color));
 
 		this.chart_types = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
 
@@ -212,6 +214,7 @@ export default class BaseChart {
 	make_tooltip() {
 		this.tip = new SvgTip({
 			parent: this.chart_wrapper,
+			colors: this.colors
 		});
 		this.bind_tooltip();
 	}

@@ -1,6 +1,6 @@
 import BaseChart from './BaseChart';
 import $ from '../utils/dom';
-import { get_color, lighten_darken_color } from '../utils/colors';
+import { lighten_darken_color } from '../utils/colors';
 import { runSVGAnimation, transform } from '../utils/animate';
 const ANGLE_RATIO = Math.PI / 180;
 const FULL_ANGLE = 360;
@@ -94,18 +94,18 @@ export default class PieChart extends BaseChart {
 			}
 			const curPath = this.makeArcPath(curStart,curEnd);
 			let slice = $.createSVG('path',{
-				inside:this.draw_area,
-				className:'pie-path',
-				style:'transition:transform .3s;',
-				d:curPath,
-				fill:get_color(this.colors[i])
+				inside: this.draw_area,
+				className: 'pie-path',
+				style: 'transition:transform .3s;',
+				d: curPath,
+				fill: this.colors[i]
 			});
 			this.slices.push(slice);
 			this.slicesProperties.push({
 				startPosition,
 				endPosition,
-				value:total,
-				total:this.grand_total,
+				value: total,
+				total: this.grand_total,
 				startAngle,
 				endAngle,
 				angle:diffAngle
@@ -152,7 +152,7 @@ export default class PieChart extends BaseChart {
 	}
 	hoverSlice(path,i,flag,e){
 		if(!path) return;
-		const color = get_color(this.colors[i]);
+		const color = this.colors[i];
 		if(flag){
 			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
 			path.setAttribute('fill',lighten_darken_color(color,50));
@@ -197,7 +197,7 @@ export default class PieChart extends BaseChart {
 		let x_values = this.formatted_labels && this.formatted_labels.length > 0
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {
-			const color = get_color(this.colors[i]);
+			const color = this.colors[i];
 
 			if(d) {
 				let stats = $.create('div', {

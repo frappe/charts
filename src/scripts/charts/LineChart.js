@@ -1,6 +1,5 @@
 import AxisChart from './AxisChart';
 import $ from '../utils/dom';
-import { get_color } from '../utils/colors';
 
 export default class LineChart extends AxisChart {
 	constructor(args) {
@@ -71,7 +70,7 @@ export default class LineChart extends AxisChart {
 
 		d.path = $.createSVG('path', {
 			inside: this.paths_groups[i],
-			style: `stroke: ${get_color(color)}`,
+			style: `stroke: ${color}`,
 			d: "M"+points_str
 		});
 

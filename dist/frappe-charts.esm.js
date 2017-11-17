@@ -128,52 +128,6 @@ $.fire = (target, type, properties) => {
 	return target.dispatchEvent(evt);
 };
 
-function limit_color(r){
-	if (r > 255) return 255;
-	else if (r < 0) return 0;
-	return r;
-}
-
-function lighten_darken_color(color, amt) {
-	let col = get_color(color);
-	let usePound = false;
-	if (col[0] == "#") {
-		col = col.slice(1);
-		usePound = true;
-	}
-	let num = parseInt(col,16);
-	let r = limit_color((num >> 16) + amt);
-	let b = limit_color(((num >> 8) & 0x00FF) + amt);
-	let g = limit_color((num & 0x0000FF) + amt);
-	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
-}
-
-function is_valid_color(string) {
-	// https://stackoverflow.com/a/8027444/6495043
-	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
-}
-
-const color_map = {
-	'light-blue': '#7cd6fd',
-	blue: '#5e64ff',
-	violet: '#743ee2',
-	red: '#ff5858',
-	orange: '#ffa00a',
-	yellow: '#feef72',
-	green: '#28a745',
-	'light-green': '#98d85b',
-	purple: '#b554ff',
-	magenta: '#ffa3ef',
-	black: '#36114C',
-	grey: '#bdd3e6',
-	'light-grey': '#f0f4f7',
-	'dark-grey': '#b8c2cc'
-};
-
-const get_color = (color) => {
-	return color_map[color] || color;
-};
-
 var UnitRenderer = (function() {
 	var UnitRenderer = function(total_height, zero_line, avg_unit_width) {
 		this.total_height = total_height;
@@ -217,7 +171,7 @@ var UnitRenderer = (function() {
 
 			return $.createSVG('rect', {
 				className: `bar mini`,
-				style: `fill: ${get_color(color)}`,
+				style: `fill: ${color}`,
 				'data-point-index': index,
 				x: current_x,
 				y: y,
@@ -228,7 +182,7 @@ var UnitRenderer = (function() {
 
 		draw_dot: function(x, y, args, color, index) {
 			return $.createSVG('circle', {
-				style: `fill: ${get_color(color)}`,
+				style: `fill: ${color}`,
 				'data-point-index': index,
 				cx: x,
 				cy: y,
@@ -634,9 +588,11 @@ function get_string_width(string, char_width) {
 
 class SvgTip {
 	constructor({
-		parent = null
+		parent = null,
+		colors = []
 	}) {
 		this.parent = parent;
+		this.colors = colors;
 		this.title_name = '';
 		this.title_value = '';
 		this.list_values = [];
@@ -689,8 +645,8 @@ class SvgTip {
 		this.title.innerHTML = title;
 		this.data_point_list.innerHTML = '';
 
-		this.list_values.map((set) => {
-			const color = set.color ? get_color(set.color) : 'black';
+		this.list_values.map((set, i) => {
+			const color = this.colors[i] || 'black';
 
 			let li = $.create('li', {
 				styles: {
@@ -750,6 +706,52 @@ class SvgTip {
 	}
 }
 
+function limit_color(r){
+	if (r > 255) return 255;
+	else if (r < 0) return 0;
+	return r;
+}
+
+function lighten_darken_color(color, amt) {
+	let col = get_color(color);
+	let usePound = false;
+	if (col[0] == "#") {
+		col = col.slice(1);
+		usePound = true;
+	}
+	let num = parseInt(col,16);
+	let r = limit_color((num >> 16) + amt);
+	let b = limit_color(((num >> 8) & 0x00FF) + amt);
+	let g = limit_color((num & 0x0000FF) + amt);
+	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
+}
+
+function is_valid_color(string) {
+	// https://stackoverflow.com/a/8027444/6495043
+	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
+}
+
+const color_map = {
+	'light-blue': '#7cd6fd',
+	blue: '#5e64ff',
+	violet: '#743ee2',
+	red: '#ff5858',
+	orange: '#ffa00a',
+	yellow: '#feef72',
+	green: '#28a745',
+	'light-green': '#98d85b',
+	purple: '#b554ff',
+	magenta: '#ffa3ef',
+	black: '#36114C',
+	grey: '#bdd3e6',
+	'light-grey': '#f0f4f7',
+	'dark-grey': '#b8c2cc'
+};
+
+const get_color = (color) => {
+	return color_map[color] || color;
+};
+
 class BaseChart {
 	constructor({
 		height = 240,
@@ -793,6 +795,7 @@ class BaseChart {
 			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange',
 				'yellow', 'green', 'light-green', 'purple', 'magenta'];
 		}
+		this.colors = this.colors.map(color => get_color(color));
 
 		this.chart_types = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
 
@@ -959,6 +962,7 @@ class BaseChart {
 	make_tooltip() {
 		this.tip = new SvgTip({
 			parent: this.chart_wrapper,
+			colors: this.colors
 		});
 		this.bind_tooltip();
 	}
@@ -2034,7 +2038,7 @@ class LineChart extends AxisChart {
 
 		d.path = $.createSVG('path', {
 			inside: this.paths_groups[i],
-			style: `stroke: ${get_color(color)}`,
+			style: `stroke: ${color}`,
 			d: "M"+points_str
 		});
 
@@ -2212,7 +2216,7 @@ class PercentageChart extends BaseChart {
 				className: `progress-bar`,
 				inside: this.percentage_bar,
 				styles: {
-					background: get_color(this.colors[i]),
+					background: this.colors[i],
 					width: total*100/this.grand_total + "%"
 				}
 			});
@@ -2247,7 +2251,7 @@ class PercentageChart extends BaseChart {
 					inside: this.stats_wrapper
 				});
 				stats.innerHTML = `<span class="indicator">
-					<i style="background: ${get_color(this.colors[i])}"></i>
+					<i style="background: ${this.colors[i]}"></i>
 					<span class="text-muted">${x_values[i]}:</span>
 					${d}
 				</span>`;
@@ -2348,18 +2352,18 @@ class PieChart extends BaseChart {
 			}
 			const curPath = this.makeArcPath(curStart,curEnd);
 			let slice = $.createSVG('path',{
-				inside:this.draw_area,
-				className:'pie-path',
-				style:'transition:transform .3s;',
-				d:curPath,
-				fill:get_color(this.colors[i])
+				inside: this.draw_area,
+				className: 'pie-path',
+				style: 'transition:transform .3s;',
+				d: curPath,
+				fill: this.colors[i]
 			});
 			this.slices.push(slice);
 			this.slicesProperties.push({
 				startPosition,
 				endPosition,
-				value:total,
-				total:this.grand_total,
+				value: total,
+				total: this.grand_total,
 				startAngle,
 				endAngle,
 				angle:diffAngle
@@ -2406,7 +2410,7 @@ class PieChart extends BaseChart {
 	}
 	hoverSlice(path,i,flag,e){
 		if(!path) return;
-		const color = get_color(this.colors[i]);
+		const color = this.colors[i];
 		if(flag){
 			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
 			path.setAttribute('fill',lighten_darken_color(color,50));
@@ -2451,7 +2455,7 @@ class PieChart extends BaseChart {
 		let x_values = this.formatted_labels && this.formatted_labels.length > 0
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {
-			const color = get_color(this.colors[i]);
+			const color = this.colors[i];
 
 			if(d) {
 				let stats = $.create('div', {
