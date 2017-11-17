@@ -235,7 +235,7 @@ export default class AxisChart extends BaseChart {
 		if(this.raw_chart_args.hasOwnProperty("init") && !this.raw_chart_args.init) {
 			this.y.map((d, i) => {
 				d.svg_units = [];
-				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
+				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
 				this.make_new_units(d, i);
 				this.calc_y_dependencies();
 			});
@@ -247,7 +247,7 @@ export default class AxisChart extends BaseChart {
 		}
 		this.y.map((d, i) => {
 			d.svg_units = [];
-			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
+			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
 			this.make_new_units(d, i);
 		});
 	}
@@ -260,7 +260,7 @@ export default class AxisChart extends BaseChart {
 			data.push({values: d.values});
 			d.svg_units = [];
 
-			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
+			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
 			this.make_new_units(d, i);
 		});
 
@@ -284,7 +284,7 @@ export default class AxisChart extends BaseChart {
 		this.make_new_units_for_dataset(
 			this.x_axis_positions,
 			d.y_tops,
-			d.color || this.colors[i],
+			this.colors[i],
 			i,
 			this.y.length
 		);
@@ -377,7 +377,7 @@ export default class AxisChart extends BaseChart {
 					return {
 						title: set.title,
 						value: y_format ? this.format_tooltip_y(set.values[i]) : set.values[i],
-						color: set.color || this.colors[j],
+						color: this.colors[j],
 					};
 				});
 
@@ -415,7 +415,7 @@ export default class AxisChart extends BaseChart {
 			this.sum_units
 		);
 
-		// this.make_path && this.make_path(d, i, old_x, old_y, d.color || this.colors[i]);
+		// this.make_path && this.make_path(d, i, old_x, old_y, this.colors[i]);
 
 		this.updating = false;
 	}
@@ -557,8 +557,8 @@ export default class AxisChart extends BaseChart {
 			// Pre-prep, equilize no of positions between old and new
 			let [old_x, old_y, new_x, new_y] = this.calc_old_and_new_postions(d, i);
 			if(this.no_of_extra_pts >= 0) {
-				this.make_path && this.make_path(d, i, old_x, old_y, d.color || this.colors[i]);
-				this.make_new_units_for_dataset(old_x, old_y, d.color || this.colors[i], i, this.y.length);
+				this.make_path && this.make_path(d, i, old_x, old_y, this.colors[i]);
+				this.make_new_units_for_dataset(old_x, old_y, this.colors[i], i, this.y.length);
 			}
 			d.path && this.animate_path(d, i, old_x, old_y, new_x, new_y);
 			this.animate_units(d, i, old_x, old_y, new_x, new_y);
@@ -567,7 +567,7 @@ export default class AxisChart extends BaseChart {
 		// TODO: replace with real units
 		setTimeout(() => {
 			this.y.map((d, i) => {
-				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
+				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
 				this.make_new_units(d, i);
 			});
 		}, 400);

@@ -64,15 +64,15 @@
 
     datasets: [
       {
-        title: "Some Data", color: "light-blue",
+        title: "Some Data",
         values: [25, 40, 30, 35, 8, 52, 17, -4]
       },
       {
-        title: "Another Set", color: "violet",
+        title: "Another Set",
         values: [25, 50, -10, 15, 18, 32, 27, 14]
       },
       {
-        title: "Yet Another", color: "blue",
+        title: "Yet Another",
         values: [15, 20, -3, -15, 58, 12, -17, 37]
       }
     ]
@@ -83,8 +83,15 @@
     title: "My Awesome Chart",
     data: data,
     type: 'bar', // or 'line', 'scatter', 'pie', 'percentage'
-    // colors: ['#000000', '#ece7f2', 'light-blue'], // use direct hex code or preset color
     height: 250,
+
+    colors: ['#7cd6fd', 'violet', 'blue'],
+    // hex-codes or these preset colors;
+    // defaults (in order):
+    // ['light-blue', 'blue', 'violet', 'red',
+    // 'orange', 'yellow', 'green', 'light-green',
+    // 'purple', 'magenta', 'grey', 'dark-grey']
+
     format_tooltip_x: d => (d + '').toUpperCase(),
     format_tooltip_y: d => d + ' pts'
   });</code></pre>
@@ -99,10 +106,6 @@
               <p class="text-muted">
                 <a target="_blank" href="http://www.storytellingwithdata.com/blog/2011/07/death-to-pie-charts">Why Percentage?</a>
               </p>
-
-              <pre><code class="hljs javascript margin-vertical-px">  // colors: 'green', 'blue', 'violet', 'red', 'orange',
-  //         'yellow', 'light-blue', 'light-green', 'purple',
-  //         'magenta', 'grey', 'dark-grey'</code></pre>
             </div>
           </div>
 
