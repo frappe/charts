@@ -1,7 +1,7 @@
 import BaseChart from './BaseChart';
 import $ from '../utils/dom';
 import { add_days, get_dd_mm_yyyy, get_weeks_between } from '../utils/date-utils';
-import { calc_distribution, get_max_checkpoint } from '../utils/intervals';
+import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
 import { is_valid_color } from '../utils/colors';
 
 export default class Heatmap extends BaseChart {
@@ -97,7 +97,7 @@ export default class Heatmap extends BaseChart {
 		this.data_groups.textContent = '';
 
 		let data_values = Object.keys(this.data).map(key => this.data[key]);
-		this.distribution = calc_distribution(data_values, this.distribution_size);
+		this.distribution = calcDistribution(data_values, this.distribution_size);
 
 		this.month_names = ["January", "February", "March", "April", "May", "June",
 			"July", "August", "September", "October", "November", "December"
@@ -165,7 +165,7 @@ export default class Heatmap extends BaseChart {
 			}
 
 			if(data_value) {
-				color_index = get_max_checkpoint(data_value, this.distribution);
+				color_index = getMaxCheckpoint(data_value, this.distribution);
 			}
 
 			let x = 13 + (index + week_col_change) * 12;

@@ -1,7 +1,7 @@
 import $ from '../utils/dom';
 import { UnitRenderer, make_x_line, make_y_line } from '../utils/draw';
 import { runSVGAnimation } from '../utils/animate';
-import { calc_intervals } from '../utils/intervals';
+import { calcIntervals } from '../utils/intervals';
 import { float_2, arrays_equal, get_string_width } from '../utils/helpers';
 import BaseChart from './BaseChart';
 
@@ -59,7 +59,7 @@ export default class AxisChart extends BaseChart {
 			values = values.concat(this.y_sums);
 		}
 
-		this.y_axis_values = calc_intervals(values, this.type === 'line');
+		this.y_axis_values = calcIntervals(values, this.type === 'line');
 
 		if(!this.y_old_axis_values) {
 			this.y_old_axis_values = this.y_axis_values.slice();
