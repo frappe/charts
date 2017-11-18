@@ -1,6 +1,6 @@
 import $ from '../utils/dom';
-import { UnitRenderer, make_x_line, make_y_line } from '../utils/draw';
-import { runSVGAnimation } from '../utils/animate';
+import { UnitRenderer, makeXLine, makeYLine } from '../utils/draw';
+import { runSVGAnimation } from '../utils/animation';
 import { calcIntervals } from '../utils/intervals';
 import { float_2, arrays_equal, get_string_width } from '../utils/helpers';
 import BaseChart from './BaseChart';
@@ -106,23 +106,21 @@ export default class AxisChart extends BaseChart {
 	}
 
 	setup_marker_components() {
-		this.y_axis_group = $.createSVG('g', {className: 'y axis', inside: this.draw_area});
-		this.x_axis_group = $.createSVG('g', {className: 'x axis', inside: this.draw_area});
-		this.specific_y_group = $.createSVG('g', {className: 'specific axis', inside: this.draw_area});
+		this.y_axis_group = this.makeDrawAreaComponent('y axis');
+		this.x_axis_group = this.makeDrawAreaComponent('x axis');
+		this.specific_y_group = this.makeDrawAreaComponent('specific axis');
 	}
 
 	setup_aggregation_components() {
-		this.sum_group = $.createSVG('g', {className: 'data-points', inside: this.draw_area});
-		this.average_group = $.createSVG('g', {className: 'chart-area', inside: this.draw_area});
+		this.sum_group = this.makeDrawAreaComponent('data-points');
+		this.average_group = this.makeDrawAreaComponent('chart-area');
 	}
 
 	setup_graph_components() {
 		this.svg_units_groups = [];
 		this.y.map((d, i) => {
-			this.svg_units_groups[i] = $.createSVG('g', {
-				className: 'data-points data-points-' + i,
-				inside: this.draw_area
-			});
+			this.svg_units_groups[i] = this.makeDrawAreaComponent(
+				'data-points data-points-' + i);
 		});
 	}
 
@@ -176,7 +174,7 @@ export default class AxisChart extends BaseChart {
 				}
 			}
 			this.x_axis_group.appendChild(
-				make_x_line(
+				makeXLine(
 					height,
 					text_start_at,
 					point,
@@ -201,7 +199,7 @@ export default class AxisChart extends BaseChart {
 		this.y_axis_group.textContent = '';
 		this.y_axis_values.map((value, i) => {
 			this.y_axis_group.appendChild(
-				make_y_line(
+				makeYLine(
 					start_at,
 					width,
 					text_end_at,
@@ -325,7 +323,7 @@ export default class AxisChart extends BaseChart {
 		this.specific_y_group.textContent = '';
 		this.specific_values.map(d => {
 			this.specific_y_group.appendChild(
-				make_y_line(
+				makeYLine(
 					0,
 					this.width,
 					this.width + 5,
@@ -408,7 +406,7 @@ export default class AxisChart extends BaseChart {
 		this.make_new_units_for_dataset(
 			this.x_axis_positions,
 			this.y_sums.map( val => float_2(this.zero_line - val * this.multiplier)),
-			'light-grey',
+			'#f0f4f7',
 			0,
 			1,
 			this.sum_group,
@@ -666,7 +664,7 @@ export default class AxisChart extends BaseChart {
 			if(typeof new_pos === 'string') {
 				new_pos = parseInt(new_pos.substring(0, new_pos.length-1));
 			}
-			const x_line = make_x_line(
+			const x_line = makeXLine(
 				height,
 				text_start_at,
 				value, // new value
@@ -792,7 +790,7 @@ export default class AxisChart extends BaseChart {
 		let [width, text_end_at, axis_line_class, start_at] = this.get_y_axis_line_props(specific);
 		let axis_label_class = !specific ? 'y-value-text' : 'specific-value';
 		value = !specific ? value : (value+"").toUpperCase();
-		const y_line = make_y_line(
+		const y_line = makeYLine(
 			start_at,
 			width,
 			text_end_at,

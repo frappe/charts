@@ -1,8 +1,30 @@
 import SvgTip from '../objects/SvgTip';
 import $ from '../utils/dom';
+import { makeSVGContainer, makeSVGDefs, makeSVGGroup } from '../utils/draw';
 import { get_string_width } from '../utils/helpers';
-import { get_color } from '../utils/colors';
+import { get_color, DEFAULT_COLORS } from '../utils/colors';
 import Chart from '../charts';
+
+const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
+
+const COMPATIBLE_CHARTS = {
+	bar: ['line', 'scatter', 'percentage', 'pie'],
+	line: ['scatter', 'bar', 'percentage', 'pie'],
+	pie: ['line', 'scatter', 'percentage', 'bar'],
+	scatter: ['line', 'bar', 'percentage', 'pie'],
+	percentage: ['bar', 'line', 'scatter', 'pie'],
+	heatmap: []
+};
+
+// TODO: Needs structure as per only labels/datasets
+const COLOR_COMPATIBLE_CHARTS = {
+	bar: ['line', 'scatter'],
+	line: ['scatter', 'bar'],
+	pie: ['percentage'],
+	scatter: ['line', 'bar'],
+	percentage: ['pie'],
+	heatmap: []
+};
 
 export default class BaseChart {
 	constructor({
@@ -16,7 +38,7 @@ export default class BaseChart {
 		is_navigable = 0,
 		has_legend = 0,
 
-		type = '', // eslint-disable-line no-unused-vars
+		type = '',
 
 		parent,
 		data
@@ -37,55 +59,24 @@ export default class BaseChart {
 			this.current_index = 0;
 		}
 		this.has_legend = has_legend;
-		this.colors = colors;
 
-		const list = type === 'percentage' || type === 'pie'
-			? this.data.labels
-			: this.data.datasets;
-
-		if(!this.colors || (list && this.colors.length < list.length)) {
-			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange',
-				'yellow', 'green', 'light-green', 'purple', 'magenta'];
-		}
-		this.colors = this.colors.map(color => get_color(color));
-
-		this.chart_types = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
-
+		this.setColors(colors, type);
 		this.set_margins(height);
 	}
 
 	get_different_chart(type) {
-		if(!this.chart_types.includes(type)) {
-			console.error(`'${type}' is not a valid chart type.`);
-		}
 		if(type === this.type) return;
 
-		// Only across compatible types
-		let compatible_types = {
-			bar: ['line', 'scatter', 'percentage', 'pie'],
-			line: ['scatter', 'bar', 'percentage', 'pie'],
-			pie: ['line', 'scatter', 'percentage', 'bar'],
-			scatter: ['line', 'bar', 'percentage', 'pie'],
-			percentage: ['bar', 'line', 'scatter', 'pie'],
-			heatmap: []
-		};
+		if(!ALL_CHART_TYPES.includes(type)) {
+			console.error(`'${type}' is not a valid chart type.`);
+		}
 
-		// Only across compatible colors types
-		let color_compatible_types = {
-			bar: ['line', 'scatter'],
-			line: ['scatter', 'bar'],
-			pie: ['percentage'],
-			scatter: ['line', 'bar'],
-			percentage: ['pie'],
-			heatmap: []
-		};
-
-		if(!compatible_types[this.type].includes(type)) {
+		if(!COMPATIBLE_CHARTS[this.type].includes(type)) {
 			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
 		}
 
 		// whether the new chart can use the existing colors
-		const use_color = color_compatible_types[this.type].includes(type);
+		const use_color = COLOR_COMPATIBLE_CHARTS[this.type].includes(type);
 
 		// Okay, this is anticlimactic
 		// this function will need to actually be 'change_chart_type(type)'
@@ -98,6 +89,21 @@ export default class BaseChart {
 			height: this.raw_chart_args.height,
 			colors: use_color ? this.colors : undefined
 		});
+	}
+
+	setColors(colors, type) {
+		this.colors = colors;
+
+		// TODO: Needs structure as per only labels/datasets
+		const list = type === 'percentage' || type === 'pie'
+			? this.data.labels
+			: this.data.datasets;
+
+		if(!this.colors || (list && this.colors.length < list.length)) {
+			this.colors = DEFAULT_COLORS;
+		}
+
+		this.colors = this.colors.map(color => get_color(color));
 	}
 
 	set_margins(height) {
@@ -187,26 +193,22 @@ export default class BaseChart {
 	}
 
 	make_chart_area() {
-		this.svg = $.createSVG('svg', {
-			className: 'chart',
-			inside: this.chart_wrapper,
-			width: this.base_width,
-			height: this.base_height
-		});
-
-		this.svg_defs = $.createSVG('defs', {
-			inside: this.svg,
-		});
-
+		this.svg = makeSVGContainer(
+			this.chart_wrapper,
+			'chart',
+			this.base_width,
+			this.base_height
+		);
+		this.svg_defs = makeSVGDefs(this.svg);
 		return this.svg;
 	}
 
 	make_draw_area() {
-		this.draw_area = $.createSVG("g", {
-			className: this.type + '-chart',
-			inside: this.svg,
-			transform: `translate(${this.translate_x}, ${this.translate_y})`
-		});
+		this.draw_area = makeSVGGroup(
+			this.svg,
+			this.type + '-chart',
+			`translate(${this.translate_x}, ${this.translate_y})`
+		);
 	}
 
 	setup_components() { }
@@ -295,4 +297,8 @@ export default class BaseChart {
 
 	// Objects
 	setup_utils() { }
+
+	makeDrawAreaComponent(className, transform='') {
+		return makeSVGGroup(this.draw_area, className, transform);
+	}
 }

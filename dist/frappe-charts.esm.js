@@ -25,6 +25,7 @@ $.create = (tag, o) => {
 			var ref = $(val);
 			ref.parentNode.insertBefore(element, ref);
 			element.appendChild(ref);
+
 		} else if (i === "styles") {
 			if(typeof val === "object") {
 				Object.keys(val).map(prop => {
@@ -36,33 +37,6 @@ $.create = (tag, o) => {
 		}
 		else {
 			element.setAttribute(i, val);
-		}
-	}
-
-	return element;
-};
-
-$.createSVG = (tag, o) => {
-	var element = document.createElementNS("http://www.w3.org/2000/svg", tag);
-
-	for (var i in o) {
-		var val = o[i];
-
-		if (i === "inside") {
-			$(val).appendChild(element);
-		}
-		else if (i === "around") {
-			var ref = $(val);
-			ref.parentNode.insertBefore(element, ref);
-			element.appendChild(ref);
-		}
-		else {
-			if(i === "className") { i = "class"; }
-			if(i === "innerHTML") {
-				element['textContent'] = val;
-			} else {
-				element.setAttribute(i, val);
-			}
 		}
 	}
 
@@ -128,6 +102,201 @@ $.fire = (target, type, properties) => {
 	return target.dispatchEvent(evt);
 };
 
+// Constants used
+
+function $$1(expr, con) {
+	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
+}
+
+function createSVG(tag, o) {
+	var element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+
+	for (var i in o) {
+		var val = o[i];
+
+		if (i === "inside") {
+			$$1(val).appendChild(element);
+		}
+		else if (i === "around") {
+			var ref = $$1(val);
+			ref.parentNode.insertBefore(element, ref);
+			element.appendChild(ref);
+
+		} else if (i === "styles") {
+			if(typeof val === "object") {
+				Object.keys(val).map(prop => {
+					element.style[prop] = val[prop];
+				});
+			}
+		} else {
+			if(i === "className") { i = "class"; }
+			if(i === "innerHTML") {
+				element['textContent'] = val;
+			} else {
+				element.setAttribute(i, val);
+			}
+		}
+	}
+
+	return element;
+}
+
+function renderVerticalGradient(svgDefElem, gradientId) {
+	return createSVG('linearGradient', {
+		inside: svgDefElem,
+		id: gradientId,
+		x1: 0,
+		x2: 0,
+		y1: 0,
+		y2: 1
+	});
+}
+
+function setGradientStop(gradElem, offset, color, opacity) {
+	createSVG('stop', {
+		'inside': gradElem,
+		'style': `stop-color: ${color}`,
+		'offset': offset,
+		'stop-opacity': opacity
+	});
+}
+
+function makeSVGContainer(parent, className, width, height) {
+	return createSVG('svg', {
+		className: className,
+		inside: parent,
+		width: width,
+		height: height
+	});
+}
+
+function makeSVGDefs(svgContainer) {
+	return createSVG('defs', {
+		inside: svgContainer,
+	});
+}
+
+function makeSVGGroup(parent, className, transform='') {
+	return createSVG('g', {
+		className: className,
+		inside: parent,
+		transform: transform
+	});
+}
+
+function makePath(pathStr, className='', stroke='none', fill='none') {
+	return createSVG('path', {
+		className: className,
+		d: pathStr,
+		styles: {
+			stroke: stroke,
+			fill: fill
+		}
+	});
+}
+
+function makeGradient(svgDefElem, color, lighter = false) {
+	let gradientId ='path-fill-gradient' + '-' + color;
+	let gradientDef = renderVerticalGradient(svgDefElem, gradientId);
+	let opacities = [1, 0.6, 0.2];
+	if(lighter) {
+		opacities = [0.4, 0.2, 0];
+	}
+
+	setGradientStop(gradientDef, "0%", color, opacities[0]);
+	setGradientStop(gradientDef, "50%", color, opacities[1]);
+	setGradientStop(gradientDef, "100%", color, opacities[2]);
+
+	return gradientId;
+}
+
+function makeHeatSquare(className, x, y, size, fill='none', data={}) {
+	let args = {
+		className: className,
+		x: x,
+		y: y,
+		width: size,
+		height: size,
+		fill: fill
+	};
+
+	Object.keys(data).map(key => {
+		args[key] = data[key];
+	});
+
+	return createSVG("rect", args);
+}
+
+function makeText(className, x, y, content) {
+	return createSVG('text', {
+		className: className,
+		x: x,
+		y: y,
+		dy: '.32em',
+		innerHTML: content
+	});
+}
+
+function makeXLine(height, textStartAt, point, labelClass, axisLineClass, xPos) {
+	let line = createSVG('line', {
+		x1: 0,
+		x2: 0,
+		y1: 0,
+		y2: height
+	});
+
+	let text = createSVG('text', {
+		className: labelClass,
+		x: 0,
+		y: textStartAt,
+		dy: '.71em',
+		innerHTML: point
+	});
+
+	let xLine = createSVG('g', {
+		className: `tick ${axisLineClass}`,
+		transform: `translate(${ xPos }, 0)`
+	});
+
+	xLine.appendChild(line);
+	xLine.appendChild(text);
+
+	return xLine;
+}
+
+function makeYLine(startAt, width, textEndAt, point, labelClass, axisLineClass, yPos, darker=false, lineType="") {
+	let line = createSVG('line', {
+		className: lineType === "dashed" ? "dashed": "",
+		x1: startAt,
+		x2: width,
+		y1: 0,
+		y2: 0
+	});
+
+	let text = createSVG('text', {
+		className: labelClass,
+		x: textEndAt,
+		y: 0,
+		dy: '.32em',
+		innerHTML: point+""
+	});
+
+	let yLine = createSVG('g', {
+		className: `tick ${axisLineClass}`,
+		transform: `translate(0, ${yPos})`,
+		'stroke-opacity': 1
+	});
+
+	if(darker) {
+		line.style.stroke = "rgba(27, 31, 35, 0.6)";
+	}
+
+	yLine.appendChild(line);
+	yLine.appendChild(text);
+
+	return yLine;
+}
+
 var UnitRenderer = (function() {
 	var UnitRenderer = function(total_height, zero_line, avg_unit_width) {
 		this.total_height = total_height;
@@ -169,7 +338,7 @@ var UnitRenderer = (function() {
 
 			let [height, y] = get_bar_height_and_y_attr(y_top, this.zero_line, this.total_height);
 
-			return $.createSVG('rect', {
+			return createSVG('rect', {
 				className: `bar mini`,
 				style: `fill: ${color}`,
 				'data-point-index': index,
@@ -181,7 +350,7 @@ var UnitRenderer = (function() {
 		},
 
 		draw_dot: function(x, y, args, color, index) {
-			return $.createSVG('circle', {
+			return createSVG('circle', {
 				style: `fill: ${color}`,
 				'data-point-index': index,
 				cx: x,
@@ -209,67 +378,6 @@ var UnitRenderer = (function() {
 
 	return UnitRenderer;
 })();
-
-
-function make_x_line(height, text_start_at, point, label_class, axis_line_class, x_pos) {
-	let line = $.createSVG('line', {
-		x1: 0,
-		x2: 0,
-		y1: 0,
-		y2: height
-	});
-
-	let text = $.createSVG('text', {
-		className: label_class,
-		x: 0,
-		y: text_start_at,
-		dy: '.71em',
-		innerHTML: point
-	});
-
-	let x_line = $.createSVG('g', {
-		className: `tick ${axis_line_class}`,
-		transform: `translate(${ x_pos }, 0)`
-	});
-
-	x_line.appendChild(line);
-	x_line.appendChild(text);
-
-	return x_line;
-}
-
-function make_y_line(start_at, width, text_end_at, point, label_class, axis_line_class, y_pos, darker=false, line_type="") {
-	let line = $.createSVG('line', {
-		className: line_type === "dashed" ? "dashed": "",
-		x1: start_at,
-		x2: width,
-		y1: 0,
-		y2: 0
-	});
-
-	let text = $.createSVG('text', {
-		className: label_class,
-		x: text_end_at,
-		y: 0,
-		dy: '.32em',
-		innerHTML: point+""
-	});
-
-	let y_line = $.createSVG('g', {
-		className: `tick ${axis_line_class}`,
-		transform: `translate(0, ${y_pos})`,
-		'stroke-opacity': 1
-	});
-
-	if(darker) {
-		line.style.stroke = "rgba(27, 31, 35, 0.6)";
-	}
-
-	y_line.appendChild(line);
-	y_line.appendChild(text);
-
-	return y_line;
-}
 
 // Leveraging SMIL Animations
 
@@ -706,6 +814,26 @@ class SvgTip {
 	}
 }
 
+const PRESET_COLOR_MAP = {
+	'light-blue': '#7cd6fd',
+	'blue': '#5e64ff',
+	'violet': '#743ee2',
+	'red': '#ff5858',
+	'orange': '#ffa00a',
+	'yellow': '#feef72',
+	'green': '#28a745',
+	'light-green': '#98d85b',
+	'purple': '#b554ff',
+	'magenta': '#ffa3ef',
+	'black': '#36114C',
+	'grey': '#bdd3e6',
+	'light-grey': '#f0f4f7',
+	'dark-grey': '#b8c2cc'
+};
+
+const DEFAULT_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
+	'yellow', 'green', 'light-green', 'purple', 'magenta'];
+
 function limit_color(r){
 	if (r > 255) return 255;
 	else if (r < 0) return 0;
@@ -731,25 +859,29 @@ function is_valid_color(string) {
 	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
 }
 
-const color_map = {
-	'light-blue': '#7cd6fd',
-	blue: '#5e64ff',
-	violet: '#743ee2',
-	red: '#ff5858',
-	orange: '#ffa00a',
-	yellow: '#feef72',
-	green: '#28a745',
-	'light-green': '#98d85b',
-	purple: '#b554ff',
-	magenta: '#ffa3ef',
-	black: '#36114C',
-	grey: '#bdd3e6',
-	'light-grey': '#f0f4f7',
-	'dark-grey': '#b8c2cc'
+const get_color = (color) => {
+	return PRESET_COLOR_MAP[color] || color;
 };
 
-const get_color = (color) => {
-	return color_map[color] || color;
+const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
+
+const COMPATIBLE_CHARTS = {
+	bar: ['line', 'scatter', 'percentage', 'pie'],
+	line: ['scatter', 'bar', 'percentage', 'pie'],
+	pie: ['line', 'scatter', 'percentage', 'bar'],
+	scatter: ['line', 'bar', 'percentage', 'pie'],
+	percentage: ['bar', 'line', 'scatter', 'pie'],
+	heatmap: []
+};
+
+// TODO: Needs structure as per only labels/datasets
+const COLOR_COMPATIBLE_CHARTS = {
+	bar: ['line', 'scatter'],
+	line: ['scatter', 'bar'],
+	pie: ['percentage'],
+	scatter: ['line', 'bar'],
+	percentage: ['pie'],
+	heatmap: []
 };
 
 class BaseChart {
@@ -764,7 +896,7 @@ class BaseChart {
 		is_navigable = 0,
 		has_legend = 0,
 
-		type = '', // eslint-disable-line no-unused-vars
+		type = '',
 
 		parent,
 		data
@@ -785,55 +917,24 @@ class BaseChart {
 			this.current_index = 0;
 		}
 		this.has_legend = has_legend;
-		this.colors = colors;
 
-		const list = type === 'percentage' || type === 'pie'
-			? this.data.labels
-			: this.data.datasets;
-
-		if(!this.colors || (list && this.colors.length < list.length)) {
-			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange',
-				'yellow', 'green', 'light-green', 'purple', 'magenta'];
-		}
-		this.colors = this.colors.map(color => get_color(color));
-
-		this.chart_types = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
-
+		this.setColors(colors, type);
 		this.set_margins(height);
 	}
 
 	get_different_chart(type) {
-		if(!this.chart_types.includes(type)) {
-			console.error(`'${type}' is not a valid chart type.`);
-		}
 		if(type === this.type) return;
 
-		// Only across compatible types
-		let compatible_types = {
-			bar: ['line', 'scatter', 'percentage', 'pie'],
-			line: ['scatter', 'bar', 'percentage', 'pie'],
-			pie: ['line', 'scatter', 'percentage', 'bar'],
-			scatter: ['line', 'bar', 'percentage', 'pie'],
-			percentage: ['bar', 'line', 'scatter', 'pie'],
-			heatmap: []
-		};
+		if(!ALL_CHART_TYPES.includes(type)) {
+			console.error(`'${type}' is not a valid chart type.`);
+		}
 
-		// Only across compatible colors types
-		let color_compatible_types = {
-			bar: ['line', 'scatter'],
-			line: ['scatter', 'bar'],
-			pie: ['percentage'],
-			scatter: ['line', 'bar'],
-			percentage: ['pie'],
-			heatmap: []
-		};
-
-		if(!compatible_types[this.type].includes(type)) {
+		if(!COMPATIBLE_CHARTS[this.type].includes(type)) {
 			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
 		}
 
 		// whether the new chart can use the existing colors
-		const use_color = color_compatible_types[this.type].includes(type);
+		const use_color = COLOR_COMPATIBLE_CHARTS[this.type].includes(type);
 
 		// Okay, this is anticlimactic
 		// this function will need to actually be 'change_chart_type(type)'
@@ -846,6 +947,21 @@ class BaseChart {
 			height: this.raw_chart_args.height,
 			colors: use_color ? this.colors : undefined
 		});
+	}
+
+	setColors(colors, type) {
+		this.colors = colors;
+
+		// TODO: Needs structure as per only labels/datasets
+		const list = type === 'percentage' || type === 'pie'
+			? this.data.labels
+			: this.data.datasets;
+
+		if(!this.colors || (list && this.colors.length < list.length)) {
+			this.colors = DEFAULT_COLORS;
+		}
+
+		this.colors = this.colors.map(color => get_color(color));
 	}
 
 	set_margins(height) {
@@ -935,26 +1051,22 @@ class BaseChart {
 	}
 
 	make_chart_area() {
-		this.svg = $.createSVG('svg', {
-			className: 'chart',
-			inside: this.chart_wrapper,
-			width: this.base_width,
-			height: this.base_height
-		});
-
-		this.svg_defs = $.createSVG('defs', {
-			inside: this.svg,
-		});
-
+		this.svg = makeSVGContainer(
+			this.chart_wrapper,
+			'chart',
+			this.base_width,
+			this.base_height
+		);
+		this.svg_defs = makeSVGDefs(this.svg);
 		return this.svg;
 	}
 
 	make_draw_area() {
-		this.draw_area = $.createSVG("g", {
-			className: this.type + '-chart',
-			inside: this.svg,
-			transform: `translate(${this.translate_x}, ${this.translate_y})`
-		});
+		this.draw_area = makeSVGGroup(
+			this.svg,
+			this.type + '-chart',
+			`translate(${this.translate_x}, ${this.translate_y})`
+		);
 	}
 
 	setup_components() { }
@@ -1043,6 +1155,10 @@ class BaseChart {
 
 	// Objects
 	setup_utils() { }
+
+	makeDrawAreaComponent(className, transform='') {
+		return makeSVGGroup(this.draw_area, className, transform);
+	}
 }
 
 class AxisChart extends BaseChart {
@@ -1146,23 +1262,21 @@ class AxisChart extends BaseChart {
 	}
 
 	setup_marker_components() {
-		this.y_axis_group = $.createSVG('g', {className: 'y axis', inside: this.draw_area});
-		this.x_axis_group = $.createSVG('g', {className: 'x axis', inside: this.draw_area});
-		this.specific_y_group = $.createSVG('g', {className: 'specific axis', inside: this.draw_area});
+		this.y_axis_group = this.makeDrawAreaComponent('y axis');
+		this.x_axis_group = this.makeDrawAreaComponent('x axis');
+		this.specific_y_group = this.makeDrawAreaComponent('specific axis');
 	}
 
 	setup_aggregation_components() {
-		this.sum_group = $.createSVG('g', {className: 'data-points', inside: this.draw_area});
-		this.average_group = $.createSVG('g', {className: 'chart-area', inside: this.draw_area});
+		this.sum_group = this.makeDrawAreaComponent('data-points');
+		this.average_group = this.makeDrawAreaComponent('chart-area');
 	}
 
 	setup_graph_components() {
 		this.svg_units_groups = [];
 		this.y.map((d, i) => {
-			this.svg_units_groups[i] = $.createSVG('g', {
-				className: 'data-points data-points-' + i,
-				inside: this.draw_area
-			});
+			this.svg_units_groups[i] = this.makeDrawAreaComponent(
+				'data-points data-points-' + i);
 		});
 	}
 
@@ -1216,7 +1330,7 @@ class AxisChart extends BaseChart {
 				}
 			}
 			this.x_axis_group.appendChild(
-				make_x_line(
+				makeXLine(
 					height,
 					text_start_at,
 					point,
@@ -1241,7 +1355,7 @@ class AxisChart extends BaseChart {
 		this.y_axis_group.textContent = '';
 		this.y_axis_values.map((value, i) => {
 			this.y_axis_group.appendChild(
-				make_y_line(
+				makeYLine(
 					start_at,
 					width,
 					text_end_at,
@@ -1365,7 +1479,7 @@ class AxisChart extends BaseChart {
 		this.specific_y_group.textContent = '';
 		this.specific_values.map(d => {
 			this.specific_y_group.appendChild(
-				make_y_line(
+				makeYLine(
 					0,
 					this.width,
 					this.width + 5,
@@ -1448,7 +1562,7 @@ class AxisChart extends BaseChart {
 		this.make_new_units_for_dataset(
 			this.x_axis_positions,
 			this.y_sums.map( val => float_2(this.zero_line - val * this.multiplier)),
-			'light-grey',
+			'#f0f4f7',
 			0,
 			1,
 			this.sum_group,
@@ -1706,7 +1820,7 @@ class AxisChart extends BaseChart {
 			if(typeof new_pos === 'string') {
 				new_pos = parseInt(new_pos.substring(0, new_pos.length-1));
 			}
-			const x_line = make_x_line(
+			const x_line = makeXLine(
 				height,
 				text_start_at,
 				value, // new value
@@ -1832,7 +1946,7 @@ class AxisChart extends BaseChart {
 		let [width, text_end_at, axis_line_class, start_at] = this.get_y_axis_line_props(specific);
 		let axis_label_class = !specific ? 'y-value-text' : 'specific-value';
 		value = !specific ? value : (value+"").toUpperCase();
-		const y_line = make_y_line(
+		const y_line = makeYLine(
 			start_at,
 			width,
 			text_end_at,
@@ -2001,10 +2115,10 @@ class LineChart extends AxisChart {
 	setup_path_groups() {
 		this.paths_groups = [];
 		this.y.map((d, i) => {
-			this.paths_groups[i] = $.createSVG('g', {
-				className: 'path-group path-group-' + i,
-				inside: this.draw_area
-			});
+			this.paths_groups[i] = makeSVGGroup(
+				this.draw_area,
+				'path-group path-group-' + i
+			);
 		});
 	}
 
@@ -2036,14 +2150,11 @@ class LineChart extends AxisChart {
 
 		this.paths_groups[i].textContent = '';
 
-		d.path = $.createSVG('path', {
-			inside: this.paths_groups[i],
-			style: `stroke: ${color}`,
-			d: "M"+points_str
-		});
+		d.path = makePath("M"+points_str, 'line-graph-path', color);
+		this.paths_groups[i].appendChild(d.path);
 
 		if(this.heatline) {
-			let gradient_id = this.make_gradient(color);
+			let gradient_id = makeGradient(this.svg_defs, color);
 			d.path.style.stroke = `url(#${gradient_id})`;
 		}
 
@@ -2053,50 +2164,11 @@ class LineChart extends AxisChart {
 	}
 
 	fill_region_for_dataset(d, i, color, points_str) {
-		let gradient_id = this.make_gradient(color, true);
+		let gradient_id = makeGradient(this.svg_defs, color, true);
+		let pathStr = "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`;
 
-		d.region_path = $.createSVG('path', {
-			inside: this.paths_groups[i],
-			className: `region-fill`,
-			d: "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`,
-		});
-
-		d.region_path.style.stroke = "none";
-		d.region_path.style.fill = `url(#${gradient_id})`;
-	}
-
-	make_gradient(color, lighter = false) {
-		let gradient_id ='path-fill-gradient' + '-' + color;
-
-		let gradient_def = $.createSVG('linearGradient', {
-			inside: this.svg_defs,
-			id: gradient_id,
-			x1: 0,
-			x2: 0,
-			y1: 0,
-			y2: 1
-		});
-
-		let set_gradient_stop = (grad_elem, offset, color, opacity) => {
-			$.createSVG('stop', {
-				style: `stop-color: ${color}`,
-				inside: grad_elem,
-				'offset': offset,
-				'stop-opacity': opacity
-			});
-		};
-
-		let opacities = [1, 0.6, 0.2];
-
-		if(lighter) {
-			opacities = [0.4, 0.2, 0];
-		}
-
-		set_gradient_stop(gradient_def, "0%", color, opacities[0]);
-		set_gradient_stop(gradient_def, "50%", color, opacities[1]);
-		set_gradient_stop(gradient_def, "100%", color, opacities[2]);
-
-		return gradient_id;
+		d.region_path = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id})`);
+		this.paths_groups[i].appendChild(d.region_path);
 	}
 }
 
@@ -2351,13 +2423,10 @@ class PieChart extends BaseChart {
 				curEnd = endPosition;
 			}
 			const curPath = this.makeArcPath(curStart,curEnd);
-			let slice = $.createSVG('path',{
-				inside: this.draw_area,
-				className: 'pie-path',
-				style: 'transition:transform .3s;',
-				d: curPath,
-				fill: this.colors[i]
-			});
+			let slice = makePath(curPath, 'pie-path', 'none', this.colors[i]);
+			slice.style.transition = 'transform .3s;';
+			this.draw_area.appendChild(slice);
+
 			this.slices.push(slice);
 			this.slicesProperties.push({
 				startPosition,
@@ -2413,7 +2482,7 @@ class PieChart extends BaseChart {
 		const color = this.colors[i];
 		if(flag){
 			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
-			path.setAttribute('fill',lighten_darken_color(color,50));
+			path.style.fill = lighten_darken_color(color,50);
 			let g_off = $.offset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
@@ -2425,7 +2494,7 @@ class PieChart extends BaseChart {
 		}else{
 			transform(path,'translate3d(0,0,0)');
 			this.tip.hide_tip();
-			path.setAttribute('fill',color);
+			path.style.fill = color;
 		}
 	}
 
@@ -2584,15 +2653,13 @@ class Heatmap extends BaseChart {
 	}
 
 	setup_components() {
-		this.domain_label_group = $.createSVG("g", {
-			className: "domain-label-group chart-label",
-			inside: this.draw_area
-		});
-		this.data_groups = $.createSVG("g", {
-			className: "data-groups",
-			inside: this.draw_area,
-			transform: `translate(0, 20)`
-		});
+		this.domain_label_group = this.makeDrawAreaComponent(
+			'domain-label-group chart-label');
+
+		this.data_groups = this.makeDrawAreaComponent(
+			'data-groups',
+			`translate(0, 20)`
+		);
 	}
 
 	setup_values() {
@@ -2647,10 +2714,7 @@ class Heatmap extends BaseChart {
 		let month_change = 0;
 		let week_col_change = 0;
 
-		let data_group = $.createSVG("g", {
-			className: "data-group",
-			inside: this.data_groups
-		});
+		let data_group = makeSVGGroup(this.data_groups, 'data-group');
 
 		for(var y = 0, i = 0; i < no_of_weekdays; i += step, y += (square_side + cell_padding)) {
 			let data_value = 0;
@@ -2673,18 +2737,15 @@ class Heatmap extends BaseChart {
 
 			let x = 13 + (index + week_col_change) * 12;
 
-			$.createSVG("rect", {
-				className: 'day',
-				inside: data_group,
-				x: x,
-				y: y,
-				width: square_side,
-				height: square_side,
-				fill:  this.legend_colors[color_index],
+			let dataAttr = {
 				'data-date': get_dd_mm_yyyy(current_date),
 				'data-value': data_value,
 				'data-day': current_date.getDay()
-			});
+			};
+			let heatSquare = makeHeatSquare('day', x, y, square_side,
+				this.legend_colors[color_index], dataAttr);
+
+			data_group.appendChild(heatSquare);
 
 			let next_date = new Date(current_date);
 			add_days(next_date, 1);
@@ -2727,15 +2788,8 @@ class Heatmap extends BaseChart {
 
 		this.month_start_points.map((start, i) => {
 			let month_name =  this.month_names[this.months[i]].substring(0, 3);
-
-			$.createSVG('text', {
-				className: 'y-value-text',
-				inside: this.domain_label_group,
-				x: start + 12,
-				y: 10,
-				dy: '.32em',
-				innerHTML: month_name
-			});
+			let text = makeText('y-value-text', start+12, 10, month_name);
+			this.domain_label_group.appendChild(text);
 		});
 	}
 

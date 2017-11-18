@@ -1,5 +1,5 @@
 import BaseChart from './BaseChart';
-import $ from '../utils/dom';
+import { makeSVGGroup, makeHeatSquare, makeText } from '../utils/draw';
 import { add_days, get_dd_mm_yyyy, get_weeks_between } from '../utils/date-utils';
 import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
 import { is_valid_color } from '../utils/colors';
@@ -81,15 +81,13 @@ export default class Heatmap extends BaseChart {
 	}
 
 	setup_components() {
-		this.domain_label_group = $.createSVG("g", {
-			className: "domain-label-group chart-label",
-			inside: this.draw_area
-		});
-		this.data_groups = $.createSVG("g", {
-			className: "data-groups",
-			inside: this.draw_area,
-			transform: `translate(0, 20)`
-		});
+		this.domain_label_group = this.makeDrawAreaComponent(
+			'domain-label-group chart-label');
+
+		this.data_groups = this.makeDrawAreaComponent(
+			'data-groups',
+			`translate(0, 20)`
+		);
 	}
 
 	setup_values() {
@@ -144,10 +142,7 @@ export default class Heatmap extends BaseChart {
 		let month_change = 0;
 		let week_col_change = 0;
 
-		let data_group = $.createSVG("g", {
-			className: "data-group",
-			inside: this.data_groups
-		});
+		let data_group = makeSVGGroup(this.data_groups, 'data-group');
 
 		for(var y = 0, i = 0; i < no_of_weekdays; i += step, y += (square_side + cell_padding)) {
 			let data_value = 0;
@@ -170,18 +165,15 @@ export default class Heatmap extends BaseChart {
 
 			let x = 13 + (index + week_col_change) * 12;
 
-			$.createSVG("rect", {
-				className: 'day',
-				inside: data_group,
-				x: x,
-				y: y,
-				width: square_side,
-				height: square_side,
-				fill:  this.legend_colors[color_index],
+			let dataAttr = {
 				'data-date': get_dd_mm_yyyy(current_date),
 				'data-value': data_value,
 				'data-day': current_date.getDay()
-			});
+			};
+			let heatSquare = makeHeatSquare('day', x, y, square_side,
+				this.legend_colors[color_index], dataAttr);
+
+			data_group.appendChild(heatSquare);
 
 			let next_date = new Date(current_date);
 			add_days(next_date, 1);
@@ -224,15 +216,8 @@ export default class Heatmap extends BaseChart {
 
 		this.month_start_points.map((start, i) => {
 			let month_name =  this.month_names[this.months[i]].substring(0, 3);
-
-			$.createSVG('text', {
-				className: 'y-value-text',
-				inside: this.domain_label_group,
-				x: start + 12,
-				y: 10,
-				dy: '.32em',
-				innerHTML: month_name
-			});
+			let text = makeText('y-value-text', start+12, 10, month_name);
+			this.domain_label_group.appendChild(text);
 		});
 	}
 
