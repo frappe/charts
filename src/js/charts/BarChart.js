@@ -25,7 +25,7 @@ export default class BarChart extends AxisChart {
 		// Just make one out of the first element
 		let index = this.x.length - 1;
 		let unit = this.y[0].svg_units[index];
-		this.update_current_data_point(index);
+		this.updateCurrentDataPoint(index);
 
 		if(this.overlay) {
 			this.overlay.parentNode.removeChild(this.overlay);
@@ -47,7 +47,7 @@ export default class BarChart extends AxisChart {
 		units_array.map(unit => {
 			unit.addEventListener('click', () => {
 				let index = unit.getAttribute('data-point-index');
-				this.update_current_data_point(index);
+				this.updateCurrentDataPoint(index);
 			});
 		});
 	}
@@ -67,11 +67,11 @@ export default class BarChart extends AxisChart {
 	}
 
 	on_left_arrow() {
-		this.update_current_data_point(this.current_index - 1);
+		this.updateCurrentDataPoint(this.current_index - 1);
 	}
 
 	on_right_arrow() {
-		this.update_current_data_point(this.current_index + 1);
+		this.updateCurrentDataPoint(this.current_index + 1);
 	}
 
 	set_avg_unit_width_and_x_offset() {

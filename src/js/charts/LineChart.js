@@ -57,19 +57,19 @@ export default class LineChart extends AxisChart {
 	}
 
 	make_paths() {
-		this.y.map((d, i) => {
-			this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
+		this.y.map(d => {
+			this.make_path(d, this.x_axis_positions, d.y_tops, d.color || this.colors[d.index]);
 		});
 	}
 
-	make_path(d, i, x_positions, y_positions, color) {
+	make_path(d, x_positions, y_positions, color) {
 		let points_list = y_positions.map((y, i) => (x_positions[i] + ',' + y));
 		let points_str = points_list.join("L");
 
-		this.paths_groups[i].textContent = '';
+		this.paths_groups[d.index].textContent = '';
 
 		d.path = makePath("M"+points_str, 'line-graph-path', color);
-		this.paths_groups[i].appendChild(d.path);
+		this.paths_groups[d.index].appendChild(d.path);
 
 		if(this.heatline) {
 			let gradient_id = makeGradient(this.svg_defs, color);
@@ -77,15 +77,15 @@ export default class LineChart extends AxisChart {
 		}
 
 		if(this.region_fill) {
-			this.fill_region_for_dataset(d, i, color, points_str);
+			this.fill_region_for_dataset(d, color, points_str);
 		}
 	}
 
-	fill_region_for_dataset(d, i, color, points_str) {
+	fill_region_for_dataset(d, color, points_str) {
 		let gradient_id = makeGradient(this.svg_defs, color, true);
 		let pathStr = "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`;
 
 		d.regionPath = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id})`);
-		this.paths_groups[i].appendChild(d.regionPath);
+		this.paths_groups[d.index].appendChild(d.regionPath);
 	}
 }

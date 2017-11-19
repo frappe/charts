@@ -16,7 +16,7 @@ const COMPATIBLE_CHARTS = {
 	heatmap: []
 };
 
-// TODO: Needs structure as per only labels/datasets
+// Needs structure as per only labels/datasets
 const COLOR_COMPATIBLE_CHARTS = {
 	bar: ['line', 'scatter'],
 	line: ['scatter', 'bar'],
@@ -50,6 +50,7 @@ export default class BaseChart {
 		this.subtitle = subtitle;
 
 		this.data = data;
+		this.oldData = Object.assign({}, data);
 
 		this.specific_values = data.specific_values || [];
 		this.summary = summary;
@@ -94,7 +95,7 @@ export default class BaseChart {
 	setColors(colors, type) {
 		this.colors = colors;
 
-		// TODO: Needs structure as per only labels/datasets
+		// Needs structure as per only labels/datasets
 		const list = type === 'percentage' || type === 'pie'
 			? this.data.labels
 			: this.data.datasets;
@@ -211,7 +212,9 @@ export default class BaseChart {
 		);
 	}
 
-	setup_components() { }
+	setup_components() {}
+	setup_values() {}
+	setup_utils() {}
 
 	make_tooltip() {
 		this.tip = new SvgTip({
@@ -220,7 +223,6 @@ export default class BaseChart {
 		});
 		this.bind_tooltip();
 	}
-
 
 	show_summary() {}
 	show_custom_summary() {
@@ -272,31 +274,10 @@ export default class BaseChart {
 	on_down_arrow() {}
 	on_enter_key() {}
 
-	get_data_point(index=this.current_index) {
-		// check for length
-		let data_point = {
-			index: index
-		};
-		let y = this.y[0];
-		['svg_units', 'y_tops', 'values'].map(key => {
-			let data_key = key.slice(0, key.length-1);
-			data_point[data_key] = y[key][index];
-		});
-		data_point.label = this.x[index];
-		return data_point;
-	}
+	updateData() {}
 
-	update_current_data_point(index) {
-		index = parseInt(index);
-		if(index < 0) index = 0;
-		if(index >= this.x.length) index = this.x.length - 1;
-		if(index === this.current_index) return;
-		this.current_index = index;
-		$.fire(this.parent, "data-select", this.get_data_point());
-	}
-
-	// Objects
-	setup_utils() { }
+	getDataPoint() {}
+	updateCurrentDataPoint() {}
 
 	makeDrawAreaComponent(className, transform='') {
 		return makeSVGGroup(this.draw_area, className, transform);

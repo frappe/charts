@@ -38,6 +38,22 @@ export function shuffle(array) {
 }
 
 /**
+ * Fill an array with extra points
+ * @param {Array} array Array
+ * @param {Number} count number of filler elements
+ * @param {Object} element element to fill with
+ * @param {Boolean} start fill at start?
+ */
+export function fillArray(array, count, element, start=false) {
+	if(!element) {
+		element = start ? array[0] : array[array.length - 1];
+	}
+	let fillerArray = new Array(Math.abs(count)).fill(element);
+	array = start ? fillerArray.concat(array) : array.concat(fillerArray);
+	return array;
+}
+
+/**
  * Returns pixel width of string.
  * @param {String} string
  * @param {Number} charWidth Width of single char in pixels

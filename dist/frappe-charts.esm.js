@@ -1,20 +1,20 @@
-function $(expr, con) {
+function $$1(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
 
 
-$.create = (tag, o) => {
+$$1.create = (tag, o) => {
 	var element = document.createElement(tag);
 
 	for (var i in o) {
 		var val = o[i];
 
 		if (i === "inside") {
-			$(val).appendChild(element);
+			$$1(val).appendChild(element);
 		}
 		else if (i === "around") {
-			var ref = $(val);
+			var ref = $$1(val);
 			ref.parentNode.insertBefore(element, ref);
 			element.appendChild(ref);
 
@@ -66,7 +66,7 @@ function getElementContentWidth(element) {
 	return element.clientWidth - padding;
 }
 
-$.bind = (element, o) => {
+$$1.bind = (element, o) => {
 	if (element) {
 		for (var event in o) {
 			var callback = o[event];
@@ -78,7 +78,7 @@ $.bind = (element, o) => {
 	}
 };
 
-$.unbind = (element, o) => {
+$$1.unbind = (element, o) => {
 	if (element) {
 		for (var event in o) {
 			var callback = o[event];
@@ -90,7 +90,7 @@ $.unbind = (element, o) => {
 	}
 };
 
-$.fire = (target, type, properties) => {
+$$1.fire = (target, type, properties) => {
 	var evt = document.createEvent("HTMLEvents");
 
 	evt.initEvent(type, true, true );
@@ -101,6 +101,59 @@ $.fire = (target, type, properties) => {
 
 	return target.dispatchEvent(evt);
 };
+
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
+function floatTwo(d) {
+	return parseFloat(d.toFixed(2));
+}
+
+/**
+ * Returns whether or not two given arrays are equal.
+ * @param {Array} arr1 First array
+ * @param {Array} arr2 Second array
+ */
+function arraysEqual(arr1, arr2) {
+	if(arr1.length !== arr2.length) return false;
+	let areEqual = true;
+	arr1.map((d, i) => {
+		if(arr2[i] !== d) areEqual = false;
+	});
+	return areEqual;
+}
+
+/**
+ * Shuffles array in place. ES6 version
+ * @param {Array} array An array containing the items.
+ */
+
+
+/**
+ * Fill an array with extra points
+ * @param {Array} array Array
+ * @param {Number} count number of filler elements
+ * @param {Object} element element to fill with
+ * @param {Boolean} start fill at start?
+ */
+function fillArray(array, count, element, start=false) {
+	if(!element) {
+		element = start ? array[0] : array[array.length - 1];
+	}
+	let fillerArray = new Array(Math.abs(count)).fill(element);
+	array = start ? fillerArray.concat(array) : array.concat(fillerArray);
+	return array;
+}
+
+/**
+ * Returns pixel width of string.
+ * @param {String} string
+ * @param {Number} charWidth Width of single char in pixels
+ */
+function getStringWidth(string, charWidth) {
+	return (string+"").length * charWidth;
+}
 
 function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
 	let height, y;
@@ -126,9 +179,25 @@ function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
 	return [height, y];
 }
 
+function equilizeNoOfPositions(old_x, old_y, new_x, new_y) {
+	let extra_count = new_x.length - old_x.length;
+	if(extra_count >= 0) {
+		// Substitute current unit set with a squiggled one (more units at end)
+		// in order to animate to stretch it later to new points
+		old_x = fillArray(old_x, extra_count);
+		old_y = fillArray(old_y, extra_count);
+	} else {
+		// Modify the new points to have extra points
+		// with the same position at end, old positions will squeeze in
+		new_x = fillArray(new_x, extra_count);
+		new_y = fillArray(new_y, extra_count);
+	}
+	return [old_x, old_y, new_x, new_y];
+}
+
 // Constants used
 
-function $$1(expr, con) {
+function $$2(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
@@ -139,10 +208,10 @@ function createSVG(tag, o) {
 		var val = o[i];
 
 		if (i === "inside") {
-			$$1(val).appendChild(element);
+			$$2(val).appendChild(element);
 		}
 		else if (i === "around") {
-			var ref = $$1(val);
+			var ref = $$2(val);
 			ref.parentNode.insertBefore(element, ref);
 			element.appendChild(ref);
 
@@ -694,43 +763,6 @@ function getMaxCheckpoint(value, distribution) {
 	return distribution.filter(d => d < value).length;
 }
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
-function floatTwo(d) {
-	return parseFloat(d.toFixed(2));
-}
-
-/**
- * Returns whether or not two given arrays are equal.
- * @param {Array} arr1 First array
- * @param {Array} arr2 Second array
- */
-function arraysEqual(arr1, arr2) {
-	if(arr1.length !== arr2.length) return false;
-	let areEqual = true;
-	arr1.map((d, i) => {
-		if(arr2[i] !== d) areEqual = false;
-	});
-	return areEqual;
-}
-
-/**
- * Shuffles array in place. ES6 version
- * @param {Array} array An array containing the items.
- */
-
-
-/**
- * Returns pixel width of string.
- * @param {String} string
- * @param {Number} charWidth Width of single char in pixels
- */
-function getStringWidth(string, charWidth) {
-	return (string+"").length * charWidth;
-}
-
 class SvgTip {
 	constructor({
 		parent = null,
@@ -763,7 +795,7 @@ class SvgTip {
 	}
 
 	make_tooltip() {
-		this.container = $.create('div', {
+		this.container = $$1.create('div', {
 			inside: this.parent,
 			className: 'graph-svg-tip comparison',
 			innerHTML: `<span class="title"></span>
@@ -793,7 +825,7 @@ class SvgTip {
 		this.list_values.map((set, i) => {
 			const color = this.colors[i] || 'black';
 
-			let li = $.create('li', {
+			let li = $$1.create('li', {
 				styles: {
 					'border-top': `3px solid ${color}`
 				},
@@ -911,7 +943,7 @@ const COMPATIBLE_CHARTS = {
 	heatmap: []
 };
 
-// TODO: Needs structure as per only labels/datasets
+// Needs structure as per only labels/datasets
 const COLOR_COMPATIBLE_CHARTS = {
 	bar: ['line', 'scatter'],
 	line: ['scatter', 'bar'],
@@ -945,6 +977,7 @@ class BaseChart {
 		this.subtitle = subtitle;
 
 		this.data = data;
+		this.oldData = Object.assign({}, data);
 
 		this.specific_values = data.specific_values || [];
 		this.summary = summary;
@@ -989,7 +1022,7 @@ class BaseChart {
 	setColors(colors, type) {
 		this.colors = colors;
 
-		// TODO: Needs structure as per only labels/datasets
+		// Needs structure as per only labels/datasets
 		const list = type === 'percentage' || type === 'pie'
 			? this.data.labels
 			: this.data.datasets;
@@ -1068,7 +1101,7 @@ class BaseChart {
 	setup_base_values() {}
 
 	setup_container() {
-		this.container = $.create('div', {
+		this.container = $$1.create('div', {
 			className: 'chart-container',
 			innerHTML: `<h6 class="title">${this.title}</h6>
 				<h6 class="sub-title uppercase">${this.subtitle}</h6>
@@ -1106,7 +1139,9 @@ class BaseChart {
 		);
 	}
 
-	setup_components() { }
+	setup_components() {}
+	setup_values() {}
+	setup_utils() {}
 
 	make_tooltip() {
 		this.tip = new SvgTip({
@@ -1116,11 +1151,10 @@ class BaseChart {
 		this.bind_tooltip();
 	}
 
-
 	show_summary() {}
 	show_custom_summary() {
 		this.summary.map(d => {
-			let stats = $.create('div', {
+			let stats = $$1.create('div', {
 				className: 'stats',
 				innerHTML: `<span class="indicator">
 					<i style="background:${d.color}"></i>
@@ -1167,31 +1201,10 @@ class BaseChart {
 	on_down_arrow() {}
 	on_enter_key() {}
 
-	get_data_point(index=this.current_index) {
-		// check for length
-		let data_point = {
-			index: index
-		};
-		let y = this.y[0];
-		['svg_units', 'y_tops', 'values'].map(key => {
-			let data_key = key.slice(0, key.length-1);
-			data_point[data_key] = y[key][index];
-		});
-		data_point.label = this.x[index];
-		return data_point;
-	}
+	updateData() {}
 
-	update_current_data_point(index) {
-		index = parseInt(index);
-		if(index < 0) index = 0;
-		if(index >= this.x.length) index = this.x.length - 1;
-		if(index === this.current_index) return;
-		this.current_index = index;
-		$.fire(this.parent, "data-select", this.get_data_point());
-	}
-
-	// Objects
-	setup_utils() { }
+	getDataPoint() {}
+	updateCurrentDataPoint() {}
 
 	makeDrawAreaComponent(className, transform='') {
 		return makeSVGGroup(this.draw_area, className, transform);
@@ -1211,11 +1224,12 @@ class AxisChart extends BaseChart {
 		this.format_tooltip_x = args.format_tooltip_x;
 
 		this.zero_line = this.height;
-
-		// this.old_values = {};
 	}
 
 	validate_and_prepare_data() {
+		this.y.forEach(function(d, i) {
+			d.index = i;
+		}, this);
 		return true;
 	}
 
@@ -1426,8 +1440,8 @@ class AxisChart extends BaseChart {
 		if(this.raw_chart_args.hasOwnProperty("init") && !this.raw_chart_args.init) {
 			this.y.map((d, i) => {
 				d.svg_units = [];
-				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
-				this.make_new_units(d, i);
+				this.make_path && this.make_path(d, this.x_axis_positions, d.y_tops, this.colors[i]);
+				this.make_new_units(d);
 				this.calc_y_dependencies();
 			});
 			return;
@@ -1438,8 +1452,8 @@ class AxisChart extends BaseChart {
 		}
 		this.y.map((d, i) => {
 			d.svg_units = [];
-			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
-			this.make_new_units(d, i);
+			this.make_path && this.make_path(d, this.x_axis_positions, d.y_tops, this.colors[i]);
+			this.make_new_units(d);
 		});
 	}
 
@@ -1451,8 +1465,8 @@ class AxisChart extends BaseChart {
 			data.push({values: d.values});
 			d.svg_units = [];
 
-			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
-			this.make_new_units(d, i);
+			this.make_path && this.make_path(d, this.x_axis_positions, d.y_tops, this.colors[i]);
+			this.make_new_units(d);
 		});
 
 		setTimeout(() => {
@@ -1471,12 +1485,12 @@ class AxisChart extends BaseChart {
 		}
 	}
 
-	make_new_units(d, i) {
+	make_new_units(d) {
 		this.make_new_units_for_dataset(
 			this.x_axis_positions,
 			d.y_tops,
-			this.colors[i],
-			i,
+			this.colors[d.index],
+			d.index,
 			this.y.length
 		);
 	}
@@ -1606,7 +1620,7 @@ class AxisChart extends BaseChart {
 			this.sum_units
 		);
 
-		// this.make_path && this.make_path(d, i, old_x, old_y, this.colors[i]);
+		// this.make_path && this.make_path(d, old_x, old_y, this.colors[i]);
 
 		this.updating = false;
 	}
@@ -1621,13 +1635,13 @@ class AxisChart extends BaseChart {
 
 	show_averages() {
 		this.old_specific_values = this.specific_values.slice();
-		this.y.map((d, i) => {
+		this.y.map(d => {
 			let sum = 0;
 			d.values.map(e => {sum+=e;});
 			let average = sum/d.values.length;
 
 			this.specific_values.push({
-				title: "AVG" + " " + (i+1),
+				title: "AVG" + " " + (d.index+1),
 				line_type: "dashed",
 				value: average,
 				auto: 1
@@ -1664,10 +1678,8 @@ class AxisChart extends BaseChart {
 
 		this.old_y_values = this.y.map(d => d.values);
 
-		this.no_of_extra_pts = new_x.length - this.x.length;
-
 		// Just update values prop, setup_x/y() will do the rest
-		if(new_y) this.y.map((d, i) => {d.values = new_y[i].values;});
+		if(new_y) this.y.map(d => {d.values = new_y[d.index].values;});
 		if(new_x) this.x = new_x;
 
 		this.setup_x();
@@ -1747,34 +1759,38 @@ class AxisChart extends BaseChart {
 	}
 
 	animate_graphs() {
-		this.y.map((d, i) => {
+		this.y.map(d => {
 			// Pre-prep, equilize no of positions between old and new
-			let [old_x, old_y, new_x, new_y] = this.calc_old_and_new_postions(d, i);
-			if(this.no_of_extra_pts >= 0) {
-				this.make_path && this.make_path(d, i, old_x, old_y, this.colors[i]);
-				this.make_new_units_for_dataset(old_x, old_y, this.colors[i], i, this.y.length);
+			let [old_x, old_y, new_x, new_y] = equilizeNoOfPositions(
+				this.x_old_axis_positions.slice(),
+				this.old_y_axis_tops[d.index].slice(),
+				this.x_axis_positions.slice(),
+				d.y_tops.slice()
+			);
+			if(new_x.length - old_x.length > 0) {
+				this.make_path && this.make_path(d, old_x, old_y, this.colors[d.index]);
+				this.make_new_units_for_dataset(old_x, old_y, this.colors[d.index], d.index, this.y.length);
 			}
-			d.path && this.animate_path(d, i, old_x, old_y, new_x, new_y);
-			this.animate_units(d, i, old_x, old_y, new_x, new_y);
+			d.path && this.animate_path(d, new_x, new_y);
+			this.animate_units(d, old_x, old_y, new_x, new_y);
 		});
 
 		// TODO: replace with real units
 		setTimeout(() => {
-			this.y.map((d, i) => {
-				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
-				this.make_new_units(d, i);
+			this.y.map(d => {
+				this.make_path && this.make_path(d, this.x_axis_positions, d.y_tops, this.colors[d.index]);
+				this.make_new_units(d);
 			});
 		}, 400);
 	}
 
-	animate_path(d, i, old_x, old_y, new_x, new_y) {
+	animate_path(d, new_x, new_y) {
 		const newPointsList = new_y.map((y, i) => (new_x[i] + ',' + y));
-		const newPathStr = newPointsList.join("L");
 		this.elements_to_animate = this.elements_to_animate
-			.concat(this.animator['path'](d, newPathStr));
+			.concat(this.animator['path'](d, newPointsList.join("L")));
 	}
 
-	animate_units(d, index, old_x, old_y, new_x, new_y) {
+	animate_units(d, old_x, old_y, new_x, new_y) {
 		let type = this.unit_args.type;
 
 		d.svg_units.map((unit, i) => {
@@ -1783,49 +1799,10 @@ class AxisChart extends BaseChart {
 				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
 				new_x[i],
 				new_y[i],
-				index,
+				d.index,
 				this.y.length
 			));
 		});
-	}
-
-	calc_old_and_new_postions(d, i) {
-		let old_x = this.x_old_axis_positions.slice();
-		let new_x = this.x_axis_positions.slice();
-
-		let old_y = this.old_y_axis_tops[i].slice();
-		let new_y = d.y_tops.slice();
-
-		const last_old_x_pos = old_x[old_x.length - 1];
-		const last_old_y_pos = old_y[old_y.length - 1];
-
-		const last_new_x_pos = new_x[new_x.length - 1];
-		const last_new_y_pos = new_y[new_y.length - 1];
-
-		if(this.no_of_extra_pts >= 0) {
-			// First substitute current path with a squiggled one
-			// (that looks the same but has more points at end),
-			// then animate to stretch it later to new points
-			// (new points already have more points)
-
-			// Hence, the extra end points will correspond to current(old) positions
-			let filler_x = new Array(Math.abs(this.no_of_extra_pts)).fill(last_old_x_pos);
-			let filler_y = new Array(Math.abs(this.no_of_extra_pts)).fill(last_old_y_pos);
-
-			old_x = old_x.concat(filler_x);
-			old_y = old_y.concat(filler_y);
-
-		} else {
-			// Just modify the new points to have extra points
-			// with the same position at end
-			let filler_x = new Array(Math.abs(this.no_of_extra_pts)).fill(last_new_x_pos);
-			let filler_y = new Array(Math.abs(this.no_of_extra_pts)).fill(last_new_y_pos);
-
-			new_x = new_x.concat(filler_x);
-			new_y = new_y.concat(filler_y);
-		}
-
-		return [old_x, old_y, new_x, new_y];
 	}
 
 	make_anim_x_axis(height, text_start_at, axis_line_class) {
@@ -1993,6 +1970,29 @@ class AxisChart extends BaseChart {
 		]);
 	}
 
+	getDataPoint(index=this.current_index) {
+		// check for length
+		let data_point = {
+			index: index
+		};
+		let y = this.y[0];
+		['svg_units', 'y_tops', 'values'].map(key => {
+			let data_key = key.slice(0, key.length-1);
+			data_point[data_key] = y[key][index];
+		});
+		data_point.label = this.x[index];
+		return data_point;
+	}
+
+	updateCurrentDataPoint(index) {
+		index = parseInt(index);
+		if(index < 0) index = 0;
+		if(index >= this.x.length) index = this.x.length - 1;
+		if(index === this.current_index) return;
+		this.current_index = index;
+		$.fire(this.parent, "data-select", this.getDataPoint());
+	}
+
 	set_avg_unit_width_and_x_offset() {
 		// Set the ... you get it
 		this.avg_unit_width = this.width/(this.x.length - 1);
@@ -2012,7 +2012,7 @@ class AxisChart extends BaseChart {
 	}
 
 	calc_y_dependencies() {
-		this.y_min_tops = new Array(this.x_axis_positions.length).fill(9999);
+		this.y_min_tops = new Array(this.x.length).fill(9999);
 		this.y.map(d => {
 			d.y_tops = d.values.map( val => floatTwo(this.zero_line - val * this.multiplier));
 			d.y_tops.map( (y_top, i) => {
@@ -2051,7 +2051,7 @@ class BarChart extends AxisChart {
 		// Just make one out of the first element
 		let index = this.x.length - 1;
 		let unit = this.y[0].svg_units[index];
-		this.update_current_data_point(index);
+		this.updateCurrentDataPoint(index);
 
 		if(this.overlay) {
 			this.overlay.parentNode.removeChild(this.overlay);
@@ -2073,7 +2073,7 @@ class BarChart extends AxisChart {
 		units_array.map(unit => {
 			unit.addEventListener('click', () => {
 				let index = unit.getAttribute('data-point-index');
-				this.update_current_data_point(index);
+				this.updateCurrentDataPoint(index);
 			});
 		});
 	}
@@ -2093,11 +2093,11 @@ class BarChart extends AxisChart {
 	}
 
 	on_left_arrow() {
-		this.update_current_data_point(this.current_index - 1);
+		this.updateCurrentDataPoint(this.current_index - 1);
 	}
 
 	on_right_arrow() {
-		this.update_current_data_point(this.current_index + 1);
+		this.updateCurrentDataPoint(this.current_index + 1);
 	}
 
 	set_avg_unit_width_and_x_offset() {
@@ -2162,19 +2162,19 @@ class LineChart extends AxisChart {
 	}
 
 	make_paths() {
-		this.y.map((d, i) => {
-			this.make_path(d, i, this.x_axis_positions, d.y_tops, d.color || this.colors[i]);
+		this.y.map(d => {
+			this.make_path(d, this.x_axis_positions, d.y_tops, d.color || this.colors[d.index]);
 		});
 	}
 
-	make_path(d, i, x_positions, y_positions, color) {
+	make_path(d, x_positions, y_positions, color) {
 		let points_list = y_positions.map((y, i) => (x_positions[i] + ',' + y));
 		let points_str = points_list.join("L");
 
-		this.paths_groups[i].textContent = '';
+		this.paths_groups[d.index].textContent = '';
 
 		d.path = makePath("M"+points_str, 'line-graph-path', color);
-		this.paths_groups[i].appendChild(d.path);
+		this.paths_groups[d.index].appendChild(d.path);
 
 		if(this.heatline) {
 			let gradient_id = makeGradient(this.svg_defs, color);
@@ -2182,16 +2182,16 @@ class LineChart extends AxisChart {
 		}
 
 		if(this.region_fill) {
-			this.fill_region_for_dataset(d, i, color, points_str);
+			this.fill_region_for_dataset(d, color, points_str);
 		}
 	}
 
-	fill_region_for_dataset(d, i, color, points_str) {
+	fill_region_for_dataset(d, color, points_str) {
 		let gradient_id = makeGradient(this.svg_defs, color, true);
 		let pathStr = "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`;
 
 		d.regionPath = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id})`);
-		this.paths_groups[i].appendChild(d.regionPath);
+		this.paths_groups[d.index].appendChild(d.regionPath);
 	}
 }
 
@@ -2250,19 +2250,19 @@ class PercentageChart extends BaseChart {
 	}
 
 	make_draw_area() {
-		this.chart_div = $.create('div', {
+		this.chart_div = $$1.create('div', {
 			className: 'div',
 			inside: this.chart_wrapper
 		});
 
-		this.chart = $.create('div', {
+		this.chart = $$1.create('div', {
 			className: 'progress-chart',
 			inside: this.chart_div
 		});
 	}
 
 	setup_components() {
-		this.percentage_bar = $.create('div', {
+		this.percentage_bar = $$1.create('div', {
 			className: 'progress',
 			inside: this.chart
 		});
@@ -2307,7 +2307,7 @@ class PercentageChart extends BaseChart {
 		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
 		this.slices = [];
 		this.slice_totals.map((total, i) => {
-			let slice = $.create('div', {
+			let slice = $$1.create('div', {
 				className: `progress-bar`,
 				inside: this.percentage_bar,
 				styles: {
@@ -2341,7 +2341,7 @@ class PercentageChart extends BaseChart {
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {
 			if(d) {
-				let stats = $.create('div', {
+				let stats = $$1.create('div', {
 					className: 'stats',
 					inside: this.stats_wrapper
 				});
@@ -2550,7 +2550,7 @@ class PieChart extends BaseChart {
 			const color = this.colors[i];
 
 			if(d) {
-				let stats = $.create('div', {
+				let stats = $$1.create('div', {
 					className: 'stats',
 					inside: this.stats_wrapper
 				});

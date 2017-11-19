@@ -1,5 +1,6 @@
 import { offset } from '../utils/dom';
 import { UnitRenderer, makeXLine, makeYLine } from '../utils/draw';
+import { equilizeNoOfPositions } from '../utils/draw-utils';
 import { Animator } from '../utils/animate';
 import { runSVGAnimation } from '../utils/animation';
 import { calcIntervals } from '../utils/intervals';
@@ -19,11 +20,12 @@ export default class AxisChart extends BaseChart {
 		this.format_tooltip_x = args.format_tooltip_x;
 
 		this.zero_line = this.height;
-
-		// this.old_values = {};
 	}
 
 	validate_and_prepare_data() {
+		this.y.forEach(function(d, i) {
+			d.index = i;
+		}, this);
 		return true;
 	}
 
@@ -234,8 +236,8 @@ export default class AxisChart extends BaseChart {
 		if(this.raw_chart_args.hasOwnProperty("init") && !this.raw_chart_args.init) {
 			this.y.map((d, i) => {
 				d.svg_units = [];
-				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
-				this.make_new_units(d, i);
+				this.make_path && this.make_path(d, this.x_axis_positions, d.y_tops, this.colors[i]);
+				this.make_new_units(d);
 				this.calc_y_dependencies();
 			});
 			return;
@@ -246,8 +248,8 @@ export default class AxisChart extends BaseChart {
 		}
 		this.y.map((d, i) => {
 			d.svg_units = [];
-			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
-			this.make_new_units(d, i);
+			this.make_path && this.make_path(d, this.x_axis_positions, d.y_tops, this.colors[i]);
+			this.make_new_units(d);
 		});
 	}
 
@@ -259,8 +261,8 @@ export default class AxisChart extends BaseChart {
 			data.push({values: d.values});
 			d.svg_units = [];
 
-			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
-			this.make_new_units(d, i);
+			this.make_path && this.make_path(d, this.x_axis_positions, d.y_tops, this.colors[i]);
+			this.make_new_units(d);
 		});
 
 		setTimeout(() => {
@@ -279,12 +281,12 @@ export default class AxisChart extends BaseChart {
 		}
 	}
 
-	make_new_units(d, i) {
+	make_new_units(d) {
 		this.make_new_units_for_dataset(
 			this.x_axis_positions,
 			d.y_tops,
-			this.colors[i],
-			i,
+			this.colors[d.index],
+			d.index,
 			this.y.length
 		);
 	}
@@ -414,7 +416,7 @@ export default class AxisChart extends BaseChart {
 			this.sum_units
 		);
 
-		// this.make_path && this.make_path(d, i, old_x, old_y, this.colors[i]);
+		// this.make_path && this.make_path(d, old_x, old_y, this.colors[i]);
 
 		this.updating = false;
 	}
@@ -429,13 +431,13 @@ export default class AxisChart extends BaseChart {
 
 	show_averages() {
 		this.old_specific_values = this.specific_values.slice();
-		this.y.map((d, i) => {
+		this.y.map(d => {
 			let sum = 0;
 			d.values.map(e => {sum+=e;});
 			let average = sum/d.values.length;
 
 			this.specific_values.push({
-				title: "AVG" + " " + (i+1),
+				title: "AVG" + " " + (d.index+1),
 				line_type: "dashed",
 				value: average,
 				auto: 1
@@ -472,10 +474,8 @@ export default class AxisChart extends BaseChart {
 
 		this.old_y_values = this.y.map(d => d.values);
 
-		this.no_of_extra_pts = new_x.length - this.x.length;
-
 		// Just update values prop, setup_x/y() will do the rest
-		if(new_y) this.y.map((d, i) => {d.values = new_y[i].values;});
+		if(new_y) this.y.map(d => {d.values = new_y[d.index].values;});
 		if(new_x) this.x = new_x;
 
 		this.setup_x();
@@ -555,34 +555,38 @@ export default class AxisChart extends BaseChart {
 	}
 
 	animate_graphs() {
-		this.y.map((d, i) => {
+		this.y.map(d => {
 			// Pre-prep, equilize no of positions between old and new
-			let [old_x, old_y, new_x, new_y] = this.calc_old_and_new_postions(d, i);
-			if(this.no_of_extra_pts >= 0) {
-				this.make_path && this.make_path(d, i, old_x, old_y, this.colors[i]);
-				this.make_new_units_for_dataset(old_x, old_y, this.colors[i], i, this.y.length);
+			let [old_x, old_y, new_x, new_y] = equilizeNoOfPositions(
+				this.x_old_axis_positions.slice(),
+				this.old_y_axis_tops[d.index].slice(),
+				this.x_axis_positions.slice(),
+				d.y_tops.slice()
+			);
+			if(new_x.length - old_x.length > 0) {
+				this.make_path && this.make_path(d, old_x, old_y, this.colors[d.index]);
+				this.make_new_units_for_dataset(old_x, old_y, this.colors[d.index], d.index, this.y.length);
 			}
-			d.path && this.animate_path(d, i, old_x, old_y, new_x, new_y);
-			this.animate_units(d, i, old_x, old_y, new_x, new_y);
+			d.path && this.animate_path(d, new_x, new_y);
+			this.animate_units(d, old_x, old_y, new_x, new_y);
 		});
 
 		// TODO: replace with real units
 		setTimeout(() => {
-			this.y.map((d, i) => {
-				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
-				this.make_new_units(d, i);
+			this.y.map(d => {
+				this.make_path && this.make_path(d, this.x_axis_positions, d.y_tops, this.colors[d.index]);
+				this.make_new_units(d);
 			});
 		}, 400);
 	}
 
-	animate_path(d, i, old_x, old_y, new_x, new_y) {
+	animate_path(d, new_x, new_y) {
 		const newPointsList = new_y.map((y, i) => (new_x[i] + ',' + y));
-		const newPathStr = newPointsList.join("L");
 		this.elements_to_animate = this.elements_to_animate
-			.concat(this.animator['path'](d, newPathStr));
+			.concat(this.animator['path'](d, newPointsList.join("L")));
 	}
 
-	animate_units(d, index, old_x, old_y, new_x, new_y) {
+	animate_units(d, old_x, old_y, new_x, new_y) {
 		let type = this.unit_args.type;
 
 		d.svg_units.map((unit, i) => {
@@ -591,49 +595,10 @@ export default class AxisChart extends BaseChart {
 				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
 				new_x[i],
 				new_y[i],
-				index,
+				d.index,
 				this.y.length
 			));
 		});
-	}
-
-	calc_old_and_new_postions(d, i) {
-		let old_x = this.x_old_axis_positions.slice();
-		let new_x = this.x_axis_positions.slice();
-
-		let old_y = this.old_y_axis_tops[i].slice();
-		let new_y = d.y_tops.slice();
-
-		const last_old_x_pos = old_x[old_x.length - 1];
-		const last_old_y_pos = old_y[old_y.length - 1];
-
-		const last_new_x_pos = new_x[new_x.length - 1];
-		const last_new_y_pos = new_y[new_y.length - 1];
-
-		if(this.no_of_extra_pts >= 0) {
-			// First substitute current path with a squiggled one
-			// (that looks the same but has more points at end),
-			// then animate to stretch it later to new points
-			// (new points already have more points)
-
-			// Hence, the extra end points will correspond to current(old) positions
-			let filler_x = new Array(Math.abs(this.no_of_extra_pts)).fill(last_old_x_pos);
-			let filler_y = new Array(Math.abs(this.no_of_extra_pts)).fill(last_old_y_pos);
-
-			old_x = old_x.concat(filler_x);
-			old_y = old_y.concat(filler_y);
-
-		} else {
-			// Just modify the new points to have extra points
-			// with the same position at end
-			let filler_x = new Array(Math.abs(this.no_of_extra_pts)).fill(last_new_x_pos);
-			let filler_y = new Array(Math.abs(this.no_of_extra_pts)).fill(last_new_y_pos);
-
-			new_x = new_x.concat(filler_x);
-			new_y = new_y.concat(filler_y);
-		}
-
-		return [old_x, old_y, new_x, new_y];
 	}
 
 	make_anim_x_axis(height, text_start_at, axis_line_class) {
@@ -801,6 +766,29 @@ export default class AxisChart extends BaseChart {
 		]);
 	}
 
+	getDataPoint(index=this.current_index) {
+		// check for length
+		let data_point = {
+			index: index
+		};
+		let y = this.y[0];
+		['svg_units', 'y_tops', 'values'].map(key => {
+			let data_key = key.slice(0, key.length-1);
+			data_point[data_key] = y[key][index];
+		});
+		data_point.label = this.x[index];
+		return data_point;
+	}
+
+	updateCurrentDataPoint(index) {
+		index = parseInt(index);
+		if(index < 0) index = 0;
+		if(index >= this.x.length) index = this.x.length - 1;
+		if(index === this.current_index) return;
+		this.current_index = index;
+		$.fire(this.parent, "data-select", this.getDataPoint());
+	}
+
 	set_avg_unit_width_and_x_offset() {
 		// Set the ... you get it
 		this.avg_unit_width = this.width/(this.x.length - 1);
@@ -820,7 +808,7 @@ export default class AxisChart extends BaseChart {
 	}
 
 	calc_y_dependencies() {
-		this.y_min_tops = new Array(this.x_axis_positions.length).fill(9999);
+		this.y_min_tops = new Array(this.x.length).fill(9999);
 		this.y.map(d => {
 			d.y_tops = d.values.map( val => floatTwo(this.zero_line - val * this.multiplier));
 			d.y_tops.map( (y_top, i) => {
