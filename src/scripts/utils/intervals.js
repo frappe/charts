@@ -21,77 +21,77 @@ function normalize(x) {
 	return [sig * man, exp];
 }
 
-function get_range_intervals(max, min=0) {
-	let upper_bound = Math.ceil(max);
-	let lower_bound = Math.floor(min);
-	let range = upper_bound - lower_bound;
+function getRangeIntervals(max, min=0) {
+	let upperBound = Math.ceil(max);
+	let lowerBound = Math.floor(min);
+	let range = upperBound - lowerBound;
 
-	let no_of_parts = range;
-	let part_size = 1;
+	let noOfParts = range;
+	let partSize = 1;
 
 	// To avoid too many partitions
 	if(range > 5) {
 		if(range % 2 !== 0) {
-			upper_bound++;
+			upperBound++;
 			// Recalc range
-			range = upper_bound - lower_bound;
+			range = upperBound - lowerBound;
 		}
-		no_of_parts = range/2;
-		part_size = 2;
+		noOfParts = range/2;
+		partSize = 2;
 	}
 
 	// Special case: 1 and 2
 	if(range <= 2) {
-		no_of_parts = 4;
-		part_size = range/no_of_parts;
+		noOfParts = 4;
+		partSize = range/noOfParts;
 	}
 
 	// Special case: 0
 	if(range === 0) {
-		no_of_parts = 5;
-		part_size = 1;
+		noOfParts = 5;
+		partSize = 1;
 	}
 
 	let intervals = [];
-	for(var i = 0; i <= no_of_parts; i++){
-		intervals.push(lower_bound + part_size * i);
+	for(var i = 0; i <= noOfParts; i++){
+		intervals.push(lowerBound + partSize * i);
 	}
 	return intervals;
 }
 
-function get_intervals(max_value, min_value=0) {
-	let [normal_max_value, exponent] = normalize(max_value);
-	let normal_min_value = min_value ? min_value/Math.pow(10, exponent): 0;
+function getIntervals(maxValue, minValue=0) {
+	let [normalMaxValue, exponent] = normalize(maxValue);
+	let normalMinValue = minValue ? minValue/Math.pow(10, exponent): 0;
 
 	// Allow only 7 significant digits
-	normal_max_value = normal_max_value.toFixed(6);
+	normalMaxValue = normalMaxValue.toFixed(6);
 
-	let intervals = get_range_intervals(normal_max_value, normal_min_value);
+	let intervals = getRangeIntervals(normalMaxValue, normalMinValue);
 	intervals = intervals.map(value => value * Math.pow(10, exponent));
 	return intervals;
 }
 
-export function calc_intervals(values, with_minimum=false) {
+export function calcIntervals(values, withMinimum=false) {
 	//*** Where the magic happens ***
 
 	// Calculates best-fit y intervals from given values
 	// and returns the interval array
 
-	let max_value = Math.max(...values);
-	let min_value = Math.min(...values);
+	let maxValue = Math.max(...values);
+	let minValue = Math.min(...values);
 
 	// Exponent to be used for pretty print
 	let exponent = 0, intervals = []; // eslint-disable-line no-unused-vars
 
-	function get_positive_first_intervals(max_value, abs_min_value) {
-		let intervals = get_intervals(max_value);
+	function getPositiveFirstIntervals(maxValue, absMinValue) {
+		let intervals = getIntervals(maxValue);
 
-		let interval_size = intervals[1] - intervals[0];
+		let intervalSize = intervals[1] - intervals[0];
 
 		// Then unshift the negative values
 		let value = 0;
-		for(var i = 1; value < abs_min_value; i++) {
-			value += interval_size;
+		for(var i = 1; value < absMinValue; i++) {
+			value += intervalSize;
 			intervals.unshift((-1) * value);
 		}
 		return intervals;
@@ -99,52 +99,52 @@ export function calc_intervals(values, with_minimum=false) {
 
 	// CASE I: Both non-negative
 
-	if(max_value >= 0 && min_value >= 0) {
-		exponent = normalize(max_value)[1];
-		if(!with_minimum) {
-			intervals = get_intervals(max_value);
+	if(maxValue >= 0 && minValue >= 0) {
+		exponent = normalize(maxValue)[1];
+		if(!withMinimum) {
+			intervals = getIntervals(maxValue);
 		} else {
-			intervals = get_intervals(max_value, min_value);
+			intervals = getIntervals(maxValue, minValue);
 		}
 	}
 
-	// CASE II: Only min_value negative
+	// CASE II: Only minValue negative
 
-	else if(max_value > 0 && min_value < 0) {
-		// `with_minimum` irrelevant in this case,
+	else if(maxValue > 0 && minValue < 0) {
+		// `withMinimum` irrelevant in this case,
 		// We'll be handling both sides of zero separately
 		// (both starting from zero)
 		// Because ceil() and floor() behave differently
 		// in those two regions
 
-		let abs_min_value = Math.abs(min_value);
+		let absMinValue = Math.abs(minValue);
 
-		if(max_value >= abs_min_value) {
-			exponent = normalize(max_value)[1];
-			intervals = get_positive_first_intervals(max_value, abs_min_value);
+		if(maxValue >= absMinValue) {
+			exponent = normalize(maxValue)[1];
+			intervals = getPositiveFirstIntervals(maxValue, absMinValue);
 		} else {
-			// Mirror: max_value => abs_min_value, then change sign
-			exponent = normalize(abs_min_value)[1];
-			let pos_intervals = get_positive_first_intervals(abs_min_value, max_value);
-			intervals = pos_intervals.map(d => d * (-1));
+			// Mirror: maxValue => absMinValue, then change sign
+			exponent = normalize(absMinValue)[1];
+			let posIntervals = getPositiveFirstIntervals(absMinValue, maxValue);
+			intervals = posIntervals.map(d => d * (-1));
 		}
 
 	}
 
 	// CASE III: Both non-positive
 
-	else if(max_value <= 0 && min_value <= 0) {
+	else if(maxValue <= 0 && minValue <= 0) {
 		// Mirrored Case I:
 		// Work with positives, then reverse the sign and array
 
-		let pseudo_max_value = Math.abs(min_value);
-		let pseudo_min_value = Math.abs(max_value);
+		let pseudoMaxValue = Math.abs(minValue);
+		let pseudoMinValue = Math.abs(maxValue);
 
-		exponent = normalize(pseudo_max_value)[1];
-		if(!with_minimum) {
-			intervals = get_intervals(pseudo_max_value);
+		exponent = normalize(pseudoMaxValue)[1];
+		if(!withMinimum) {
+			intervals = getIntervals(pseudoMaxValue);
 		} else {
-			intervals = get_intervals(pseudo_max_value, pseudo_min_value);
+			intervals = getIntervals(pseudoMaxValue, pseudoMinValue);
 		}
 
 		intervals = intervals.reverse().map(d => d * (-1));
@@ -153,23 +153,23 @@ export function calc_intervals(values, with_minimum=false) {
 	return intervals;
 }
 
-export function calc_distribution(values, distribution_size) {
+export function calcDistribution(values, distributionSize) {
 	// Assume non-negative values,
 	// implying distribution minimum at zero
 
-	let data_max_value = Math.max(...values);
+	let dataMaxValue = Math.max(...values);
 
-	let distribution_step = 1 / (distribution_size - 1);
+	let distributionStep = 1 / (distributionSize - 1);
 	let distribution = [];
 
-	for(var i = 0; i < distribution_size; i++) {
-		let checkpoint = data_max_value * (distribution_step * i);
+	for(var i = 0; i < distributionSize; i++) {
+		let checkpoint = dataMaxValue * (distributionStep * i);
 		distribution.push(checkpoint);
 	}
 
 	return distribution;
 }
 
-export function get_max_checkpoint(value, distribution) {
+export function getMaxCheckpoint(value, distribution) {
 	return distribution.filter(d => d < value).length;
 }

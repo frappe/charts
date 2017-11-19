@@ -25,6 +25,7 @@ $.create = (tag, o) => {
 			var ref = $(val);
 			ref.parentNode.insertBefore(element, ref);
 			element.appendChild(ref);
+
 		} else if (i === "styles") {
 			if(typeof val === "object") {
 				Object.keys(val).map(prop => {
@@ -36,33 +37,6 @@ $.create = (tag, o) => {
 		}
 		else {
 			element.setAttribute(i, val);
-		}
-	}
-
-	return element;
-};
-
-$.createSVG = (tag, o) => {
-	var element = document.createElementNS("http://www.w3.org/2000/svg", tag);
-
-	for (var i in o) {
-		var val = o[i];
-
-		if (i === "inside") {
-			$(val).appendChild(element);
-		}
-		else if (i === "around") {
-			var ref = $(val);
-			ref.parentNode.insertBefore(element, ref);
-			element.appendChild(ref);
-		}
-		else {
-			if(i === "className") { i = "class"; }
-			if(i === "innerHTML") {
-				element['textContent'] = val;
-			} else {
-				element.setAttribute(i, val);
-			}
 		}
 	}
 
@@ -128,136 +102,210 @@ $.fire = (target, type, properties) => {
 	return target.dispatchEvent(evt);
 };
 
-var UnitRenderer = (function() {
-	var UnitRenderer = function(total_height, zero_line, avg_unit_width) {
-		this.total_height = total_height;
-		this.zero_line = zero_line;
-		this.avg_unit_width = avg_unit_width;
-	};
+function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
+	let height, y;
+	if (yTop <= zeroLine) {
+		height = zeroLine - yTop;
+		y = yTop;
 
-	function get_bar_height_and_y_attr(y_top, zero_line, total_height) {
-		let height, y;
-		if (y_top <= zero_line) {
-			height = zero_line - y_top;
-			y = y_top;
-
-			// In case of invisible bars
-			if(height === 0) {
-				height = total_height * 0.01;
-				y -= height;
-			}
-		} else {
-			height = y_top - zero_line;
-			y = zero_line;
-
-			// In case of invisible bars
-			if(height === 0) {
-				height = total_height * 0.01;
-			}
+		// In case of invisible bars
+		if(height === 0) {
+			height = totalHeight * 0.01;
+			y -= height;
 		}
+	} else {
+		height = yTop - zeroLine;
+		y = zeroLine;
 
-		return [height, y];
+		// In case of invisible bars
+		if(height === 0) {
+			height = totalHeight * 0.01;
+		}
 	}
 
-	UnitRenderer.prototype = {
-		draw_bar: function (x, y_top, args, color, index, dataset_index, no_of_datasets) {
-			let total_width = this.avg_unit_width - args.space_width;
-			let start_x = x - total_width/2;
+	return [height, y];
+}
 
-			let width = total_width / no_of_datasets;
-			let current_x = start_x + width * dataset_index;
+function $$1(expr, con) {
+	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
+}
 
-			let [height, y] = get_bar_height_and_y_attr(y_top, this.zero_line, this.total_height);
+function createSVG(tag, o) {
+	var element = document.createElementNS("http://www.w3.org/2000/svg", tag);
 
-			return $.createSVG('rect', {
-				className: `bar mini`,
-				style: `fill: ${color}`,
-				'data-point-index': index,
-				x: current_x,
-				y: y,
-				width: width,
-				height: height
-			});
-		},
+	for (var i in o) {
+		var val = o[i];
 
-		draw_dot: function(x, y, args, color, index) {
-			return $.createSVG('circle', {
-				style: `fill: ${color}`,
-				'data-point-index': index,
-				cx: x,
-				cy: y,
-				r: args.radius
-			});
-		},
-
-		animate_bar: function(bar_obj, x, y_top, index, no_of_datasets) {
-			let start = x - this.avg_unit_width/4;
-			let width = (this.avg_unit_width/2)/no_of_datasets;
-			let [height, y] = get_bar_height_and_y_attr(y_top, this.zero_line, this.total_height);
-
-			x = start + (width * index);
-
-			return [bar_obj, {width: width, height: height, x: x, y: y}, 350, "easein"];
-			// bar.animate({height: args.new_height, y: y_top}, 350, mina.easein);
-		},
-
-		animate_dot: function(dot_obj, x, y_top) {
-			return [dot_obj, {cx: x, cy: y_top}, 350, "easein"];
-			// dot.animate({cy: y_top}, 350, mina.easein);
+		if (i === "inside") {
+			$$1(val).appendChild(element);
 		}
+		else if (i === "around") {
+			var ref = $$1(val);
+			ref.parentNode.insertBefore(element, ref);
+			element.appendChild(ref);
+
+		} else if (i === "styles") {
+			if(typeof val === "object") {
+				Object.keys(val).map(prop => {
+					element.style[prop] = val[prop];
+				});
+			}
+		} else {
+			if(i === "className") { i = "class"; }
+			if(i === "innerHTML") {
+				element['textContent'] = val;
+			} else {
+				element.setAttribute(i, val);
+			}
+		}
+	}
+
+	return element;
+}
+
+function renderVerticalGradient(svgDefElem, gradientId) {
+	return createSVG('linearGradient', {
+		inside: svgDefElem,
+		id: gradientId,
+		x1: 0,
+		x2: 0,
+		y1: 0,
+		y2: 1
+	});
+}
+
+function setGradientStop(gradElem, offset, color, opacity) {
+	return createSVG('stop', {
+		'inside': gradElem,
+		'style': `stop-color: ${color}`,
+		'offset': offset,
+		'stop-opacity': opacity
+	});
+}
+
+function makeSVGContainer(parent, className, width, height) {
+	return createSVG('svg', {
+		className: className,
+		inside: parent,
+		width: width,
+		height: height
+	});
+}
+
+function makeSVGDefs(svgContainer) {
+	return createSVG('defs', {
+		inside: svgContainer,
+	});
+}
+
+function makeSVGGroup(parent, className, transform='') {
+	return createSVG('g', {
+		className: className,
+		inside: parent,
+		transform: transform
+	});
+}
+
+function makePath(pathStr, className='', stroke='none', fill='none') {
+	return createSVG('path', {
+		className: className,
+		d: pathStr,
+		styles: {
+			stroke: stroke,
+			fill: fill
+		}
+	});
+}
+
+function makeGradient(svgDefElem, color, lighter = false) {
+	let gradientId ='path-fill-gradient' + '-' + color;
+	let gradientDef = renderVerticalGradient(svgDefElem, gradientId);
+	let opacities = [1, 0.6, 0.2];
+	if(lighter) {
+		opacities = [0.4, 0.2, 0];
+	}
+
+	setGradientStop(gradientDef, "0%", color, opacities[0]);
+	setGradientStop(gradientDef, "50%", color, opacities[1]);
+	setGradientStop(gradientDef, "100%", color, opacities[2]);
+
+	return gradientId;
+}
+
+function makeHeatSquare(className, x, y, size, fill='none', data={}) {
+	let args = {
+		className: className,
+		x: x,
+		y: y,
+		width: size,
+		height: size,
+		fill: fill
 	};
 
-	return UnitRenderer;
-})();
+	Object.keys(data).map(key => {
+		args[key] = data[key];
+	});
 
+	return createSVG("rect", args);
+}
 
-function make_x_line(height, text_start_at, point, label_class, axis_line_class, x_pos) {
-	let line = $.createSVG('line', {
+function makeText(className, x, y, content) {
+	return createSVG('text', {
+		className: className,
+		x: x,
+		y: y,
+		dy: '.32em',
+		innerHTML: content
+	});
+}
+
+function makeXLine(height, textStartAt, point, labelClass, axisLineClass, xPos) {
+	let line = createSVG('line', {
 		x1: 0,
 		x2: 0,
 		y1: 0,
 		y2: height
 	});
 
-	let text = $.createSVG('text', {
-		className: label_class,
+	let text = createSVG('text', {
+		className: labelClass,
 		x: 0,
-		y: text_start_at,
+		y: textStartAt,
 		dy: '.71em',
 		innerHTML: point
 	});
 
-	let x_line = $.createSVG('g', {
-		className: `tick ${axis_line_class}`,
-		transform: `translate(${ x_pos }, 0)`
+	let xLine = createSVG('g', {
+		className: `tick ${axisLineClass}`,
+		transform: `translate(${ xPos }, 0)`
 	});
 
-	x_line.appendChild(line);
-	x_line.appendChild(text);
+	xLine.appendChild(line);
+	xLine.appendChild(text);
 
-	return x_line;
+	return xLine;
 }
 
-function make_y_line(start_at, width, text_end_at, point, label_class, axis_line_class, y_pos, darker=false, line_type="") {
-	let line = $.createSVG('line', {
-		className: line_type === "dashed" ? "dashed": "",
-		x1: start_at,
+function makeYLine(startAt, width, textEndAt, point, labelClass, axisLineClass, yPos, darker=false, lineType="") {
+	let line = createSVG('line', {
+		className: lineType === "dashed" ? "dashed": "",
+		x1: startAt,
 		x2: width,
 		y1: 0,
 		y2: 0
 	});
 
-	let text = $.createSVG('text', {
-		className: label_class,
-		x: text_end_at,
+	let text = createSVG('text', {
+		className: labelClass,
+		x: textEndAt,
 		y: 0,
 		dy: '.32em',
 		innerHTML: point+""
 	});
 
-	let y_line = $.createSVG('g', {
-		className: `tick ${axis_line_class}`,
-		transform: `translate(0, ${y_pos})`,
+	let yLine = createSVG('g', {
+		className: `tick ${axisLineClass}`,
+		transform: `translate(0, ${yPos})`,
 		'stroke-opacity': 1
 	});
 
@@ -265,11 +313,106 @@ function make_y_line(start_at, width, text_end_at, point, label_class, axis_line
 		line.style.stroke = "rgba(27, 31, 35, 0.6)";
 	}
 
-	y_line.appendChild(line);
-	y_line.appendChild(text);
+	yLine.appendChild(line);
+	yLine.appendChild(text);
 
-	return y_line;
+	return yLine;
 }
+
+var UnitRenderer = (function() {
+	var UnitRenderer = function(totalHeight, zeroLine, avgUnitWidth) {
+		this.totalHeight = totalHeight;
+		this.zeroLine = zeroLine;
+		this.avgUnitWidth = avgUnitWidth;
+	};
+
+	UnitRenderer.prototype = {
+		bar: function (x, yTop, args, color, index, datasetIndex, noOfDatasets) {
+			let totalWidth = this.avgUnitWidth - args.spaceWidth;
+			let startX = x - totalWidth/2;
+
+			let width = totalWidth / noOfDatasets;
+			let currentX = startX + width * datasetIndex;
+
+			let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
+
+			return createSVG('rect', {
+				className: `bar mini`,
+				style: `fill: ${color}`,
+				'data-point-index': index,
+				x: currentX,
+				y: y,
+				width: width,
+				height: height
+			});
+		},
+
+		dot: function(x, y, args, color, index) {
+			return createSVG('circle', {
+				style: `fill: ${color}`,
+				'data-point-index': index,
+				cx: x,
+				cy: y,
+				r: args.radius
+			});
+		}
+	};
+
+	return UnitRenderer;
+})();
+
+var Animator = (function() {
+	var Animator = function(totalHeight, totalWidth, zeroLine, avgUnitWidth) {
+		// constants
+		this.totalHeight = totalHeight;
+		this.totalWidth = totalWidth;
+
+		// changeables
+		this.avgUnitWidth = avgUnitWidth;
+		this.zeroLine = zeroLine;
+	};
+
+	Animator.prototype = {
+		bar: function(barObj, x, yTop, index, noOfDatasets) {
+			let start = x - this.avgUnitWidth/4;
+			let width = (this.avgUnitWidth/2)/noOfDatasets;
+			let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
+
+			x = start + (width * index);
+
+			return [barObj, {width: width, height: height, x: x, y: y}, 350, "easein"];
+			// bar.animate({height: args.newHeight, y: yTop}, 350, mina.easein);
+		},
+
+		dot: function(dotObj, x, yTop) {
+			return [dotObj, {cx: x, cy: yTop}, 350, "easein"];
+			// dot.animate({cy: yTop}, 350, mina.easein);
+		},
+
+		path: function(d, pathStr) {
+			let pathComponents = [];
+			const animPath = [{unit: d.path, object: d, key: 'path'}, {d:"M"+pathStr}, 350, "easein"];
+			pathComponents.push(animPath);
+
+			if(d.regionPath) {
+				let regStartPt = `0,${this.zeroLine}L`;
+				let regEndPt = `L${this.totalWidth}, ${this.zeroLine}`;
+
+				const animRegion = [
+					{unit: d.regionPath, object: d, key: 'regionPath'},
+					{d:"M" + regStartPt + pathStr + regEndPt},
+					350,
+					"easein"
+				];
+				pathComponents.push(animRegion);
+			}
+
+			return pathComponents;
+		},
+	};
+
+	return Animator;
+})();
 
 // Leveraging SMIL Animations
 
@@ -282,52 +425,52 @@ const EASING = {
 	easeinout: "0.42 0 0.58 1"
 };
 
-function animateSVG(element, props, dur, easing_type="linear", type=undefined, old_values={}) {
+function animateSVG(element, props, dur, easingType="linear", type=undefined, oldValues={}) {
 
-	let anim_element = element.cloneNode(true);
-	let new_element = element.cloneNode(true);
+	let animElement = element.cloneNode(true);
+	let newElement = element.cloneNode(true);
 
 	for(var attributeName in props) {
-		let animate_element;
+		let animateElement;
 		if(attributeName === 'transform') {
-			animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+			animateElement = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
 		} else {
-			animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+			animateElement = document.createElementNS("http://www.w3.org/2000/svg", "animate");
 		}
-		let current_value = old_values[attributeName] || element.getAttribute(attributeName);
+		let currentValue = oldValues[attributeName] || element.getAttribute(attributeName);
 		let value = props[attributeName];
 
-		let anim_attr = {
+		let animAttr = {
 			attributeName: attributeName,
-			from: current_value,
+			from: currentValue,
 			to: value,
 			begin: "0s",
 			dur: dur/1000 + "s",
-			values: current_value + ";" + value,
-			keySplines: EASING[easing_type],
+			values: currentValue + ";" + value,
+			keySplines: EASING[easingType],
 			keyTimes: "0;1",
 			calcMode: "spline",
 			fill: 'freeze'
 		};
 
 		if(type) {
-			anim_attr["type"] = type;
+			animAttr["type"] = type;
 		}
 
-		for (var i in anim_attr) {
-			animate_element.setAttribute(i, anim_attr[i]);
+		for (var i in animAttr) {
+			animateElement.setAttribute(i, animAttr[i]);
 		}
 
-		anim_element.appendChild(animate_element);
+		animElement.appendChild(animateElement);
 
 		if(type) {
-			new_element.setAttribute(attributeName, `translate(${value})`);
+			newElement.setAttribute(attributeName, `translate(${value})`);
 		} else {
-			new_element.setAttribute(attributeName, value);
+			newElement.setAttribute(attributeName, value);
 		}
 	}
 
-	return [anim_element, new_element];
+	return [animElement, newElement];
 }
 
 function transform(element, style) { // eslint-disable-line no-unused-vars
@@ -338,39 +481,39 @@ function transform(element, style) { // eslint-disable-line no-unused-vars
 	element.style.oTransform = style;
 }
 
-function runSVGAnimation(svg_container, elements) {
-	let new_elements = [];
-	let anim_elements = [];
+function runSVGAnimation(svgContainer, elements) {
+	let newElements = [];
+	let animElements = [];
 
 	elements.map(element => {
 		let obj = element[0];
 		let parent = obj.unit.parentNode;
 
-		let anim_element, new_element;
+		let animElement, newElement;
 
 		element[0] = obj.unit;
-		[anim_element, new_element] = animateSVG(...element);
+		[animElement, newElement] = animateSVG(...element);
 
-		new_elements.push(new_element);
-		anim_elements.push([anim_element, parent]);
+		newElements.push(newElement);
+		animElements.push([animElement, parent]);
 
-		parent.replaceChild(anim_element, obj.unit);
+		parent.replaceChild(animElement, obj.unit);
 
 		if(obj.array) {
-			obj.array[obj.index] = new_element;
+			obj.array[obj.index] = newElement;
 		} else {
-			obj.object[obj.key] = new_element;
+			obj.object[obj.key] = newElement;
 		}
 	});
 
-	let anim_svg = svg_container.cloneNode(true);
+	let animSvg = svgContainer.cloneNode(true);
 
-	anim_elements.map((anim_element, i) => {
-		anim_element[1].replaceChild(new_elements[i], anim_element[0]);
-		elements[i][0] = new_elements[i];
+	animElements.map((animElement, i) => {
+		animElement[1].replaceChild(newElements[i], animElement[0]);
+		elements[i][0] = newElements[i];
 	});
 
-	return anim_svg;
+	return animSvg;
 }
 
 function normalize(x) {
@@ -396,77 +539,77 @@ function normalize(x) {
 	return [sig * man, exp];
 }
 
-function get_range_intervals(max, min=0) {
-	let upper_bound = Math.ceil(max);
-	let lower_bound = Math.floor(min);
-	let range = upper_bound - lower_bound;
+function getRangeIntervals(max, min=0) {
+	let upperBound = Math.ceil(max);
+	let lowerBound = Math.floor(min);
+	let range = upperBound - lowerBound;
 
-	let no_of_parts = range;
-	let part_size = 1;
+	let noOfParts = range;
+	let partSize = 1;
 
 	// To avoid too many partitions
 	if(range > 5) {
 		if(range % 2 !== 0) {
-			upper_bound++;
+			upperBound++;
 			// Recalc range
-			range = upper_bound - lower_bound;
+			range = upperBound - lowerBound;
 		}
-		no_of_parts = range/2;
-		part_size = 2;
+		noOfParts = range/2;
+		partSize = 2;
 	}
 
 	// Special case: 1 and 2
 	if(range <= 2) {
-		no_of_parts = 4;
-		part_size = range/no_of_parts;
+		noOfParts = 4;
+		partSize = range/noOfParts;
 	}
 
 	// Special case: 0
 	if(range === 0) {
-		no_of_parts = 5;
-		part_size = 1;
+		noOfParts = 5;
+		partSize = 1;
 	}
 
 	let intervals = [];
-	for(var i = 0; i <= no_of_parts; i++){
-		intervals.push(lower_bound + part_size * i);
+	for(var i = 0; i <= noOfParts; i++){
+		intervals.push(lowerBound + partSize * i);
 	}
 	return intervals;
 }
 
-function get_intervals(max_value, min_value=0) {
-	let [normal_max_value, exponent] = normalize(max_value);
-	let normal_min_value = min_value ? min_value/Math.pow(10, exponent): 0;
+function getIntervals(maxValue, minValue=0) {
+	let [normalMaxValue, exponent] = normalize(maxValue);
+	let normalMinValue = minValue ? minValue/Math.pow(10, exponent): 0;
 
 	// Allow only 7 significant digits
-	normal_max_value = normal_max_value.toFixed(6);
+	normalMaxValue = normalMaxValue.toFixed(6);
 
-	let intervals = get_range_intervals(normal_max_value, normal_min_value);
+	let intervals = getRangeIntervals(normalMaxValue, normalMinValue);
 	intervals = intervals.map(value => value * Math.pow(10, exponent));
 	return intervals;
 }
 
-function calc_intervals(values, with_minimum=false) {
+function calcIntervals(values, withMinimum=false) {
 	//*** Where the magic happens ***
 
 	// Calculates best-fit y intervals from given values
 	// and returns the interval array
 
-	let max_value = Math.max(...values);
-	let min_value = Math.min(...values);
+	let maxValue = Math.max(...values);
+	let minValue = Math.min(...values);
 
 	// Exponent to be used for pretty print
 	let exponent = 0, intervals = []; // eslint-disable-line no-unused-vars
 
-	function get_positive_first_intervals(max_value, abs_min_value) {
-		let intervals = get_intervals(max_value);
+	function getPositiveFirstIntervals(maxValue, absMinValue) {
+		let intervals = getIntervals(maxValue);
 
-		let interval_size = intervals[1] - intervals[0];
+		let intervalSize = intervals[1] - intervals[0];
 
 		// Then unshift the negative values
 		let value = 0;
-		for(var i = 1; value < abs_min_value; i++) {
-			value += interval_size;
+		for(var i = 1; value < absMinValue; i++) {
+			value += intervalSize;
 			intervals.unshift((-1) * value);
 		}
 		return intervals;
@@ -474,52 +617,52 @@ function calc_intervals(values, with_minimum=false) {
 
 	// CASE I: Both non-negative
 
-	if(max_value >= 0 && min_value >= 0) {
-		exponent = normalize(max_value)[1];
-		if(!with_minimum) {
-			intervals = get_intervals(max_value);
+	if(maxValue >= 0 && minValue >= 0) {
+		exponent = normalize(maxValue)[1];
+		if(!withMinimum) {
+			intervals = getIntervals(maxValue);
 		} else {
-			intervals = get_intervals(max_value, min_value);
+			intervals = getIntervals(maxValue, minValue);
 		}
 	}
 
-	// CASE II: Only min_value negative
+	// CASE II: Only minValue negative
 
-	else if(max_value > 0 && min_value < 0) {
-		// `with_minimum` irrelevant in this case,
+	else if(maxValue > 0 && minValue < 0) {
+		// `withMinimum` irrelevant in this case,
 		// We'll be handling both sides of zero separately
 		// (both starting from zero)
 		// Because ceil() and floor() behave differently
 		// in those two regions
 
-		let abs_min_value = Math.abs(min_value);
+		let absMinValue = Math.abs(minValue);
 
-		if(max_value >= abs_min_value) {
-			exponent = normalize(max_value)[1];
-			intervals = get_positive_first_intervals(max_value, abs_min_value);
+		if(maxValue >= absMinValue) {
+			exponent = normalize(maxValue)[1];
+			intervals = getPositiveFirstIntervals(maxValue, absMinValue);
 		} else {
-			// Mirror: max_value => abs_min_value, then change sign
-			exponent = normalize(abs_min_value)[1];
-			let pos_intervals = get_positive_first_intervals(abs_min_value, max_value);
-			intervals = pos_intervals.map(d => d * (-1));
+			// Mirror: maxValue => absMinValue, then change sign
+			exponent = normalize(absMinValue)[1];
+			let posIntervals = getPositiveFirstIntervals(absMinValue, maxValue);
+			intervals = posIntervals.map(d => d * (-1));
 		}
 
 	}
 
 	// CASE III: Both non-positive
 
-	else if(max_value <= 0 && min_value <= 0) {
+	else if(maxValue <= 0 && minValue <= 0) {
 		// Mirrored Case I:
 		// Work with positives, then reverse the sign and array
 
-		let pseudo_max_value = Math.abs(min_value);
-		let pseudo_min_value = Math.abs(max_value);
+		let pseudoMaxValue = Math.abs(minValue);
+		let pseudoMinValue = Math.abs(maxValue);
 
-		exponent = normalize(pseudo_max_value)[1];
-		if(!with_minimum) {
-			intervals = get_intervals(pseudo_max_value);
+		exponent = normalize(pseudoMaxValue)[1];
+		if(!withMinimum) {
+			intervals = getIntervals(pseudoMaxValue);
 		} else {
-			intervals = get_intervals(pseudo_max_value, pseudo_min_value);
+			intervals = getIntervals(pseudoMaxValue, pseudoMinValue);
 		}
 
 		intervals = intervals.reverse().map(d => d * (-1));
@@ -528,24 +671,24 @@ function calc_intervals(values, with_minimum=false) {
 	return intervals;
 }
 
-function calc_distribution(values, distribution_size) {
+function calcDistribution(values, distributionSize) {
 	// Assume non-negative values,
 	// implying distribution minimum at zero
 
-	let data_max_value = Math.max(...values);
+	let dataMaxValue = Math.max(...values);
 
-	let distribution_step = 1 / (distribution_size - 1);
+	let distributionStep = 1 / (distributionSize - 1);
 	let distribution = [];
 
-	for(var i = 0; i < distribution_size; i++) {
-		let checkpoint = data_max_value * (distribution_step * i);
+	for(var i = 0; i < distributionSize; i++) {
+		let checkpoint = dataMaxValue * (distributionStep * i);
 		distribution.push(checkpoint);
 	}
 
 	return distribution;
 }
 
-function get_max_checkpoint(value, distribution) {
+function getMaxCheckpoint(value, distribution) {
 	return distribution.filter(d => d < value).length;
 }
 
@@ -553,7 +696,7 @@ function get_max_checkpoint(value, distribution) {
  * Returns the value of a number upto 2 decimal places.
  * @param {Number} d Any number
  */
-function float_2(d) {
+function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
 
@@ -562,13 +705,13 @@ function float_2(d) {
  * @param {Array} arr1 First array
  * @param {Array} arr2 Second array
  */
-function arrays_equal(arr1, arr2) {
+function arraysEqual(arr1, arr2) {
 	if(arr1.length !== arr2.length) return false;
-	let are_equal = true;
+	let areEqual = true;
 	arr1.map((d, i) => {
-		if(arr2[i] !== d) are_equal = false;
+		if(arr2[i] !== d) areEqual = false;
 	});
-	return are_equal;
+	return areEqual;
 }
 
 /**
@@ -580,10 +723,10 @@ function arrays_equal(arr1, arr2) {
 /**
  * Returns pixel width of string.
  * @param {String} string
- * @param {Number} char_width Width of single char in pixels
+ * @param {Number} charWidth Width of single char in pixels
  */
-function get_string_width(string, char_width) {
-	return (string+"").length * char_width;
+function getStringWidth(string, charWidth) {
+	return (string+"").length * charWidth;
 }
 
 class SvgTip {
@@ -706,50 +849,74 @@ class SvgTip {
 	}
 }
 
-function limit_color(r){
+const PRESET_COLOR_MAP = {
+	'light-blue': '#7cd6fd',
+	'blue': '#5e64ff',
+	'violet': '#743ee2',
+	'red': '#ff5858',
+	'orange': '#ffa00a',
+	'yellow': '#feef72',
+	'green': '#28a745',
+	'light-green': '#98d85b',
+	'purple': '#b554ff',
+	'magenta': '#ffa3ef',
+	'black': '#36114C',
+	'grey': '#bdd3e6',
+	'light-grey': '#f0f4f7',
+	'dark-grey': '#b8c2cc'
+};
+
+const DEFAULT_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
+	'yellow', 'green', 'light-green', 'purple', 'magenta'];
+
+function limitColor(r){
 	if (r > 255) return 255;
 	else if (r < 0) return 0;
 	return r;
 }
 
-function lighten_darken_color(color, amt) {
-	let col = get_color(color);
+function lightenDarkenColor(color, amt) {
+	let col = getColor(color);
 	let usePound = false;
 	if (col[0] == "#") {
 		col = col.slice(1);
 		usePound = true;
 	}
 	let num = parseInt(col,16);
-	let r = limit_color((num >> 16) + amt);
-	let b = limit_color(((num >> 8) & 0x00FF) + amt);
-	let g = limit_color((num & 0x0000FF) + amt);
+	let r = limitColor((num >> 16) + amt);
+	let b = limitColor(((num >> 8) & 0x00FF) + amt);
+	let g = limitColor((num & 0x0000FF) + amt);
 	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
 }
 
-function is_valid_color(string) {
+function isValidColor(string) {
 	// https://stackoverflow.com/a/8027444/6495043
 	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
 }
 
-const color_map = {
-	'light-blue': '#7cd6fd',
-	blue: '#5e64ff',
-	violet: '#743ee2',
-	red: '#ff5858',
-	orange: '#ffa00a',
-	yellow: '#feef72',
-	green: '#28a745',
-	'light-green': '#98d85b',
-	purple: '#b554ff',
-	magenta: '#ffa3ef',
-	black: '#36114C',
-	grey: '#bdd3e6',
-	'light-grey': '#f0f4f7',
-	'dark-grey': '#b8c2cc'
+const getColor = (color) => {
+	return PRESET_COLOR_MAP[color] || color;
 };
 
-const get_color = (color) => {
-	return color_map[color] || color;
+const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
+
+const COMPATIBLE_CHARTS = {
+	bar: ['line', 'scatter', 'percentage', 'pie'],
+	line: ['scatter', 'bar', 'percentage', 'pie'],
+	pie: ['line', 'scatter', 'percentage', 'bar'],
+	scatter: ['line', 'bar', 'percentage', 'pie'],
+	percentage: ['bar', 'line', 'scatter', 'pie'],
+	heatmap: []
+};
+
+// TODO: Needs structure as per only labels/datasets
+const COLOR_COMPATIBLE_CHARTS = {
+	bar: ['line', 'scatter'],
+	line: ['scatter', 'bar'],
+	pie: ['percentage'],
+	scatter: ['line', 'bar'],
+	percentage: ['pie'],
+	heatmap: []
 };
 
 class BaseChart {
@@ -764,7 +931,7 @@ class BaseChart {
 		is_navigable = 0,
 		has_legend = 0,
 
-		type = '', // eslint-disable-line no-unused-vars
+		type = '',
 
 		parent,
 		data
@@ -785,55 +952,24 @@ class BaseChart {
 			this.current_index = 0;
 		}
 		this.has_legend = has_legend;
-		this.colors = colors;
 
-		const list = type === 'percentage' || type === 'pie'
-			? this.data.labels
-			: this.data.datasets;
-
-		if(!this.colors || (list && this.colors.length < list.length)) {
-			this.colors = ['light-blue', 'blue', 'violet', 'red', 'orange',
-				'yellow', 'green', 'light-green', 'purple', 'magenta'];
-		}
-		this.colors = this.colors.map(color => get_color(color));
-
-		this.chart_types = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
-
+		this.setColors(colors, type);
 		this.set_margins(height);
 	}
 
 	get_different_chart(type) {
-		if(!this.chart_types.includes(type)) {
-			console.error(`'${type}' is not a valid chart type.`);
-		}
 		if(type === this.type) return;
 
-		// Only across compatible types
-		let compatible_types = {
-			bar: ['line', 'scatter', 'percentage', 'pie'],
-			line: ['scatter', 'bar', 'percentage', 'pie'],
-			pie: ['line', 'scatter', 'percentage', 'bar'],
-			scatter: ['line', 'bar', 'percentage', 'pie'],
-			percentage: ['bar', 'line', 'scatter', 'pie'],
-			heatmap: []
-		};
+		if(!ALL_CHART_TYPES.includes(type)) {
+			console.error(`'${type}' is not a valid chart type.`);
+		}
 
-		// Only across compatible colors types
-		let color_compatible_types = {
-			bar: ['line', 'scatter'],
-			line: ['scatter', 'bar'],
-			pie: ['percentage'],
-			scatter: ['line', 'bar'],
-			percentage: ['pie'],
-			heatmap: []
-		};
-
-		if(!compatible_types[this.type].includes(type)) {
+		if(!COMPATIBLE_CHARTS[this.type].includes(type)) {
 			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
 		}
 
 		// whether the new chart can use the existing colors
-		const use_color = color_compatible_types[this.type].includes(type);
+		const use_color = COLOR_COMPATIBLE_CHARTS[this.type].includes(type);
 
 		// Okay, this is anticlimactic
 		// this function will need to actually be 'change_chart_type(type)'
@@ -846,6 +982,21 @@ class BaseChart {
 			height: this.raw_chart_args.height,
 			colors: use_color ? this.colors : undefined
 		});
+	}
+
+	setColors(colors, type) {
+		this.colors = colors;
+
+		// TODO: Needs structure as per only labels/datasets
+		const list = type === 'percentage' || type === 'pie'
+			? this.data.labels
+			: this.data.datasets;
+
+		if(!this.colors || (list && this.colors.length < list.length)) {
+			this.colors = DEFAULT_COLORS;
+		}
+
+		this.colors = this.colors.map(color => getColor(color));
 	}
 
 	set_margins(height) {
@@ -903,7 +1054,7 @@ class BaseChart {
 		let special_values_width = 0;
 		let char_width = 8;
 		this.specific_values.map(val => {
-			let str_width = get_string_width((val.title + ""), char_width);
+			let str_width = getStringWidth((val.title + ""), char_width);
 			if(str_width > special_values_width) {
 				special_values_width = str_width - 40;
 			}
@@ -935,26 +1086,22 @@ class BaseChart {
 	}
 
 	make_chart_area() {
-		this.svg = $.createSVG('svg', {
-			className: 'chart',
-			inside: this.chart_wrapper,
-			width: this.base_width,
-			height: this.base_height
-		});
-
-		this.svg_defs = $.createSVG('defs', {
-			inside: this.svg,
-		});
-
+		this.svg = makeSVGContainer(
+			this.chart_wrapper,
+			'chart',
+			this.base_width,
+			this.base_height
+		);
+		this.svg_defs = makeSVGDefs(this.svg);
 		return this.svg;
 	}
 
 	make_draw_area() {
-		this.draw_area = $.createSVG("g", {
-			className: this.type + '-chart',
-			inside: this.svg,
-			transform: `translate(${this.translate_x}, ${this.translate_y})`
-		});
+		this.draw_area = makeSVGGroup(
+			this.svg,
+			this.type + '-chart',
+			`translate(${this.translate_x}, ${this.translate_y})`
+		);
 	}
 
 	setup_components() { }
@@ -1043,6 +1190,10 @@ class BaseChart {
 
 	// Objects
 	setup_utils() { }
+
+	makeDrawAreaComponent(className, transform='') {
+		return makeSVGGroup(this.draw_area, className, transform);
+	}
 }
 
 class AxisChart extends BaseChart {
@@ -1081,7 +1232,7 @@ class AxisChart extends BaseChart {
 			this.x_old_axis_positions =  this.x_axis_positions.slice();
 		}
 		this.x_axis_positions = this.x.map((d, i) =>
-			float_2(this.x_offset + i * this.avg_unit_width));
+			floatTwo(this.x_offset + i * this.avg_unit_width));
 
 		if(!this.x_old_axis_positions) {
 			this.x_old_axis_positions = this.x_axis_positions.slice();
@@ -1099,7 +1250,7 @@ class AxisChart extends BaseChart {
 			values = values.concat(this.y_sums);
 		}
 
-		this.y_axis_values = calc_intervals(values, this.type === 'line');
+		this.y_axis_values = calcIntervals(values, this.type === 'line');
 
 		if(!this.y_old_axis_values) {
 			this.y_old_axis_values = this.y_axis_values.slice();
@@ -1146,23 +1297,21 @@ class AxisChart extends BaseChart {
 	}
 
 	setup_marker_components() {
-		this.y_axis_group = $.createSVG('g', {className: 'y axis', inside: this.draw_area});
-		this.x_axis_group = $.createSVG('g', {className: 'x axis', inside: this.draw_area});
-		this.specific_y_group = $.createSVG('g', {className: 'specific axis', inside: this.draw_area});
+		this.y_axis_group = this.makeDrawAreaComponent('y axis');
+		this.x_axis_group = this.makeDrawAreaComponent('x axis');
+		this.specific_y_group = this.makeDrawAreaComponent('specific axis');
 	}
 
 	setup_aggregation_components() {
-		this.sum_group = $.createSVG('g', {className: 'data-points', inside: this.draw_area});
-		this.average_group = $.createSVG('g', {className: 'chart-area', inside: this.draw_area});
+		this.sum_group = this.makeDrawAreaComponent('data-points');
+		this.average_group = this.makeDrawAreaComponent('chart-area');
 	}
 
 	setup_graph_components() {
 		this.svg_units_groups = [];
 		this.y.map((d, i) => {
-			this.svg_units_groups[i] = $.createSVG('g', {
-				className: 'data-points data-points-' + i,
-				inside: this.draw_area
-			});
+			this.svg_units_groups[i] = this.makeDrawAreaComponent(
+				'data-points data-points-' + i);
 		});
 	}
 
@@ -1200,7 +1349,7 @@ class AxisChart extends BaseChart {
 
 		this.x_axis_group.textContent = '';
 		this.x.map((point, i) => {
-			let space_taken = get_string_width(point, char_width) + 2;
+			let space_taken = getStringWidth(point, char_width) + 2;
 			if(space_taken > allowed_space) {
 				if(this.is_series) {
 					// Skip some axis lines if X axis is a series
@@ -1216,7 +1365,7 @@ class AxisChart extends BaseChart {
 				}
 			}
 			this.x_axis_group.appendChild(
-				make_x_line(
+				makeXLine(
 					height,
 					text_start_at,
 					point,
@@ -1241,7 +1390,7 @@ class AxisChart extends BaseChart {
 		this.y_axis_group.textContent = '';
 		this.y_axis_values.map((value, i) => {
 			this.y_axis_group.appendChild(
-				make_y_line(
+				makeYLine(
 					start_at,
 					width,
 					text_end_at,
@@ -1343,7 +1492,7 @@ class AxisChart extends BaseChart {
 		let unit_renderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
 
 		y_values.map((y, i) => {
-			let data_unit = unit_renderer['draw_' + unit.type](
+			let data_unit = unit_renderer[unit.type](
 				x_values[i],
 				y,
 				unit.args,
@@ -1365,7 +1514,7 @@ class AxisChart extends BaseChart {
 		this.specific_y_group.textContent = '';
 		this.specific_values.map(d => {
 			this.specific_y_group.appendChild(
-				make_y_line(
+				makeYLine(
 					0,
 					this.width,
 					this.width + 5,
@@ -1447,8 +1596,8 @@ class AxisChart extends BaseChart {
 
 		this.make_new_units_for_dataset(
 			this.x_axis_positions,
-			this.y_sums.map( val => float_2(this.zero_line - val * this.multiplier)),
-			'light-grey',
+			this.y_sums.map( val => floatTwo(this.zero_line - val * this.multiplier)),
+			'#f0f4f7',
 			0,
 			1,
 			this.sum_group,
@@ -1522,17 +1671,23 @@ class AxisChart extends BaseChart {
 		this.setup_x();
 		this.setup_y();
 
+		// Change in data, so calculate dependencies
+		this.calc_y_dependencies();
+
+		// Got the values? Now begin drawing
+		this.animator = new Animator(this.height, this.width, this.zero_line, this.avg_unit_width);
+
 		// Animate only if positions have changed
-		if(!arrays_equal(this.x_old_axis_positions, this.x_axis_positions)) {
+		if(!arraysEqual(this.x_old_axis_positions, this.x_axis_positions)) {
 			this.make_x_axis(true);
 			setTimeout(() => {
 				if(!this.updating) this.make_x_axis();
 			}, 350);
 		}
 
-		if(!arrays_equal(this.y_old_axis_values, this.y_axis_values) ||
+		if(!arraysEqual(this.y_old_axis_values, this.y_axis_values) ||
 			(this.old_specific_values &&
-			!arrays_equal(this.old_specific_values, this.specific_values))) {
+			!arraysEqual(this.old_specific_values, this.specific_values))) {
 
 			this.make_y_axis(true);
 			setTimeout(() => {
@@ -1542,9 +1697,6 @@ class AxisChart extends BaseChart {
 				}
 			}, 350);
 		}
-
-		// Change in data, so calculate dependencies
-		this.calc_y_dependencies();
 
 		this.animate_graphs();
 
@@ -1614,35 +1766,18 @@ class AxisChart extends BaseChart {
 	}
 
 	animate_path(d, i, old_x, old_y, new_x, new_y) {
-		// Animate path
-		const new_points_list = new_y.map((y, i) => (new_x[i] + ',' + y));
-		const new_path_str = new_points_list.join("L");
-
-		const path_args = [{unit: d.path, object: d, key: 'path'}, {d:"M"+new_path_str}, 350, "easein"];
-		this.elements_to_animate.push(path_args);
-
-		// Animate region
-		if(d.region_path) {
-			let reg_start_pt = `0,${this.zero_line}L`;
-			let reg_end_pt = `L${this.width},${this.zero_line}`;
-
-			const region_args = [
-				{unit: d.region_path, object: d, key: 'region_path'},
-				{d:"M" + reg_start_pt + new_path_str + reg_end_pt},
-				350,
-				"easein"
-			];
-			this.elements_to_animate.push(region_args);
-		}
+		const newPointsList = new_y.map((y, i) => (new_x[i] + ',' + y));
+		const newPathStr = newPointsList.join("L");
+		this.elements_to_animate = this.elements_to_animate
+			.concat(this.animator['path'](d, newPathStr));
 	}
 
 	animate_units(d, index, old_x, old_y, new_x, new_y) {
 		let type = this.unit_args.type;
-		let unit_renderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
 
 		d.svg_units.map((unit, i) => {
 			if(new_x[i] === undefined || new_y[i] === undefined) return;
-			this.elements_to_animate.push(unit_renderer['animate_' + type](
+			this.elements_to_animate.push(this.animator[type](
 				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
 				new_x[i],
 				new_y[i],
@@ -1666,8 +1801,8 @@ class AxisChart extends BaseChart {
 		const last_new_y_pos = new_y[new_y.length - 1];
 
 		if(this.no_of_extra_pts >= 0) {
-			// First substitute current path with a squiggled one (looking the same but
-			// having more points at end),
+			// First substitute current path with a squiggled one
+			// (that looks the same but has more points at end),
 			// then animate to stretch it later to new points
 			// (new points already have more points)
 
@@ -1706,7 +1841,7 @@ class AxisChart extends BaseChart {
 			if(typeof new_pos === 'string') {
 				new_pos = parseInt(new_pos.substring(0, new_pos.length-1));
 			}
-			const x_line = make_x_line(
+			const x_line = makeXLine(
 				height,
 				text_start_at,
 				value, // new value
@@ -1832,7 +1967,7 @@ class AxisChart extends BaseChart {
 		let [width, text_end_at, axis_line_class, start_at] = this.get_y_axis_line_props(specific);
 		let axis_label_class = !specific ? 'y-value-text' : 'specific-value';
 		value = !specific ? value : (value+"").toUpperCase();
-		const y_line = make_y_line(
+		const y_line = makeYLine(
 			start_at,
 			width,
 			text_end_at,
@@ -1877,7 +2012,7 @@ class AxisChart extends BaseChart {
 	calc_y_dependencies() {
 		this.y_min_tops = new Array(this.x_axis_positions.length).fill(9999);
 		this.y.map(d => {
-			d.y_tops = d.values.map( val => float_2(this.zero_line - val * this.multiplier));
+			d.y_tops = d.values.map( val => floatTwo(this.zero_line - val * this.multiplier));
 			d.y_tops.map( (y_top, i) => {
 				if(y_top < this.y_min_tops[i]) {
 					this.y_min_tops[i] = y_top;
@@ -1905,7 +2040,7 @@ class BarChart extends AxisChart {
 		this.unit_args = {
 			type: 'bar',
 			args: {
-				space_width: this.avg_unit_width/2,
+				spaceWidth: this.avg_unit_width/2,
 			}
 		};
 	}
@@ -2001,10 +2136,10 @@ class LineChart extends AxisChart {
 	setup_path_groups() {
 		this.paths_groups = [];
 		this.y.map((d, i) => {
-			this.paths_groups[i] = $.createSVG('g', {
-				className: 'path-group path-group-' + i,
-				inside: this.draw_area
-			});
+			this.paths_groups[i] = makeSVGGroup(
+				this.draw_area,
+				'path-group path-group-' + i
+			);
 		});
 	}
 
@@ -2036,14 +2171,11 @@ class LineChart extends AxisChart {
 
 		this.paths_groups[i].textContent = '';
 
-		d.path = $.createSVG('path', {
-			inside: this.paths_groups[i],
-			style: `stroke: ${color}`,
-			d: "M"+points_str
-		});
+		d.path = makePath("M"+points_str, 'line-graph-path', color);
+		this.paths_groups[i].appendChild(d.path);
 
 		if(this.heatline) {
-			let gradient_id = this.make_gradient(color);
+			let gradient_id = makeGradient(this.svg_defs, color);
 			d.path.style.stroke = `url(#${gradient_id})`;
 		}
 
@@ -2053,50 +2185,11 @@ class LineChart extends AxisChart {
 	}
 
 	fill_region_for_dataset(d, i, color, points_str) {
-		let gradient_id = this.make_gradient(color, true);
+		let gradient_id = makeGradient(this.svg_defs, color, true);
+		let pathStr = "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`;
 
-		d.region_path = $.createSVG('path', {
-			inside: this.paths_groups[i],
-			className: `region-fill`,
-			d: "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`,
-		});
-
-		d.region_path.style.stroke = "none";
-		d.region_path.style.fill = `url(#${gradient_id})`;
-	}
-
-	make_gradient(color, lighter = false) {
-		let gradient_id ='path-fill-gradient' + '-' + color;
-
-		let gradient_def = $.createSVG('linearGradient', {
-			inside: this.svg_defs,
-			id: gradient_id,
-			x1: 0,
-			x2: 0,
-			y1: 0,
-			y2: 1
-		});
-
-		let set_gradient_stop = (grad_elem, offset, color, opacity) => {
-			$.createSVG('stop', {
-				style: `stop-color: ${color}`,
-				inside: grad_elem,
-				'offset': offset,
-				'stop-opacity': opacity
-			});
-		};
-
-		let opacities = [1, 0.6, 0.2];
-
-		if(lighter) {
-			opacities = [0.4, 0.2, 0];
-		}
-
-		set_gradient_stop(gradient_def, "0%", color, opacities[0]);
-		set_gradient_stop(gradient_def, "50%", color, opacities[1]);
-		set_gradient_stop(gradient_def, "100%", color, opacities[2]);
-
-		return gradient_id;
+		d.regionPath = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id})`);
+		this.paths_groups[i].appendChild(d.regionPath);
 	}
 }
 
@@ -2351,13 +2444,10 @@ class PieChart extends BaseChart {
 				curEnd = endPosition;
 			}
 			const curPath = this.makeArcPath(curStart,curEnd);
-			let slice = $.createSVG('path',{
-				inside: this.draw_area,
-				className: 'pie-path',
-				style: 'transition:transform .3s;',
-				d: curPath,
-				fill: this.colors[i]
-			});
+			let slice = makePath(curPath, 'pie-path', 'none', this.colors[i]);
+			slice.style.transition = 'transform .3s;';
+			this.draw_area.appendChild(slice);
+
 			this.slices.push(slice);
 			this.slicesProperties.push({
 				startPosition,
@@ -2413,7 +2503,7 @@ class PieChart extends BaseChart {
 		const color = this.colors[i];
 		if(flag){
 			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
-			path.setAttribute('fill',lighten_darken_color(color,50));
+			path.style.fill = lightenDarkenColor(color,50);
 			let g_off = $.offset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
@@ -2425,7 +2515,7 @@ class PieChart extends BaseChart {
 		}else{
 			transform(path,'translate3d(0,0,0)');
 			this.tip.hide_tip();
-			path.setAttribute('fill',color);
+			path.style.fill = color;
 		}
 	}
 
@@ -2475,13 +2565,13 @@ class PieChart extends BaseChart {
 // Playing around with dates
 
 // https://stackoverflow.com/a/11252167/6495043
-function treat_as_utc(date_str) {
-	let result = new Date(date_str);
+function treatAsUtc(dateStr) {
+	let result = new Date(dateStr);
 	result.setMinutes(result.getMinutes() - result.getTimezoneOffset());
 	return result;
 }
 
-function get_dd_mm_yyyy(date) {
+function getDdMmYyyy(date) {
 	let dd = date.getDate();
 	let mm = date.getMonth() + 1; // getMonth() is zero-based
 	return [
@@ -2491,21 +2581,21 @@ function get_dd_mm_yyyy(date) {
 	].join('-');
 }
 
-function get_weeks_between(start_date_str, end_date_str) {
-	return Math.ceil(get_days_between(start_date_str, end_date_str) / 7);
+function getWeeksBetween(startDateStr, endDateStr) {
+	return Math.ceil(getDaysBetween(startDateStr, endDateStr) / 7);
 }
 
-function get_days_between(start_date_str, end_date_str) {
-	let milliseconds_per_day = 24 * 60 * 60 * 1000;
-	return (treat_as_utc(end_date_str) - treat_as_utc(start_date_str)) / milliseconds_per_day;
+function getDaysBetween(startDateStr, endDateStr) {
+	let millisecondsPerDay = 24 * 60 * 60 * 1000;
+	return (treatAsUtc(endDateStr) - treatAsUtc(startDateStr)) / millisecondsPerDay;
 }
 
 // mutates
-function add_days(date, number_of_days) {
-	date.setDate(date.getDate() + number_of_days);
+function addDays(date, numberOfDays) {
+	date.setDate(date.getDate() + numberOfDays);
 }
 
-// export function get_month_name() {}
+// export function getMonthName() {}
 
 class Heatmap extends BaseChart {
 	constructor({
@@ -2528,14 +2618,14 @@ class Heatmap extends BaseChart {
 		this.count_label = count_label;
 
 		let today = new Date();
-		this.start = start || add_days(today, 365);
+		this.start = start || addDays(today, 365);
 
 		legend_colors = legend_colors.slice(0, 5);
 		this.legend_colors = this.validate_colors(legend_colors)
 			? legend_colors
 			: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
 
-		// Hardcoded for a fixed 5-color theme,
+		// Fixed 5-color theme,
 		// More colors are difficult to parse visually
 		this.distribution_size = 5;
 
@@ -2548,7 +2638,7 @@ class Heatmap extends BaseChart {
 
 		let valid = 1;
 		colors.forEach(function(string) {
-			if(!is_valid_color(string)) {
+			if(!isValidColor(string)) {
 				valid = 0;
 				console.warn('"' + string + '" is not a valid color.');
 			}
@@ -2567,12 +2657,12 @@ class Heatmap extends BaseChart {
 		this.first_week_start = new Date(this.start.toDateString());
 		this.last_week_start = new Date(this.today.toDateString());
 		if(this.first_week_start.getDay() !== 7) {
-			add_days(this.first_week_start, (-1) * this.first_week_start.getDay());
+			addDays(this.first_week_start, (-1) * this.first_week_start.getDay());
 		}
 		if(this.last_week_start.getDay() !== 7) {
-			add_days(this.last_week_start, (-1) * this.last_week_start.getDay());
+			addDays(this.last_week_start, (-1) * this.last_week_start.getDay());
 		}
-		this.no_of_cols = get_weeks_between(this.first_week_start + '', this.last_week_start + '') + 1;
+		this.no_of_cols = getWeeksBetween(this.first_week_start + '', this.last_week_start + '') + 1;
 	}
 
 	set_width() {
@@ -2584,15 +2674,13 @@ class Heatmap extends BaseChart {
 	}
 
 	setup_components() {
-		this.domain_label_group = $.createSVG("g", {
-			className: "domain-label-group chart-label",
-			inside: this.draw_area
-		});
-		this.data_groups = $.createSVG("g", {
-			className: "data-groups",
-			inside: this.draw_area,
-			transform: `translate(0, 20)`
-		});
+		this.domain_label_group = this.makeDrawAreaComponent(
+			'domain-label-group chart-label');
+
+		this.data_groups = this.makeDrawAreaComponent(
+			'data-groups',
+			`translate(0, 20)`
+		);
 	}
 
 	setup_values() {
@@ -2600,7 +2688,7 @@ class Heatmap extends BaseChart {
 		this.data_groups.textContent = '';
 
 		let data_values = Object.keys(this.data).map(key => this.data[key]);
-		this.distribution = calc_distribution(data_values, this.distribution_size);
+		this.distribution = calcDistribution(data_values, this.distribution_size);
 
 		this.month_names = ["January", "February", "March", "April", "May", "June",
 			"July", "August", "September", "October", "November", "December"
@@ -2632,7 +2720,7 @@ class Heatmap extends BaseChart {
 				this.months.push(this.current_month + '');
 				this.month_weeks[this.current_month] = 1;
 			}
-			add_days(current_week_sunday, 7);
+			addDays(current_week_sunday, 7);
 		}
 		this.render_month_labels();
 	}
@@ -2647,10 +2735,7 @@ class Heatmap extends BaseChart {
 		let month_change = 0;
 		let week_col_change = 0;
 
-		let data_group = $.createSVG("g", {
-			className: "data-group",
-			inside: this.data_groups
-		});
+		let data_group = makeSVGGroup(this.data_groups, 'data-group');
 
 		for(var y = 0, i = 0; i < no_of_weekdays; i += step, y += (square_side + cell_padding)) {
 			let data_value = 0;
@@ -2668,26 +2753,23 @@ class Heatmap extends BaseChart {
 			}
 
 			if(data_value) {
-				color_index = get_max_checkpoint(data_value, this.distribution);
+				color_index = getMaxCheckpoint(data_value, this.distribution);
 			}
 
 			let x = 13 + (index + week_col_change) * 12;
 
-			$.createSVG("rect", {
-				className: 'day',
-				inside: data_group,
-				x: x,
-				y: y,
-				width: square_side,
-				height: square_side,
-				fill:  this.legend_colors[color_index],
-				'data-date': get_dd_mm_yyyy(current_date),
+			let dataAttr = {
+				'data-date': getDdMmYyyy(current_date),
 				'data-value': data_value,
 				'data-day': current_date.getDay()
-			});
+			};
+			let heatSquare = makeHeatSquare('day', x, y, square_side,
+				this.legend_colors[color_index], dataAttr);
+
+			data_group.appendChild(heatSquare);
 
 			let next_date = new Date(current_date);
-			add_days(next_date, 1);
+			addDays(next_date, 1);
 			if(next_date.getTime() > today_time) break;
 
 
@@ -2727,15 +2809,8 @@ class Heatmap extends BaseChart {
 
 		this.month_start_points.map((start, i) => {
 			let month_name =  this.month_names[this.months[i]].substring(0, 3);
-
-			$.createSVG('text', {
-				className: 'y-value-text',
-				inside: this.domain_label_group,
-				x: start + 12,
-				y: 10,
-				dy: '.32em',
-				innerHTML: month_name
-			});
+			let text = makeText('y-value-text', start+12, 10, month_name);
+			this.domain_label_group.appendChild(text);
 		});
 	}
 

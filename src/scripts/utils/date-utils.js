@@ -1,13 +1,13 @@
 // Playing around with dates
 
 // https://stackoverflow.com/a/11252167/6495043
-function treat_as_utc(date_str) {
-	let result = new Date(date_str);
+function treatAsUtc(dateStr) {
+	let result = new Date(dateStr);
 	result.setMinutes(result.getMinutes() - result.getTimezoneOffset());
 	return result;
 }
 
-export function get_dd_mm_yyyy(date) {
+export function getDdMmYyyy(date) {
 	let dd = date.getDate();
 	let mm = date.getMonth() + 1; // getMonth() is zero-based
 	return [
@@ -17,18 +17,18 @@ export function get_dd_mm_yyyy(date) {
 	].join('-');
 }
 
-export function get_weeks_between(start_date_str, end_date_str) {
-	return Math.ceil(get_days_between(start_date_str, end_date_str) / 7);
+export function getWeeksBetween(startDateStr, endDateStr) {
+	return Math.ceil(getDaysBetween(startDateStr, endDateStr) / 7);
 }
 
-export function get_days_between(start_date_str, end_date_str) {
-	let milliseconds_per_day = 24 * 60 * 60 * 1000;
-	return (treat_as_utc(end_date_str) - treat_as_utc(start_date_str)) / milliseconds_per_day;
+export function getDaysBetween(startDateStr, endDateStr) {
+	let millisecondsPerDay = 24 * 60 * 60 * 1000;
+	return (treatAsUtc(endDateStr) - treatAsUtc(startDateStr)) / millisecondsPerDay;
 }
 
 // mutates
-export function add_days(date, number_of_days) {
-	date.setDate(date.getDate() + number_of_days);
+export function addDays(date, numberOfDays) {
+	date.setDate(date.getDate() + numberOfDays);
 }
 
-// export function get_month_name() {}
+// export function getMonthName() {}

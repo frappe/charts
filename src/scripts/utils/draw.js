@@ -1,135 +1,187 @@
-import $ from './dom';
+import { getBarHeightAndYAttr } from './draw-utils';
 
-export var UnitRenderer = (function() {
-	var UnitRenderer = function(total_height, zero_line, avg_unit_width) {
-		this.total_height = total_height;
-		this.zero_line = zero_line;
-		this.avg_unit_width = avg_unit_width;
-	};
+// Constants used
 
-	function get_bar_height_and_y_attr(y_top, zero_line, total_height) {
-		let height, y;
-		if (y_top <= zero_line) {
-			height = zero_line - y_top;
-			y = y_top;
+function $(expr, con) {
+	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
+}
 
-			// In case of invisible bars
-			if(height === 0) {
-				height = total_height * 0.01;
-				y -= height;
+function createSVG(tag, o) {
+	var element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+
+	for (var i in o) {
+		var val = o[i];
+
+		if (i === "inside") {
+			$(val).appendChild(element);
+		}
+		else if (i === "around") {
+			var ref = $(val);
+			ref.parentNode.insertBefore(element, ref);
+			element.appendChild(ref);
+
+		} else if (i === "styles") {
+			if(typeof val === "object") {
+				Object.keys(val).map(prop => {
+					element.style[prop] = val[prop];
+				});
 			}
 		} else {
-			height = y_top - zero_line;
-			y = zero_line;
-
-			// In case of invisible bars
-			if(height === 0) {
-				height = total_height * 0.01;
+			if(i === "className") { i = "class"; }
+			if(i === "innerHTML") {
+				element['textContent'] = val;
+			} else {
+				element.setAttribute(i, val);
 			}
 		}
-
-		return [height, y];
 	}
 
-	UnitRenderer.prototype = {
-		draw_bar: function (x, y_top, args, color, index, dataset_index, no_of_datasets) {
-			let total_width = this.avg_unit_width - args.space_width;
-			let start_x = x - total_width/2;
+	return element;
+}
 
-			let width = total_width / no_of_datasets;
-			let current_x = start_x + width * dataset_index;
+function renderVerticalGradient(svgDefElem, gradientId) {
+	return createSVG('linearGradient', {
+		inside: svgDefElem,
+		id: gradientId,
+		x1: 0,
+		x2: 0,
+		y1: 0,
+		y2: 1
+	});
+}
 
-			let [height, y] = get_bar_height_and_y_attr(y_top, this.zero_line, this.total_height);
+function setGradientStop(gradElem, offset, color, opacity) {
+	return createSVG('stop', {
+		'inside': gradElem,
+		'style': `stop-color: ${color}`,
+		'offset': offset,
+		'stop-opacity': opacity
+	});
+}
 
-			return $.createSVG('rect', {
-				className: `bar mini`,
-				style: `fill: ${color}`,
-				'data-point-index': index,
-				x: current_x,
-				y: y,
-				width: width,
-				height: height
-			});
-		},
+export function makeSVGContainer(parent, className, width, height) {
+	return createSVG('svg', {
+		className: className,
+		inside: parent,
+		width: width,
+		height: height
+	});
+}
 
-		draw_dot: function(x, y, args, color, index) {
-			return $.createSVG('circle', {
-				style: `fill: ${color}`,
-				'data-point-index': index,
-				cx: x,
-				cy: y,
-				r: args.radius
-			});
-		},
+export function makeSVGDefs(svgContainer) {
+	return createSVG('defs', {
+		inside: svgContainer,
+	});
+}
 
-		animate_bar: function(bar_obj, x, y_top, index, no_of_datasets) {
-			let start = x - this.avg_unit_width/4;
-			let width = (this.avg_unit_width/2)/no_of_datasets;
-			let [height, y] = get_bar_height_and_y_attr(y_top, this.zero_line, this.total_height);
+export function makeSVGGroup(parent, className, transform='') {
+	return createSVG('g', {
+		className: className,
+		inside: parent,
+		transform: transform
+	});
+}
 
-			x = start + (width * index);
-
-			return [bar_obj, {width: width, height: height, x: x, y: y}, 350, "easein"];
-			// bar.animate({height: args.new_height, y: y_top}, 350, mina.easein);
-		},
-
-		animate_dot: function(dot_obj, x, y_top) {
-			return [dot_obj, {cx: x, cy: y_top}, 350, "easein"];
-			// dot.animate({cy: y_top}, 350, mina.easein);
+export function makePath(pathStr, className='', stroke='none', fill='none') {
+	return createSVG('path', {
+		className: className,
+		d: pathStr,
+		styles: {
+			stroke: stroke,
+			fill: fill
 		}
+	});
+}
+
+export function makeGradient(svgDefElem, color, lighter = false) {
+	let gradientId ='path-fill-gradient' + '-' + color;
+	let gradientDef = renderVerticalGradient(svgDefElem, gradientId);
+	let opacities = [1, 0.6, 0.2];
+	if(lighter) {
+		opacities = [0.4, 0.2, 0];
+	}
+
+	setGradientStop(gradientDef, "0%", color, opacities[0]);
+	setGradientStop(gradientDef, "50%", color, opacities[1]);
+	setGradientStop(gradientDef, "100%", color, opacities[2]);
+
+	return gradientId;
+}
+
+export function makeHeatSquare(className, x, y, size, fill='none', data={}) {
+	let args = {
+		className: className,
+		x: x,
+		y: y,
+		width: size,
+		height: size,
+		fill: fill
 	};
 
-	return UnitRenderer;
-})();
+	Object.keys(data).map(key => {
+		args[key] = data[key];
+	});
 
+	return createSVG("rect", args);
+}
 
-export function make_x_line(height, text_start_at, point, label_class, axis_line_class, x_pos) {
-	let line = $.createSVG('line', {
+export function makeText(className, x, y, content) {
+	return createSVG('text', {
+		className: className,
+		x: x,
+		y: y,
+		dy: '.32em',
+		innerHTML: content
+	});
+}
+
+export function makeXLine(height, textStartAt, point, labelClass, axisLineClass, xPos) {
+	let line = createSVG('line', {
 		x1: 0,
 		x2: 0,
 		y1: 0,
 		y2: height
 	});
 
-	let text = $.createSVG('text', {
-		className: label_class,
+	let text = createSVG('text', {
+		className: labelClass,
 		x: 0,
-		y: text_start_at,
+		y: textStartAt,
 		dy: '.71em',
 		innerHTML: point
 	});
 
-	let x_line = $.createSVG('g', {
-		className: `tick ${axis_line_class}`,
-		transform: `translate(${ x_pos }, 0)`
+	let xLine = createSVG('g', {
+		className: `tick ${axisLineClass}`,
+		transform: `translate(${ xPos }, 0)`
 	});
 
-	x_line.appendChild(line);
-	x_line.appendChild(text);
+	xLine.appendChild(line);
+	xLine.appendChild(text);
 
-	return x_line;
+	return xLine;
 }
 
-export function make_y_line(start_at, width, text_end_at, point, label_class, axis_line_class, y_pos, darker=false, line_type="") {
-	let line = $.createSVG('line', {
-		className: line_type === "dashed" ? "dashed": "",
-		x1: start_at,
+export function makeYLine(startAt, width, textEndAt, point, labelClass, axisLineClass, yPos, darker=false, lineType="") {
+	let line = createSVG('line', {
+		className: lineType === "dashed" ? "dashed": "",
+		x1: startAt,
 		x2: width,
 		y1: 0,
 		y2: 0
 	});
 
-	let text = $.createSVG('text', {
-		className: label_class,
-		x: text_end_at,
+	let text = createSVG('text', {
+		className: labelClass,
+		x: textEndAt,
 		y: 0,
 		dy: '.32em',
 		innerHTML: point+""
 	});
 
-	let y_line = $.createSVG('g', {
-		className: `tick ${axis_line_class}`,
-		transform: `translate(0, ${y_pos})`,
+	let yLine = createSVG('g', {
+		className: `tick ${axisLineClass}`,
+		transform: `translate(0, ${yPos})`,
 		'stroke-opacity': 1
 	});
 
@@ -137,13 +189,50 @@ export function make_y_line(start_at, width, text_end_at, point, label_class, ax
 		line.style.stroke = "rgba(27, 31, 35, 0.6)";
 	}
 
-	y_line.appendChild(line);
-	y_line.appendChild(text);
+	yLine.appendChild(line);
+	yLine.appendChild(text);
 
-	return y_line;
+	return yLine;
 }
 
-export function get_anim_x_line() {}
+export var UnitRenderer = (function() {
+	var UnitRenderer = function(totalHeight, zeroLine, avgUnitWidth) {
+		this.totalHeight = totalHeight;
+		this.zeroLine = zeroLine;
+		this.avgUnitWidth = avgUnitWidth;
+	};
 
-export function get_anim_y_line() {}
+	UnitRenderer.prototype = {
+		bar: function (x, yTop, args, color, index, datasetIndex, noOfDatasets) {
+			let totalWidth = this.avgUnitWidth - args.spaceWidth;
+			let startX = x - totalWidth/2;
 
+			let width = totalWidth / noOfDatasets;
+			let currentX = startX + width * datasetIndex;
+
+			let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
+
+			return createSVG('rect', {
+				className: `bar mini`,
+				style: `fill: ${color}`,
+				'data-point-index': index,
+				x: currentX,
+				y: y,
+				width: width,
+				height: height
+			});
+		},
+
+		dot: function(x, y, args, color, index) {
+			return createSVG('circle', {
+				style: `fill: ${color}`,
+				'data-point-index': index,
+				cx: x,
+				cy: y,
+				r: args.radius
+			});
+		}
+	};
+
+	return UnitRenderer;
+})();
