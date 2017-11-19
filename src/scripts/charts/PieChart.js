@@ -1,7 +1,7 @@
 import BaseChart from './BaseChart';
 import $ from '../utils/dom';
 import { makePath } from '../utils/draw';
-import { lighten_darken_color } from '../utils/colors';
+import { lightenDarkenColor } from '../utils/colors';
 import { runSVGAnimation, transform } from '../utils/animation';
 const ANGLE_RATIO = Math.PI / 180;
 const FULL_ANGLE = 360;
@@ -153,7 +153,7 @@ export default class PieChart extends BaseChart {
 		const color = this.colors[i];
 		if(flag){
 			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
-			path.style.fill = lighten_darken_color(color,50);
+			path.style.fill = lightenDarkenColor(color,50);
 			let g_off = $.offset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;

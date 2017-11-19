@@ -16,7 +16,7 @@ export default class BarChart extends AxisChart {
 		this.unit_args = {
 			type: 'bar',
 			args: {
-				space_width: this.avg_unit_width/2,
+				spaceWidth: this.avg_unit_width/2,
 			}
 		};
 	}

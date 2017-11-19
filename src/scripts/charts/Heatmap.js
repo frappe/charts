@@ -1,8 +1,8 @@
 import BaseChart from './BaseChart';
 import { makeSVGGroup, makeHeatSquare, makeText } from '../utils/draw';
-import { add_days, get_dd_mm_yyyy, get_weeks_between } from '../utils/date-utils';
+import { addDays, getDdMmYyyy, getWeeksBetween } from '../utils/date-utils';
 import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
-import { is_valid_color } from '../utils/colors';
+import { isValidColor } from '../utils/colors';
 
 export default class Heatmap extends BaseChart {
 	constructor({
@@ -25,14 +25,14 @@ export default class Heatmap extends BaseChart {
 		this.count_label = count_label;
 
 		let today = new Date();
-		this.start = start || add_days(today, 365);
+		this.start = start || addDays(today, 365);
 
 		legend_colors = legend_colors.slice(0, 5);
 		this.legend_colors = this.validate_colors(legend_colors)
 			? legend_colors
 			: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
 
-		// Hardcoded for a fixed 5-color theme,
+		// Fixed 5-color theme,
 		// More colors are difficult to parse visually
 		this.distribution_size = 5;
 
@@ -45,7 +45,7 @@ export default class Heatmap extends BaseChart {
 
 		let valid = 1;
 		colors.forEach(function(string) {
-			if(!is_valid_color(string)) {
+			if(!isValidColor(string)) {
 				valid = 0;
 				console.warn('"' + string + '" is not a valid color.');
 			}
@@ -64,12 +64,12 @@ export default class Heatmap extends BaseChart {
 		this.first_week_start = new Date(this.start.toDateString());
 		this.last_week_start = new Date(this.today.toDateString());
 		if(this.first_week_start.getDay() !== 7) {
-			add_days(this.first_week_start, (-1) * this.first_week_start.getDay());
+			addDays(this.first_week_start, (-1) * this.first_week_start.getDay());
 		}
 		if(this.last_week_start.getDay() !== 7) {
-			add_days(this.last_week_start, (-1) * this.last_week_start.getDay());
+			addDays(this.last_week_start, (-1) * this.last_week_start.getDay());
 		}
-		this.no_of_cols = get_weeks_between(this.first_week_start + '', this.last_week_start + '') + 1;
+		this.no_of_cols = getWeeksBetween(this.first_week_start + '', this.last_week_start + '') + 1;
 	}
 
 	set_width() {
@@ -127,7 +127,7 @@ export default class Heatmap extends BaseChart {
 				this.months.push(this.current_month + '');
 				this.month_weeks[this.current_month] = 1;
 			}
-			add_days(current_week_sunday, 7);
+			addDays(current_week_sunday, 7);
 		}
 		this.render_month_labels();
 	}
@@ -166,7 +166,7 @@ export default class Heatmap extends BaseChart {
 			let x = 13 + (index + week_col_change) * 12;
 
 			let dataAttr = {
-				'data-date': get_dd_mm_yyyy(current_date),
+				'data-date': getDdMmYyyy(current_date),
 				'data-value': data_value,
 				'data-day': current_date.getDay()
 			};
@@ -176,7 +176,7 @@ export default class Heatmap extends BaseChart {
 			data_group.appendChild(heatSquare);
 
 			let next_date = new Date(current_date);
-			add_days(next_date, 1);
+			addDays(next_date, 1);
 			if(next_date.getTime() > today_time) break;
 
 

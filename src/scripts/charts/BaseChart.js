@@ -1,8 +1,8 @@
 import SvgTip from '../objects/SvgTip';
 import $ from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup } from '../utils/draw';
-import { get_string_width } from '../utils/helpers';
-import { get_color, DEFAULT_COLORS } from '../utils/colors';
+import { getStringWidth } from '../utils/helpers';
+import { getColor, DEFAULT_COLORS } from '../utils/colors';
 import Chart from '../charts';
 
 const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
@@ -103,7 +103,7 @@ export default class BaseChart {
 			this.colors = DEFAULT_COLORS;
 		}
 
-		this.colors = this.colors.map(color => get_color(color));
+		this.colors = this.colors.map(color => getColor(color));
 	}
 
 	set_margins(height) {
@@ -161,7 +161,7 @@ export default class BaseChart {
 		let special_values_width = 0;
 		let char_width = 8;
 		this.specific_values.map(val => {
-			let str_width = get_string_width((val.title + ""), char_width);
+			let str_width = getStringWidth((val.title + ""), char_width);
 			if(str_width > special_values_width) {
 				special_values_width = str_width - 40;
 			}

@@ -9,52 +9,52 @@ const EASING = {
 	easeinout: "0.42 0 0.58 1"
 };
 
-function animateSVG(element, props, dur, easing_type="linear", type=undefined, old_values={}) {
+function animateSVG(element, props, dur, easingType="linear", type=undefined, oldValues={}) {
 
-	let anim_element = element.cloneNode(true);
-	let new_element = element.cloneNode(true);
+	let animElement = element.cloneNode(true);
+	let newElement = element.cloneNode(true);
 
 	for(var attributeName in props) {
-		let animate_element;
+		let animateElement;
 		if(attributeName === 'transform') {
-			animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+			animateElement = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
 		} else {
-			animate_element = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+			animateElement = document.createElementNS("http://www.w3.org/2000/svg", "animate");
 		}
-		let current_value = old_values[attributeName] || element.getAttribute(attributeName);
+		let currentValue = oldValues[attributeName] || element.getAttribute(attributeName);
 		let value = props[attributeName];
 
-		let anim_attr = {
+		let animAttr = {
 			attributeName: attributeName,
-			from: current_value,
+			from: currentValue,
 			to: value,
 			begin: "0s",
 			dur: dur/1000 + "s",
-			values: current_value + ";" + value,
-			keySplines: EASING[easing_type],
+			values: currentValue + ";" + value,
+			keySplines: EASING[easingType],
 			keyTimes: "0;1",
 			calcMode: "spline",
 			fill: 'freeze'
 		};
 
 		if(type) {
-			anim_attr["type"] = type;
+			animAttr["type"] = type;
 		}
 
-		for (var i in anim_attr) {
-			animate_element.setAttribute(i, anim_attr[i]);
+		for (var i in animAttr) {
+			animateElement.setAttribute(i, animAttr[i]);
 		}
 
-		anim_element.appendChild(animate_element);
+		animElement.appendChild(animateElement);
 
 		if(type) {
-			new_element.setAttribute(attributeName, `translate(${value})`);
+			newElement.setAttribute(attributeName, `translate(${value})`);
 		} else {
-			new_element.setAttribute(attributeName, value);
+			newElement.setAttribute(attributeName, value);
 		}
 	}
 
-	return [anim_element, new_element];
+	return [animElement, newElement];
 }
 
 export function transform(element, style) { // eslint-disable-line no-unused-vars
@@ -65,37 +65,37 @@ export function transform(element, style) { // eslint-disable-line no-unused-var
 	element.style.oTransform = style;
 }
 
-export function runSVGAnimation(svg_container, elements) {
-	let new_elements = [];
-	let anim_elements = [];
+export function runSVGAnimation(svgContainer, elements) {
+	let newElements = [];
+	let animElements = [];
 
 	elements.map(element => {
 		let obj = element[0];
 		let parent = obj.unit.parentNode;
 
-		let anim_element, new_element;
+		let animElement, newElement;
 
 		element[0] = obj.unit;
-		[anim_element, new_element] = animateSVG(...element);
+		[animElement, newElement] = animateSVG(...element);
 
-		new_elements.push(new_element);
-		anim_elements.push([anim_element, parent]);
+		newElements.push(newElement);
+		animElements.push([animElement, parent]);
 
-		parent.replaceChild(anim_element, obj.unit);
+		parent.replaceChild(animElement, obj.unit);
 
 		if(obj.array) {
-			obj.array[obj.index] = new_element;
+			obj.array[obj.index] = newElement;
 		} else {
-			obj.object[obj.key] = new_element;
+			obj.object[obj.key] = newElement;
 		}
 	});
 
-	let anim_svg = svg_container.cloneNode(true);
+	let animSvg = svgContainer.cloneNode(true);
 
-	anim_elements.map((anim_element, i) => {
-		anim_element[1].replaceChild(new_elements[i], anim_element[0]);
-		elements[i][0] = new_elements[i];
+	animElements.map((animElement, i) => {
+		animElement[1].replaceChild(newElements[i], animElement[0]);
+		elements[i][0] = newElements[i];
 	});
 
-	return anim_svg;
+	return animSvg;
 }

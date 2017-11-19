@@ -1,8 +1,9 @@
 import $ from '../utils/dom';
 import { UnitRenderer, makeXLine, makeYLine } from '../utils/draw';
+import { Animator } from '../utils/animate';
 import { runSVGAnimation } from '../utils/animation';
 import { calcIntervals } from '../utils/intervals';
-import { float_2, arrays_equal, get_string_width } from '../utils/helpers';
+import { floatTwo, arraysEqual, getStringWidth } from '../utils/helpers';
 import BaseChart from './BaseChart';
 
 export default class AxisChart extends BaseChart {
@@ -41,7 +42,7 @@ export default class AxisChart extends BaseChart {
 			this.x_old_axis_positions =  this.x_axis_positions.slice();
 		}
 		this.x_axis_positions = this.x.map((d, i) =>
-			float_2(this.x_offset + i * this.avg_unit_width));
+			floatTwo(this.x_offset + i * this.avg_unit_width));
 
 		if(!this.x_old_axis_positions) {
 			this.x_old_axis_positions = this.x_axis_positions.slice();
@@ -158,7 +159,7 @@ export default class AxisChart extends BaseChart {
 
 		this.x_axis_group.textContent = '';
 		this.x.map((point, i) => {
-			let space_taken = get_string_width(point, char_width) + 2;
+			let space_taken = getStringWidth(point, char_width) + 2;
 			if(space_taken > allowed_space) {
 				if(this.is_series) {
 					// Skip some axis lines if X axis is a series
@@ -301,7 +302,7 @@ export default class AxisChart extends BaseChart {
 		let unit_renderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
 
 		y_values.map((y, i) => {
-			let data_unit = unit_renderer['draw_' + unit.type](
+			let data_unit = unit_renderer[unit.type](
 				x_values[i],
 				y,
 				unit.args,
@@ -405,7 +406,7 @@ export default class AxisChart extends BaseChart {
 
 		this.make_new_units_for_dataset(
 			this.x_axis_positions,
-			this.y_sums.map( val => float_2(this.zero_line - val * this.multiplier)),
+			this.y_sums.map( val => floatTwo(this.zero_line - val * this.multiplier)),
 			'#f0f4f7',
 			0,
 			1,
@@ -480,17 +481,23 @@ export default class AxisChart extends BaseChart {
 		this.setup_x();
 		this.setup_y();
 
+		// Change in data, so calculate dependencies
+		this.calc_y_dependencies();
+
+		// Got the values? Now begin drawing
+		this.animator = new Animator(this.height, this.width, this.zero_line, this.avg_unit_width);
+
 		// Animate only if positions have changed
-		if(!arrays_equal(this.x_old_axis_positions, this.x_axis_positions)) {
+		if(!arraysEqual(this.x_old_axis_positions, this.x_axis_positions)) {
 			this.make_x_axis(true);
 			setTimeout(() => {
 				if(!this.updating) this.make_x_axis();
 			}, 350);
 		}
 
-		if(!arrays_equal(this.y_old_axis_values, this.y_axis_values) ||
+		if(!arraysEqual(this.y_old_axis_values, this.y_axis_values) ||
 			(this.old_specific_values &&
-			!arrays_equal(this.old_specific_values, this.specific_values))) {
+			!arraysEqual(this.old_specific_values, this.specific_values))) {
 
 			this.make_y_axis(true);
 			setTimeout(() => {
@@ -500,9 +507,6 @@ export default class AxisChart extends BaseChart {
 				}
 			}, 350);
 		}
-
-		// Change in data, so calculate dependencies
-		this.calc_y_dependencies();
 
 		this.animate_graphs();
 
@@ -572,35 +576,18 @@ export default class AxisChart extends BaseChart {
 	}
 
 	animate_path(d, i, old_x, old_y, new_x, new_y) {
-		// Animate path
-		const new_points_list = new_y.map((y, i) => (new_x[i] + ',' + y));
-		const new_path_str = new_points_list.join("L");
-
-		const path_args = [{unit: d.path, object: d, key: 'path'}, {d:"M"+new_path_str}, 350, "easein"];
-		this.elements_to_animate.push(path_args);
-
-		// Animate region
-		if(d.region_path) {
-			let reg_start_pt = `0,${this.zero_line}L`;
-			let reg_end_pt = `L${this.width},${this.zero_line}`;
-
-			const region_args = [
-				{unit: d.region_path, object: d, key: 'region_path'},
-				{d:"M" + reg_start_pt + new_path_str + reg_end_pt},
-				350,
-				"easein"
-			];
-			this.elements_to_animate.push(region_args);
-		}
+		const newPointsList = new_y.map((y, i) => (new_x[i] + ',' + y));
+		const newPathStr = newPointsList.join("L");
+		this.elements_to_animate = this.elements_to_animate
+			.concat(this.animator['path'](d, newPathStr));
 	}
 
 	animate_units(d, index, old_x, old_y, new_x, new_y) {
 		let type = this.unit_args.type;
-		let unit_renderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
 
 		d.svg_units.map((unit, i) => {
 			if(new_x[i] === undefined || new_y[i] === undefined) return;
-			this.elements_to_animate.push(unit_renderer['animate_' + type](
+			this.elements_to_animate.push(this.animator[type](
 				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
 				new_x[i],
 				new_y[i],
@@ -624,8 +611,8 @@ export default class AxisChart extends BaseChart {
 		const last_new_y_pos = new_y[new_y.length - 1];
 
 		if(this.no_of_extra_pts >= 0) {
-			// First substitute current path with a squiggled one (looking the same but
-			// having more points at end),
+			// First substitute current path with a squiggled one
+			// (that looks the same but has more points at end),
 			// then animate to stretch it later to new points
 			// (new points already have more points)
 
@@ -835,7 +822,7 @@ export default class AxisChart extends BaseChart {
 	calc_y_dependencies() {
 		this.y_min_tops = new Array(this.x_axis_positions.length).fill(9999);
 		this.y.map(d => {
-			d.y_tops = d.values.map( val => float_2(this.zero_line - val * this.multiplier));
+			d.y_tops = d.values.map( val => floatTwo(this.zero_line - val * this.multiplier));
 			d.y_tops.map( (y_top, i) => {
 				if(y_top < this.y_min_tops[i]) {
 					this.y_min_tops[i] = y_top;
