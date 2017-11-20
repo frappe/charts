@@ -6,10 +6,6 @@ export default class PercentageChart extends BaseChart {
 		super(args);
 		this.type = 'percentage';
 
-		this.get_y_label = this.format_lambdas.y_label;
-		this.get_x_tooltip = this.format_lambdas.x_tooltip;
-		this.get_y_tooltip = this.format_lambdas.y_tooltip;
-
 		this.max_slices = 10;
 		this.max_legend_points = 6;
 
@@ -84,9 +80,10 @@ export default class PercentageChart extends BaseChart {
 		this.slices = [];
 		this.slice_totals.map((total, i) => {
 			let slice = $.create('div', {
-				className: `progress-bar background ${this.colors[i]}`,
+				className: `progress-bar`,
 				inside: this.percentage_bar,
 				styles: {
+					background: this.colors[i],
 					width: total*100/this.grand_total + "%"
 				}
 			});
@@ -120,7 +117,8 @@ export default class PercentageChart extends BaseChart {
 					className: 'stats',
 					inside: this.stats_wrapper
 				});
-				stats.innerHTML = `<span class="indicator ${this.colors[i]}">
+				stats.innerHTML = `<span class="indicator">
+					<i style="background: ${this.colors[i]}"></i>
 					<span class="text-muted">${x_values[i]}:</span>
 					${d}
 				</span>`;

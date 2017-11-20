@@ -2,9 +2,11 @@ import $ from '../utils/dom';
 
 export default class SvgTip {
 	constructor({
-		parent = null
+		parent = null,
+		colors = []
 	}) {
 		this.parent = parent;
+		this.colors = colors;
 		this.title_name = '';
 		this.title_value = '';
 		this.list_values = [];
@@ -57,9 +59,13 @@ export default class SvgTip {
 		this.title.innerHTML = title;
 		this.data_point_list.innerHTML = '';
 
-		this.list_values.map((set) => {
+		this.list_values.map((set, i) => {
+			const color = this.colors[i] || 'black';
+
 			let li = $.create('li', {
-				className: `border-top ${set.color || 'black'}`,
+				styles: {
+					'border-top': `3px solid ${color}`
+				},
 				innerHTML: `<strong style="display: block;">${ set.value === 0 || set.value ? set.value : '' }</strong>
 					${set.title ? set.title : '' }`
 			});

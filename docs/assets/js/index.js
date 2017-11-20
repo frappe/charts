@@ -9,7 +9,6 @@ let bar_composite_data = {
 
 	datasets: [{
 		"title": "Events",
-		"color": "orange",
 		"values": report_count_list,
 		// "formatted": report_count_list.map(d => d + " reports")
 	}]
@@ -18,14 +17,15 @@ let bar_composite_data = {
 let line_composite_data = {
 	labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
 	datasets: [{
-		"color": "green",
 		"values": [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 0, 0],
-		// "formatted": ["₹ 0.00", "₹ 0.00", "₹ 0.00", "₹ 61,500.00", "₹ 82,936.88", "₹ 24,010.00", "₹ 0.00", "₹ 0.00", "₹ 25,840.00", "₹ 5,08,048.82", "₹ 1,16,820.00", "₹ 0.00"],
+		// "values": [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 40, 40],
+		// "values": [-36, -46, -45, -32, -27, -31, -30, -36, -39, -49, -40, -40],
 	}]
 };
 
 let more_line_data = {
-	0: {values: [4, 0, 3, 1, 1, 2, 1, 2, 1, 0, 1, 1]},
+	// 0: {values: [4, 0, 3, 1, 1, 2, 1, 2, 1, 0, 1, 1]},
+	0: {values: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
 	1: {values: [2, 3, 3, 2, 1, 4, 0, 1, 2, 7, 11, 4]},
 	2: {values: [7, 7, 2, 4, 0, 1, 5, 3, 1, 2, 0, 1]},
 	3: {values: [0, 2, 6, 2, 2, 1, 2, 3, 6, 3, 7, 10]},
@@ -36,6 +36,8 @@ let more_line_data = {
 	8: {values: [36, 24, 38, 27, 15, 22, 24, 38, 32, 57, 139, 26]},
 	9: {values: [37, 36, 32, 33, 12, 34, 52, 45, 58, 57, 64, 35]},
 	10: {values: [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 0, 0]}
+	// 10: {values: [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 40, 40]}
+	// 10: {values: [-36, -46, -45, -32, -27, -31, -30, -36, -39, -49, -40, -40]}
 };
 
 let c1 = document.querySelector("#chart-composite-1");
@@ -47,6 +49,7 @@ let bar_composite_chart = new Chart ({
 	data: bar_composite_data,
 	type: 'bar',
 	height: 180,
+	colors: ['orange'],
 	is_navigable: 1,
 	is_series: 1
 	// region_fill: 1
@@ -57,6 +60,7 @@ let line_composite_chart = new Chart ({
 	data: line_composite_data,
 	type: 'line',
 	height: 180,
+	colors: ['green'],
 	is_series: 1
 });
 
@@ -73,15 +77,15 @@ let type_data = {
 
 	datasets: [
 		{
-			title: "Some Data", color: "light-blue",
+			title: "Some Data",
 			values: [25, 40, 30, 35, 8, 52, 17, -4]
 		},
 		{
-			title: "Another Set", color: "violet",
+			title: "Another Set",
 			values: [25, 50, -10, 15, 18, 32, 27, 14]
 		},
 		{
-			title: "Yet Another", color: "blue",
+			title: "Yet Another",
 			values: [15, 20, -3, -15, 58, 12, -17, 37]
 		}
 	]
@@ -93,7 +97,10 @@ let type_chart = new Chart({
 	data: type_data,
 	type: 'bar',
 	height: 250,
-	is_series: 1
+	colors: ['light-blue', 'violet', 'blue'],
+	is_series: 1,
+    format_tooltip_x: d => (d + '').toUpperCase(),
+    format_tooltip_y: d => d + ' pts'
 });
 
 Array.prototype.slice.call(
@@ -125,7 +132,6 @@ let trends_data = {
 		2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016] ,
 	datasets: [
 		{
-			"color": "blue",
 			"values": [132.9, 150.0, 149.4, 148.0,  94.4,  97.6,  54.1,  49.2,  22.5, 18.4,
 				39.3, 131.0, 220.1, 218.9, 198.9, 162.4,  91.0,  60.5,  20.6,  14.8,
 				33.9, 123.0, 211.1, 191.8, 203.3, 133.0,  76.1,  44.9,  25.1,  11.6,
@@ -141,6 +147,7 @@ let plot_chart_args = {
 	data: trends_data,
 	type: 'line',
 	height: 250,
+	colors: ['blue'],
 	is_series: 1,
 	show_dots: 0,
 	heatline: 1,
@@ -200,7 +207,6 @@ let get_update_data = (source_array, length=10) => {
 let update_data = {
 	labels: get_update_data(update_data_all_labels),
 	datasets: [{
-		"color": "red",
 		"values": get_update_data(update_data_all_values)
 	}],
 	"specific_values": [
@@ -218,6 +224,7 @@ let update_chart = new Chart({
 	data: update_data,
 	type: 'line',
 	height: 250,
+	colors: ['red'],
 	is_series: 1,
 	region_fill: 1
 });
@@ -280,8 +287,6 @@ let events_data = {
 	labels: ["Ganymede", "Callisto", "Io", "Europa"],
 	datasets: [
 		{
-			// "title": "km",
-			"color": "grey",
 			"values": distances,
 			"formatted": distances.map(d => d*1000 + " km")
 		}
@@ -294,6 +299,7 @@ let events_chart = new Chart({
 	data: events_data,
 	type: 'bar',
 	height: 250,
+	colors: ['grey'],
 	is_navigable: 1,
 });
 
@@ -314,11 +320,9 @@ let aggr_data = {
 	labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
 	datasets: [
 		{
-			"color": "purple",
 			"values": [25, 40, 30, 35, 8, 52, 17]
 		},
 		{
-			"color": "orange",
 			"values": [25, 50, -10, 15, 18, 32, 27]
 
 		}
@@ -329,7 +333,8 @@ let aggr_chart = new Chart({
 	parent: "#chart-aggr",
 	data: aggr_data,
 	type: 'bar',
-	height: 250
+	height: 250,
+	colors: ['purple', 'orange'],
 });
 
 document.querySelector('[data-aggregation="sums"]').addEventListener("click", (e) => {
@@ -357,9 +362,10 @@ document.querySelector('[data-aggregation="average"]').addEventListener("click",
 
 let heatmap_data = {};
 let start_date = new Date();
-let end_date = new Date();
-end_date.setFullYear(end_date.getFullYear() + 1);
 let tmp_date = new Date(start_date);
+let end_date = new Date(start_date);
+end_date.setFullYear(end_date.getFullYear() + 1);
+
 while (tmp_date < end_date) {
 	tmp_date.setDate(tmp_date.getDate() + 1);
 	let timestamp = tmp_date.getTime()/1000;
@@ -369,11 +375,12 @@ while (tmp_date < end_date) {
 
 new Chart({
 	parent: "#chart-heatmap",
-	data: heatmap_data,
 	start: start_date,
 	end: end_date,
+	data: heatmap_data,
 	start_monday: 1,
 	type: 'heatmap',
+	legend_scale: [0, 1, 2, 4, 5],
 	height: 115,
 	discrete_domains: 1  // default 0
 });
@@ -390,6 +397,55 @@ Array.prototype.slice.call(
 			discrete_domains = 1;
 		}
 
+		let colors = [];
+		let colors_mode = document
+			.querySelector('.heatmap-color-buttons .active')
+			.getAttribute('data-color');
+		if(colors_mode === 'halloween') {
+			colors = ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'];
+		}
+
+		new Chart({
+			parent: "#chart-heatmap",
+			start: start_date,
+			end: end_date,
+			data: heatmap_data,
+			type: 'heatmap',
+			legend_scale: [0, 1, 2, 4, 5],
+			height: 115,
+			discrete_domains: discrete_domains,
+			legend_colors: colors
+		});
+
+		Array.prototype.slice.call(
+			btn.parentNode.querySelectorAll('button')).map(el => {
+			el.classList.remove('active');
+		});
+		btn.classList.add('active');
+	});
+});
+
+Array.prototype.slice.call(
+	document.querySelectorAll('.heatmap-color-buttons button')
+).map(el => {
+	el.addEventListener('click', (e) => {
+		let btn = e.target;
+		let colors_mode = btn.getAttribute('data-color');
+		let colors = [];
+
+		if(colors_mode === 'halloween') {
+			colors = ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'];
+		}
+
+		let discrete_domains = 1;
+
+		let view_mode = document
+			.querySelector('.heatmap-mode-buttons .active')
+			.getAttribute('data-mode');
+		if(view_mode === 'continuous') {
+			discrete_domains = 0;
+		}
+
 		new Chart({
 			parent: "#chart-heatmap",
 			data: heatmap_data,
@@ -397,8 +453,10 @@ Array.prototype.slice.call(
 			start_monday: 1,
 			end: end_date,
 			type: 'heatmap',
+			legend_scale: [0, 1, 2, 4, 5],
 			height: 115,
-			discrete_domains: discrete_domains
+			discrete_domains: discrete_domains,
+			legend_colors: colors
 		});
 
 		Array.prototype.slice.call(

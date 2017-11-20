@@ -1,9 +1,10 @@
 {
   "name": "frappe-charts",
-  "version": "0.0.4",
+  "version": "0.0.7",
   "description": "https://frappe.github.io/charts",
   "main": "dist/frappe-charts.min.cjs.js",
   "module": "dist/frappe-charts.min.esm.js",
+  "src": "dist/frappe-charts.esm.js",
   "browser": "dist/frappe-charts.min.iife.js",
   "directories": {
     "doc": "docs"
@@ -48,6 +49,7 @@
     "rollup-plugin-postcss": "^0.5.5",
     "rollup-plugin-replace": "^2.0.0",
     "rollup-plugin-uglify": "^2.0.1",
+    "rollup-plugin-uglify-es": "0.0.1",
     "rollup-watch": "^4.3.1"
   }
 }

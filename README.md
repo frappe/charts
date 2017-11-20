@@ -41,7 +41,7 @@
 * ...or include within your HTML
 
   ```html
-    <script src="https://unpkg.com/frappe-charts@0.0.4/dist/frappe-charts.min.iife.js"></script>
+    <script src="https://unpkg.com/frappe-charts@0.0.7/dist/frappe-charts.min.iife.js"></script>
   ```
 
 #### Usage
@@ -85,3 +85,4 @@ This repository has been released under the [MIT License](LICENSE)
 
 ------------------
 Project maintained by [Frappe](https://frappe.io).
+Used in [ERPNext](https://erpnext.com). Read the [blog post](https://medium.com/@pratu16x7/so-we-decided-to-create-our-own-charts-a95cb5032c97).

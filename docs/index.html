@@ -53,7 +53,7 @@
               <p class="step-explain">And include it in your project</p>
               <pre><code class="hljs javascript">  import Chart from "frappe-charts/dist/frappe-charts.min.esm"</code></pre>
               <p class="step-explain">... or include it directly in your HTML</p>
-              <pre><code class="hljs html">  &lt;script src="https://unpkg.com/frappe-charts@0.0.3/dist/frappe-charts.min.iife.js"&gt;&lt;/script&gt;</code></pre>
+              <pre><code class="hljs html">  &lt;script src="https://unpkg.com/frappe-charts@0.0.7/dist/frappe-charts.min.iife.js"&gt;&lt;/script&gt;</code></pre>
               <p class="step-explain">Make a new Chart</p>
               <pre><code class="hljs html">  &lt!--HTML--&gt;
   &lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
@@ -64,15 +64,15 @@
 
     datasets: [
       {
-        title: "Some Data", color: "light-blue",
+        title: "Some Data",
         values: [25, 40, 30, 35, 8, 52, 17, -4]
       },
       {
-        title: "Another Set", color: "violet",
+        title: "Another Set",
         values: [25, 50, -10, 15, 18, 32, 27, 14]
       },
       {
-        title: "Yet Another", color: "blue",
+        title: "Yet Another",
         values: [15, 20, -3, -15, 58, 12, -17, 37]
       }
     ]
@@ -83,7 +83,17 @@
     title: "My Awesome Chart",
     data: data,
     type: 'bar', // or 'line', 'scatter', 'pie', 'percentage'
-    height: 250
+    height: 250,
+
+    colors: ['#7cd6fd', 'violet', 'blue'],
+    // hex-codes or these preset colors;
+    // defaults (in order):
+    // ['light-blue', 'blue', 'violet', 'red',
+    // 'orange', 'yellow', 'green', 'light-green',
+    // 'purple', 'magenta', 'grey', 'dark-grey']
+
+    format_tooltip_x: d => (d + '').toUpperCase(),
+    format_tooltip_y: d => d + ' pts'
   });</code></pre>
               <div id="chart-types" class="border"></div>
               <div class="btn-group chart-type-buttons margin-vertical-px mx-auto" role="group">
@@ -96,10 +106,6 @@
               <p class="text-muted">
                 <a target="_blank" href="http://www.storytellingwithdata.com/blog/2011/07/death-to-pie-charts">Why Percentage?</a>
               </p>
-
-              <pre><code class="hljs javascript margin-vertical-px">  // colors: 'green', 'blue', 'violet', 'red', 'orange',
-  //         'yellow', 'light-blue', 'light-green', 'purple',
-  //         'magenta', 'grey', 'dark-grey'</code></pre>
             </div>
           </div>
 
@@ -227,13 +233,17 @@
           <div class="col-sm-10 push-sm-1">
             <div class="dashboard-section">
               <h6 class="margin-vertical-rem">
-                And an Annual Heatmap
+                And a Month-wise Heatmap
               </h6>
               <div id="chart-heatmap" class="border"
                 style="overflow: scroll; text-align: center; padding: 20px;"></div>
               <div class="heatmap-mode-buttons btn-group mt-1 mx-auto" role="group">
                 <button type="button" class="btn btn-sm btn-secondary active" data-mode="discrete">Discrete</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-mode="continuous">Continuous</button>
+              </div>
+              <div class="heatmap-color-buttons btn-group mt-1 mx-auto" role="group">
+                <button type="button" class="btn btn-sm btn-secondary active" data-color="default">Default green</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-color="halloween">GitHub's Halloween</button>
               </div>
               <pre><code class="hljs javascript margin-vertical-px">  let heatmap = new Chart({
     parent: "#heatmap",
@@ -243,7 +253,20 @@
     start_monday: 1,     // default 0 (= Sunday)
     type: 'heatmap',
     height: 115,
-    discrete_domains: 1  // default 0
+    data: heatmap_data,  // object with date/timestamp-value pairs
+
+    discrete_domains: 1  // default: 0
+
+    start: start_date,
+                  // A Date object;
+                  // default: today's date in past year
+                  //          for an annual heatmap
+
+    legend_colors: ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'],
+                  // Set of five incremental colors,
+                  // beginning with a low-saturation color for zero data;
+                  // default: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127']
+
   });</code></pre>
             </div>
           </div>
@@ -267,7 +290,11 @@
 
     <div class="built-with-frappe text-center" style="margin-top: -20px">
         <img style="padding: 5px; width: 40px; background: #fff" class="frappe-bird" src="https://frappe.github.io/frappe/assets/img/frappe-bird-grey.svg">
-        <p style="margin: 24px 0 0px 0; font-size: 15px">Project maintained by <a href="https://frappe.io" target="_blank">Frappe</a>.</p>
+        <p style="margin: 24px 0 0px 0; font-size: 15px">
+          Project maintained by <a href="https://frappe.io" target="_blank">Frappe</a>.
+          Used in <a href="https://erpnext.com" target="_blank">ERPNext</a>.
+          Read the <a href="https://medium.com/@pratu16x7/so-we-decided-to-create-our-own-charts-a95cb5032c97" target="_blank">blog post</a>.
+        </p>
         <p style="margin: 24px 0 80px 0; font-size: 12px">
           Data from the <a href="https://www.amsmeteors.org" target="_blank">American Meteor Society</a>,
           <a href="http://www.sidc.be/silso" target="_blank">SILSO</a> and

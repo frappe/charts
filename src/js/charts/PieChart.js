@@ -1,7 +1,8 @@
 import BaseChart from './BaseChart';
 import $ from '../utils/dom';
-import { lighten_darken_color } from '../utils/colors';
-import { runSVGAnimation, transform } from '../utils/animate';
+import { makePath } from '../utils/draw';
+import { lightenDarkenColor } from '../utils/colors';
+import { runSVGAnimation, transform } from '../utils/animation';
 const ANGLE_RATIO = Math.PI / 180;
 const FULL_ANGLE = 360;
 
@@ -9,21 +10,13 @@ export default class PieChart extends BaseChart {
 	constructor(args) {
 		super(args);
 		this.type = 'pie';
-		this.get_y_label = this.format_lambdas.y_label;
-		this.get_x_tooltip = this.format_lambdas.x_tooltip;
-		this.get_y_tooltip = this.format_lambdas.y_tooltip;
 		this.elements_to_animate = null;
 		this.hoverRadio = args.hoverRadio || 0.1;
 		this.max_slices = 10;
 		this.max_legend_points = 6;
 		this.isAnimate = false;
-		this.colors = args.colors;
 		this.startAngle = args.startAngle || 0;
 		this.clockWise = args.clockWise || false;
-		if(!this.colors || this.colors.length < this.data.labels.length) {
-			this.colors = ['#7cd6fd', '#5e64ff', '#743ee2', '#ff5858', '#ffa00a',
-				'#FEEF72', '#28a745', '#98d85b', '#b554ff', '#ffa3ef'];
-		}
 		this.mouseMove = this.mouseMove.bind(this);
 		this.mouseLeave = this.mouseLeave.bind(this);
 		this.setup();
@@ -101,19 +94,16 @@ export default class PieChart extends BaseChart {
 				curEnd = endPosition;
 			}
 			const curPath = this.makeArcPath(curStart,curEnd);
-			let slice = $.createSVG('path',{
-				inside:this.draw_area,
-				className:'pie-path',
-				style:'transition:transform .3s;',
-				d:curPath,
-				fill:this.colors[i]
-			});
+			let slice = makePath(curPath, 'pie-path', 'none', this.colors[i]);
+			slice.style.transition = 'transform .3s;';
+			this.draw_area.appendChild(slice);
+
 			this.slices.push(slice);
 			this.slicesProperties.push({
 				startPosition,
 				endPosition,
-				value:total,
-				total:this.grand_total,
+				value: total,
+				total: this.grand_total,
 				startAngle,
 				endAngle,
 				angle:diffAngle
@@ -160,9 +150,10 @@ export default class PieChart extends BaseChart {
 	}
 	hoverSlice(path,i,flag,e){
 		if(!path) return;
+		const color = this.colors[i];
 		if(flag){
 			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
-			path.setAttribute('fill',lighten_darken_color(this.colors[i],50));
+			path.style.fill = lightenDarkenColor(color,50);
 			let g_off = $.offset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
@@ -174,7 +165,7 @@ export default class PieChart extends BaseChart {
 		}else{
 			transform(path,'translate3d(0,0,0)');
 			this.tip.hide_tip();
-			path.setAttribute('fill',this.colors[i]);
+			path.style.fill = color;
 		}
 	}
 
@@ -204,13 +195,15 @@ export default class PieChart extends BaseChart {
 		let x_values = this.formatted_labels && this.formatted_labels.length > 0
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {
+			const color = this.colors[i];
+
 			if(d) {
 				let stats = $.create('div', {
 					className: 'stats',
 					inside: this.stats_wrapper
 				});
 				stats.innerHTML = `<span class="indicator">
-					<i style="background-color:${this.colors[i]};"></i>
+					<i style="background-color:${color};"></i>
 					<span class="text-muted">${x_values[i]}:</span>
 					${d}
 				</span>`;

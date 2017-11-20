@@ -1,5 +1,5 @@
 import AxisChart from './AxisChart';
-import $ from '../utils/dom';
+import { makeSVGGroup, makePath, makeGradient } from '../utils/draw';
 
 export default class LineChart extends AxisChart {
 	constructor(args) {
@@ -33,10 +33,10 @@ export default class LineChart extends AxisChart {
 	setup_path_groups() {
 		this.paths_groups = [];
 		this.y.map((d, i) => {
-			this.paths_groups[i] = $.createSVG('g', {
-				className: 'path-group path-group-' + i,
-				inside: this.draw_area
-			});
+			this.paths_groups[i] = makeSVGGroup(
+				this.draw_area,
+				'path-group path-group-' + i
+			);
 		});
 	}
 
@@ -68,14 +68,11 @@ export default class LineChart extends AxisChart {
 
 		this.paths_groups[i].textContent = '';
 
-		d.path = $.createSVG('path', {
-			inside: this.paths_groups[i],
-			className: `stroke ${color}`,
-			d: "M"+points_str
-		});
+		d.path = makePath("M"+points_str, 'line-graph-path', color);
+		this.paths_groups[i].appendChild(d.path);
 
 		if(this.heatline) {
-			let gradient_id = this.make_gradient(color);
+			let gradient_id = makeGradient(this.svg_defs, color);
 			d.path.style.stroke = `url(#${gradient_id})`;
 		}
 
@@ -85,49 +82,10 @@ export default class LineChart extends AxisChart {
 	}
 
 	fill_region_for_dataset(d, i, color, points_str) {
-		let gradient_id = this.make_gradient(color, true);
+		let gradient_id = makeGradient(this.svg_defs, color, true);
+		let pathStr = "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`;
 
-		d.region_path = $.createSVG('path', {
-			inside: this.paths_groups[i],
-			className: `region-fill`,
-			d: "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`,
-		});
-
-		d.region_path.style.stroke = "none";
-		d.region_path.style.fill = `url(#${gradient_id})`;
-	}
-
-	make_gradient(color, lighter = false) {
-		let gradient_id ='path-fill-gradient' + '-' + color;
-
-		let gradient_def = $.createSVG('linearGradient', {
-			inside: this.svg_defs,
-			id: gradient_id,
-			x1: 0,
-			x2: 0,
-			y1: 0,
-			y2: 1
-		});
-
-		let set_gradient_stop = (grad_elem, offset, color, opacity) => {
-			$.createSVG('stop', {
-				'className': 'stop-color ' + color,
-				'inside': grad_elem,
-				'offset': offset,
-				'stop-opacity': opacity
-			});
-		};
-
-		let opacities = [1, 0.6, 0.2];
-
-		if(lighter) {
-			opacities = [0.4, 0.2, 0];
-		}
-
-		set_gradient_stop(gradient_def, "0%", color, opacities[0]);
-		set_gradient_stop(gradient_def, "50%", color, opacities[1]);
-		set_gradient_stop(gradient_def, "100%", color, opacities[2]);
-
-		return gradient_id;
+		d.regionPath = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id})`);
+		this.paths_groups[i].appendChild(d.regionPath);
 	}
 }

@@ -2,7 +2,7 @@
  * Returns the value of a number upto 2 decimal places.
  * @param {Number} d Any number
  */
-export function float_2(d) {
+export function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
 
@@ -11,13 +11,13 @@ export function float_2(d) {
  * @param {Array} arr1 First array
  * @param {Array} arr2 Second array
  */
-export function arrays_equal(arr1, arr2) {
+export function arraysEqual(arr1, arr2) {
 	if(arr1.length !== arr2.length) return false;
-	let are_equal = true;
+	let areEqual = true;
 	arr1.map((d, i) => {
-		if(arr2[i] !== d) are_equal = false;
+		if(arr2[i] !== d) areEqual = false;
 	});
-	return are_equal;
+	return areEqual;
 }
 
 /**
@@ -40,8 +40,8 @@ export function shuffle(array) {
 /**
  * Returns pixel width of string.
  * @param {String} string
- * @param {Number} char_width Width of single char in pixels
+ * @param {Number} charWidth Width of single char in pixels
  */
-export function get_string_width(string, char_width) {
-	return (string+"").length * char_width;
+export function getStringWidth(string, charWidth) {
+	return (string+"").length * charWidth;
 }
