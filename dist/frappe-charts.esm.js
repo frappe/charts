@@ -179,23 +179,16 @@ function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
 	return [height, y];
 }
 
-function equilizeNoOfPositions(old_x, old_y, new_x, new_y) {
-	let extra_count = new_x.length - old_x.length;
-	if(extra_count >= 0) {
-		// Substitute current unit set with a squiggled one (more units at end)
-		// in order to animate to stretch it later to new points
-		old_x = fillArray(old_x, extra_count);
-		old_y = fillArray(old_y, extra_count);
-	} else {
-		// Modify the new points to have extra points
-		// with the same position at end, old positions will squeeze in
-		new_x = fillArray(new_x, extra_count);
-		new_y = fillArray(new_y, extra_count);
-	}
-	return [old_x, old_y, new_x, new_y];
-}
+function equilizeNoOfPositions(oldPos, newPos,
+	extra_count=newPos.length - oldPos.length) {
 
-// Constants used
+	if(extra_count > 0) {
+		oldPos = fillArray(oldPos, extra_count);
+	} else {
+		newPos = fillArray(newPos, extra_count);
+	}
+	return [oldPos, newPos];
+}
 
 function $$2(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
@@ -330,7 +323,7 @@ function makeText(className, x, y, content) {
 	});
 }
 
-function makeXLine(height, textStartAt, point, labelClass, axisLineClass, xPos) {
+function makeXLine$1(height, textStartAt, point, labelClass, axisLineClass, xPos) {
 	let line = createSVG('line', {
 		x1: 0,
 		x2: 0,
@@ -1381,7 +1374,7 @@ class AxisChart extends BaseChart {
 				}
 			}
 			this.x_axis_group.appendChild(
-				makeXLine(
+				makeXLine$1(
 					height,
 					text_start_at,
 					point,
@@ -1761,12 +1754,15 @@ class AxisChart extends BaseChart {
 	animate_graphs() {
 		this.y.map(d => {
 			// Pre-prep, equilize no of positions between old and new
-			let [old_x, old_y, new_x, new_y] = equilizeNoOfPositions(
+			let [old_x, new_x] = equilizeNoOfPositions(
 				this.x_old_axis_positions.slice(),
+				this.x_axis_positions.slice()
+			);
+			let [old_y, new_y] = equilizeNoOfPositions(
 				this.old_y_axis_tops[d.index].slice(),
-				this.x_axis_positions.slice(),
 				d.y_tops.slice()
 			);
+
 			if(new_x.length - old_x.length > 0) {
 				this.make_path && this.make_path(d, old_x, old_y, this.colors[d.index]);
 				this.make_new_units_for_dataset(old_x, old_y, this.colors[d.index], d.index, this.y.length);
@@ -1820,7 +1816,7 @@ class AxisChart extends BaseChart {
 			if(typeof new_pos === 'string') {
 				new_pos = parseInt(new_pos.substring(0, new_pos.length-1));
 			}
-			const x_line = makeXLine(
+			const x_line = makeXLine$1(
 				height,
 				text_start_at,
 				value, // new value
@@ -2856,14 +2852,6 @@ class Heatmap extends BaseChart {
 		this.bind_tooltip();
 	}
 }
-
-// if ("development" !== 'production') {
-// 	// Enable LiveReload
-// 	document.write(
-// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
-// 		':35729/livereload.js?snipver=1"></' + 'script>'
-// 	);
-// }
 
 const chartTypes = {
 	line: LineChart,

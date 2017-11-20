@@ -557,12 +557,15 @@ export default class AxisChart extends BaseChart {
 	animate_graphs() {
 		this.y.map(d => {
 			// Pre-prep, equilize no of positions between old and new
-			let [old_x, old_y, new_x, new_y] = equilizeNoOfPositions(
+			let [old_x, new_x] = equilizeNoOfPositions(
 				this.x_old_axis_positions.slice(),
+				this.x_axis_positions.slice()
+			);
+			let [old_y, new_y] = equilizeNoOfPositions(
 				this.old_y_axis_tops[d.index].slice(),
-				this.x_axis_positions.slice(),
 				d.y_tops.slice()
 			);
+
 			if(new_x.length - old_x.length > 0) {
 				this.make_path && this.make_path(d, old_x, old_y, this.colors[d.index]);
 				this.make_new_units_for_dataset(old_x, old_y, this.colors[d.index], d.index, this.y.length);
