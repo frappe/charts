@@ -65,7 +65,7 @@ let line_composite_chart = new Chart ({
 });
 
 bar_composite_chart.parent.addEventListener('data-select', (e) => {
-	line_composite_chart.update_values([more_line_data[e.index]]);
+	line_composite_chart.updateData([more_line_data[e.index]]);
 });
 
 
@@ -233,7 +233,7 @@ let chart_update_buttons = document.querySelector('.chart-update-buttons');
 
 chart_update_buttons.querySelector('[data-update="random"]').addEventListener("click", (e) => {
 	shuffle(update_data_all_indices);
-	update_chart.update_values(
+	update_chart.updateData(
 		[{values: get_update_data(update_data_all_values)}],
 		update_data_all_labels.slice(0, 10)
 	);

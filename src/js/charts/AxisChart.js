@@ -1,6 +1,6 @@
 import { offset } from '../utils/dom';
 import { UnitRenderer, makeXLine, makeYLine } from '../utils/draw';
-import { equilizeNoOfPositions } from '../utils/draw-utils';
+import { equilizeNoOfElements, getXLineProps, getYLineProps } from '../utils/draw-utils';
 import { Animator } from '../utils/animate';
 import { runSVGAnimation } from '../utils/animation';
 import { calcIntervals } from '../utils/intervals';
@@ -99,6 +99,10 @@ export default class AxisChart extends BaseChart {
 		if(this.zero_line) this.old_zero_line = this.zero_line;
 		this.zero_line = this.height - (zero_index * interval_height);
 		if(!this.old_zero_line) this.old_zero_line = this.zero_line;
+
+		// Make positions arrays for y elements
+		this.y_axis_positions = this.y_axis_values.map(d => this.zero_line - d * this.multiplier);
+		this.yAnnotationPositions = this.specific_values.map(d => this.zero_line - d * this.multiplier);
 	}
 
 	setup_components() {
@@ -128,40 +132,25 @@ export default class AxisChart extends BaseChart {
 	}
 
 	make_graph_components(init=false) {
-		this.make_y_axis();
-		this.make_x_axis();
+		this.makeYLines(this.y_axis_positions, this.y_axis_values);
+		this.makeXLines(this.x_axis_positions, this.x);
 		this.draw_graph(init);
-		this.make_y_specifics();
+		this.make_y_specifics(this.yAnnotationPositions, this.specific_values);
 	}
 
 	// make VERTICAL lines for x values
-	make_x_axis(animate=false) {
-		let char_width = 8;
-		let start_at, height, text_start_at, axis_line_class = '';
-		if(this.x_axis_mode === 'span') {		// long spanning lines
-			start_at = -7;
-			height = this.height + 15;
-			text_start_at = this.height + 25;
-		} else if(this.x_axis_mode === 'tick'){	// short label lines
-			start_at = this.height;
-			height = 6;
-			text_start_at = 9;
-			axis_line_class = 'x-axis-label';
-		}
-
+	makeXLines(positions, values) {
+		let [start_at, height, text_start_at, axis_line_class] = getXLineProps(this.height, this.x_axis_mode);
 		this.x_axis_group.setAttribute('transform', `translate(0,${start_at})`);
 
-		if(animate) {
-			this.make_anim_x_axis(height, text_start_at, axis_line_class);
-			return;
-		}
-
+		let char_width = 8;
 		let allowed_space = this.avg_unit_width * 1.5;
 		let allowed_letters = allowed_space / 8;
 
+		this.xAxisLines = [];
 		this.x_axis_group.textContent = '';
-		this.x.map((point, i) => {
-			let space_taken = getStringWidth(point, char_width) + 2;
+		values.map((value, i) => {
+			let space_taken = getStringWidth(value, char_width) + 2;
 			if(space_taken > allowed_space) {
 				if(this.is_series) {
 					// Skip some axis lines if X axis is a series
@@ -173,34 +162,32 @@ export default class AxisChart extends BaseChart {
 						return;
 					}
 				} else {
-					point = point.slice(0, allowed_letters-3) + " ...";
+					value = value.slice(0, allowed_letters-3) + " ...";
 				}
 			}
-			this.x_axis_group.appendChild(
-				makeXLine(
-					height,
-					text_start_at,
-					point,
-					'x-value-text',
-					axis_line_class,
-					this.x_axis_positions[i]
-				)
+
+			let xLine = makeXLine(
+				height,
+				text_start_at,
+				value,
+				'x-value-text',
+				axis_line_class,
+				positions[i]
 			);
+			this.xAxisLines.push(xLine);
+			this.x_axis_group.appendChild(xLine);
 		});
 	}
 
 	// make HORIZONTAL lines for y values
-	make_y_axis(animate=false) {
-		if(animate) {
-			this.make_anim_y_axis();
-			this.make_anim_y_specifics();
-			return;
-		}
+	makeYLines(positions, values) {
 
-		let [width, text_end_at, axis_line_class, start_at] = this.get_y_axis_line_props();
+		let [width, text_end_at, axis_line_class, start_at] = getYLineProps(
+			this.width, this.y_axis_mode);
 
+		this.yAxisLines = [];
 		this.y_axis_group.textContent = '';
-		this.y_axis_values.map((value, i) => {
+		values.map((value, i) => {
 			this.y_axis_group.appendChild(
 				makeYLine(
 					start_at,
@@ -209,27 +196,30 @@ export default class AxisChart extends BaseChart {
 					value,
 					'y-value-text',
 					axis_line_class,
-					this.zero_line - value * this.multiplier,
+					positions[i],
 					(value === 0 && i !== 0) // Non-first Zero line
 				)
 			);
 		});
 	}
 
-	get_y_axis_line_props(specific=false) {
-		if(specific) {
-			return[this.width, this.width + 5, 'specific-value', 0];
-		}
-		let width, text_end_at = -9, axis_line_class = '', start_at = 0;
-		if(this.y_axis_mode === 'span') {		// long spanning lines
-			width = this.width + 6;
-			start_at = -6;
-		} else if(this.y_axis_mode === 'tick'){	// short label lines
-			width = -6;
-			axis_line_class = 'y-axis-label';
-		}
-
-		return [width, text_end_at, axis_line_class, start_at];
+	make_y_specifics(positions, value_objs) {
+		this.specific_y_group.textContent = '';
+		value_objs.map((d, i) => {
+			this.specific_y_group.appendChild(
+				makeYLine(
+					0,
+					this.width,
+					this.width + 5,
+					d.title.toUpperCase(),
+					'specific-value',
+					'specific-value',
+					positions[i],
+					false,
+					d.line_type
+				)
+			);
+		});
 	}
 
 	draw_graph(init=false) {
@@ -266,13 +256,13 @@ export default class AxisChart extends BaseChart {
 		});
 
 		setTimeout(() => {
-			this.update_values(data);
+			this.updateData(data);
 		}, 350);
 	}
 
 	setup_navigation(init) {
 		if(init) {
-			// Hack: defer nav till initial update_values
+			// Hack: defer nav till initial updateData
 			setTimeout(() => {
 				super.setup_navigation(init);
 			}, 500);
@@ -320,25 +310,6 @@ export default class AxisChart extends BaseChart {
 		if(this.is_navigable) {
 			this.bind_units(units_array);
 		}
-	}
-
-	make_y_specifics() {
-		this.specific_y_group.textContent = '';
-		this.specific_values.map(d => {
-			this.specific_y_group.appendChild(
-				makeYLine(
-					0,
-					this.width,
-					this.width + 5,
-					d.title.toUpperCase(),
-					'specific-value',
-					'specific-value',
-					this.zero_line - d.value * this.multiplier,
-					false,
-					d.line_type
-				)
-			);
-		});
 	}
 
 	bind_tooltip() {
@@ -401,7 +372,7 @@ export default class AxisChart extends BaseChart {
 		});
 
 		// Remake y axis, animate
-		this.update_values();
+		this.updateData();
 
 		// Then make sum units, don't animate
 		this.sum_units = [];
@@ -426,7 +397,7 @@ export default class AxisChart extends BaseChart {
 		this.y_sums = [];
 		this.sum_group.textContent = '';
 		this.sum_units = [];
-		this.update_values();
+		this.updateData();
 	}
 
 	show_averages() {
@@ -444,7 +415,7 @@ export default class AxisChart extends BaseChart {
 			});
 		});
 
-		this.update_values();
+		this.updateData();
 	}
 
 	hide_averages() {
@@ -459,10 +430,10 @@ export default class AxisChart extends BaseChart {
 			this.specific_values.splice(index, 1);
 		});
 
-		this.update_values();
+		this.updateData();
 	}
 
-	update_values(new_y, new_x) {
+	updateData(new_y, new_x) {
 		if(!new_x) {
 			new_x = this.x;
 		}
@@ -487,53 +458,12 @@ export default class AxisChart extends BaseChart {
 		// Got the values? Now begin drawing
 		this.animator = new Animator(this.height, this.width, this.zero_line, this.avg_unit_width);
 
-		// Animate only if positions have changed
-		if(!arraysEqual(this.x_old_axis_positions, this.x_axis_positions)) {
-			this.make_x_axis(true);
-			setTimeout(() => {
-				if(!this.updating) this.make_x_axis();
-			}, 350);
-		}
-
-		if(!arraysEqual(this.y_old_axis_values, this.y_axis_values) ||
-			(this.old_specific_values &&
-			!arraysEqual(this.old_specific_values, this.specific_values))) {
-
-			this.make_y_axis(true);
-			setTimeout(() => {
-				if(!this.updating) {
-					this.make_y_axis();
-					this.make_y_specifics();
-				}
-			}, 350);
-		}
-
 		this.animate_graphs();
 
 		// Trigger animation with the animatable elements in this.elements_to_animate
 		this.run_animation();
 
 		this.updating = false;
-	}
-
-	add_data_point(y_point, x_point, index=this.x.length) {
-		let new_y = this.y.map(data_set => { return {values:data_set.values}; });
-		new_y.map((d, i) => { d.values.splice(index, 0, y_point[i]); });
-		let new_x = this.x.slice();
-		new_x.splice(index, 0, x_point);
-
-		this.update_values(new_y, new_x);
-	}
-
-	remove_data_point(index = this.x.length-1) {
-		if(this.x.length < 3) return;
-
-		let new_y = this.y.map(data_set => { return {values:data_set.values}; });
-		new_y.map((d) => { d.values.splice(index, 1); });
-		let new_x = this.x.slice();
-		new_x.splice(index, 1);
-
-		this.update_values(new_y, new_x);
 	}
 
 	run_animation() {
@@ -557,28 +487,51 @@ export default class AxisChart extends BaseChart {
 	animate_graphs() {
 		this.y.map(d => {
 			// Pre-prep, equilize no of positions between old and new
-			let [old_x, new_x] = equilizeNoOfPositions(
+			let [old_x, new_x] = equilizeNoOfElements(
 				this.x_old_axis_positions.slice(),
 				this.x_axis_positions.slice()
 			);
-			let [old_y, new_y] = equilizeNoOfPositions(
+			let [old_y, new_y] = equilizeNoOfElements(
 				this.old_y_axis_tops[d.index].slice(),
 				d.y_tops.slice()
 			);
 
-			if(new_x.length - old_x.length > 0) {
+			let newYValues = this.y_old_axis_values.slice();
+
+			let [oldYAxis, newYAxis] = equilizeNoOfElements(
+				this.y_old_axis_values.slice(),
+				this.y_axis_values.slice()
+			);
+
+			let newXValues = this.x.slice();
+
+			let extra_points = this.x_axis_positions.slice().length - this.x_old_axis_positions.slice().length;
+
+			if(extra_points > 0) {
 				this.make_path && this.make_path(d, old_x, old_y, this.colors[d.index]);
 				this.make_new_units_for_dataset(old_x, old_y, this.colors[d.index], d.index, this.y.length);
+				this.makeXLines(old_x, newXValues);
 			}
+			// No Y extra check?
+			this.makeYLines(oldYAxis, newYValues);
+
+			if(extra_points !== 0) {
+				this.animateXLines(old_x, new_x);
+			}
+
 			d.path && this.animate_path(d, new_x, new_y);
-			this.animate_units(d, old_x, old_y, new_x, new_y);
+			this.animate_units(d, new_x, new_y);
+			this.animateYLines(oldYAxis, newYAxis);
 		});
 
-		// TODO: replace with real units
 		setTimeout(() => {
 			this.y.map(d => {
 				this.make_path && this.make_path(d, this.x_axis_positions, d.y_tops, this.colors[d.index]);
 				this.make_new_units(d);
+
+				this.makeYLines(this.y_axis_positions, this.y_axis_values);
+				this.makeXLines(this.x_axis_positions, this.x);
+				// this.make_y_specifics(this.yAnnotationPositions, this.specific_values);
 			});
 		}, 400);
 	}
@@ -589,7 +542,7 @@ export default class AxisChart extends BaseChart {
 			.concat(this.animator['path'](d, newPointsList.join("L")));
 	}
 
-	animate_units(d, old_x, old_y, new_x, new_y) {
+	animate_units(d, new_x, new_y) {
 		let type = this.unit_args.type;
 
 		d.svg_units.map((unit, i) => {
@@ -604,169 +557,173 @@ export default class AxisChart extends BaseChart {
 		});
 	}
 
-	make_anim_x_axis(height, text_start_at, axis_line_class) {
-		// Animate X AXIS to account for more or less axis lines
-
-		const old_pos = this.x_old_axis_positions;
-		const new_pos = this.x_axis_positions;
-
-		const old_vals = this.old_x_values;
-		const new_vals = this.x;
-
-		const last_line_pos = old_pos[old_pos.length - 1];
-
-		let add_and_animate_line = (value, old_pos, new_pos) => {
-			if(typeof new_pos === 'string') {
-				new_pos = parseInt(new_pos.substring(0, new_pos.length-1));
-			}
-			const x_line = makeXLine(
-				height,
-				text_start_at,
-				value, // new value
-				'x-value-text',
-				axis_line_class,
-				old_pos // old position
-			);
-			this.x_axis_group.appendChild(x_line);
-
-			this.elements_to_animate && this.elements_to_animate.push([
-				{unit: x_line, array: [0], index: 0},
-				{transform: `${ new_pos }, 0`},
+	animateXLines(oldX, newX) {
+		this.xAxisLines.map((xLine, i) => {
+			this.elements_to_animate.push([
+				{unit: xLine, array: [0], index: 0},
+				{transform: `${ newX[i] }, 0`},
 				350,
 				"easein",
 				"translate",
-				{transform: `${ old_pos }, 0`}
+				{transform: `${ oldX[i] }, 0`}
 			]);
-		};
-
-		this.x_axis_group.textContent = '';
-
-		this.make_new_axis_anim_lines(
-			old_pos,
-			new_pos,
-			old_vals,
-			new_vals,
-			last_line_pos,
-			add_and_animate_line
-		);
-	}
-
-	make_anim_y_axis() {
-		// Animate Y AXIS to account for more or less axis lines
-
-		const old_pos = this.y_old_axis_values.map(value =>
-			this.zero_line - value * this.multiplier);
-		const new_pos = this.y_axis_values.map(value =>
-			this.zero_line - value * this.multiplier);
-
-		const old_vals = this.y_old_axis_values;
-		const new_vals = this.y_axis_values;
-
-		const last_line_pos = old_pos[old_pos.length - 1];
-
-		this.y_axis_group.textContent = '';
-
-		this.make_new_axis_anim_lines(
-			old_pos,
-			new_pos,
-			old_vals,
-			new_vals,
-			last_line_pos,
-			this.add_and_animate_y_line.bind(this),
-			this.y_axis_group
-		);
-	}
-
-	make_anim_y_specifics() {
-		this.specific_y_group.textContent = '';
-		this.specific_values.map((d) => {
-			this.add_and_animate_y_line(
-				d.title,
-				this.old_zero_line - d.value * this.old_multiplier,
-				this.zero_line - d.value * this.multiplier,
-				0,
-				this.specific_y_group,
-				d.line_type,
-				true
-			);
 		});
 	}
 
-	make_new_axis_anim_lines(old_pos, new_pos, old_vals, new_vals, last_line_pos, add_and_animate_line, group) {
-		let superimposed_positions, superimposed_values;
-		let no_of_extras = new_vals.length - old_vals.length;
-		if(no_of_extras > 0) {
-			// More axis are needed
-			// First make only the superimposed (same position) ones
-			// Add in the extras at the end later
-			superimposed_positions = new_pos.slice(0, old_pos.length);
-			superimposed_values = new_vals.slice(0, old_vals.length);
-		} else {
-			// Axis have to be reduced
-			// Fake it by moving all current extra axis to the last position
-			// You'll need filler positions and values in the new arrays
-			const filler_vals = new Array(Math.abs(no_of_extras)).fill("");
-			superimposed_values = new_vals.concat(filler_vals);
-
-			const filler_pos = new Array(Math.abs(no_of_extras)).fill(last_line_pos + "F");
-			superimposed_positions = new_pos.concat(filler_pos);
-		}
-
-		superimposed_values.map((value, i) => {
-			add_and_animate_line(value, old_pos[i], superimposed_positions[i], i, group);
+	animateYLines(oldY, newY) {
+		this.yAxisLines.map((yLine, i) => {
+			this.elements_to_animate.push([
+				{unit: yLine, array: [0], index: 0},
+				{transform: `0, ${ newY[i] }`},
+				350,
+				"easein",
+				"translate",
+				{transform: `0, ${ oldY[i] }`}
+			]);
 		});
-
-		if(no_of_extras > 0) {
-			// Add in extra axis in the end
-			// and then animate to new positions
-			const extra_values = new_vals.slice(old_vals.length);
-			const extra_positions = new_pos.slice(old_pos.length);
-
-			extra_values.map((value, i) => {
-				add_and_animate_line(value, last_line_pos, extra_positions[i], i, group);
-			});
-		}
 	}
 
-	add_and_animate_y_line(value, old_pos, new_pos, i, group, type, specific=false) {
-		let filler = false;
-		if(typeof new_pos === 'string') {
-			new_pos = parseInt(new_pos.substring(0, new_pos.length-1));
-			filler = true;
-		}
-		let new_props = {transform: `0, ${ new_pos }`};
-		let old_props = {transform: `0, ${ old_pos }`};
+	animateYAnnotations() {
 
-		if(filler) {
-			new_props['stroke-opacity'] = 0;
-			// old_props['stroke-opacity'] = 1;
-		}
+	}
 
-		let [width, text_end_at, axis_line_class, start_at] = this.get_y_axis_line_props(specific);
-		let axis_label_class = !specific ? 'y-value-text' : 'specific-value';
-		value = !specific ? value : (value+"").toUpperCase();
-		const y_line = makeYLine(
-			start_at,
-			width,
-			text_end_at,
-			value,
-			axis_label_class,
-			axis_line_class,
-			old_pos,  // old position
-			(value === 0 && i !== 0), // Non-first Zero line
-			type
-		);
+	// make_anim_y_axis() {
+	// 	// Animate Y AXIS to account for more or less axis lines
 
-		group.appendChild(y_line);
+	// 	const old_pos = this.y_old_axis_values.map(value =>
+	// 		this.zero_line - value * this.multiplier);
+	// 	const new_pos = this.y_axis_values.map(value =>
+	// 		this.zero_line - value * this.multiplier);
 
-		this.elements_to_animate && this.elements_to_animate.push([
-			{unit: y_line, array: [0], index: 0},
-			new_props,
-			350,
-			"easein",
-			"translate",
-			old_props
-		]);
+	// 	const old_vals = this.y_old_axis_values;
+	// 	const new_vals = this.y_axis_values;
+
+	// 	const last_line_pos = old_pos[old_pos.length - 1];
+
+	// 	this.y_axis_group.textContent = '';
+
+	// 	this.make_new_axis_anim_lines(
+	// 		old_pos,
+	// 		new_pos,
+	// 		old_vals,
+	// 		new_vals,
+	// 		last_line_pos,
+	// 		this.add_and_animate_y_line.bind(this),
+	// 		this.y_axis_group
+	// 	);
+	// }
+
+	// make_anim_y_specifics() {
+	// 	this.specific_y_group.textContent = '';
+	// 	this.specific_values.map((d) => {
+	// 		this.add_and_animate_y_line(
+	// 			d.title,
+	// 			this.old_zero_line - d.value * this.old_multiplier,
+	// 			this.zero_line - d.value * this.multiplier,
+	// 			0,
+	// 			this.specific_y_group,
+	// 			d.line_type,
+	// 			true
+	// 		);
+	// 	});
+	// }
+
+	// make_new_axis_anim_lines(old_pos, new_pos, old_vals, new_vals, last_line_pos, add_and_animate_line, group) {
+	// 	let superimposed_positions, superimposed_values;
+	// 	let no_of_extras = new_vals.length - old_vals.length;
+	// 	if(no_of_extras > 0) {
+	// 		// More axis are needed
+	// 		// First make only the superimposed (same position) ones
+	// 		// Add in the extras at the end later
+	// 		superimposed_positions = new_pos.slice(0, old_pos.length);
+	// 		superimposed_values = new_vals.slice(0, old_vals.length);
+	// 	} else {
+	// 		// Axis have to be reduced
+	// 		// Fake it by moving all current extra axis to the last position
+	// 		// You'll need filler positions and values in the new arrays
+	// 		const filler_vals = new Array(Math.abs(no_of_extras)).fill("");
+	// 		superimposed_values = new_vals.concat(filler_vals);
+
+	// 		const filler_pos = new Array(Math.abs(no_of_extras)).fill(last_line_pos + "F");
+	// 		superimposed_positions = new_pos.concat(filler_pos);
+	// 	}
+
+	// 	superimposed_values.map((value, i) => {
+	// 		add_and_animate_line(value, old_pos[i], superimposed_positions[i], i, group);
+	// 	});
+
+	// 	if(no_of_extras > 0) {
+	// 		// Add in extra axis in the end
+	// 		// and then animate to new positions
+	// 		const extra_values = new_vals.slice(old_vals.length);
+	// 		const extra_positions = new_pos.slice(old_pos.length);
+
+	// 		extra_values.map((value, i) => {
+	// 			add_and_animate_line(value, last_line_pos, extra_positions[i], i, group);
+	// 		});
+	// 	}
+	// }
+
+	// add_and_animate_y_line(value, old_pos, new_pos, i, group, type, specific=false) {
+	// 	let filler = false;
+	// 	if(typeof new_pos === 'string') {
+	// 		new_pos = parseInt(new_pos.substring(0, new_pos.length-1));
+	// 		filler = true;
+	// 	}
+	// 	let new_props = {transform: `0, ${ new_pos }`};
+	// 	let old_props = {transform: `0, ${ old_pos }`};
+
+	// 	if(filler) {
+	// 		new_props['stroke-opacity'] = 0;
+	// 		// old_props['stroke-opacity'] = 1;
+	// 	}
+
+	// 	let [width, text_end_at, axis_line_class, start_at] = getYLineProps(
+	// 		this.width, this.y_axis_mode, specific);
+	// 	let axis_label_class = !specific ? 'y-value-text' : 'specific-value';
+	// 	value = !specific ? value : (value+"").toUpperCase();
+	// 	const y_line = makeYLine(
+	// 		start_at,
+	// 		width,
+	// 		text_end_at,
+	// 		value,
+	// 		axis_label_class,
+	// 		axis_line_class,
+	// 		old_pos,  // old position
+	// 		(value === 0 && i !== 0), // Non-first Zero line
+	// 		type
+	// 	);
+
+	// 	group.appendChild(y_line);
+
+	// 	this.elements_to_animate && this.elements_to_animate.push([
+	// 		{unit: y_line, array: [0], index: 0},
+	// 		new_props,
+	// 		350,
+	// 		"easein",
+	// 		"translate",
+	// 		old_props
+	// 	]);
+	// }
+
+	add_data_point(y_point, x_point, index=this.x.length) {
+		let new_y = this.y.map(data_set => { return {values:data_set.values}; });
+		new_y.map((d, i) => { d.values.splice(index, 0, y_point[i]); });
+		let new_x = this.x.slice();
+		new_x.splice(index, 0, x_point);
+
+		this.updateData(new_y, new_x);
+	}
+
+	remove_data_point(index = this.x.length-1) {
+		if(this.x.length < 3) return;
+
+		let new_y = this.y.map(data_set => { return {values:data_set.values}; });
+		new_y.map((d) => { d.values.splice(index, 1); });
+		let new_x = this.x.slice();
+		new_x.splice(index, 1);
+
+		this.updateData(new_y, new_x);
 	}
 
 	getDataPoint(index=this.current_index) {
