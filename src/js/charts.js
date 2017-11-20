@@ -1,4 +1,4 @@
-import '../styles/charts.less';
+import '../scss/charts.scss';
 
 import BarChart from './charts/BarChart';
 import LineChart from './charts/LineChart';

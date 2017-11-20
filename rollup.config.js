@@ -14,7 +14,7 @@ import pkg from './package.json';
 
 export default [
 	{
-		input: 'src/scripts/charts.js',
+		input: 'src/js/charts.js',
 		output: [
 			{
 				file: pkg.main,
@@ -27,7 +27,7 @@ export default [
 		],
 		plugins: [
 			postcss({
-				extensions: [ '.less' ],
+				extensions: [ '.scss' ],
 				extract: 'dist/frappe-charts.min.css',
 				plugins: [
 					nested(),
@@ -37,7 +37,7 @@ export default [
 			}),
 			eslint({
 				exclude: [
-					'src/styles/**',
+					'src/scss/**',
 				]
 			}),
 			babel({
@@ -51,7 +51,7 @@ export default [
 		],
 	},
 	{
-		input: 'src/scripts/charts.js',
+		input: 'src/js/charts.js',
 		output: [
 			{
 				file: pkg.src,
@@ -60,7 +60,7 @@ export default [
 		],
 		plugins: [
 			postcss({
-				extensions: [ '.less' ],
+				extensions: [ '.scss' ],
 				extract: 'dist/frappe-charts.min.css',
 				plugins: [
 					nested(),
@@ -70,7 +70,7 @@ export default [
 			}),
 			eslint({
 				exclude: [
-					'src/styles/**',
+					'src/scss/**',
 				]
 			}),
 			replace({
@@ -80,7 +80,7 @@ export default [
 		],
 	},
 	{
-		input: 'src/scripts/charts.js',
+		input: 'src/js/charts.js',
 		output: [
 			{
 				file: 'docs/assets/js/frappe-charts.min.js',
@@ -94,7 +94,7 @@ export default [
 		name: 'Chart',
 		plugins: [
 			postcss({
-				extensions: [ '.less' ],
+				extensions: [ '.scss' ],
 				plugins: [
 					nested(),
 					cssnext({ warnForDuplicates: false }),
@@ -103,7 +103,7 @@ export default [
 			}),
 			eslint({
 				exclude: [
-					'src/styles/**',
+					'src/scss/**',
 				]
 			}),
 			babel({
