@@ -101,8 +101,13 @@ export default class AxisChart extends BaseChart {
 		if(!this.old_zero_line) this.old_zero_line = this.zero_line;
 
 		// Make positions arrays for y elements
-		this.y_axis_positions = this.y_axis_values.map(d => this.zero_line - d * this.multiplier);
-		this.yAnnotationPositions = this.specific_values.map(d => this.zero_line - d * this.multiplier);
+		if(this.yAxisPositions) this.oldYAxisPositions = this.yAxisPositions;
+		this.yAxisPositions = this.y_axis_values.map(d => this.zero_line - d * this.multiplier);
+		if(!this.oldYAxisPositions) this.oldYAxisPositions = this.yAxisPositions;
+
+		if(this.yAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
+		this.yAnnotationPositions = this.specific_values.map(d => this.zero_line - d.value * this.multiplier);
+		if(!this.oldYAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
 	}
 
 	setup_components() {
@@ -132,13 +137,12 @@ export default class AxisChart extends BaseChart {
 	}
 
 	make_graph_components(init=false) {
-		this.makeYLines(this.y_axis_positions, this.y_axis_values);
+		this.makeYLines(this.yAxisPositions, this.y_axis_values);
 		this.makeXLines(this.x_axis_positions, this.x);
 		this.draw_graph(init);
-		this.make_y_specifics(this.yAnnotationPositions, this.specific_values);
+		// this.make_y_specifics(this.yAnnotationPositions, this.specific_values);
 	}
 
-	// make VERTICAL lines for x values
 	makeXLines(positions, values) {
 		let [start_at, height, text_start_at, axis_line_class] = getXLineProps(this.height, this.x_axis_mode);
 		this.x_axis_group.setAttribute('transform', `translate(0,${start_at})`);
@@ -179,48 +183,46 @@ export default class AxisChart extends BaseChart {
 		});
 	}
 
-	// make HORIZONTAL lines for y values
 	makeYLines(positions, values) {
-
 		let [width, text_end_at, axis_line_class, start_at] = getYLineProps(
 			this.width, this.y_axis_mode);
 
 		this.yAxisLines = [];
 		this.y_axis_group.textContent = '';
 		values.map((value, i) => {
-			this.y_axis_group.appendChild(
-				makeYLine(
-					start_at,
-					width,
-					text_end_at,
-					value,
-					'y-value-text',
-					axis_line_class,
-					positions[i],
-					(value === 0 && i !== 0) // Non-first Zero line
-				)
+			let yLine = makeYLine(
+				start_at,
+				width,
+				text_end_at,
+				value,
+				'y-value-text',
+				axis_line_class,
+				positions[i],
+				(value === 0 && i !== 0) // Non-first Zero line
 			);
+			this.yAxisLines.push(yLine);
+			this.y_axis_group.appendChild(yLine);
 		});
 	}
 
-	make_y_specifics(positions, value_objs) {
-		this.specific_y_group.textContent = '';
-		value_objs.map((d, i) => {
-			this.specific_y_group.appendChild(
-				makeYLine(
-					0,
-					this.width,
-					this.width + 5,
-					d.title.toUpperCase(),
-					'specific-value',
-					'specific-value',
-					positions[i],
-					false,
-					d.line_type
-				)
-			);
-		});
-	}
+	// make_y_specifics(positions, value_objs) {
+	// 	this.specific_y_group.textContent = '';
+	// 	value_objs.map((d, i) => {
+	// 		this.specific_y_group.appendChild(
+	// 			makeYLine(
+	// 				0,
+	// 				this.width,
+	// 				this.width + 5,
+	// 				d.title.toUpperCase(),
+	// 				'specific-value',
+	// 				'specific-value',
+	// 				positions[i],
+	// 				false,
+	// 				d.line_type
+	// 			)
+	// 		);
+	// 	});
+	// }
 
 	draw_graph(init=false) {
 		if(this.raw_chart_args.hasOwnProperty("init") && !this.raw_chart_args.init) {
@@ -361,78 +363,6 @@ export default class AxisChart extends BaseChart {
 	}
 
 	// API
-	show_sums() {
-		this.updating = true;
-
-		this.y_sums = new Array(this.x_axis_positions.length).fill(0);
-		this.y.map(d => {
-			d.values.map( (value, i) => {
-				this.y_sums[i] += value;
-			});
-		});
-
-		// Remake y axis, animate
-		this.updateData();
-
-		// Then make sum units, don't animate
-		this.sum_units = [];
-
-		this.make_new_units_for_dataset(
-			this.x_axis_positions,
-			this.y_sums.map( val => floatTwo(this.zero_line - val * this.multiplier)),
-			'#f0f4f7',
-			0,
-			1,
-			this.sum_group,
-			this.sum_units
-		);
-
-		// this.make_path && this.make_path(d, old_x, old_y, this.colors[i]);
-
-		this.updating = false;
-	}
-
-	hide_sums() {
-		if(this.updating) return;
-		this.y_sums = [];
-		this.sum_group.textContent = '';
-		this.sum_units = [];
-		this.updateData();
-	}
-
-	show_averages() {
-		this.old_specific_values = this.specific_values.slice();
-		this.y.map(d => {
-			let sum = 0;
-			d.values.map(e => {sum+=e;});
-			let average = sum/d.values.length;
-
-			this.specific_values.push({
-				title: "AVG" + " " + (d.index+1),
-				line_type: "dashed",
-				value: average,
-				auto: 1
-			});
-		});
-
-		this.updateData();
-	}
-
-	hide_averages() {
-		this.old_specific_values = this.specific_values.slice();
-
-		let indices_to_remove = [];
-		this.specific_values.map((d, i) => {
-			if(d.auto) indices_to_remove.unshift(i);
-		});
-
-		indices_to_remove.map(index => {
-			this.specific_values.splice(index, 1);
-		});
-
-		this.updateData();
-	}
-
 	updateData(new_y, new_x) {
 		if(!new_x) {
 			new_x = this.x;
@@ -496,14 +426,13 @@ export default class AxisChart extends BaseChart {
 				d.y_tops.slice()
 			);
 
-			let newYValues = this.y_old_axis_values.slice();
-
 			let [oldYAxis, newYAxis] = equilizeNoOfElements(
-				this.y_old_axis_values.slice(),
-				this.y_axis_values.slice()
+				this.oldYAxisPositions.slice(),
+				this.yAxisPositions.slice()
 			);
 
 			let newXValues = this.x.slice();
+			let newYValues = this.y_axis_values.slice();
 
 			let extra_points = this.x_axis_positions.slice().length - this.x_old_axis_positions.slice().length;
 
@@ -515,13 +444,16 @@ export default class AxisChart extends BaseChart {
 			// No Y extra check?
 			this.makeYLines(oldYAxis, newYValues);
 
-			if(extra_points !== 0) {
-				this.animateXLines(old_x, new_x);
-			}
+			if(!this.updating) {
+				// Animation
+				if(extra_points !== 0) {
+					this.animateXLines(old_x, new_x);
+				}
 
-			d.path && this.animate_path(d, new_x, new_y);
-			this.animate_units(d, new_x, new_y);
-			this.animateYLines(oldYAxis, newYAxis);
+				d.path && this.animate_path(d, new_x, new_y);
+				this.animate_units(d, new_x, new_y);
+				this.animateYLines(oldYAxis, newYAxis);
+			}
 		});
 
 		setTimeout(() => {
@@ -529,7 +461,7 @@ export default class AxisChart extends BaseChart {
 				this.make_path && this.make_path(d, this.x_axis_positions, d.y_tops, this.colors[d.index]);
 				this.make_new_units(d);
 
-				this.makeYLines(this.y_axis_positions, this.y_axis_values);
+				this.makeYLines(this.yAxisPositions, this.y_axis_values);
 				this.makeXLines(this.x_axis_positions, this.x);
 				// this.make_y_specifics(this.yAnnotationPositions, this.specific_values);
 			});
@@ -586,125 +518,6 @@ export default class AxisChart extends BaseChart {
 	animateYAnnotations() {
 
 	}
-
-	// make_anim_y_axis() {
-	// 	// Animate Y AXIS to account for more or less axis lines
-
-	// 	const old_pos = this.y_old_axis_values.map(value =>
-	// 		this.zero_line - value * this.multiplier);
-	// 	const new_pos = this.y_axis_values.map(value =>
-	// 		this.zero_line - value * this.multiplier);
-
-	// 	const old_vals = this.y_old_axis_values;
-	// 	const new_vals = this.y_axis_values;
-
-	// 	const last_line_pos = old_pos[old_pos.length - 1];
-
-	// 	this.y_axis_group.textContent = '';
-
-	// 	this.make_new_axis_anim_lines(
-	// 		old_pos,
-	// 		new_pos,
-	// 		old_vals,
-	// 		new_vals,
-	// 		last_line_pos,
-	// 		this.add_and_animate_y_line.bind(this),
-	// 		this.y_axis_group
-	// 	);
-	// }
-
-	// make_anim_y_specifics() {
-	// 	this.specific_y_group.textContent = '';
-	// 	this.specific_values.map((d) => {
-	// 		this.add_and_animate_y_line(
-	// 			d.title,
-	// 			this.old_zero_line - d.value * this.old_multiplier,
-	// 			this.zero_line - d.value * this.multiplier,
-	// 			0,
-	// 			this.specific_y_group,
-	// 			d.line_type,
-	// 			true
-	// 		);
-	// 	});
-	// }
-
-	// make_new_axis_anim_lines(old_pos, new_pos, old_vals, new_vals, last_line_pos, add_and_animate_line, group) {
-	// 	let superimposed_positions, superimposed_values;
-	// 	let no_of_extras = new_vals.length - old_vals.length;
-	// 	if(no_of_extras > 0) {
-	// 		// More axis are needed
-	// 		// First make only the superimposed (same position) ones
-	// 		// Add in the extras at the end later
-	// 		superimposed_positions = new_pos.slice(0, old_pos.length);
-	// 		superimposed_values = new_vals.slice(0, old_vals.length);
-	// 	} else {
-	// 		// Axis have to be reduced
-	// 		// Fake it by moving all current extra axis to the last position
-	// 		// You'll need filler positions and values in the new arrays
-	// 		const filler_vals = new Array(Math.abs(no_of_extras)).fill("");
-	// 		superimposed_values = new_vals.concat(filler_vals);
-
-	// 		const filler_pos = new Array(Math.abs(no_of_extras)).fill(last_line_pos + "F");
-	// 		superimposed_positions = new_pos.concat(filler_pos);
-	// 	}
-
-	// 	superimposed_values.map((value, i) => {
-	// 		add_and_animate_line(value, old_pos[i], superimposed_positions[i], i, group);
-	// 	});
-
-	// 	if(no_of_extras > 0) {
-	// 		// Add in extra axis in the end
-	// 		// and then animate to new positions
-	// 		const extra_values = new_vals.slice(old_vals.length);
-	// 		const extra_positions = new_pos.slice(old_pos.length);
-
-	// 		extra_values.map((value, i) => {
-	// 			add_and_animate_line(value, last_line_pos, extra_positions[i], i, group);
-	// 		});
-	// 	}
-	// }
-
-	// add_and_animate_y_line(value, old_pos, new_pos, i, group, type, specific=false) {
-	// 	let filler = false;
-	// 	if(typeof new_pos === 'string') {
-	// 		new_pos = parseInt(new_pos.substring(0, new_pos.length-1));
-	// 		filler = true;
-	// 	}
-	// 	let new_props = {transform: `0, ${ new_pos }`};
-	// 	let old_props = {transform: `0, ${ old_pos }`};
-
-	// 	if(filler) {
-	// 		new_props['stroke-opacity'] = 0;
-	// 		// old_props['stroke-opacity'] = 1;
-	// 	}
-
-	// 	let [width, text_end_at, axis_line_class, start_at] = getYLineProps(
-	// 		this.width, this.y_axis_mode, specific);
-	// 	let axis_label_class = !specific ? 'y-value-text' : 'specific-value';
-	// 	value = !specific ? value : (value+"").toUpperCase();
-	// 	const y_line = makeYLine(
-	// 		start_at,
-	// 		width,
-	// 		text_end_at,
-	// 		value,
-	// 		axis_label_class,
-	// 		axis_line_class,
-	// 		old_pos,  // old position
-	// 		(value === 0 && i !== 0), // Non-first Zero line
-	// 		type
-	// 	);
-
-	// 	group.appendChild(y_line);
-
-	// 	this.elements_to_animate && this.elements_to_animate.push([
-	// 		{unit: y_line, array: [0], index: 0},
-	// 		new_props,
-	// 		350,
-	// 		"easein",
-	// 		"translate",
-	// 		old_props
-	// 	]);
-	// }
 
 	add_data_point(y_point, x_point, index=this.x.length) {
 		let new_y = this.y.map(data_set => { return {values:data_set.values}; });
