@@ -54,23 +54,26 @@ const data = {
     datasets: [
         {
             title: "Some Data",
-            color: "light-blue",
             values: [25, 40, 30, 35, 8, 52, 17, -4]
         },
         {
             title: "Another Set",
-            color: "violet",
             values: [25, 50, -10, 15, 18, 32, 27, 14]
         }
     ]
 }
 
 const chart = new Chart({
-    parent: '#chart', // or a DOM element
+    parent: "#chart", // or a DOM element
     title: "My Awesome Chart",
     data: data,
     type: 'bar', // or 'line', 'scatter', 'pie', 'percentage'
-    height: 250
+    height: 250,
+
+    colors: ['#7cd6fd', '#743ee2'],
+
+    format_tooltip_x: d => (d + '').toUpperCase(),
+    format_tooltip_y: d => d + ' pts'
 })
 ```
 
