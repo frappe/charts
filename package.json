@@ -39,6 +39,7 @@
     "babel-preset-latest": "^6.24.1",
     "cssnano": "^3.10.0",
     "livereload": "^0.6.3",
+    "node-sass": "^4.7.2",
     "npm-run-all": "^4.1.1",
     "postcss-cssnext": "^3.0.2",
     "postcss-nested": "^2.1.2",

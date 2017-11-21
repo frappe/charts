@@ -3,6 +3,7 @@ import babel from 'rollup-plugin-babel';
 import eslint from 'rollup-plugin-eslint';
 import replace from 'rollup-plugin-replace';
 import uglify from 'rollup-plugin-uglify-es';
+import sass from 'node-sass';
 import postcss from 'rollup-plugin-postcss';
 
 // PostCSS plugins
@@ -27,6 +28,10 @@ export default [
 		],
 		plugins: [
 			postcss({
+				preprocessor: (content, id) => new Promise((resolve, reject) => {
+					const result = sass.renderSync({ file: id })
+					resolve({ code: result.css.toString() })
+				}),
 				extensions: [ '.scss' ],
 				extract: 'dist/frappe-charts.min.css',
 				plugins: [
@@ -37,18 +42,18 @@ export default [
 			}),
 			eslint({
 				exclude: [
-					'src/scss/**',
+					'src/scss/**'
 				]
 			}),
 			babel({
-				exclude: 'node_modules/**',
+				exclude: 'node_modules/**'
 			}),
 			replace({
 				exclude: 'node_modules/**',
 				ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
 			}),
 			uglify()
-		],
+		]
 	},
 	{
 		input: 'src/js/charts.js',
@@ -60,6 +65,10 @@ export default [
 		],
 		plugins: [
 			postcss({
+				preprocessor: (content, id) => new Promise((resolve, reject) => {
+					const result = sass.renderSync({ file: id })
+					resolve({ code: result.css.toString() })
+				}),
 				extensions: [ '.scss' ],
 				extract: 'dist/frappe-charts.min.css',
 				plugins: [
@@ -94,6 +103,10 @@ export default [
 		name: 'Chart',
 		plugins: [
 			postcss({
+				preprocessor: (content, id) => new Promise((resolve, reject) => {
+					const result = sass.renderSync({ file: id })
+					resolve({ code: result.css.toString() })
+				}),
 				extensions: [ '.scss' ],
 				plugins: [
 					nested(),
