@@ -2,15 +2,7 @@ function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
-$.findNodeIndex = (node) =>
-{
-	var i = 0;
-	while (node.previousSibling) {
-		node = node.previousSibling;
-		i++;
-	}
-	return i;
-};
+
 
 $.create = (tag, o) => {
 	var element = document.createElement(tag);
@@ -43,7 +35,7 @@ $.create = (tag, o) => {
 	return element;
 };
 
-$.offset = (element) => {
+function offset(element) {
 	let rect = element.getBoundingClientRect();
 	return {
 		// https://stackoverflow.com/a/7436602/6495043
@@ -52,9 +44,9 @@ $.offset = (element) => {
 		top: rect.top + (document.documentElement.scrollTop || document.body.scrollTop),
 		left: rect.left + (document.documentElement.scrollLeft || document.body.scrollLeft)
 	};
-};
+}
 
-$.isElementInViewport = (el) => {
+function isElementInViewport(el) {
 	// Although straightforward: https://stackoverflow.com/a/7557433/6495043
 	var rect = el.getBoundingClientRect();
 
@@ -64,7 +56,15 @@ $.isElementInViewport = (el) => {
         rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /*or $(window).height() */
         rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
 	);
-};
+}
+
+function getElementContentWidth(element) {
+	var styles = window.getComputedStyle(element);
+	var padding = parseFloat(styles.paddingLeft) +
+		parseFloat(styles.paddingRight);
+
+	return element.clientWidth - padding;
+}
 
 $.bind = (element, o) => {
 	if (element) {
@@ -1059,7 +1059,7 @@ class BaseChart {
 				special_values_width = str_width - 40;
 			}
 		});
-		this.base_width = this.parent.offsetWidth - special_values_width;
+		this.base_width = getElementContentWidth(this.parent) - special_values_width;
 		this.width = this.base_width - this.translate_x * 2;
 	}
 
@@ -1120,10 +1120,10 @@ class BaseChart {
 		this.summary.map(d => {
 			let stats = $.create('div', {
 				className: 'stats',
-				styles: {
-					background: d.color
-				},
-				innerHTML: `<span class="indicator">${d.title}: ${d.value}</span>`
+				innerHTML: `<span class="indicator">
+					<i style="background:${d.color}"></i>
+					${d.title}: ${d.value}
+				</span>`
 			});
 			this.stats_wrapper.appendChild(stats);
 		});
@@ -1136,7 +1136,7 @@ class BaseChart {
 			this.bind_overlay();
 
 			document.addEventListener('keydown', (e) => {
-				if($.isElementInViewport(this.chart_wrapper)) {
+				if(isElementInViewport(this.chart_wrapper)) {
 					e = e || window.event;
 
 					if (e.keyCode == '37') {
@@ -1532,9 +1532,9 @@ class AxisChart extends BaseChart {
 	bind_tooltip() {
 		// TODO: could be in tooltip itself, as it is a given functionality for its parent
 		this.chart_wrapper.addEventListener('mousemove', (e) => {
-			let offset = $.offset(this.chart_wrapper);
-			let relX = e.pageX - offset.left - this.translate_x;
-			let relY = e.pageY - offset.top - this.translate_y;
+			let o = offset(this.chart_wrapper);
+			let relX = e.pageX - o.left - this.translate_x;
+			let relY = e.pageY - o.top - this.translate_y;
 
 			if(relY < this.height + this.translate_y * 2) {
 				this.map_tooltip_x_position_and_show(relX);
@@ -2320,7 +2320,7 @@ class PercentageChart extends BaseChart {
 	bind_tooltip() {
 		this.slices.map((slice, i) => {
 			slice.addEventListener('mouseenter', () => {
-				let g_off = $.offset(this.chart_wrapper), p_off = $.offset(slice);
+				let g_off = offset(this.chart_wrapper), p_off = offset(slice);
 
 				let x = p_off.left - g_off.left + slice.offsetWidth/2;
 				let y = p_off.top - g_off.top - 6;
@@ -2504,7 +2504,7 @@ class PieChart extends BaseChart {
 		if(flag){
 			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
 			path.style.fill = lightenDarkenColor(color,50);
-			let g_off = $.offset(this.svg);
+			let g_off = offset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
 			let title = (this.formatted_labels && this.formatted_labels.length>0

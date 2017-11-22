@@ -1,5 +1,5 @@
 import BaseChart from './BaseChart';
-import $ from '../utils/dom';
+import { $, offset } from '../utils/dom';
 import { makePath } from '../utils/draw';
 import { lightenDarkenColor } from '../utils/colors';
 import { runSVGAnimation, transform } from '../utils/animation';
@@ -154,7 +154,7 @@ export default class PieChart extends BaseChart {
 		if(flag){
 			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
 			path.style.fill = lightenDarkenColor(color,50);
-			let g_off = $.offset(this.svg);
+			let g_off = offset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
 			let title = (this.formatted_labels && this.formatted_labels.length>0

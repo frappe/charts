@@ -1,4 +1,4 @@
-import $ from '../utils/dom';
+import { offset } from '../utils/dom';
 import { UnitRenderer, makeXLine, makeYLine } from '../utils/draw';
 import { Animator } from '../utils/animate';
 import { runSVGAnimation } from '../utils/animation';
@@ -342,9 +342,9 @@ export default class AxisChart extends BaseChart {
 	bind_tooltip() {
 		// TODO: could be in tooltip itself, as it is a given functionality for its parent
 		this.chart_wrapper.addEventListener('mousemove', (e) => {
-			let offset = $.offset(this.chart_wrapper);
-			let relX = e.pageX - offset.left - this.translate_x;
-			let relY = e.pageY - offset.top - this.translate_y;
+			let o = offset(this.chart_wrapper);
+			let relX = e.pageX - o.left - this.translate_x;
+			let relY = e.pageY - o.top - this.translate_y;
 
 			if(relY < this.height + this.translate_y * 2) {
 				this.map_tooltip_x_position_and_show(relX);

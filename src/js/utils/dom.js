@@ -1,8 +1,8 @@
-export default function $(expr, con) {
+export function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
-$.findNodeIndex = (node) =>
+export function findNodeIndex(node)
 {
 	var i = 0;
 	while (node.previousSibling) {
@@ -10,7 +10,7 @@ $.findNodeIndex = (node) =>
 		i++;
 	}
 	return i;
-};
+}
 
 $.create = (tag, o) => {
 	var element = document.createElement(tag);
@@ -43,7 +43,7 @@ $.create = (tag, o) => {
 	return element;
 };
 
-$.offset = (element) => {
+export function offset(element) {
 	let rect = element.getBoundingClientRect();
 	return {
 		// https://stackoverflow.com/a/7436602/6495043
@@ -52,9 +52,9 @@ $.offset = (element) => {
 		top: rect.top + (document.documentElement.scrollTop || document.body.scrollTop),
 		left: rect.left + (document.documentElement.scrollLeft || document.body.scrollLeft)
 	};
-};
+}
 
-$.isElementInViewport = (el) => {
+export function isElementInViewport(el) {
 	// Although straightforward: https://stackoverflow.com/a/7557433/6495043
 	var rect = el.getBoundingClientRect();
 
@@ -64,7 +64,15 @@ $.isElementInViewport = (el) => {
         rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /*or $(window).height() */
         rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
 	);
-};
+}
+
+export function getElementContentWidth(element) {
+	var styles = window.getComputedStyle(element);
+	var padding = parseFloat(styles.paddingLeft) +
+		parseFloat(styles.paddingRight);
+
+	return element.clientWidth - padding;
+}
 
 $.bind = (element, o) => {
 	if (element) {

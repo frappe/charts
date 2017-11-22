@@ -1,5 +1,5 @@
 import BaseChart from './BaseChart';
-import $ from '../utils/dom';
+import { $, offset } from '../utils/dom';
 
 export default class PercentageChart extends BaseChart {
 	constructor(args) {
@@ -94,7 +94,7 @@ export default class PercentageChart extends BaseChart {
 	bind_tooltip() {
 		this.slices.map((slice, i) => {
 			slice.addEventListener('mouseenter', () => {
-				let g_off = $.offset(this.chart_wrapper), p_off = $.offset(slice);
+				let g_off = offset(this.chart_wrapper), p_off = offset(slice);
 
 				let x = p_off.left - g_off.left + slice.offsetWidth/2;
 				let y = p_off.top - g_off.top - 6;

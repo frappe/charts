@@ -1,5 +1,5 @@
 import SvgTip from '../objects/SvgTip';
-import $ from '../utils/dom';
+import { $, isElementInViewport, getElementContentWidth } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup } from '../utils/draw';
 import { getStringWidth } from '../utils/helpers';
 import { getColor, DEFAULT_COLORS } from '../utils/colors';
@@ -166,7 +166,7 @@ export default class BaseChart {
 				special_values_width = str_width - 40;
 			}
 		});
-		this.base_width = this.parent.offsetWidth - special_values_width;
+		this.base_width = getElementContentWidth(this.parent) - special_values_width;
 		this.width = this.base_width - this.translate_x * 2;
 	}
 
@@ -227,10 +227,10 @@ export default class BaseChart {
 		this.summary.map(d => {
 			let stats = $.create('div', {
 				className: 'stats',
-				styles: {
-					background: d.color
-				},
-				innerHTML: `<span class="indicator">${d.title}: ${d.value}</span>`
+				innerHTML: `<span class="indicator">
+					<i style="background:${d.color}"></i>
+					${d.title}: ${d.value}
+				</span>`
 			});
 			this.stats_wrapper.appendChild(stats);
 		});
@@ -243,7 +243,7 @@ export default class BaseChart {
 			this.bind_overlay();
 
 			document.addEventListener('keydown', (e) => {
-				if($.isElementInViewport(this.chart_wrapper)) {
+				if(isElementInViewport(this.chart_wrapper)) {
 					e = e || window.event;
 
 					if (e.keyCode == '37') {
