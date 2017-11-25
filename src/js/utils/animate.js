@@ -1,5 +1,12 @@
 import { getBarHeightAndYAttr } from './draw-utils';
 
+const UNIT_ANIM_DUR = 350;
+const PATH_ANIM_DUR = 350;
+const MARKER_LINE_ANIM_DUR = 350;
+export const REPLACE_ALL_NEW_DUR = 250;
+
+const STD_EASING = 'easein';
+
 export var Animator = (function() {
 	var Animator = function(totalHeight, totalWidth, zeroLine, avgUnitWidth) {
 		// constants
@@ -19,18 +26,18 @@ export var Animator = (function() {
 
 			x = start + (width * index);
 
-			return [barObj, {width: width, height: height, x: x, y: y}, 350, "easein"];
-			// bar.animate({height: args.newHeight, y: yTop}, 350, mina.easein);
+			return [barObj, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING];
+			// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
 		},
 
 		dot: function(dotObj, x, yTop) {
-			return [dotObj, {cx: x, cy: yTop}, 350, "easein"];
-			// dot.animate({cy: yTop}, 350, mina.easein);
+			return [dotObj, {cx: x, cy: yTop}, UNIT_ANIM_DUR, STD_EASING];
+			// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
 		},
 
 		path: function(d, pathStr) {
 			let pathComponents = [];
-			const animPath = [{unit: d.path, object: d, key: 'path'}, {d:"M"+pathStr}, 350, "easein"];
+			const animPath = [{unit: d.path, object: d, key: 'path'}, {d:"M"+pathStr}, PATH_ANIM_DUR, STD_EASING];
 			pathComponents.push(animPath);
 
 			if(d.regionPath) {
@@ -40,14 +47,36 @@ export var Animator = (function() {
 				const animRegion = [
 					{unit: d.regionPath, object: d, key: 'regionPath'},
 					{d:"M" + regStartPt + pathStr + regEndPt},
-					350,
-					"easein"
+					PATH_ANIM_DUR,
+					STD_EASING
 				];
 				pathComponents.push(animRegion);
 			}
 
 			return pathComponents;
 		},
+
+		verticalLine: function(xLine, newX, oldX) {
+			return [
+				{unit: xLine, array: [0], index: 0},
+				{transform: `${ newX }, 0`},
+				MARKER_LINE_ANIM_DUR,
+				STD_EASING,
+				"translate",
+				{transform: `${ oldX }, 0`}
+			];
+		},
+
+		horizontalLine: function(yLine, newY, oldY) {
+			return [
+				{unit: yLine, array: [0], index: 0},
+				{transform: `0, ${ newY }`},
+				MARKER_LINE_ANIM_DUR,
+				STD_EASING,
+				"translate",
+				{transform: `0, ${ oldY }`}
+			];
+		}
 	};
 
 	return Animator;

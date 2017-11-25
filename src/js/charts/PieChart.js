@@ -2,7 +2,7 @@ import BaseChart from './BaseChart';
 import { $, offset } from '../utils/dom';
 import { makePath } from '../utils/draw';
 import { lightenDarkenColor } from '../utils/colors';
-import { runSVGAnimation, transform } from '../utils/animation';
+import { runSMILAnimation, transform } from '../utils/animation';
 const ANGLE_RATIO = Math.PI / 180;
 const FULL_ANGLE = 360;
 
@@ -118,29 +118,8 @@ export default class PieChart extends BaseChart {
 
 		});
 		if(init){
-			this.run_animation();
+			runSMILAnimation(this.chart_wrapper, this.svg, this.elements_to_animate);
 		}
-	}
-	run_animation() {
-		// if(this.isAnimate) return ;
-		// this.isAnimate = true;
-		if(!this.elements_to_animate || this.elements_to_animate.length === 0) return;
-		let anim_svg = runSVGAnimation(this.svg, this.elements_to_animate);
-
-		if(this.svg.parentNode == this.chart_wrapper) {
-			this.chart_wrapper.removeChild(this.svg);
-			this.chart_wrapper.appendChild(anim_svg);
-
-		}
-
-		// Replace the new svg (data has long been replaced)
-		setTimeout(() => {
-			// this.isAnimate = false;
-			if(anim_svg.parentNode == this.chart_wrapper) {
-				this.chart_wrapper.removeChild(anim_svg);
-				this.chart_wrapper.appendChild(this.svg);
-			}
-		}, 650);
 	}
 
 	calTranslateByAngle(property){

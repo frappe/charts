@@ -450,6 +450,13 @@ var UnitRenderer = (function() {
 	return UnitRenderer;
 })();
 
+const UNIT_ANIM_DUR = 350;
+const PATH_ANIM_DUR = 350;
+const MARKER_LINE_ANIM_DUR = 350;
+const REPLACE_ALL_NEW_DUR = 250;
+
+const STD_EASING = 'easein';
+
 var Animator = (function() {
 	var Animator = function(totalHeight, totalWidth, zeroLine, avgUnitWidth) {
 		// constants
@@ -469,18 +476,18 @@ var Animator = (function() {
 
 			x = start + (width * index);
 
-			return [barObj, {width: width, height: height, x: x, y: y}, 350, "easein"];
-			// bar.animate({height: args.newHeight, y: yTop}, 350, mina.easein);
+			return [barObj, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING];
+			// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
 		},
 
 		dot: function(dotObj, x, yTop) {
-			return [dotObj, {cx: x, cy: yTop}, 350, "easein"];
-			// dot.animate({cy: yTop}, 350, mina.easein);
+			return [dotObj, {cx: x, cy: yTop}, UNIT_ANIM_DUR, STD_EASING];
+			// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
 		},
 
 		path: function(d, pathStr) {
 			let pathComponents = [];
-			const animPath = [{unit: d.path, object: d, key: 'path'}, {d:"M"+pathStr}, 350, "easein"];
+			const animPath = [{unit: d.path, object: d, key: 'path'}, {d:"M"+pathStr}, PATH_ANIM_DUR, STD_EASING];
 			pathComponents.push(animPath);
 
 			if(d.regionPath) {
@@ -490,14 +497,36 @@ var Animator = (function() {
 				const animRegion = [
 					{unit: d.regionPath, object: d, key: 'regionPath'},
 					{d:"M" + regStartPt + pathStr + regEndPt},
-					350,
-					"easein"
+					PATH_ANIM_DUR,
+					STD_EASING
 				];
 				pathComponents.push(animRegion);
 			}
 
 			return pathComponents;
 		},
+
+		verticalLine: function(xLine, newX, oldX) {
+			return [
+				{unit: xLine, array: [0], index: 0},
+				{transform: `${ newX }, 0`},
+				MARKER_LINE_ANIM_DUR,
+				STD_EASING,
+				"translate",
+				{transform: `${ oldX }, 0`}
+			];
+		},
+
+		horizontalLine: function(yLine, newY, oldY) {
+			return [
+				{unit: yLine, array: [0], index: 0},
+				{transform: `0, ${ newY }`},
+				MARKER_LINE_ANIM_DUR,
+				STD_EASING,
+				"translate",
+				{transform: `0, ${ oldY }`}
+			];
+		}
 	};
 
 	return Animator;
@@ -514,7 +543,7 @@ const EASING = {
 	easeinout: "0.42 0 0.58 1"
 };
 
-function animateSVG(element, props, dur, easingType="linear", type=undefined, oldValues={}) {
+function animateSVGElement(element, props, dur, easingType="linear", type=undefined, oldValues={}) {
 
 	let animElement = element.cloneNode(true);
 	let newElement = element.cloneNode(true);
@@ -570,7 +599,7 @@ function transform(element, style) { // eslint-disable-line no-unused-vars
 	element.style.oTransform = style;
 }
 
-function runSVGAnimation(svgContainer, elements) {
+function animateSVG(svgContainer, elements) {
 	let newElements = [];
 	let animElements = [];
 
@@ -581,7 +610,7 @@ function runSVGAnimation(svgContainer, elements) {
 		let animElement, newElement;
 
 		element[0] = obj.unit;
-		[animElement, newElement] = animateSVG(...element);
+		[animElement, newElement] = animateSVGElement(...element);
 
 		newElements.push(newElement);
 		animElements.push([animElement, parent]);
@@ -603,6 +632,25 @@ function runSVGAnimation(svgContainer, elements) {
 	});
 
 	return animSvg;
+}
+
+function runSMILAnimation(parent, svgElement, elementsToAnimate) {
+	if(elementsToAnimate.length === 0) return;
+
+	let animSvgElement = animateSVG(svgElement, elementsToAnimate);
+	if(svgElement.parentNode == parent) {
+		parent.removeChild(svgElement);
+		parent.appendChild(animSvgElement);
+
+	}
+
+	// Replace the new svgElement (data has already been replaced)
+	setTimeout(() => {
+		if(animSvgElement.parentNode == parent) {
+			parent.removeChild(animSvgElement);
+			parent.appendChild(svgElement);
+		}
+	}, REPLACE_ALL_NEW_DUR);
 }
 
 function normalize(x) {
@@ -1366,7 +1414,8 @@ class AxisChart extends BaseChart {
 	}
 
 	makeXLines(positions, values) {
-		let [start_at, height, text_start_at, axis_line_class] = getXLineProps(this.height, this.x_axis_mode);
+		let [start_at, height, text_start_at,
+			axis_line_class] = getXLineProps(this.height, this.x_axis_mode);
 		this.x_axis_group.setAttribute('transform', `translate(0,${start_at})`);
 
 		let char_width = 8;
@@ -1406,8 +1455,8 @@ class AxisChart extends BaseChart {
 	}
 
 	makeYLines(positions, values) {
-		let [width, text_end_at, axis_line_class, start_at] = getYLineProps(
-			this.width, this.y_axis_mode);
+		let [width, text_end_at, axis_line_class,
+			start_at] = getYLineProps(this.width, this.y_axis_mode);
 
 		this.yAxisLines = [];
 		this.y_axis_group.textContent = '';
@@ -1426,25 +1475,6 @@ class AxisChart extends BaseChart {
 			this.y_axis_group.appendChild(yLine);
 		});
 	}
-
-	// make_y_specifics(positions, value_objs) {
-	// 	this.specific_y_group.textContent = '';
-	// 	value_objs.map((d, i) => {
-	// 		this.specific_y_group.appendChild(
-	// 			makeYLine(
-	// 				0,
-	// 				this.width,
-	// 				this.width + 5,
-	// 				d.title.toUpperCase(),
-	// 				'specific-value',
-	// 				'specific-value',
-	// 				positions[i],
-	// 				false,
-	// 				d.line_type
-	// 			)
-	// 		);
-	// 	});
-	// }
 
 	draw_graph(init=false) {
 		if(this.raw_chart_args.hasOwnProperty("init") && !this.raw_chart_args.init) {
@@ -1589,7 +1619,6 @@ class AxisChart extends BaseChart {
 		if(!new_x) {
 			new_x = this.x;
 		}
-		this.elements_to_animate = [];
 		this.updating = true;
 
 		this.old_x_values = this.x.slice();
@@ -1612,71 +1641,54 @@ class AxisChart extends BaseChart {
 
 		this.animate_graphs();
 
-		// Trigger animation with the animatable elements in this.elements_to_animate
-		this.run_animation();
-
 		this.updating = false;
 	}
 
-	run_animation() {
-		let anim_svg = runSVGAnimation(this.svg, this.elements_to_animate);
-
-		if(this.svg.parentNode == this.chart_wrapper) {
-			this.chart_wrapper.removeChild(this.svg);
-			this.chart_wrapper.appendChild(anim_svg);
-
-		}
-
-		// Replace the new svg (data has long been replaced)
-		setTimeout(() => {
-			if(anim_svg.parentNode == this.chart_wrapper) {
-				this.chart_wrapper.removeChild(anim_svg);
-				this.chart_wrapper.appendChild(this.svg);
-			}
-		}, 250);
-	}
-
 	animate_graphs() {
+		this.elements_to_animate = [];
+		// Pre-prep, equilize no of positions between old and new
+		let [old_x, new_x] = equilizeNoOfElements(
+			this.x_old_axis_positions.slice(),
+			this.x_axis_positions.slice()
+		);
+
+		let [oldYAxis, newYAxis] = equilizeNoOfElements(
+			this.oldYAxisPositions.slice(),
+			this.yAxisPositions.slice()
+		);
+
+		let newXValues = this.x.slice();
+		let newYValues = this.y_axis_values.slice();
+
+		let extra_points = this.x_axis_positions.slice().length - this.x_old_axis_positions.slice().length;
+
+		if(extra_points > 0) {
+			this.makeXLines(old_x, newXValues);
+		}
+		// No Y extra check?
+		this.makeYLines(oldYAxis, newYValues);
+
+		// Animation
+		if(extra_points !== 0) {
+			this.animateXLines(old_x, new_x);
+		}
+		this.animateYLines(oldYAxis, newYAxis);
+
 		this.y.map(d => {
-			// Pre-prep, equilize no of positions between old and new
-			let [old_x, new_x] = equilizeNoOfElements(
-				this.x_old_axis_positions.slice(),
-				this.x_axis_positions.slice()
-			);
 			let [old_y, new_y] = equilizeNoOfElements(
 				this.old_y_axis_tops[d.index].slice(),
 				d.y_tops.slice()
 			);
-
-			let [oldYAxis, newYAxis] = equilizeNoOfElements(
-				this.oldYAxisPositions.slice(),
-				this.yAxisPositions.slice()
-			);
-
-			let newXValues = this.x.slice();
-			let newYValues = this.y_axis_values.slice();
-
-			let extra_points = this.x_axis_positions.slice().length - this.x_old_axis_positions.slice().length;
-
 			if(extra_points > 0) {
 				this.make_path && this.make_path(d, old_x, old_y, this.colors[d.index]);
 				this.make_new_units_for_dataset(old_x, old_y, this.colors[d.index], d.index, this.y.length);
-				this.makeXLines(old_x, newXValues);
 			}
-			// No Y extra check?
-			this.makeYLines(oldYAxis, newYValues);
-
-			if(!this.updating) {
-				// Animation
-				if(extra_points !== 0) {
-					this.animateXLines(old_x, new_x);
-				}
-
-				d.path && this.animate_path(d, new_x, new_y);
-				this.animate_units(d, new_x, new_y);
-				this.animateYLines(oldYAxis, newYAxis);
-			}
+			// Animation
+			d.path && this.animate_path(d, new_x, new_y);
+			this.animate_units(d, new_x, new_y);
 		});
+
+		runSMILAnimation(this.chart_wrapper, this.svg, this.elements_to_animate);
 
 		setTimeout(() => {
 			this.y.map(d => {
@@ -1693,7 +1705,7 @@ class AxisChart extends BaseChart {
 	animate_path(d, new_x, new_y) {
 		const newPointsList = new_y.map((y, i) => (new_x[i] + ',' + y));
 		this.elements_to_animate = this.elements_to_animate
-			.concat(this.animator['path'](d, newPointsList.join("L")));
+			.concat(this.animator.path(d, newPointsList.join("L")));
 	}
 
 	animate_units(d, new_x, new_y) {
@@ -1713,32 +1725,22 @@ class AxisChart extends BaseChart {
 
 	animateXLines(oldX, newX) {
 		this.xAxisLines.map((xLine, i) => {
-			this.elements_to_animate.push([
-				{unit: xLine, array: [0], index: 0},
-				{transform: `${ newX[i] }, 0`},
-				350,
-				"easein",
-				"translate",
-				{transform: `${ oldX[i] }, 0`}
-			]);
+			this.elements_to_animate.push(this.animator.verticalLine(
+				xLine, newX[i], oldX[i]
+			));
 		});
 	}
 
 	animateYLines(oldY, newY) {
 		this.yAxisLines.map((yLine, i) => {
-			this.elements_to_animate.push([
-				{unit: yLine, array: [0], index: 0},
-				{transform: `0, ${ newY[i] }`},
-				350,
-				"easein",
-				"translate",
-				{transform: `0, ${ oldY[i] }`}
-			]);
+			this.elements_to_animate.push(this.animator.horizontalLine(
+				yLine, newY[i], oldY[i]
+			));
 		});
 	}
 
 	animateYAnnotations() {
-
+		//
 	}
 
 	add_data_point(y_point, x_point, index=this.x.length) {
@@ -2261,29 +2263,8 @@ class PieChart extends BaseChart {
 
 		});
 		if(init){
-			this.run_animation();
+			runSMILAnimation(this.chart_wrapper, this.svg, this.elements_to_animate);
 		}
-	}
-	run_animation() {
-		// if(this.isAnimate) return ;
-		// this.isAnimate = true;
-		if(!this.elements_to_animate || this.elements_to_animate.length === 0) return;
-		let anim_svg = runSVGAnimation(this.svg, this.elements_to_animate);
-
-		if(this.svg.parentNode == this.chart_wrapper) {
-			this.chart_wrapper.removeChild(this.svg);
-			this.chart_wrapper.appendChild(anim_svg);
-
-		}
-
-		// Replace the new svg (data has long been replaced)
-		setTimeout(() => {
-			// this.isAnimate = false;
-			if(anim_svg.parentNode == this.chart_wrapper) {
-				this.chart_wrapper.removeChild(anim_svg);
-				this.chart_wrapper.appendChild(this.svg);
-			}
-		}, 650);
 	}
 
 	calTranslateByAngle(property){
