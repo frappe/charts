@@ -42,7 +42,7 @@
 * ...or include within your HTML
 
   ```html
-    <script src="https://unpkg.com/frappe-charts@0.0.7/dist/frappe-charts.min.iife.js"></script>
+    <script src="https://unpkg.com/frappe-charts@0.0.8/dist/frappe-charts.min.iife.js"></script>
   ```
 
 #### Usage

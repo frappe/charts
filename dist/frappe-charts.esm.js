@@ -126,6 +126,8 @@ function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
 	return [height, y];
 }
 
+// Constants used
+
 function $$1(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
@@ -2854,6 +2856,14 @@ class Heatmap extends BaseChart {
 		this.bind_tooltip();
 	}
 }
+
+// if ("development" !== 'production') {
+// 	// Enable LiveReload
+// 	document.write(
+// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
+// 		':35729/livereload.js?snipver=1"></' + 'script>'
+// 	);
+// }
 
 const chartTypes = {
 	line: LineChart,

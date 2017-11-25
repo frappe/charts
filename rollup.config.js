@@ -33,7 +33,7 @@ export default [
 					resolve({ code: result.css.toString() })
 				}),
 				extensions: [ '.scss' ],
-				extract: 'dist/frappe-charts.min.css',
+				// extract: 'dist/frappe-charts.min.css',
 				plugins: [
 					nested(),
 					cssnext({ warnForDuplicates: false }),
