@@ -23,7 +23,7 @@ export default class BarChart extends AxisChart {
 
 	make_overlay() {
 		// Just make one out of the first element
-		let index = this.x.length - 1;
+		let index = this.xAxisLabels.length - 1;
 		let unit = this.y[0].svg_units[index];
 		this.updateCurrentDataPoint(index);
 
@@ -75,7 +75,7 @@ export default class BarChart extends AxisChart {
 	}
 
 	set_avg_unit_width_and_x_offset() {
-		this.avg_unit_width = this.width/(this.x.length + 1);
+		this.avg_unit_width = this.width/(this.xAxisLabels.length + 1);
 		this.x_offset = this.avg_unit_width;
 	}
 }

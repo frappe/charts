@@ -58,7 +58,7 @@ export default class LineChart extends AxisChart {
 
 	make_paths() {
 		this.y.map(d => {
-			this.make_path(d, this.x_axis_positions, d.y_tops, d.color || this.colors[d.index]);
+			this.make_path(d, this.xPositions, d.yUnitPositions, d.color || this.colors[d.index]);
 		});
 	}
 

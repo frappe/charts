@@ -1,8 +1,8 @@
 import { getBarHeightAndYAttr } from './draw-utils';
 
 const UNIT_ANIM_DUR = 350;
-const PATH_ANIM_DUR = 350;
-const MARKER_LINE_ANIM_DUR = 350;
+const PATH_ANIM_DUR = 650;
+const MARKER_LINE_ANIM_DUR = UNIT_ANIM_DUR;
 export const REPLACE_ALL_NEW_DUR = 250;
 
 const STD_EASING = 'easein';
