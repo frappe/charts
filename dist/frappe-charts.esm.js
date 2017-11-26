@@ -1128,16 +1128,17 @@ class BaseChart {
 	}
 
 	refresh(init=false) {
+		// TODO: no init!
 		this.setup_base_values();
 		this.set_width();
 
 		this.setup_container();
-		this.setup_components();
+		this.setupLayers();
 
 		this.setup_values();
 		this.setup_utils();
 
-		this.make_graph_components(init);
+		this.renderComponents(init);
 		this.make_tooltip();
 
 		if(this.summary.length > 0) {
@@ -1205,7 +1206,7 @@ class BaseChart {
 		);
 	}
 
-	setup_components() {}
+	setupLayers() {}
 	setup_values() {}
 	setup_utils() {}
 
@@ -1272,7 +1273,7 @@ class BaseChart {
 	getDataPoint() {}
 	updateCurrentDataPoint() {}
 
-	makeDrawAreaComponent(className, transform='') {
+	makeLayer(className, transform='') {
 		return makeSVGGroup(this.draw_area, className, transform);
 	}
 }
@@ -1380,33 +1381,29 @@ class AxisChart extends BaseChart {
 		if(!this.oldYAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
 	}
 
-	setup_components() {
-		super.setup_components();
-		this.setup_marker_components();
-		this.setup_aggregation_components();
-		this.setup_graph_components();
-	}
+	setupLayers() {
+		super.setupLayers();
 
-	setup_marker_components() {
-		this.y_axis_group = this.makeDrawAreaComponent('y axis');
-		this.x_axis_group = this.makeDrawAreaComponent('x axis');
-		this.specific_y_group = this.makeDrawAreaComponent('specific axis');
-	}
+		// For markers
+		this.y_axis_group = this.makeLayer('y axis');
+		this.x_axis_group = this.makeLayer('x axis');
+		this.specific_y_group = this.makeLayer('specific axis');
 
-	setup_aggregation_components() {
-		this.sum_group = this.makeDrawAreaComponent('data-points');
-		this.average_group = this.makeDrawAreaComponent('chart-area');
-	}
+		// For Aggregation
+		// this.sumGroup = this.makeLayer('data-points');
+		// this.averageGroup = this.makeLayer('chart-area');
 
-	setup_graph_components() {
+		this.setupPreUnitLayers && this.setupPreUnitLayers();
+
+		// For Graph points
 		this.svg_units_groups = [];
 		this.y.map((d, i) => {
-			this.svg_units_groups[i] = this.makeDrawAreaComponent(
+			this.svg_units_groups[i] = this.makeLayer(
 				'data-points data-points-' + i);
 		});
 	}
 
-	make_graph_components(init=false) {
+	renderComponents(init) {
 		this.makeYLines(this.yAxisPositions, this.yAxisLabels);
 		this.makeXLines(this.xPositions, this.xAxisLabels);
 		this.draw_graph(init);
@@ -1477,12 +1474,13 @@ class AxisChart extends BaseChart {
 	}
 
 	draw_graph(init=false) {
+		// TODO: NO INIT!
 		if(this.raw_chart_args.hasOwnProperty("init") && !this.raw_chart_args.init) {
 			this.y.map((d, i) => {
 				d.svg_units = [];
 				this.make_path && this.make_path(d, this.xPositions, d.yUnitPositions, this.colors[i]);
-				this.make_new_units(d);
-				this.calc_y_dependencies();
+				this.makeUnits(d);
+				this.calcYDependencies();
 			});
 			return;
 		}
@@ -1493,7 +1491,7 @@ class AxisChart extends BaseChart {
 		this.y.map((d, i) => {
 			d.svg_units = [];
 			this.make_path && this.make_path(d, this.xPositions, d.yUnitPositions, this.colors[i]);
-			this.make_new_units(d);
+			this.makeUnits(d);
 		});
 	}
 
@@ -1506,7 +1504,7 @@ class AxisChart extends BaseChart {
 			d.svg_units = [];
 
 			this.make_path && this.make_path(d, this.xPositions, d.yUnitPositions, this.colors[i]);
-			this.make_new_units(d);
+			this.makeUnits(d);
 		});
 
 		setTimeout(() => {
@@ -1525,8 +1523,8 @@ class AxisChart extends BaseChart {
 		}
 	}
 
-	make_new_units(d) {
-		this.make_new_units_for_dataset(
+	makeUnits(d) {
+		this.makeDatasetUnits(
 			this.xPositions,
 			d.yUnitPositions,
 			this.colors[d.index],
@@ -1535,7 +1533,7 @@ class AxisChart extends BaseChart {
 		);
 	}
 
-	make_new_units_for_dataset(x_values, y_values, color, dataset_index,
+	makeDatasetUnits(x_values, y_values, color, dataset_index,
 		no_of_datasets, units_group, units_array, unit) {
 
 		if(!units_group) units_group = this.svg_units_groups[dataset_index];
@@ -1574,14 +1572,14 @@ class AxisChart extends BaseChart {
 			let relY = e.pageY - o.top - this.translate_y;
 
 			if(relY < this.height + this.translate_y * 2) {
-				this.map_tooltip_x_position_and_show(relX);
+				this.mapTooltipXPosition(relX);
 			} else {
 				this.tip.hide_tip();
 			}
 		});
 	}
 
-	map_tooltip_x_position_and_show(relX) {
+	mapTooltipXPosition(relX) {
 		if(!this.y_min_tops) return;
 
 		let titles = this.xAxisLabels;
@@ -1634,7 +1632,7 @@ class AxisChart extends BaseChart {
 		this.setup_y();
 
 		// Change in data, so calculate dependencies
-		this.calc_y_dependencies();
+		this.calcYDependencies();
 
 		// Got the values? Now begin drawing
 		this.animator = new Animator(this.height, this.width, this.zero_line, this.avg_unit_width);
@@ -1681,7 +1679,7 @@ class AxisChart extends BaseChart {
 			);
 			if(extra_points > 0) {
 				this.make_path && this.make_path(d, old_x, old_y, this.colors[d.index]);
-				this.make_new_units_for_dataset(old_x, old_y, this.colors[d.index], d.index, this.y.length);
+				this.makeDatasetUnits(old_x, old_y, this.colors[d.index], d.index, this.y.length);
 			}
 			// Animation
 			d.path && this.animate_path(d, newX, newY);
@@ -1693,7 +1691,7 @@ class AxisChart extends BaseChart {
 		setTimeout(() => {
 			this.y.map(d => {
 				this.make_path && this.make_path(d, this.xPositions, d.yUnitPositions, this.colors[d.index]);
-				this.make_new_units(d);
+				this.makeUnits(d);
 
 				this.makeYLines(this.yAxisPositions, this.yAxisLabels);
 				this.makeXLines(this.xPositions, this.xAxisLabels);
@@ -1804,7 +1802,7 @@ class AxisChart extends BaseChart {
 		return all_values.concat(this.specific_values.map(d => d.value));
 	}
 
-	calc_y_dependencies() {
+	calcYDependencies() {
 		this.y_min_tops = new Array(this.xAxisLabels.length).fill(9999);
 		this.y.map(d => {
 			d.yUnitPositions = d.values.map( val => floatTwo(this.zero_line - val * this.multiplier));
@@ -1923,12 +1921,8 @@ class LineChart extends AxisChart {
 		this.setup();
 	}
 
-	setup_graph_components() {
-		this.setup_path_groups();
-		super.setup_graph_components();
-	}
-
-	setup_path_groups() {
+	setupPreUnitLayers() {
+		// Path groups
 		this.paths_groups = [];
 		this.y.map((d, i) => {
 			this.paths_groups[i] = makeSVGGroup(
@@ -1946,10 +1940,10 @@ class LineChart extends AxisChart {
 		};
 	}
 
-	make_new_units_for_dataset(x_values, y_values, color, dataset_index,
+	makeDatasetUnits(x_values, y_values, color, dataset_index,
 		no_of_datasets, units_group, units_array, unit) {
 		if(this.show_dots) {
-			super.make_new_units_for_dataset(x_values, y_values, color, dataset_index,
+			super.makeDatasetUnits(x_values, y_values, color, dataset_index,
 				no_of_datasets, units_group, units_array, unit);
 		}
 	}
@@ -2003,13 +1997,6 @@ class ScatterChart extends LineChart {
 		this.setup();
 	}
 
-	setup_graph_components() {
-		this.setup_path_groups();
-		super.setup_graph_components();
-	}
-
-	setup_path_groups() {}
-
 	setup_values() {
 		super.setup_values();
 		this.unit_args = {
@@ -2054,7 +2041,7 @@ class PercentageChart extends BaseChart {
 		});
 	}
 
-	setup_components() {
+	setupLayers() {
 		this.percentage_bar = $$1.create('div', {
 			className: 'progress',
 			inside: this.chart
@@ -2096,7 +2083,7 @@ class PercentageChart extends BaseChart {
 		this.legend_totals = this.slice_totals.slice(0, this.max_legend_points);
 	}
 
-	make_graph_components() {
+	renderComponents() {
 		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
 		this.slices = [];
 		this.slice_totals.map((total, i) => {
@@ -2214,7 +2201,7 @@ class PieChart extends BaseChart {
 		const{centerX,centerY,radius,clockWise} = this;
 		return `M${centerX} ${centerY} L${centerX+startPosition.x} ${centerY+startPosition.y} A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0} ${centerX+endPosition.x} ${centerY+endPosition.y} z`;
 	}
-	make_graph_components(init){
+	renderComponents(init){
 		const{radius,clockWise} = this;
 		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
 		const prevSlicesProperties = this.slicesProperties || [];
@@ -2447,11 +2434,11 @@ class Heatmap extends BaseChart {
 		}
 	}
 
-	setup_components() {
-		this.domain_label_group = this.makeDrawAreaComponent(
+	setupLayers() {
+		this.domain_label_group = this.makeLayer(
 			'domain-label-group chart-label');
 
-		this.data_groups = this.makeDrawAreaComponent(
+		this.data_groups = this.makeLayer(
 			'data-groups',
 			`translate(0, 20)`
 		);
@@ -2588,7 +2575,7 @@ class Heatmap extends BaseChart {
 		});
 	}
 
-	make_graph_components() {
+	renderComponents() {
 		Array.prototype.slice.call(
 			this.container.querySelectorAll('.graph-stats-container, .sub-title, .title')
 		).map(d => {

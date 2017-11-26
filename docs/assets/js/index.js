@@ -241,7 +241,7 @@ chart_update_buttons.querySelector('[data-update="random"]').addEventListener("c
 
 chart_update_buttons.querySelector('[data-update="add"]').addEventListener("click", (e) => {
 	// NOTE: this ought to be problem, labels stay the same after update
-	let index = update_chart.x.length; // last index to add
+	let index = update_chart.xAxisLabels.length; // last index to add
 	if(index >= update_data_all_indices.length) return;
 	update_chart.add_data_point(
 		[update_data_all_values[index]], update_data_all_labels[index]

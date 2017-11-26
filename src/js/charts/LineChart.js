@@ -25,12 +25,8 @@ export default class LineChart extends AxisChart {
 		this.setup();
 	}
 
-	setup_graph_components() {
-		this.setup_path_groups();
-		super.setup_graph_components();
-	}
-
-	setup_path_groups() {
+	setupPreUnitLayers() {
+		// Path groups
 		this.paths_groups = [];
 		this.y.map((d, i) => {
 			this.paths_groups[i] = makeSVGGroup(
@@ -48,10 +44,10 @@ export default class LineChart extends AxisChart {
 		};
 	}
 
-	make_new_units_for_dataset(x_values, y_values, color, dataset_index,
+	makeDatasetUnits(x_values, y_values, color, dataset_index,
 		no_of_datasets, units_group, units_array, unit) {
 		if(this.show_dots) {
-			super.make_new_units_for_dataset(x_values, y_values, color, dataset_index,
+			super.makeDatasetUnits(x_values, y_values, color, dataset_index,
 				no_of_datasets, units_group, units_array, unit);
 		}
 	}

@@ -80,11 +80,11 @@ export default class Heatmap extends BaseChart {
 		}
 	}
 
-	setup_components() {
-		this.domain_label_group = this.makeDrawAreaComponent(
+	setupLayers() {
+		this.domain_label_group = this.makeLayer(
 			'domain-label-group chart-label');
 
-		this.data_groups = this.makeDrawAreaComponent(
+		this.data_groups = this.makeLayer(
 			'data-groups',
 			`translate(0, 20)`
 		);
@@ -221,7 +221,7 @@ export default class Heatmap extends BaseChart {
 		});
 	}
 
-	make_graph_components() {
+	renderComponents() {
 		Array.prototype.slice.call(
 			this.container.querySelectorAll('.graph-stats-container, .sub-title, .title')
 		).map(d => {

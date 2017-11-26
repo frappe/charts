@@ -110,33 +110,29 @@ export default class AxisChart extends BaseChart {
 		if(!this.oldYAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
 	}
 
-	setup_components() {
-		super.setup_components();
-		this.setup_marker_components();
-		this.setup_aggregation_components();
-		this.setup_graph_components();
-	}
+	setupLayers() {
+		super.setupLayers();
 
-	setup_marker_components() {
-		this.y_axis_group = this.makeDrawAreaComponent('y axis');
-		this.x_axis_group = this.makeDrawAreaComponent('x axis');
-		this.specific_y_group = this.makeDrawAreaComponent('specific axis');
-	}
+		// For markers
+		this.y_axis_group = this.makeLayer('y axis');
+		this.x_axis_group = this.makeLayer('x axis');
+		this.specific_y_group = this.makeLayer('specific axis');
 
-	setup_aggregation_components() {
-		this.sum_group = this.makeDrawAreaComponent('data-points');
-		this.average_group = this.makeDrawAreaComponent('chart-area');
-	}
+		// For Aggregation
+		// this.sumGroup = this.makeLayer('data-points');
+		// this.averageGroup = this.makeLayer('chart-area');
 
-	setup_graph_components() {
+		this.setupPreUnitLayers && this.setupPreUnitLayers();
+
+		// For Graph points
 		this.svg_units_groups = [];
 		this.y.map((d, i) => {
-			this.svg_units_groups[i] = this.makeDrawAreaComponent(
+			this.svg_units_groups[i] = this.makeLayer(
 				'data-points data-points-' + i);
 		});
 	}
 
-	make_graph_components(init=false) {
+	renderComponents(init) {
 		this.makeYLines(this.yAxisPositions, this.yAxisLabels);
 		this.makeXLines(this.xPositions, this.xAxisLabels);
 		this.draw_graph(init);
@@ -207,12 +203,13 @@ export default class AxisChart extends BaseChart {
 	}
 
 	draw_graph(init=false) {
+		// TODO: NO INIT!
 		if(this.raw_chart_args.hasOwnProperty("init") && !this.raw_chart_args.init) {
 			this.y.map((d, i) => {
 				d.svg_units = [];
 				this.make_path && this.make_path(d, this.xPositions, d.yUnitPositions, this.colors[i]);
-				this.make_new_units(d);
-				this.calc_y_dependencies();
+				this.makeUnits(d);
+				this.calcYDependencies();
 			});
 			return;
 		}
@@ -223,7 +220,7 @@ export default class AxisChart extends BaseChart {
 		this.y.map((d, i) => {
 			d.svg_units = [];
 			this.make_path && this.make_path(d, this.xPositions, d.yUnitPositions, this.colors[i]);
-			this.make_new_units(d);
+			this.makeUnits(d);
 		});
 	}
 
@@ -236,7 +233,7 @@ export default class AxisChart extends BaseChart {
 			d.svg_units = [];
 
 			this.make_path && this.make_path(d, this.xPositions, d.yUnitPositions, this.colors[i]);
-			this.make_new_units(d);
+			this.makeUnits(d);
 		});
 
 		setTimeout(() => {
@@ -255,8 +252,8 @@ export default class AxisChart extends BaseChart {
 		}
 	}
 
-	make_new_units(d) {
-		this.make_new_units_for_dataset(
+	makeUnits(d) {
+		this.makeDatasetUnits(
 			this.xPositions,
 			d.yUnitPositions,
 			this.colors[d.index],
@@ -265,7 +262,7 @@ export default class AxisChart extends BaseChart {
 		);
 	}
 
-	make_new_units_for_dataset(x_values, y_values, color, dataset_index,
+	makeDatasetUnits(x_values, y_values, color, dataset_index,
 		no_of_datasets, units_group, units_array, unit) {
 
 		if(!units_group) units_group = this.svg_units_groups[dataset_index];
@@ -304,14 +301,14 @@ export default class AxisChart extends BaseChart {
 			let relY = e.pageY - o.top - this.translate_y;
 
 			if(relY < this.height + this.translate_y * 2) {
-				this.map_tooltip_x_position_and_show(relX);
+				this.mapTooltipXPosition(relX);
 			} else {
 				this.tip.hide_tip();
 			}
 		});
 	}
 
-	map_tooltip_x_position_and_show(relX) {
+	mapTooltipXPosition(relX) {
 		if(!this.y_min_tops) return;
 
 		let titles = this.xAxisLabels;
@@ -364,7 +361,7 @@ export default class AxisChart extends BaseChart {
 		this.setup_y();
 
 		// Change in data, so calculate dependencies
-		this.calc_y_dependencies();
+		this.calcYDependencies();
 
 		// Got the values? Now begin drawing
 		this.animator = new Animator(this.height, this.width, this.zero_line, this.avg_unit_width);
@@ -411,7 +408,7 @@ export default class AxisChart extends BaseChart {
 			);
 			if(extra_points > 0) {
 				this.make_path && this.make_path(d, old_x, old_y, this.colors[d.index]);
-				this.make_new_units_for_dataset(old_x, old_y, this.colors[d.index], d.index, this.y.length);
+				this.makeDatasetUnits(old_x, old_y, this.colors[d.index], d.index, this.y.length);
 			}
 			// Animation
 			d.path && this.animate_path(d, newX, newY);
@@ -423,7 +420,7 @@ export default class AxisChart extends BaseChart {
 		setTimeout(() => {
 			this.y.map(d => {
 				this.make_path && this.make_path(d, this.xPositions, d.yUnitPositions, this.colors[d.index]);
-				this.make_new_units(d);
+				this.makeUnits(d);
 
 				this.makeYLines(this.yAxisPositions, this.yAxisLabels);
 				this.makeXLines(this.xPositions, this.xAxisLabels);
@@ -534,7 +531,7 @@ export default class AxisChart extends BaseChart {
 		return all_values.concat(this.specific_values.map(d => d.value));
 	}
 
-	calc_y_dependencies() {
+	calcYDependencies() {
 		this.y_min_tops = new Array(this.xAxisLabels.length).fill(9999);
 		this.y.map(d => {
 			d.yUnitPositions = d.values.map( val => floatTwo(this.zero_line - val * this.multiplier));

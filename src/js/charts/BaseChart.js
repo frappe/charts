@@ -135,16 +135,17 @@ export default class BaseChart {
 	}
 
 	refresh(init=false) {
+		// TODO: no init!
 		this.setup_base_values();
 		this.set_width();
 
 		this.setup_container();
-		this.setup_components();
+		this.setupLayers();
 
 		this.setup_values();
 		this.setup_utils();
 
-		this.make_graph_components(init);
+		this.renderComponents(init);
 		this.make_tooltip();
 
 		if(this.summary.length > 0) {
@@ -212,7 +213,7 @@ export default class BaseChart {
 		);
 	}
 
-	setup_components() {}
+	setupLayers() {}
 	setup_values() {}
 	setup_utils() {}
 
@@ -279,7 +280,7 @@ export default class BaseChart {
 	getDataPoint() {}
 	updateCurrentDataPoint() {}
 
-	makeDrawAreaComponent(className, transform='') {
+	makeLayer(className, transform='') {
 		return makeSVGGroup(this.draw_area, className, transform);
 	}
 }

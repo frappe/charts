@@ -69,7 +69,7 @@ export default class PieChart extends BaseChart {
 		const{centerX,centerY,radius,clockWise} = this;
 		return `M${centerX} ${centerY} L${centerX+startPosition.x} ${centerY+startPosition.y} A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0} ${centerX+endPosition.x} ${centerY+endPosition.y} z`;
 	}
-	make_graph_components(init){
+	renderComponents(init){
 		const{radius,clockWise} = this;
 		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
 		const prevSlicesProperties = this.slicesProperties || [];

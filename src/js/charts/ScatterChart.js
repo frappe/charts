@@ -15,13 +15,6 @@ export default class ScatterChart extends LineChart {
 		this.setup();
 	}
 
-	setup_graph_components() {
-		this.setup_path_groups();
-		super.setup_graph_components();
-	}
-
-	setup_path_groups() {}
-
 	setup_values() {
 		super.setup_values();
 		this.unit_args = {

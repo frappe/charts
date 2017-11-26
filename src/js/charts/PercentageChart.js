@@ -33,7 +33,7 @@ export default class PercentageChart extends BaseChart {
 		});
 	}
 
-	setup_components() {
+	setupLayers() {
 		this.percentage_bar = $.create('div', {
 			className: 'progress',
 			inside: this.chart
@@ -75,7 +75,7 @@ export default class PercentageChart extends BaseChart {
 		this.legend_totals = this.slice_totals.slice(0, this.max_legend_points);
 	}
 
-	make_graph_components() {
+	renderComponents() {
 		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
 		this.slices = [];
 		this.slice_totals.map((total, i) => {
