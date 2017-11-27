@@ -506,31 +506,46 @@ var Animator = (function() {
 			return pathComponents;
 		},
 
-		verticalLine: function(xLine, newX, oldX) {
+		translate: function(obj, oldCoord, newCoord, duration) {
 			return [
-				{unit: xLine, array: [0], index: 0},
-				{transform: `${ newX }, 0`},
-				MARKER_LINE_ANIM_DUR,
+				{unit: obj, array: [0], index: 0},
+				{transform: newCoord.join(', ')},
+				duration,
 				STD_EASING,
 				"translate",
-				{transform: `${ oldX }, 0`}
+				{transform: oldCoord.join(', ')}
 			];
 		},
 
+		verticalLine: function(xLine, newX, oldX) {
+			return this.translate(xLine, [oldX, 0], [newX, 0], MARKER_LINE_ANIM_DUR);
+		},
+
 		horizontalLine: function(yLine, newY, oldY) {
-			return [
-				{unit: yLine, array: [0], index: 0},
-				{transform: `0, ${ newY }`},
-				MARKER_LINE_ANIM_DUR,
-				STD_EASING,
-				"translate",
-				{transform: `0, ${ oldY }`}
-			];
+			return this.translate(yLine, [0, oldY], [0, newY], MARKER_LINE_ANIM_DUR);
 		}
 	};
 
 	return Animator;
 })();
+
+
+
+
+
+// export function animateXLines(animator, lines, oldX, newX) {
+// 	// this.xAxisLines.map((xLine, i) => {
+// 	return lines.map((xLine, i) => {
+// 		return animator.verticalLine(xLine, newX[i], oldX[i]);
+// 	});
+// }
+
+// export function animateYLines(animator, lines, oldY, newY) {
+// 	// this.yAxisLines.map((yLine, i) => {
+// 	lines.map((yLine, i) => {
+// 		return animator.horizontalLine(yLine, newY[i], oldY[i]);
+// 	});
+// }
 
 // Leveraging SMIL Animations
 
@@ -1026,10 +1041,8 @@ class BaseChart {
 		title = '',
 		subtitle = '',
 		colors = [],
-		summary = [],
 
 		is_navigable = 0,
-		has_legend = 0,
 
 		type = '',
 
@@ -1043,46 +1056,26 @@ class BaseChart {
 		this.subtitle = subtitle;
 
 		this.data = data;
-		this.oldData = Object.assign({}, data);
-
-		this.specific_values = data.specific_values || [];
-		this.summary = summary;
 
 		this.is_navigable = is_navigable;
 		if(this.is_navigable) {
 			this.current_index = 0;
 		}
-		this.has_legend = has_legend;
 
-		this.setColors(colors, type);
-		this.set_margins(height);
+		this.setupConfiguration(arguments[0]);
 	}
 
-	get_different_chart(type) {
-		if(type === this.type) return;
+	setupConfiguration(args) {
+		// Make a this.config, that has stuff like showTooltip,
+		// showLegend, which then all functions will check
+		this.setColors(args.colors, args.type);
+		this.set_margins(args.height);
 
-		if(!ALL_CHART_TYPES.includes(type)) {
-			console.error(`'${type}' is not a valid chart type.`);
-		}
-
-		if(!COMPATIBLE_CHARTS[this.type].includes(type)) {
-			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
-		}
-
-		// whether the new chart can use the existing colors
-		const use_color = COLOR_COMPATIBLE_CHARTS[this.type].includes(type);
-
-		// Okay, this is anticlimactic
-		// this function will need to actually be 'change_chart_type(type)'
-		// that will update only the required elements, but for now ...
-		return new Chart({
-			parent: this.raw_chart_args.parent,
-			title: this.title,
-			data: this.raw_chart_args.data,
-			type: type,
-			height: this.raw_chart_args.height,
-			colors: use_color ? this.colors : undefined
-		});
+		this.config = {
+			showTooltip: 1,
+			showLegend: 1,
+			isNavigable: 0
+		};
 	}
 
 	setColors(colors, type) {
@@ -1101,58 +1094,81 @@ class BaseChart {
 	}
 
 	set_margins(height) {
-		this.base_height = height;
+		this.baseHeight = height;
 		this.height = height - 40;
 		this.translate_x = 60;
 		this.translate_y = 10;
 	}
 
-	setup() {
+	validate(){
 		if(!this.parent) {
 			console.error("No parent element to render on was provided.");
-			return;
+			return false;
 		}
-		if(this.validate_and_prepare_data()) {
-			this.bind_window_events();
-			this.refresh(true);
+		if(!this.validateAndPrepareData()) {
+			return false;
 		}
-	}
-
-	validate_and_prepare_data() {
 		return true;
 	}
 
-	bind_window_events() {
-		window.addEventListener('resize', () => this.refresh());
-		window.addEventListener('orientationchange', () => this.refresh());
+	validateAndPrepareData() {
+		return true;
 	}
 
-	refresh(init=false) {
-		// TODO: no init!
-		this.setup_base_values();
-		this.set_width();
-
-		this.setup_container();
-		this.setupLayers();
-
-		this.setup_values();
-		this.setup_utils();
-
-		this.renderComponents(init);
-		this.make_tooltip();
-
-		if(this.summary.length > 0) {
-			this.show_custom_summary();
-		} else {
-			this.show_summary();
-		}
-
-		if(this.is_navigable) {
-			this.setup_navigation(init);
+	setup() {
+		if(this.validate()) {
+			this._setup();
 		}
 	}
 
-	set_width() {
+	_setup() {
+		this.bindWindowEvents();
+		this.setupConstants();
+
+		this.setupEmptyValues();
+		// this.setupComponents();
+
+		this.makeContainer();
+		this.makeTooltip(); // without binding
+		this.draw(true);
+	}
+
+	draw(init=false) {
+		// (everything, layers, groups, units)
+		this.setWidth();
+
+		// dependent on width >.<, how can this be decoupled
+		this.setupComponents();
+
+		this.makeChartArea();
+		this.makeLayers();
+
+		this.renderComponents(); // with zero values
+		this.renderLegend();
+		this.setupNavigation(init);
+
+		if(init) this.update(this.data);
+	}
+
+	update(data, animate=true) {
+		this.oldData = Object.assign({}, this.data);
+		this.data = this.prepareNewData(data);
+
+		this.calculateValues();
+		this.updateComponents(animate);
+	}
+
+	prepareNewData(newData) {
+		// handle all types of passed data?
+		return newData;
+	}
+
+	bindWindowEvents() {
+		window.addEventListener('resize', () => this.draw());
+		window.addEventListener('orientationchange', () => this.draw());
+	}
+
+	setWidth() {
 		let special_values_width = 0;
 		let char_width = 8;
 		this.specific_values.map(val => {
@@ -1165,9 +1181,16 @@ class BaseChart {
 		this.width = this.base_width - this.translate_x * 2;
 	}
 
-	setup_base_values() {}
+	setupConstants() {}
 
-	setup_container() {
+	setupEmptyValues() {}
+
+	setupComponents() {
+		// Components config
+		this.components = [];
+	}
+
+	makeContainer() {
 		this.container = $$1.create('div', {
 			className: 'chart-container',
 			innerHTML: `<h6 class="title">${this.title}</h6>
@@ -1182,35 +1205,48 @@ class BaseChart {
 
 		this.chart_wrapper = this.container.querySelector('.frappe-chart');
 		this.stats_wrapper = this.container.querySelector('.graph-stats-container');
-
-		this.make_chart_area();
-		this.make_draw_area();
 	}
 
-	make_chart_area() {
+	makeChartArea() {
 		this.svg = makeSVGContainer(
 			this.chart_wrapper,
 			'chart',
-			this.base_width,
-			this.base_height
+			this.baseWidth,
+			this.baseHeight
 		);
 		this.svg_defs = makeSVGDefs(this.svg);
-		return this.svg;
-	}
 
-	make_draw_area() {
-		this.draw_area = makeSVGGroup(
+		this.drawArea = makeSVGGroup(
 			this.svg,
 			this.type + '-chart',
 			`translate(${this.translate_x}, ${this.translate_y})`
 		);
 	}
 
-	setupLayers() {}
-	setup_values() {}
-	setup_utils() {}
 
-	make_tooltip() {
+	makeLayers() {
+		this.components.forEach((component) => {
+			component.layer = this.makeLayer(component.layerClass);
+		});
+	}
+
+	calculateValues() {}
+
+	renderComponents() {
+		this.components.forEach(c => {
+			c.store = c.make(...c.makeArgs);
+			c.layer.textContent = '';
+			c.store.forEach(element => {c.layer.appendChild(element);});
+		});
+	}
+
+	updateComponents() {
+		// this.components.forEach((component) => {
+		// 	//
+		// });
+	}
+
+	makeTooltip() {
 		this.tip = new SvgTip({
 			parent: this.chart_wrapper,
 			colors: this.colors
@@ -1231,8 +1267,11 @@ class BaseChart {
 			this.stats_wrapper.appendChild(stats);
 		});
 	}
+	renderLegend() {}
 
-	setup_navigation(init=false) {
+	setupNavigation(init=false) {
+		if(this.is_navigable) return;
+
 		this.make_overlay();
 
 		if(init) {
@@ -1268,36 +1307,124 @@ class BaseChart {
 	on_down_arrow() {}
 	on_enter_key() {}
 
-	updateData() {}
-
 	getDataPoint() {}
 	updateCurrentDataPoint() {}
 
 	makeLayer(className, transform='') {
-		return makeSVGGroup(this.draw_area, className, transform);
+		return makeSVGGroup(this.drawArea, className, transform);
+	}
+
+	get_different_chart(type) {
+		if(type === this.type) return;
+
+		if(!ALL_CHART_TYPES.includes(type)) {
+			console.error(`'${type}' is not a valid chart type.`);
+		}
+
+		if(!COMPATIBLE_CHARTS[this.type].includes(type)) {
+			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
+		}
+
+		// whether the new chart can use the existing colors
+		const use_color = COLOR_COMPATIBLE_CHARTS[this.type].includes(type);
+
+		// Okay, this is anticlimactic
+		// this function will need to actually be 'change_chart_type(type)'
+		// that will update only the required elements, but for now ...
+		return new Chart({
+			parent: this.raw_chart_args.parent,
+			title: this.title,
+			data: this.raw_chart_args.data,
+			type: type,
+			height: this.raw_chart_args.height,
+			colors: use_color ? this.colors : undefined
+		});
 	}
 }
 
 class AxisChart extends BaseChart {
 	constructor(args) {
 		super(args);
-
-		this.xAxisLabels = this.data.labels || [];
-		this.y = this.data.datasets || [];
-
 		this.is_series = args.is_series;
-
 		this.format_tooltip_y = args.format_tooltip_y;
 		this.format_tooltip_x = args.format_tooltip_x;
-
 		this.zero_line = this.height;
 	}
 
-	validate_and_prepare_data() {
+	validateAndPrepareData() {
+		this.xAxisLabels = this.data.labels || [];
+		this.y = this.data.datasets || [];
+
 		this.y.forEach(function(d, i) {
 			d.index = i;
 		}, this);
 		return true;
+	}
+
+	setupEmptyValues() {
+		this.yAxisPositions = [this.height, this.height/2, 0];
+		this.yAxisLabels = ['0', '5', '10'];
+
+		this.xPositions = [0, this.width/2, this.width];
+		this.xAxisLabels = ['0', '5', '10'];
+	}
+
+	setupComponents() {
+		let self = this;
+		this.yAxis = {
+			layerClass: 'y axis',
+			layer: undefined,
+			make: self.makeYLines,
+			makeArgs: [self.yAxisPositions, self.yAxisLabels,
+				self.width, self.y_axis_mode],
+			store: [], //this.yAxisLines
+			animate: self.animateYLines
+		};
+		this.xAxis = {
+			layerClass: 'x axis',
+			layer: undefined,
+			make: self.makeXLines,
+			makeArgs: [self.xPositions, self.xAxisLabels],
+			store: [], //this.xAxisLines
+			animate: self.animateXLines
+		};
+		this.yMarkerLines = {
+			// layerClass: 'y marker axis',
+			// layer: undefined,
+			// make: makeYMarkerLines,
+			// makeArgs: [this.yMarkerPositions, this.yMarker],
+			// store: [],
+			// animate: animateYMarkerLines
+		};
+		this.xMarkerLines = {
+			// layerClass: 'x marker axis',
+			// layer: undefined,
+			// make: makeXMarkerLines,
+			// makeArgs: [this.yMarkerPositions, this.xMarker],
+			// store: [],
+			// animate: animateXMarkerLines
+		};
+
+		// Marker Regions
+
+		// Indexed according to dataset
+		this.dataUnits = {
+			layerClass: 'y marker axis',
+			layer: undefined,
+			// make: makeXLines,
+			// makeArgs: [this.xPositions, this.xAxisLabels],
+			// store: [],
+			// animate: animateXLines,
+			indexed: 1
+		};
+
+		this.components = [
+			this.yAxis,
+			// this.xAxis,
+			// this.yMarkerLines,
+			// this.xMarkerLines,
+			// this.dataUnits,
+		];
 	}
 
 	setup_values() {
@@ -1310,7 +1437,6 @@ class AxisChart extends BaseChart {
 
 	setup_x() {
 		this.set_avg_unit_width_and_x_offset();
-
 		if(this.xPositions) {
 			this.x_old_axis_positions =  this.xPositions.slice();
 		}
@@ -1376,39 +1502,39 @@ class AxisChart extends BaseChart {
 		this.yAxisPositions = this.yAxisLabels.map(d => this.zero_line - d * this.multiplier);
 		if(!this.oldYAxisPositions) this.oldYAxisPositions = this.yAxisPositions;
 
-		if(this.yAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
-		this.yAnnotationPositions = this.specific_values.map(d => this.zero_line - d.value * this.multiplier);
-		if(!this.oldYAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
+		// if(this.yAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
+		// this.yAnnotationPositions = this.specific_values.map(d => this.zero_line - d.value * this.multiplier);
+		// if(!this.oldYAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
 	}
 
-	setupLayers() {
-		super.setupLayers();
+	// setupLayers() {
+	// 	super.setupLayers();
 
-		// For markers
-		this.y_axis_group = this.makeLayer('y axis');
-		this.x_axis_group = this.makeLayer('x axis');
-		this.specific_y_group = this.makeLayer('specific axis');
+	// 	// For markers
+	// 	this.y_axis_group = this.makeLayer('y axis');
+	// 	this.x_axis_group = this.makeLayer('x axis');
+	// 	this.specific_y_group = this.makeLayer('specific axis');
 
-		// For Aggregation
-		// this.sumGroup = this.makeLayer('data-points');
-		// this.averageGroup = this.makeLayer('chart-area');
+	// 	// For Aggregation
+	// 	// this.sumGroup = this.makeLayer('data-points');
+	// 	// this.averageGroup = this.makeLayer('chart-area');
 
-		this.setupPreUnitLayers && this.setupPreUnitLayers();
+	// 	this.setupPreUnitLayers && this.setupPreUnitLayers();
 
-		// For Graph points
-		this.svg_units_groups = [];
-		this.y.map((d, i) => {
-			this.svg_units_groups[i] = this.makeLayer(
-				'data-points data-points-' + i);
-		});
-	}
+	// 	// For Graph points
+	// 	this.svg_units_groups = [];
+	// 	this.y.map((d, i) => {
+	// 		this.svg_units_groups[i] = this.makeLayer(
+	// 			'data-points data-points-' + i);
+	// 	});
+	// }
 
-	renderComponents(init) {
-		this.makeYLines(this.yAxisPositions, this.yAxisLabels);
-		this.makeXLines(this.xPositions, this.xAxisLabels);
-		this.draw_graph(init);
-		// this.make_y_specifics(this.yAnnotationPositions, this.specific_values);
-	}
+	// renderComponents(init) {
+	// 	this.makeYLines(this.yAxisPositions, this.yAxisLabels);
+	// 	this.makeXLines(this.xPositions, this.xAxisLabels);
+	// 	this.draw_graph(init);
+	// 	// this.make_y_specifics(this.yAnnotationPositions, this.specific_values);
+	// }
 
 	makeXLines(positions, values) {
 		let [start_at, height, text_start_at,
@@ -1451,14 +1577,36 @@ class AxisChart extends BaseChart {
 		});
 	}
 
-	makeYLines(positions, values) {
-		let [width, text_end_at, axis_line_class,
-			start_at] = getYLineProps(this.width, this.y_axis_mode);
+	// makeYLines(positions, values) {
+	// 	let [width, text_end_at, axis_line_class,
+	// 		start_at] = getYLineProps(this.width, this.y_axis_mode);
 
-		this.yAxisLines = [];
-		this.y_axis_group.textContent = '';
-		values.map((value, i) => {
-			let yLine = makeYLine(
+	// 	this.yAxisLines = [];
+	// 	this.y_axis_group.textContent = '';
+	// 	values.map((value, i) => {
+	// 		let yLine = makeYLine(
+	// 			start_at,
+	// 			width,
+	// 			text_end_at,
+	// 			value,
+	// 			'y-value-text',
+	// 			axis_line_class,
+	// 			positions[i],
+	// 			(value === 0 && i !== 0) // Non-first Zero line
+	// 		);
+	// 		this.yAxisLines.push(yLine);
+	// 		this.y_axis_group.appendChild(yLine);
+	// 	});
+	// }
+
+	makeYLines(positions, values, totalWidth, mode) {
+		let [width, text_end_at, axis_line_class,
+			start_at] = getYLineProps(totalWidth, mode);
+
+		// this.yAxisLines = [];
+		// this.y_axis_group.textContent = '';
+		return values.map((value, i) => {
+			return makeYLine(
 				start_at,
 				width,
 				text_end_at,
@@ -1468,8 +1616,8 @@ class AxisChart extends BaseChart {
 				positions[i],
 				(value === 0 && i !== 0) // Non-first Zero line
 			);
-			this.yAxisLines.push(yLine);
-			this.y_axis_group.appendChild(yLine);
+			// this.yAxisLines.push(yLine);
+			// this.y_axis_group.appendChild(yLine);
 		});
 	}
 
@@ -1512,14 +1660,14 @@ class AxisChart extends BaseChart {
 		}, 350);
 	}
 
-	setup_navigation(init) {
+	setupNavigation(init) {
 		if(init) {
 			// Hack: defer nav till initial updateData
 			setTimeout(() => {
-				super.setup_navigation(init);
+				super.setupNavigation(init);
 			}, 500);
 		} else {
-			super.setup_navigation(init);
+			super.setupNavigation(init);
 		}
 	}
 
@@ -1850,7 +1998,7 @@ class BarChart extends AxisChart {
 		this.overlay = unit.cloneNode();
 		this.overlay.style.fill = '#000000';
 		this.overlay.style.opacity = '0.4';
-		this.draw_area.appendChild(this.overlay);
+		this.drawArea.appendChild(this.overlay);
 	}
 
 	bind_overlay() {
@@ -1926,7 +2074,7 @@ class LineChart extends AxisChart {
 		this.paths_groups = [];
 		this.y.map((d, i) => {
 			this.paths_groups[i] = makeSVGGroup(
-				this.draw_area,
+				this.drawArea,
 				'path-group path-group-' + i
 			);
 		});
@@ -2020,29 +2168,27 @@ class PercentageChart extends BaseChart {
 		this.setup();
 	}
 
-	make_chart_area() {
+	makeChartArea() {
 		this.chart_wrapper.className += ' ' + 'graph-focus-margin';
 		this.chart_wrapper.style.marginTop = '45px';
 
 		this.stats_wrapper.className += ' ' + 'graph-focus-margin';
 		this.stats_wrapper.style.marginBottom = '30px';
 		this.stats_wrapper.style.paddingTop = '0px';
-	}
 
-	make_draw_area() {
-		this.chart_div = $$1.create('div', {
+		this.chartDiv = $$1.create('div', {
 			className: 'div',
 			inside: this.chart_wrapper
 		});
 
 		this.chart = $$1.create('div', {
 			className: 'progress-chart',
-			inside: this.chart_div
+			inside: this.chartDiv
 		});
 	}
 
 	setupLayers() {
-		this.percentage_bar = $$1.create('div', {
+		this.percentageBar = $$1.create('div', {
 			className: 'progress',
 			inside: this.chart
 		});
@@ -2089,7 +2235,7 @@ class PercentageChart extends BaseChart {
 		this.slice_totals.map((total, i) => {
 			let slice = $$1.create('div', {
 				className: `progress-bar`,
-				inside: this.percentage_bar,
+				inside: this.percentageBar,
 				styles: {
 					background: this.colors[i],
 					width: total*100/this.grand_total + "%"
@@ -2116,7 +2262,7 @@ class PercentageChart extends BaseChart {
 		});
 	}
 
-	show_summary() {
+	renderLegend() {
 		let x_values = this.formatted_labels && this.formatted_labels.length > 0
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {
@@ -2228,7 +2374,7 @@ class PieChart extends BaseChart {
 			const curPath = this.makeArcPath(curStart,curEnd);
 			let slice = makePath(curPath, 'pie-path', 'none', this.colors[i]);
 			slice.style.transition = 'transform .3s;';
-			this.draw_area.appendChild(slice);
+			this.drawArea.appendChild(slice);
 
 			this.slices.push(slice);
 			this.slicesProperties.push({
@@ -2298,11 +2444,11 @@ class PieChart extends BaseChart {
 		this.hoverSlice(this.curActiveSlice,this.curActiveSliceIndex,false);
 	}
 	bind_tooltip() {
-		this.draw_area.addEventListener('mousemove',this.mouseMove);
-		this.draw_area.addEventListener('mouseleave',this.mouseLeave);
+		this.drawArea.addEventListener('mousemove',this.mouseMove);
+		this.drawArea.addEventListener('mouseleave',this.mouseLeave);
 	}
 
-	show_summary() {
+	renderLegend() {
 		let x_values = this.formatted_labels && this.formatted_labels.length > 0
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {
@@ -2408,7 +2554,7 @@ class Heatmap extends BaseChart {
 		return valid;
 	}
 
-	setup_base_values() {
+	setupConstants() {
 		this.today = new Date();
 
 		if(!this.start) {
@@ -2426,11 +2572,11 @@ class Heatmap extends BaseChart {
 		this.no_of_cols = getWeeksBetween(this.first_week_start + '', this.last_week_start + '') + 1;
 	}
 
-	set_width() {
-		this.base_width = (this.no_of_cols + 3) * 12 ;
+	setWidth() {
+		this.baseWidth = (this.no_of_cols + 3) * 12 ;
 
 		if(this.discrete_domains) {
-			this.base_width += (12 * 12);
+			this.baseWidth += (12 * 12);
 		}
 	}
 

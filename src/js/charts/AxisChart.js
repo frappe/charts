@@ -10,23 +10,86 @@ import BaseChart from './BaseChart';
 export default class AxisChart extends BaseChart {
 	constructor(args) {
 		super(args);
-
-		this.xAxisLabels = this.data.labels || [];
-		this.y = this.data.datasets || [];
-
 		this.is_series = args.is_series;
-
 		this.format_tooltip_y = args.format_tooltip_y;
 		this.format_tooltip_x = args.format_tooltip_x;
-
 		this.zero_line = this.height;
 	}
 
-	validate_and_prepare_data() {
+	validateAndPrepareData() {
+		this.xAxisLabels = this.data.labels || [];
+		this.y = this.data.datasets || [];
+
 		this.y.forEach(function(d, i) {
 			d.index = i;
 		}, this);
 		return true;
+	}
+
+	setupEmptyValues() {
+		this.yAxisPositions = [this.height, this.height/2, 0];
+		this.yAxisLabels = ['0', '5', '10'];
+
+		this.xPositions = [0, this.width/2, this.width];
+		this.xAxisLabels = ['0', '5', '10'];
+	}
+
+	setupComponents() {
+		let self = this;
+		this.yAxis = {
+			layerClass: 'y axis',
+			layer: undefined,
+			make: self.makeYLines,
+			makeArgs: [self.yAxisPositions, self.yAxisLabels,
+				self.width, self.y_axis_mode],
+			store: [], //this.yAxisLines
+			animate: self.animateYLines
+		};
+		this.xAxis = {
+			layerClass: 'x axis',
+			layer: undefined,
+			make: self.makeXLines,
+			makeArgs: [self.xPositions, self.xAxisLabels],
+			store: [], //this.xAxisLines
+			animate: self.animateXLines
+		};
+		this.yMarkerLines = {
+			// layerClass: 'y marker axis',
+			// layer: undefined,
+			// make: makeYMarkerLines,
+			// makeArgs: [this.yMarkerPositions, this.yMarker],
+			// store: [],
+			// animate: animateYMarkerLines
+		};
+		this.xMarkerLines = {
+			// layerClass: 'x marker axis',
+			// layer: undefined,
+			// make: makeXMarkerLines,
+			// makeArgs: [this.yMarkerPositions, this.xMarker],
+			// store: [],
+			// animate: animateXMarkerLines
+		};
+
+		// Marker Regions
+
+		// Indexed according to dataset
+		this.dataUnits = {
+			layerClass: 'y marker axis',
+			layer: undefined,
+			// make: makeXLines,
+			// makeArgs: [this.xPositions, this.xAxisLabels],
+			// store: [],
+			// animate: animateXLines,
+			indexed: 1
+		};
+
+		this.components = [
+			this.yAxis,
+			// this.xAxis,
+			// this.yMarkerLines,
+			// this.xMarkerLines,
+			// this.dataUnits,
+		];
 	}
 
 	setup_values() {
@@ -39,7 +102,6 @@ export default class AxisChart extends BaseChart {
 
 	setup_x() {
 		this.set_avg_unit_width_and_x_offset();
-
 		if(this.xPositions) {
 			this.x_old_axis_positions =  this.xPositions.slice();
 		}
@@ -105,39 +167,39 @@ export default class AxisChart extends BaseChart {
 		this.yAxisPositions = this.yAxisLabels.map(d => this.zero_line - d * this.multiplier);
 		if(!this.oldYAxisPositions) this.oldYAxisPositions = this.yAxisPositions;
 
-		if(this.yAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
-		this.yAnnotationPositions = this.specific_values.map(d => this.zero_line - d.value * this.multiplier);
-		if(!this.oldYAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
+		// if(this.yAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
+		// this.yAnnotationPositions = this.specific_values.map(d => this.zero_line - d.value * this.multiplier);
+		// if(!this.oldYAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
 	}
 
-	setupLayers() {
-		super.setupLayers();
+	// setupLayers() {
+	// 	super.setupLayers();
 
-		// For markers
-		this.y_axis_group = this.makeLayer('y axis');
-		this.x_axis_group = this.makeLayer('x axis');
-		this.specific_y_group = this.makeLayer('specific axis');
+	// 	// For markers
+	// 	this.y_axis_group = this.makeLayer('y axis');
+	// 	this.x_axis_group = this.makeLayer('x axis');
+	// 	this.specific_y_group = this.makeLayer('specific axis');
 
-		// For Aggregation
-		// this.sumGroup = this.makeLayer('data-points');
-		// this.averageGroup = this.makeLayer('chart-area');
+	// 	// For Aggregation
+	// 	// this.sumGroup = this.makeLayer('data-points');
+	// 	// this.averageGroup = this.makeLayer('chart-area');
 
-		this.setupPreUnitLayers && this.setupPreUnitLayers();
+	// 	this.setupPreUnitLayers && this.setupPreUnitLayers();
 
-		// For Graph points
-		this.svg_units_groups = [];
-		this.y.map((d, i) => {
-			this.svg_units_groups[i] = this.makeLayer(
-				'data-points data-points-' + i);
-		});
-	}
+	// 	// For Graph points
+	// 	this.svg_units_groups = [];
+	// 	this.y.map((d, i) => {
+	// 		this.svg_units_groups[i] = this.makeLayer(
+	// 			'data-points data-points-' + i);
+	// 	});
+	// }
 
-	renderComponents(init) {
-		this.makeYLines(this.yAxisPositions, this.yAxisLabels);
-		this.makeXLines(this.xPositions, this.xAxisLabels);
-		this.draw_graph(init);
-		// this.make_y_specifics(this.yAnnotationPositions, this.specific_values);
-	}
+	// renderComponents(init) {
+	// 	this.makeYLines(this.yAxisPositions, this.yAxisLabels);
+	// 	this.makeXLines(this.xPositions, this.xAxisLabels);
+	// 	this.draw_graph(init);
+	// 	// this.make_y_specifics(this.yAnnotationPositions, this.specific_values);
+	// }
 
 	makeXLines(positions, values) {
 		let [start_at, height, text_start_at,
@@ -180,14 +242,36 @@ export default class AxisChart extends BaseChart {
 		});
 	}
 
-	makeYLines(positions, values) {
-		let [width, text_end_at, axis_line_class,
-			start_at] = getYLineProps(this.width, this.y_axis_mode);
+	// makeYLines(positions, values) {
+	// 	let [width, text_end_at, axis_line_class,
+	// 		start_at] = getYLineProps(this.width, this.y_axis_mode);
 
-		this.yAxisLines = [];
-		this.y_axis_group.textContent = '';
-		values.map((value, i) => {
-			let yLine = makeYLine(
+	// 	this.yAxisLines = [];
+	// 	this.y_axis_group.textContent = '';
+	// 	values.map((value, i) => {
+	// 		let yLine = makeYLine(
+	// 			start_at,
+	// 			width,
+	// 			text_end_at,
+	// 			value,
+	// 			'y-value-text',
+	// 			axis_line_class,
+	// 			positions[i],
+	// 			(value === 0 && i !== 0) // Non-first Zero line
+	// 		);
+	// 		this.yAxisLines.push(yLine);
+	// 		this.y_axis_group.appendChild(yLine);
+	// 	});
+	// }
+
+	makeYLines(positions, values, totalWidth, mode) {
+		let [width, text_end_at, axis_line_class,
+			start_at] = getYLineProps(totalWidth, mode);
+
+		// this.yAxisLines = [];
+		// this.y_axis_group.textContent = '';
+		return values.map((value, i) => {
+			return makeYLine(
 				start_at,
 				width,
 				text_end_at,
@@ -197,8 +281,8 @@ export default class AxisChart extends BaseChart {
 				positions[i],
 				(value === 0 && i !== 0) // Non-first Zero line
 			);
-			this.yAxisLines.push(yLine);
-			this.y_axis_group.appendChild(yLine);
+			// this.yAxisLines.push(yLine);
+			// this.y_axis_group.appendChild(yLine);
 		});
 	}
 
@@ -241,14 +325,14 @@ export default class AxisChart extends BaseChart {
 		}, 350);
 	}
 
-	setup_navigation(init) {
+	setupNavigation(init) {
 		if(init) {
 			// Hack: defer nav till initial updateData
 			setTimeout(() => {
-				super.setup_navigation(init);
+				super.setupNavigation(init);
 			}, 500);
 		} else {
-			super.setup_navigation(init);
+			super.setupNavigation(init);
 		}
 	}
 

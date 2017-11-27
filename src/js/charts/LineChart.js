@@ -30,7 +30,7 @@ export default class LineChart extends AxisChart {
 		this.paths_groups = [];
 		this.y.map((d, i) => {
 			this.paths_groups[i] = makeSVGGroup(
-				this.draw_area,
+				this.drawArea,
 				'path-group path-group-' + i
 			);
 		});

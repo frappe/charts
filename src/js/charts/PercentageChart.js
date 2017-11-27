@@ -12,29 +12,27 @@ export default class PercentageChart extends BaseChart {
 		this.setup();
 	}
 
-	make_chart_area() {
+	makeChartArea() {
 		this.chart_wrapper.className += ' ' + 'graph-focus-margin';
 		this.chart_wrapper.style.marginTop = '45px';
 
 		this.stats_wrapper.className += ' ' + 'graph-focus-margin';
 		this.stats_wrapper.style.marginBottom = '30px';
 		this.stats_wrapper.style.paddingTop = '0px';
-	}
 
-	make_draw_area() {
-		this.chart_div = $.create('div', {
+		this.chartDiv = $.create('div', {
 			className: 'div',
 			inside: this.chart_wrapper
 		});
 
 		this.chart = $.create('div', {
 			className: 'progress-chart',
-			inside: this.chart_div
+			inside: this.chartDiv
 		});
 	}
 
 	setupLayers() {
-		this.percentage_bar = $.create('div', {
+		this.percentageBar = $.create('div', {
 			className: 'progress',
 			inside: this.chart
 		});
@@ -81,7 +79,7 @@ export default class PercentageChart extends BaseChart {
 		this.slice_totals.map((total, i) => {
 			let slice = $.create('div', {
 				className: `progress-bar`,
-				inside: this.percentage_bar,
+				inside: this.percentageBar,
 				styles: {
 					background: this.colors[i],
 					width: total*100/this.grand_total + "%"
@@ -108,7 +106,7 @@ export default class PercentageChart extends BaseChart {
 		});
 	}
 
-	show_summary() {
+	renderLegend() {
 		let x_values = this.formatted_labels && this.formatted_labels.length > 0
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {

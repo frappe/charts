@@ -33,7 +33,7 @@ export default class BarChart extends AxisChart {
 		this.overlay = unit.cloneNode();
 		this.overlay.style.fill = '#000000';
 		this.overlay.style.opacity = '0.4';
-		this.draw_area.appendChild(this.overlay);
+		this.drawArea.appendChild(this.overlay);
 	}
 
 	bind_overlay() {

@@ -96,7 +96,7 @@ export default class PieChart extends BaseChart {
 			const curPath = this.makeArcPath(curStart,curEnd);
 			let slice = makePath(curPath, 'pie-path', 'none', this.colors[i]);
 			slice.style.transition = 'transform .3s;';
-			this.draw_area.appendChild(slice);
+			this.drawArea.appendChild(slice);
 
 			this.slices.push(slice);
 			this.slicesProperties.push({
@@ -166,11 +166,11 @@ export default class PieChart extends BaseChart {
 		this.hoverSlice(this.curActiveSlice,this.curActiveSliceIndex,false);
 	}
 	bind_tooltip() {
-		this.draw_area.addEventListener('mousemove',this.mouseMove);
-		this.draw_area.addEventListener('mouseleave',this.mouseLeave);
+		this.drawArea.addEventListener('mousemove',this.mouseMove);
+		this.drawArea.addEventListener('mouseleave',this.mouseLeave);
 	}
 
-	show_summary() {
+	renderLegend() {
 		let x_values = this.formatted_labels && this.formatted_labels.length > 0
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {

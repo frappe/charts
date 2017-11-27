@@ -33,10 +33,8 @@ export default class BaseChart {
 		title = '',
 		subtitle = '',
 		colors = [],
-		summary = [],
 
 		is_navigable = 0,
-		has_legend = 0,
 
 		type = '',
 
@@ -50,46 +48,26 @@ export default class BaseChart {
 		this.subtitle = subtitle;
 
 		this.data = data;
-		this.oldData = Object.assign({}, data);
-
-		this.specific_values = data.specific_values || [];
-		this.summary = summary;
 
 		this.is_navigable = is_navigable;
 		if(this.is_navigable) {
 			this.current_index = 0;
 		}
-		this.has_legend = has_legend;
 
-		this.setColors(colors, type);
-		this.set_margins(height);
+		this.setupConfiguration(arguments[0]);
 	}
 
-	get_different_chart(type) {
-		if(type === this.type) return;
+	setupConfiguration(args) {
+		// Make a this.config, that has stuff like showTooltip,
+		// showLegend, which then all functions will check
+		this.setColors(args.colors, args.type);
+		this.set_margins(args.height);
 
-		if(!ALL_CHART_TYPES.includes(type)) {
-			console.error(`'${type}' is not a valid chart type.`);
-		}
-
-		if(!COMPATIBLE_CHARTS[this.type].includes(type)) {
-			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
-		}
-
-		// whether the new chart can use the existing colors
-		const use_color = COLOR_COMPATIBLE_CHARTS[this.type].includes(type);
-
-		// Okay, this is anticlimactic
-		// this function will need to actually be 'change_chart_type(type)'
-		// that will update only the required elements, but for now ...
-		return new Chart({
-			parent: this.raw_chart_args.parent,
-			title: this.title,
-			data: this.raw_chart_args.data,
-			type: type,
-			height: this.raw_chart_args.height,
-			colors: use_color ? this.colors : undefined
-		});
+		this.config = {
+			showTooltip: 1,
+			showLegend: 1,
+			isNavigable: 0
+		};
 	}
 
 	setColors(colors, type) {
@@ -108,58 +86,81 @@ export default class BaseChart {
 	}
 
 	set_margins(height) {
-		this.base_height = height;
+		this.baseHeight = height;
 		this.height = height - 40;
 		this.translate_x = 60;
 		this.translate_y = 10;
 	}
 
-	setup() {
+	validate(){
 		if(!this.parent) {
 			console.error("No parent element to render on was provided.");
-			return;
+			return false;
 		}
-		if(this.validate_and_prepare_data()) {
-			this.bind_window_events();
-			this.refresh(true);
+		if(!this.validateAndPrepareData()) {
+			return false;
 		}
-	}
-
-	validate_and_prepare_data() {
 		return true;
 	}
 
-	bind_window_events() {
-		window.addEventListener('resize', () => this.refresh());
-		window.addEventListener('orientationchange', () => this.refresh());
+	validateAndPrepareData() {
+		return true;
 	}
 
-	refresh(init=false) {
-		// TODO: no init!
-		this.setup_base_values();
-		this.set_width();
-
-		this.setup_container();
-		this.setupLayers();
-
-		this.setup_values();
-		this.setup_utils();
-
-		this.renderComponents(init);
-		this.make_tooltip();
-
-		if(this.summary.length > 0) {
-			this.show_custom_summary();
-		} else {
-			this.show_summary();
-		}
-
-		if(this.is_navigable) {
-			this.setup_navigation(init);
+	setup() {
+		if(this.validate()) {
+			this._setup();
 		}
 	}
 
-	set_width() {
+	_setup() {
+		this.bindWindowEvents();
+		this.setupConstants();
+
+		this.setupEmptyValues();
+		// this.setupComponents();
+
+		this.makeContainer();
+		this.makeTooltip(); // without binding
+		this.draw(true);
+	}
+
+	draw(init=false) {
+		// (everything, layers, groups, units)
+		this.setWidth();
+
+		// dependent on width >.<, how can this be decoupled
+		this.setupComponents();
+
+		this.makeChartArea();
+		this.makeLayers();
+
+		this.renderComponents(); // with zero values
+		this.renderLegend();
+		this.setupNavigation(init);
+
+		if(init) this.update(this.data);
+	}
+
+	update(data, animate=true) {
+		this.oldData = Object.assign({}, this.data);
+		this.data = this.prepareNewData(data);
+
+		this.calculateValues();
+		this.updateComponents(animate);
+	}
+
+	prepareNewData(newData) {
+		// handle all types of passed data?
+		return newData;
+	}
+
+	bindWindowEvents() {
+		window.addEventListener('resize', () => this.draw());
+		window.addEventListener('orientationchange', () => this.draw());
+	}
+
+	setWidth() {
 		let special_values_width = 0;
 		let char_width = 8;
 		this.specific_values.map(val => {
@@ -172,9 +173,16 @@ export default class BaseChart {
 		this.width = this.base_width - this.translate_x * 2;
 	}
 
-	setup_base_values() {}
+	setupConstants() {}
 
-	setup_container() {
+	setupEmptyValues() {}
+
+	setupComponents() {
+		// Components config
+		this.components = [];
+	}
+
+	makeContainer() {
 		this.container = $.create('div', {
 			className: 'chart-container',
 			innerHTML: `<h6 class="title">${this.title}</h6>
@@ -189,35 +197,48 @@ export default class BaseChart {
 
 		this.chart_wrapper = this.container.querySelector('.frappe-chart');
 		this.stats_wrapper = this.container.querySelector('.graph-stats-container');
-
-		this.make_chart_area();
-		this.make_draw_area();
 	}
 
-	make_chart_area() {
+	makeChartArea() {
 		this.svg = makeSVGContainer(
 			this.chart_wrapper,
 			'chart',
-			this.base_width,
-			this.base_height
+			this.baseWidth,
+			this.baseHeight
 		);
 		this.svg_defs = makeSVGDefs(this.svg);
-		return this.svg;
-	}
 
-	make_draw_area() {
-		this.draw_area = makeSVGGroup(
+		this.drawArea = makeSVGGroup(
 			this.svg,
 			this.type + '-chart',
 			`translate(${this.translate_x}, ${this.translate_y})`
 		);
 	}
 
-	setupLayers() {}
-	setup_values() {}
-	setup_utils() {}
 
-	make_tooltip() {
+	makeLayers() {
+		this.components.forEach((component) => {
+			component.layer = this.makeLayer(component.layerClass);
+		});
+	}
+
+	calculateValues() {}
+
+	renderComponents() {
+		this.components.forEach(c => {
+			c.store = c.make(...c.makeArgs);
+			c.layer.textContent = '';
+			c.store.forEach(element => {c.layer.appendChild(element);});
+		});
+	}
+
+	updateComponents() {
+		// this.components.forEach((component) => {
+		// 	//
+		// });
+	}
+
+	makeTooltip() {
 		this.tip = new SvgTip({
 			parent: this.chart_wrapper,
 			colors: this.colors
@@ -238,8 +259,11 @@ export default class BaseChart {
 			this.stats_wrapper.appendChild(stats);
 		});
 	}
+	renderLegend() {}
 
-	setup_navigation(init=false) {
+	setupNavigation(init=false) {
+		if(this.is_navigable) return;
+
 		this.make_overlay();
 
 		if(init) {
@@ -275,12 +299,37 @@ export default class BaseChart {
 	on_down_arrow() {}
 	on_enter_key() {}
 
-	updateData() {}
-
 	getDataPoint() {}
 	updateCurrentDataPoint() {}
 
 	makeLayer(className, transform='') {
-		return makeSVGGroup(this.draw_area, className, transform);
+		return makeSVGGroup(this.drawArea, className, transform);
+	}
+
+	get_different_chart(type) {
+		if(type === this.type) return;
+
+		if(!ALL_CHART_TYPES.includes(type)) {
+			console.error(`'${type}' is not a valid chart type.`);
+		}
+
+		if(!COMPATIBLE_CHARTS[this.type].includes(type)) {
+			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
+		}
+
+		// whether the new chart can use the existing colors
+		const use_color = COLOR_COMPATIBLE_CHARTS[this.type].includes(type);
+
+		// Okay, this is anticlimactic
+		// this function will need to actually be 'change_chart_type(type)'
+		// that will update only the required elements, but for now ...
+		return new Chart({
+			parent: this.raw_chart_args.parent,
+			title: this.title,
+			data: this.raw_chart_args.data,
+			type: type,
+			height: this.raw_chart_args.height,
+			colors: use_color ? this.colors : undefined
+		});
 	}
 }

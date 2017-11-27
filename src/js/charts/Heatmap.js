@@ -54,7 +54,7 @@ export default class Heatmap extends BaseChart {
 		return valid;
 	}
 
-	setup_base_values() {
+	setupConstants() {
 		this.today = new Date();
 
 		if(!this.start) {
@@ -72,11 +72,11 @@ export default class Heatmap extends BaseChart {
 		this.no_of_cols = getWeeksBetween(this.first_week_start + '', this.last_week_start + '') + 1;
 	}
 
-	set_width() {
-		this.base_width = (this.no_of_cols + 3) * 12 ;
+	setWidth() {
+		this.baseWidth = (this.no_of_cols + 3) * 12 ;
 
 		if(this.discrete_domains) {
-			this.base_width += (12 * 12);
+			this.baseWidth += (12 * 12);
 		}
 	}
 
