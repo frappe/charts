@@ -148,6 +148,40 @@ function getStringWidth(string, charWidth) {
 	return (string+"").length * charWidth;
 }
 
+const MIN_BAR_PERCENT_HEIGHT = 0.01;
+
+function getXLineProps(totalHeight, mode) {
+	let startAt = totalHeight + 6, height, textStartAt, axisLineClass = '';
+	if(mode === 'span') {		// long spanning lines
+		startAt = -7;
+		height = totalHeight + 15;
+		textStartAt = totalHeight + 25;
+	} else if(mode === 'tick'){	// short label lines
+		startAt = totalHeight;
+		height = 6;
+		textStartAt = 9;
+		axisLineClass = 'x-axis-label';
+	}
+
+	return [startAt, height, textStartAt, axisLineClass];
+}
+
+function getYLineProps(totalWidth, mode, specific=false) {
+	if(specific) {
+		return[totalWidth, totalWidth + 5, 'specific-value', 0];
+	}
+	let width, text_end_at = -9, axisLineClass = '', startAt = 0;
+	if(mode === 'span') {		// long spanning lines
+		width = totalWidth + 6;
+		startAt = -6;
+	} else if(mode === 'tick'){	// short label lines
+		width = -6;
+		axisLineClass = 'y-axis-label';
+	}
+
+	return [width, text_end_at, axisLineClass, startAt];
+}
+
 function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
 	let height, y;
 	if (yTop <= zeroLine) {
@@ -156,7 +190,7 @@ function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
 
 		// In case of invisible bars
 		if(height === 0) {
-			height = totalHeight * 0.01;
+			height = totalHeight * MIN_BAR_PERCENT_HEIGHT;
 			y -= height;
 		}
 	} else {
@@ -165,7 +199,7 @@ function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
 
 		// In case of invisible bars
 		if(height === 0) {
-			height = totalHeight * 0.01;
+			height = totalHeight * MIN_BAR_PERCENT_HEIGHT;
 		}
 	}
 
@@ -183,38 +217,7 @@ function equilizeNoOfElements(array1, array2,
 	return [array1, array2];
 }
 
-function getXLineProps(total_height, mode) {
-	let start_at, height, text_start_at, axis_line_class = '';
-	if(mode === 'span') {		// long spanning lines
-		start_at = -7;
-		height = total_height + 15;
-		text_start_at = total_height + 25;
-	} else if(mode === 'tick'){	// short label lines
-		start_at = total_height;
-		height = 6;
-		text_start_at = 9;
-		axis_line_class = 'x-axis-label';
-	}
-
-	return [start_at, height, text_start_at, axis_line_class];
-}
-
-function getYLineProps(total_width, mode, specific=false) {
-	if(specific) {
-		return[total_width, total_width + 5, 'specific-value', 0];
-	}
-	let width, text_end_at = -9, axis_line_class = '', start_at = 0;
-	if(mode === 'span') {		// long spanning lines
-		width = total_width + 6;
-		start_at = -6;
-	} else if(mode === 'tick'){	// short label lines
-		width = -6;
-		axis_line_class = 'y-axis-label';
-	}
-
-	return [width, text_end_at, axis_line_class, start_at];
-}
-
+const X_AXIS_LINE_CLASS = 'x-value-text';
 function $$2(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
@@ -348,11 +351,11 @@ function makeText(className, x, y, content) {
 	});
 }
 
-function makeXLine(height, textStartAt, point, labelClass, axisLineClass, xPos) {
+function makeXLine(xPos, startAt, height, textStartAt, point, labelClass, axisLineClass) {
 	let line = createSVG('line', {
 		x1: 0,
 		x2: 0,
-		y1: 0,
+		y1: startAt,
 		y2: height
 	});
 
@@ -365,7 +368,7 @@ function makeXLine(height, textStartAt, point, labelClass, axisLineClass, xPos) 
 	});
 
 	let xLine = createSVG('g', {
-		className: `tick ${axisLineClass}`,
+		className: `tick ${X_AXIS_LINE_CLASS}`,
 		transform: `translate(${ xPos }, 0)`
 	});
 
@@ -1125,7 +1128,7 @@ class BaseChart {
 		this.bindWindowEvents();
 		this.setupConstants();
 
-		this.setupEmptyValues();
+		// this.setupEmptyValues();
 		// this.setupComponents();
 
 		this.makeContainer();
@@ -1137,7 +1140,8 @@ class BaseChart {
 		// (everything, layers, groups, units)
 		this.setWidth();
 
-		// dependent on width >.<, how can this be decoupled
+		// these both dependent on width >.<, how can this be decoupled
+		this.setupEmptyValues();
 		this.setupComponents();
 
 		this.makeChartArea();
@@ -1377,15 +1381,18 @@ class AxisChart extends BaseChart {
 			make: self.makeYLines,
 			makeArgs: [self.yAxisPositions, self.yAxisLabels,
 				self.width, self.y_axis_mode],
-			store: [], //this.yAxisLines
-			animate: self.animateYLines
+			store: [],
+			animate: self.animateYLines,
+			// indexed: 1
 		};
 		this.xAxis = {
 			layerClass: 'x axis',
 			layer: undefined,
 			make: self.makeXLines,
-			makeArgs: [self.xPositions, self.xAxisLabels],
-			store: [], //this.xAxisLines
+			// Need avg_unit_width here
+			makeArgs: [self.xPositions, self.xAxisLabels,
+				self.height, self.x_axis_mode, 200, self.is_series],
+			store: [],
 			animate: self.animateXLines
 		};
 		this.yMarkerLines = {
@@ -1420,7 +1427,7 @@ class AxisChart extends BaseChart {
 
 		this.components = [
 			this.yAxis,
-			// this.xAxis,
+			this.xAxis,
 			// this.yMarkerLines,
 			// this.xMarkerLines,
 			// this.dataUnits,
@@ -1536,21 +1543,18 @@ class AxisChart extends BaseChart {
 	// 	// this.make_y_specifics(this.yAnnotationPositions, this.specific_values);
 	// }
 
-	makeXLines(positions, values) {
-		let [start_at, height, text_start_at,
-			axis_line_class] = getXLineProps(this.height, this.x_axis_mode);
-		this.x_axis_group.setAttribute('transform', `translate(0,${start_at})`);
+	makeXLines(positions, values, total_height, mode, avg_unit_width, is_series) {
+		let [startAt, height, text_start_at,
+			axis_line_class] = getXLineProps(total_height, mode);
 
 		let char_width = 8;
-		let allowed_space = this.avg_unit_width * 1.5;
+		let allowed_space = avg_unit_width * 1.5;
 		let allowed_letters = allowed_space / 8;
 
-		this.xAxisLines = [];
-		this.x_axis_group.textContent = '';
-		values.map((value, i) => {
+		return values.map((value, i) => {
 			let space_taken = getStringWidth(value, char_width) + 2;
 			if(space_taken > allowed_space) {
-				if(this.is_series) {
+				if(is_series) {
 					// Skip some axis lines if X axis is a series
 					let skips = 1;
 					while((space_taken/skips)*2 > allowed_space) {
@@ -1564,47 +1568,21 @@ class AxisChart extends BaseChart {
 				}
 			}
 
-			let xLine = makeXLine(
+			return makeXLine(
+				positions[i],
+				startAt,
 				height,
 				text_start_at,
 				value,
 				'x-value-text',
-				axis_line_class,
-				positions[i]
+				axis_line_class
 			);
-			this.xAxisLines.push(xLine);
-			this.x_axis_group.appendChild(xLine);
 		});
 	}
-
-	// makeYLines(positions, values) {
-	// 	let [width, text_end_at, axis_line_class,
-	// 		start_at] = getYLineProps(this.width, this.y_axis_mode);
-
-	// 	this.yAxisLines = [];
-	// 	this.y_axis_group.textContent = '';
-	// 	values.map((value, i) => {
-	// 		let yLine = makeYLine(
-	// 			start_at,
-	// 			width,
-	// 			text_end_at,
-	// 			value,
-	// 			'y-value-text',
-	// 			axis_line_class,
-	// 			positions[i],
-	// 			(value === 0 && i !== 0) // Non-first Zero line
-	// 		);
-	// 		this.yAxisLines.push(yLine);
-	// 		this.y_axis_group.appendChild(yLine);
-	// 	});
-	// }
 
 	makeYLines(positions, values, totalWidth, mode) {
 		let [width, text_end_at, axis_line_class,
 			start_at] = getYLineProps(totalWidth, mode);
-
-		// this.yAxisLines = [];
-		// this.y_axis_group.textContent = '';
 		return values.map((value, i) => {
 			return makeYLine(
 				start_at,
@@ -1616,8 +1594,6 @@ class AxisChart extends BaseChart {
 				positions[i],
 				(value === 0 && i !== 0) // Non-first Zero line
 			);
-			// this.yAxisLines.push(yLine);
-			// this.y_axis_group.appendChild(yLine);
 		});
 	}
 
@@ -1986,27 +1962,27 @@ class BarChart extends AxisChart {
 		};
 	}
 
-	make_overlay() {
-		// Just make one out of the first element
-		let index = this.xAxisLabels.length - 1;
-		let unit = this.y[0].svg_units[index];
-		this.updateCurrentDataPoint(index);
+	// make_overlay() {
+	// 	// Just make one out of the first element
+	// 	let index = this.xAxisLabels.length - 1;
+	// 	let unit = this.y[0].svg_units[index];
+	// 	this.updateCurrentDataPoint(index);
 
-		if(this.overlay) {
-			this.overlay.parentNode.removeChild(this.overlay);
-		}
-		this.overlay = unit.cloneNode();
-		this.overlay.style.fill = '#000000';
-		this.overlay.style.opacity = '0.4';
-		this.drawArea.appendChild(this.overlay);
-	}
+	// 	if(this.overlay) {
+	// 		this.overlay.parentNode.removeChild(this.overlay);
+	// 	}
+	// 	this.overlay = unit.cloneNode();
+	// 	this.overlay.style.fill = '#000000';
+	// 	this.overlay.style.opacity = '0.4';
+	// 	this.drawArea.appendChild(this.overlay);
+	// }
 
-	bind_overlay() {
-		// on event, update overlay
-		this.parent.addEventListener('data-select', (e) => {
-			this.update_overlay(e.svg_unit);
-		});
-	}
+	// bind_overlay() {
+	// 	// on event, update overlay
+	// 	this.parent.addEventListener('data-select', (e) => {
+	// 		this.update_overlay(e.svg_unit);
+	// 	});
+	// }
 
 	bind_units(units_array) {
 		units_array.map(unit => {
@@ -2537,7 +2513,7 @@ class Heatmap extends BaseChart {
 		this.distribution_size = 5;
 
 		this.translate_x = 0;
-		this.setup();
+		// this.setup();
 	}
 
 	validate_colors(colors) {
@@ -2761,6 +2737,14 @@ class Heatmap extends BaseChart {
 		this.bind_tooltip();
 	}
 }
+
+// if ("development" !== 'production') {
+// 	// Enable LiveReload
+// 	document.write(
+// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
+// 		':35729/livereload.js?snipver=1"></' + 'script>'
+// 	);
+// }
 
 const chartTypes = {
 	line: LineChart,

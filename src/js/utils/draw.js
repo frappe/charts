@@ -1,6 +1,7 @@
 import { getBarHeightAndYAttr } from './draw-utils';
 
-// Constants used
+const X_AXIS_LINE_CLASS = 'x-value-text';
+const Y_AXIS_LINE_CLASS = 'y-value-text';
 
 function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
@@ -135,11 +136,11 @@ export function makeText(className, x, y, content) {
 	});
 }
 
-export function makeXLine(height, textStartAt, point, labelClass, axisLineClass, xPos) {
+export function makeXLine(xPos, startAt, height, textStartAt, point, labelClass, axisLineClass) {
 	let line = createSVG('line', {
 		x1: 0,
 		x2: 0,
-		y1: 0,
+		y1: startAt,
 		y2: height
 	});
 
@@ -152,7 +153,7 @@ export function makeXLine(height, textStartAt, point, labelClass, axisLineClass,
 	});
 
 	let xLine = createSVG('g', {
-		className: `tick ${axisLineClass}`,
+		className: `tick ${X_AXIS_LINE_CLASS}`,
 		transform: `translate(${ xPos }, 0)`
 	});
 

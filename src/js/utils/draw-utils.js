@@ -1,5 +1,40 @@
 import { fillArray } from '../utils/helpers';
 
+const AXIS_TICK_LENGTH = 6;
+const MIN_BAR_PERCENT_HEIGHT = 0.01;
+
+export function getXLineProps(totalHeight, mode) {
+	let startAt = totalHeight + 6, height, textStartAt, axisLineClass = '';
+	if(mode === 'span') {		// long spanning lines
+		startAt = -7;
+		height = totalHeight + 15;
+		textStartAt = totalHeight + 25;
+	} else if(mode === 'tick'){	// short label lines
+		startAt = totalHeight;
+		height = 6;
+		textStartAt = 9;
+		axisLineClass = 'x-axis-label';
+	}
+
+	return [startAt, height, textStartAt, axisLineClass];
+}
+
+export function getYLineProps(totalWidth, mode, specific=false) {
+	if(specific) {
+		return[totalWidth, totalWidth + 5, 'specific-value', 0];
+	}
+	let width, text_end_at = -9, axisLineClass = '', startAt = 0;
+	if(mode === 'span') {		// long spanning lines
+		width = totalWidth + 6;
+		startAt = -6;
+	} else if(mode === 'tick'){	// short label lines
+		width = -6;
+		axisLineClass = 'y-axis-label';
+	}
+
+	return [width, text_end_at, axisLineClass, startAt];
+}
+
 export function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
 	let height, y;
 	if (yTop <= zeroLine) {
@@ -8,7 +43,7 @@ export function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
 
 		// In case of invisible bars
 		if(height === 0) {
-			height = totalHeight * 0.01;
+			height = totalHeight * MIN_BAR_PERCENT_HEIGHT;
 			y -= height;
 		}
 	} else {
@@ -17,7 +52,7 @@ export function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
 
 		// In case of invisible bars
 		if(height === 0) {
-			height = totalHeight * 0.01;
+			height = totalHeight * MIN_BAR_PERCENT_HEIGHT;
 		}
 	}
 
@@ -33,36 +68,4 @@ export function equilizeNoOfElements(array1, array2,
 		array2 = fillArray(array2, extra_count);
 	}
 	return [array1, array2];
-}
-
-export function getXLineProps(total_height, mode) {
-	let start_at, height, text_start_at, axis_line_class = '';
-	if(mode === 'span') {		// long spanning lines
-		start_at = -7;
-		height = total_height + 15;
-		text_start_at = total_height + 25;
-	} else if(mode === 'tick'){	// short label lines
-		start_at = total_height;
-		height = 6;
-		text_start_at = 9;
-		axis_line_class = 'x-axis-label';
-	}
-
-	return [start_at, height, text_start_at, axis_line_class];
-}
-
-export function getYLineProps(total_width, mode, specific=false) {
-	if(specific) {
-		return[total_width, total_width + 5, 'specific-value', 0];
-	}
-	let width, text_end_at = -9, axis_line_class = '', start_at = 0;
-	if(mode === 'span') {		// long spanning lines
-		width = total_width + 6;
-		start_at = -6;
-	} else if(mode === 'tick'){	// short label lines
-		width = -6;
-		axis_line_class = 'y-axis-label';
-	}
-
-	return [width, text_end_at, axis_line_class, start_at];
 }

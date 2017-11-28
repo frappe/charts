@@ -117,7 +117,7 @@ export default class BaseChart {
 		this.bindWindowEvents();
 		this.setupConstants();
 
-		this.setupEmptyValues();
+		// this.setupEmptyValues();
 		// this.setupComponents();
 
 		this.makeContainer();
@@ -129,7 +129,8 @@ export default class BaseChart {
 		// (everything, layers, groups, units)
 		this.setWidth();
 
-		// dependent on width >.<, how can this be decoupled
+		// these both dependent on width >.<, how can this be decoupled
+		this.setupEmptyValues();
 		this.setupComponents();
 
 		this.makeChartArea();

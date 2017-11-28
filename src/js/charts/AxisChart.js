@@ -42,15 +42,18 @@ export default class AxisChart extends BaseChart {
 			make: self.makeYLines,
 			makeArgs: [self.yAxisPositions, self.yAxisLabels,
 				self.width, self.y_axis_mode],
-			store: [], //this.yAxisLines
-			animate: self.animateYLines
+			store: [],
+			animate: self.animateYLines,
+			// indexed: 1
 		};
 		this.xAxis = {
 			layerClass: 'x axis',
 			layer: undefined,
 			make: self.makeXLines,
-			makeArgs: [self.xPositions, self.xAxisLabels],
-			store: [], //this.xAxisLines
+			// Need avg_unit_width here
+			makeArgs: [self.xPositions, self.xAxisLabels,
+				self.height, self.x_axis_mode, 200, self.is_series],
+			store: [],
 			animate: self.animateXLines
 		};
 		this.yMarkerLines = {
@@ -85,7 +88,7 @@ export default class AxisChart extends BaseChart {
 
 		this.components = [
 			this.yAxis,
-			// this.xAxis,
+			this.xAxis,
 			// this.yMarkerLines,
 			// this.xMarkerLines,
 			// this.dataUnits,
@@ -201,21 +204,18 @@ export default class AxisChart extends BaseChart {
 	// 	// this.make_y_specifics(this.yAnnotationPositions, this.specific_values);
 	// }
 
-	makeXLines(positions, values) {
-		let [start_at, height, text_start_at,
-			axis_line_class] = getXLineProps(this.height, this.x_axis_mode);
-		this.x_axis_group.setAttribute('transform', `translate(0,${start_at})`);
+	makeXLines(positions, values, total_height, mode, avg_unit_width, is_series) {
+		let [startAt, height, text_start_at,
+			axis_line_class] = getXLineProps(total_height, mode);
 
 		let char_width = 8;
-		let allowed_space = this.avg_unit_width * 1.5;
+		let allowed_space = avg_unit_width * 1.5;
 		let allowed_letters = allowed_space / 8;
 
-		this.xAxisLines = [];
-		this.x_axis_group.textContent = '';
-		values.map((value, i) => {
+		return values.map((value, i) => {
 			let space_taken = getStringWidth(value, char_width) + 2;
 			if(space_taken > allowed_space) {
-				if(this.is_series) {
+				if(is_series) {
 					// Skip some axis lines if X axis is a series
 					let skips = 1;
 					while((space_taken/skips)*2 > allowed_space) {
@@ -229,47 +229,21 @@ export default class AxisChart extends BaseChart {
 				}
 			}
 
-			let xLine = makeXLine(
+			return makeXLine(
+				positions[i],
+				startAt,
 				height,
 				text_start_at,
 				value,
 				'x-value-text',
-				axis_line_class,
-				positions[i]
+				axis_line_class
 			);
-			this.xAxisLines.push(xLine);
-			this.x_axis_group.appendChild(xLine);
 		});
 	}
-
-	// makeYLines(positions, values) {
-	// 	let [width, text_end_at, axis_line_class,
-	// 		start_at] = getYLineProps(this.width, this.y_axis_mode);
-
-	// 	this.yAxisLines = [];
-	// 	this.y_axis_group.textContent = '';
-	// 	values.map((value, i) => {
-	// 		let yLine = makeYLine(
-	// 			start_at,
-	// 			width,
-	// 			text_end_at,
-	// 			value,
-	// 			'y-value-text',
-	// 			axis_line_class,
-	// 			positions[i],
-	// 			(value === 0 && i !== 0) // Non-first Zero line
-	// 		);
-	// 		this.yAxisLines.push(yLine);
-	// 		this.y_axis_group.appendChild(yLine);
-	// 	});
-	// }
 
 	makeYLines(positions, values, totalWidth, mode) {
 		let [width, text_end_at, axis_line_class,
 			start_at] = getYLineProps(totalWidth, mode);
-
-		// this.yAxisLines = [];
-		// this.y_axis_group.textContent = '';
 		return values.map((value, i) => {
 			return makeYLine(
 				start_at,
@@ -281,8 +255,6 @@ export default class AxisChart extends BaseChart {
 				positions[i],
 				(value === 0 && i !== 0) // Non-first Zero line
 			);
-			// this.yAxisLines.push(yLine);
-			// this.y_axis_group.appendChild(yLine);
 		});
 	}
 

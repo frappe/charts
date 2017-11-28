@@ -37,7 +37,7 @@ export default class Heatmap extends BaseChart {
 		this.distribution_size = 5;
 
 		this.translate_x = 0;
-		this.setup();
+		// this.setup();
 	}
 
 	validate_colors(colors) {

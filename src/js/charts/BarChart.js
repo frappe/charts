@@ -21,27 +21,27 @@ export default class BarChart extends AxisChart {
 		};
 	}
 
-	make_overlay() {
-		// Just make one out of the first element
-		let index = this.xAxisLabels.length - 1;
-		let unit = this.y[0].svg_units[index];
-		this.updateCurrentDataPoint(index);
+	// make_overlay() {
+	// 	// Just make one out of the first element
+	// 	let index = this.xAxisLabels.length - 1;
+	// 	let unit = this.y[0].svg_units[index];
+	// 	this.updateCurrentDataPoint(index);
 
-		if(this.overlay) {
-			this.overlay.parentNode.removeChild(this.overlay);
-		}
-		this.overlay = unit.cloneNode();
-		this.overlay.style.fill = '#000000';
-		this.overlay.style.opacity = '0.4';
-		this.drawArea.appendChild(this.overlay);
-	}
+	// 	if(this.overlay) {
+	// 		this.overlay.parentNode.removeChild(this.overlay);
+	// 	}
+	// 	this.overlay = unit.cloneNode();
+	// 	this.overlay.style.fill = '#000000';
+	// 	this.overlay.style.opacity = '0.4';
+	// 	this.drawArea.appendChild(this.overlay);
+	// }
 
-	bind_overlay() {
-		// on event, update overlay
-		this.parent.addEventListener('data-select', (e) => {
-			this.update_overlay(e.svg_unit);
-		});
-	}
+	// bind_overlay() {
+	// 	// on event, update overlay
+	// 	this.parent.addEventListener('data-select', (e) => {
+	// 		this.update_overlay(e.svg_unit);
+	// 	});
+	// }
 
 	bind_units(units_array) {
 		units_array.map(unit => {
