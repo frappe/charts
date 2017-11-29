@@ -5,8 +5,8 @@ export default class LineChart extends AxisChart {
 	constructor(args) {
 		super(args);
 
-		this.x_axis_mode = args.x_axis_mode || 'span';
-		this.y_axis_mode = args.y_axis_mode || 'span';
+		this.xAxisMode = args.xAxisMode || 'span';
+		this.yAxisMode = args.yAxisMode || 'span';
 
 		if(args.hasOwnProperty('show_dots')) {
 			this.show_dots = args.show_dots;

@@ -1,7 +1,10 @@
-import { getBarHeightAndYAttr } from './draw-utils';
+import { getBarHeightAndYAttr, getXLineProps, getYLineProps } from './draw-utils';
 
-const X_AXIS_LINE_CLASS = 'x-value-text';
-const Y_AXIS_LINE_CLASS = 'y-value-text';
+const X_LABEL_CLASS = 'x-value-text';
+const Y_LABEL_CLASS = 'y-value-text';
+
+// const X_AXIS_LINE_CLASS = 'x-value-text';
+// const Y_AXIS_LINE_CLASS = 'y-value-text';
 
 function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
@@ -136,74 +139,17 @@ export function makeText(className, x, y, content) {
 	});
 }
 
-export function makeXLine(xPos, startAt, height, textStartAt, point, labelClass, axisLineClass) {
-	let line = createSVG('line', {
-		x1: 0,
-		x2: 0,
-		y1: startAt,
-		y2: height
-	});
-
-	let text = createSVG('text', {
-		className: labelClass,
-		x: 0,
-		y: textStartAt,
-		dy: '.71em',
-		innerHTML: point
-	});
-
-	let xLine = createSVG('g', {
-		className: `tick ${X_AXIS_LINE_CLASS}`,
-		transform: `translate(${ xPos }, 0)`
-	});
-
-	xLine.appendChild(line);
-	xLine.appendChild(text);
-
-	return xLine;
-}
-
-export function makeYLine(startAt, width, textEndAt, point, labelClass, axisLineClass, yPos, darker=false, lineType="") {
-	let line = createSVG('line', {
-		className: lineType === "dashed" ? "dashed": "",
-		x1: startAt,
-		x2: width,
-		y1: 0,
-		y2: 0
-	});
-
-	let text = createSVG('text', {
-		className: labelClass,
-		x: textEndAt,
-		y: 0,
-		dy: '.32em',
-		innerHTML: point+""
-	});
-
-	let yLine = createSVG('g', {
-		className: `tick ${axisLineClass}`,
-		transform: `translate(0, ${yPos})`,
-		'stroke-opacity': 1
-	});
-
-	if(darker) {
-		line.style.stroke = "rgba(27, 31, 35, 0.6)";
-	}
-
-	yLine.appendChild(line);
-	yLine.appendChild(text);
-
-	return yLine;
-}
-
-export var UnitRenderer = (function() {
-	var UnitRenderer = function(totalHeight, zeroLine, avgUnitWidth) {
+export var AxisChartRenderer = (function() {
+	var AxisChartRenderer = function(totalHeight, totalWidth, zeroLine, avgUnitWidth, xAxisMode, yAxisMode) {
 		this.totalHeight = totalHeight;
+		this.totalWidth = totalWidth;
 		this.zeroLine = zeroLine;
 		this.avgUnitWidth = avgUnitWidth;
+		this.xAxisMode = xAxisMode;
+		this.yAxisMode = yAxisMode;
 	};
 
-	UnitRenderer.prototype = {
+	AxisChartRenderer.prototype = {
 		bar: function (x, yTop, args, color, index, datasetIndex, noOfDatasets) {
 			let totalWidth = this.avgUnitWidth - args.spaceWidth;
 			let startX = x - totalWidth/2;
@@ -232,8 +178,78 @@ export var UnitRenderer = (function() {
 				cy: y,
 				r: args.radius
 			});
-		}
+		},
+
+		xLine: function(x, label, mode=this.xAxisMode) {
+			// Draw X axis line in span/tick mode with optional label
+			let [startAt, height, textStartAt, axisLineClass] = getXLineProps(this.totalHeight, mode);
+			let l = createSVG('line', {
+				x1: 0,
+				x2: 0,
+				y1: startAt,
+				y2: height
+			});
+
+			let text = createSVG('text', {
+				className: X_LABEL_CLASS,
+				x: 0,
+				y: textStartAt,
+				dy: '.71em',
+				innerHTML: label
+			});
+
+			let line = createSVG('g', {
+				className: `tick ${axisLineClass}`,
+				transform: `translate(${ x }, 0)`
+			});
+
+			line.appendChild(l);
+			line.appendChild(text);
+
+			return line;
+		},
+
+		yLine: function(y, label, mode=this.yAxisMode) {
+			// TODO: stroke type
+			let lineType = '';
+
+			let [width, textEndAt, axisLineClass, startAt] = getYLineProps(this.totalWidth, mode);
+			let l = createSVG('line', {
+				className: lineType === "dashed" ? "dashed": "",
+				x1: startAt,
+				x2: width,
+				y1: 0,
+				y2: 0
+			});
+
+			let text = createSVG('text', {
+				className: Y_LABEL_CLASS,
+				x: textEndAt,
+				y: 0,
+				dy: '.32em',
+				innerHTML: label+""
+			});
+
+			let line = createSVG('g', {
+				className: `tick ${axisLineClass}`,
+				transform: `translate(0, ${y})`,
+				'stroke-opacity': 1
+			});
+
+			// if(darker) {
+			// 	line.style.stroke = "rgba(27, 31, 35, 0.6)";
+			// }
+
+			line.appendChild(l);
+			line.appendChild(text);
+
+			return line;
+		},
+
+		xRegion: function(x1, x2, label) { },
+
+		yRegion: function(y1, y2, label) { }
 	};
 
-	return UnitRenderer;
+	return AxisChartRenderer;
 })();

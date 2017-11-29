@@ -5,8 +5,8 @@ export default class BarChart extends AxisChart {
 		super(args);
 
 		this.type = 'bar';
-		this.x_axis_mode = args.x_axis_mode || 'tick';
-		this.y_axis_mode = args.y_axis_mode || 'span';
+		this.xAxisMode = args.xAxisMode || 'tick';
+		this.yAxisMode = args.yAxisMode || 'span';
 		this.setup();
 	}
 

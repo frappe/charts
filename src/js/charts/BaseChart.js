@@ -126,7 +126,7 @@ export default class BaseChart {
 	}
 
 	draw(init=false) {
-		// (everything, layers, groups, units)
+		// (draw everything, layers, groups, units)
 		this.setWidth();
 
 		// these both dependent on width >.<, how can this be decoupled
@@ -163,15 +163,15 @@ export default class BaseChart {
 
 	setWidth() {
 		let special_values_width = 0;
-		let char_width = 8;
-		this.specific_values.map(val => {
-			let str_width = getStringWidth((val.title + ""), char_width);
-			if(str_width > special_values_width) {
-				special_values_width = str_width - 40;
-			}
-		});
-		this.base_width = getElementContentWidth(this.parent) - special_values_width;
-		this.width = this.base_width - this.translate_x * 2;
+		// let char_width = 8;
+		// this.specific_values.map(val => {
+		// 	let str_width = getStringWidth((val.title + ""), char_width);
+		// 	if(str_width > special_values_width) {
+		// 		special_values_width = str_width - 40;
+		// 	}
+		// });
+		this.baseWidth = getElementContentWidth(this.parent) - special_values_width;
+		this.width = this.baseWidth - this.translate_x * 2;
 	}
 
 	setupConstants() {}

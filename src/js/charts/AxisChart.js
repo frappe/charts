@@ -1,11 +1,11 @@
-import { offset } from '../utils/dom';
-import { UnitRenderer, makeXLine, makeYLine } from '../utils/draw';
-import { equilizeNoOfElements, getXLineProps, getYLineProps } from '../utils/draw-utils';
+import BaseChart from './BaseChart';
+import { get_offset, fire } from '../utils/dom';
+import { AxisChartRenderer } from '../utils/draw';
+import { equilizeNoOfElements } from '../utils/draw-utils';
 import { Animator } from '../utils/animate';
 import { runSMILAnimation } from '../utils/animation';
 import { calcIntervals } from '../utils/intervals';
-import { floatTwo, getStringWidth } from '../utils/helpers';
-import BaseChart from './BaseChart';
+import { floatTwo } from '../utils/helpers';
 
 export default class AxisChart extends BaseChart {
 	constructor(args) {
@@ -34,25 +34,35 @@ export default class AxisChart extends BaseChart {
 		this.xAxisLabels = ['0', '5', '10'];
 	}
 
+	// this should be inherent in BaseChart
+	getRenderer() {
+		// These args are basically the current state/config of the chart,
+		// with constant and alive params mixed
+
+
+		return new AxisChartRenderer(this.height, this.width,
+			this.zero_line, this.avg_unit_width, this.xAxisMode, this.yAxisMode);
+	}
+
 	setupComponents() {
 		let self = this;
+		let renderer = this.getRenderer();
 		this.yAxis = {
 			layerClass: 'y axis',
 			layer: undefined,
 			make: self.makeYLines,
-			makeArgs: [self.yAxisPositions, self.yAxisLabels,
-				self.width, self.y_axis_mode],
+			makeArgs: [renderer, self.yAxisPositions, self.yAxisLabels],
 			store: [],
 			animate: self.animateYLines,
-			// indexed: 1
+			// indexed: 1 // ?? As per datasets?
 		};
 		this.xAxis = {
 			layerClass: 'x axis',
 			layer: undefined,
 			make: self.makeXLines,
-			// Need avg_unit_width here
-			makeArgs: [self.xPositions, self.xAxisLabels,
-				self.height, self.x_axis_mode, 200, self.is_series],
+			// TODO: better context of renderer
+			// TODO: will implement series skip with avgUnitWidth and isSeries later
+			makeArgs: [renderer, self.xPositions, self.xAxisLabels],
 			store: [],
 			animate: self.animateXLines
 		};
@@ -175,87 +185,14 @@ export default class AxisChart extends BaseChart {
 		// if(!this.oldYAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
 	}
 
-	// setupLayers() {
-	// 	super.setupLayers();
+	makeXLines(renderer, positions, values) {
+		// TODO: draw as per condition
 
-	// 	// For markers
-	// 	this.y_axis_group = this.makeLayer('y axis');
-	// 	this.x_axis_group = this.makeLayer('x axis');
-	// 	this.specific_y_group = this.makeLayer('specific axis');
-
-	// 	// For Aggregation
-	// 	// this.sumGroup = this.makeLayer('data-points');
-	// 	// this.averageGroup = this.makeLayer('chart-area');
-
-	// 	this.setupPreUnitLayers && this.setupPreUnitLayers();
-
-	// 	// For Graph points
-	// 	this.svg_units_groups = [];
-	// 	this.y.map((d, i) => {
-	// 		this.svg_units_groups[i] = this.makeLayer(
-	// 			'data-points data-points-' + i);
-	// 	});
-	// }
-
-	// renderComponents(init) {
-	// 	this.makeYLines(this.yAxisPositions, this.yAxisLabels);
-	// 	this.makeXLines(this.xPositions, this.xAxisLabels);
-	// 	this.draw_graph(init);
-	// 	// this.make_y_specifics(this.yAnnotationPositions, this.specific_values);
-	// }
-
-	makeXLines(positions, values, total_height, mode, avg_unit_width, is_series) {
-		let [startAt, height, text_start_at,
-			axis_line_class] = getXLineProps(total_height, mode);
-
-		let char_width = 8;
-		let allowed_space = avg_unit_width * 1.5;
-		let allowed_letters = allowed_space / 8;
-
-		return values.map((value, i) => {
-			let space_taken = getStringWidth(value, char_width) + 2;
-			if(space_taken > allowed_space) {
-				if(is_series) {
-					// Skip some axis lines if X axis is a series
-					let skips = 1;
-					while((space_taken/skips)*2 > allowed_space) {
-						skips++;
-					}
-					if(i % skips !== 0) {
-						return;
-					}
-				} else {
-					value = value.slice(0, allowed_letters-3) + " ...";
-				}
-			}
-
-			return makeXLine(
-				positions[i],
-				startAt,
-				height,
-				text_start_at,
-				value,
-				'x-value-text',
-				axis_line_class
-			);
-		});
+		return positions.map((position, i) => renderer.xLine(position, values[i]));
 	}
 
-	makeYLines(positions, values, totalWidth, mode) {
-		let [width, text_end_at, axis_line_class,
-			start_at] = getYLineProps(totalWidth, mode);
-		return values.map((value, i) => {
-			return makeYLine(
-				start_at,
-				width,
-				text_end_at,
-				value,
-				'y-value-text',
-				axis_line_class,
-				positions[i],
-				(value === 0 && i !== 0) // Non-first Zero line
-			);
-		});
+	makeYLines(renderer, positions, values) {
+		return positions.map((position, i) => renderer.yLine(position, values[i]));
 	}
 
 	draw_graph(init=false) {
@@ -328,10 +265,10 @@ export default class AxisChart extends BaseChart {
 		units_group.textContent = '';
 		units_array.length = 0;
 
-		let unit_renderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
+		let unit_AxisChartRenderer = new AxisChartRenderer(this.height, this.zero_line, this.avg_unit_width);
 
 		y_values.map((y, i) => {
-			let data_unit = unit_renderer[unit.type](
+			let data_unit = unit_AxisChartRenderer[unit.type](
 				x_values[i],
 				y,
 				unit.args,
@@ -352,9 +289,9 @@ export default class AxisChart extends BaseChart {
 	bind_tooltip() {
 		// TODO: could be in tooltip itself, as it is a given functionality for its parent
 		this.chart_wrapper.addEventListener('mousemove', (e) => {
-			let o = offset(this.chart_wrapper);
-			let relX = e.pageX - o.left - this.translate_x;
-			let relY = e.pageY - o.top - this.translate_y;
+			let offset = get_offset(this.chart_wrapper);
+			let relX = e.pageX - offset.left - this.translate_x;
+			let relY = e.pageY - offset.top - this.translate_y;
 
 			if(relY < this.height + this.translate_y * 2) {
 				this.mapTooltipXPosition(relX);
@@ -566,7 +503,7 @@ export default class AxisChart extends BaseChart {
 		if(index >= this.xAxisLabels.length) index = this.xAxisLabels.length - 1;
 		if(index === this.current_index) return;
 		this.current_index = index;
-		$.fire(this.parent, "data-select", this.getDataPoint());
+		fire(this.parent, "data-select", this.getDataPoint());
 	}
 
 	set_avg_unit_width_and_x_offset() {

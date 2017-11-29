@@ -43,7 +43,7 @@ $.create = (tag, o) => {
 	return element;
 };
 
-export function offset(element) {
+export function get_offset(element) {
 	let rect = element.getBoundingClientRect();
 	return {
 		// https://stackoverflow.com/a/7436602/6495043
@@ -74,7 +74,7 @@ export function getElementContentWidth(element) {
 	return element.clientWidth - padding;
 }
 
-$.bind = (element, o) => {
+export function bind(element, o){
 	if (element) {
 		for (var event in o) {
 			var callback = o[event];
@@ -84,9 +84,9 @@ $.bind = (element, o) => {
 			});
 		}
 	}
-};
+}
 
-$.unbind = (element, o) => {
+export function unbind(element, o){
 	if (element) {
 		for (var event in o) {
 			var callback = o[event];
@@ -96,9 +96,9 @@ $.unbind = (element, o) => {
 			});
 		}
 	}
-};
+}
 
-$.fire = (target, type, properties) => {
+export function fire(target, type, properties) {
 	var evt = document.createEvent("HTMLEvents");
 
 	evt.initEvent(type, true, true );
@@ -108,4 +108,4 @@ $.fire = (target, type, properties) => {
 	}
 
 	return target.dispatchEvent(evt);
-};
+}

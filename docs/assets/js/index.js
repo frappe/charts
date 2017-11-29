@@ -151,8 +151,8 @@ let plot_chart_args = {
 	is_series: 1,
 	show_dots: 0,
 	heatline: 1,
-	x_axis_mode: 'tick',
-	y_axis_mode: 'span'
+	xAxisMode: 'tick',
+	yAxisMode: 'span'
 };
 
 new Chart(plot_chart_args);

@@ -1,20 +1,20 @@
-function $$1(expr, con) {
+function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
 
 
-$$1.create = (tag, o) => {
+$.create = (tag, o) => {
 	var element = document.createElement(tag);
 
 	for (var i in o) {
 		var val = o[i];
 
 		if (i === "inside") {
-			$$1(val).appendChild(element);
+			$(val).appendChild(element);
 		}
 		else if (i === "around") {
-			var ref = $$1(val);
+			var ref = $(val);
 			ref.parentNode.insertBefore(element, ref);
 			element.appendChild(ref);
 
@@ -35,7 +35,7 @@ $$1.create = (tag, o) => {
 	return element;
 };
 
-function offset(element) {
+function get_offset(element) {
 	let rect = element.getBoundingClientRect();
 	return {
 		// https://stackoverflow.com/a/7436602/6495043
@@ -66,31 +66,11 @@ function getElementContentWidth(element) {
 	return element.clientWidth - padding;
 }
 
-$$1.bind = (element, o) => {
-	if (element) {
-		for (var event in o) {
-			var callback = o[event];
 
-			event.split(/\s+/).forEach(function (event) {
-				element.addEventListener(event, callback);
-			});
-		}
-	}
-};
 
-$$1.unbind = (element, o) => {
-	if (element) {
-		for (var event in o) {
-			var callback = o[event];
 
-			event.split(/\s+/).forEach(function(event) {
-				element.removeEventListener(event, callback);
-			});
-		}
-	}
-};
 
-$$1.fire = (target, type, properties) => {
+function fire(target, type, properties) {
 	var evt = document.createEvent("HTMLEvents");
 
 	evt.initEvent(type, true, true );
@@ -100,7 +80,127 @@ $$1.fire = (target, type, properties) => {
 	}
 
 	return target.dispatchEvent(evt);
-};
+}
+
+class SvgTip {
+	constructor({
+		parent = null,
+		colors = []
+	}) {
+		this.parent = parent;
+		this.colors = colors;
+		this.title_name = '';
+		this.title_value = '';
+		this.list_values = [];
+		this.title_value_first = 0;
+
+		this.x = 0;
+		this.y = 0;
+
+		this.top = 0;
+		this.left = 0;
+
+		this.setup();
+	}
+
+	setup() {
+		this.make_tooltip();
+	}
+
+	refresh() {
+		this.fill();
+		this.calc_position();
+		// this.show_tip();
+	}
+
+	make_tooltip() {
+		this.container = $.create('div', {
+			inside: this.parent,
+			className: 'graph-svg-tip comparison',
+			innerHTML: `<span class="title"></span>
+				<ul class="data-point-list"></ul>
+				<div class="svg-pointer"></div>`
+		});
+		this.hide_tip();
+
+		this.title = this.container.querySelector('.title');
+		this.data_point_list = this.container.querySelector('.data-point-list');
+
+		this.parent.addEventListener('mouseleave', () => {
+			this.hide_tip();
+		});
+	}
+
+	fill() {
+		let title;
+		if(this.title_value_first) {
+			title = `<strong>${this.title_value}</strong>${this.title_name}`;
+		} else {
+			title = `${this.title_name}<strong>${this.title_value}</strong>`;
+		}
+		this.title.innerHTML = title;
+		this.data_point_list.innerHTML = '';
+
+		this.list_values.map((set, i) => {
+			const color = this.colors[i] || 'black';
+
+			let li = $.create('li', {
+				styles: {
+					'border-top': `3px solid ${color}`
+				},
+				innerHTML: `<strong style="display: block;">${ set.value === 0 || set.value ? set.value : '' }</strong>
+					${set.title ? set.title : '' }`
+			});
+
+			this.data_point_list.appendChild(li);
+		});
+	}
+
+	calc_position() {
+		let width = this.container.offsetWidth;
+
+		this.top = this.y - this.container.offsetHeight;
+		this.left = this.x - width/2;
+		let max_left = this.parent.offsetWidth - width;
+
+		let pointer = this.container.querySelector('.svg-pointer');
+
+		if(this.left < 0) {
+			pointer.style.left = `calc(50% - ${-1 * this.left}px)`;
+			this.left = 0;
+		} else if(this.left > max_left) {
+			let delta = this.left - max_left;
+			let pointer_offset = `calc(50% + ${delta}px)`;
+			pointer.style.left = pointer_offset;
+
+			this.left = max_left;
+		} else {
+			pointer.style.left = `50%`;
+		}
+	}
+
+	set_values(x, y, title_name = '', title_value = '', list_values = [], title_value_first = 0) {
+		this.title_name = title_name;
+		this.title_value = title_value;
+		this.list_values = list_values;
+		this.x = x;
+		this.y = y;
+		this.title_value_first = title_value_first;
+		this.refresh();
+	}
+
+	hide_tip() {
+		this.container.style.top = '0px';
+		this.container.style.left = '0px';
+		this.container.style.opacity = '0';
+	}
+
+	show_tip() {
+		this.container.style.top = this.top + 'px';
+		this.container.style.left = this.left + 'px';
+		this.container.style.opacity = '1';
+	}
+}
 
 /**
  * Returns the value of a number upto 2 decimal places.
@@ -144,11 +244,10 @@ function fillArray(array, count, element, start=false) {
  * @param {String} string
  * @param {Number} charWidth Width of single char in pixels
  */
-function getStringWidth(string, charWidth) {
-	return (string+"").length * charWidth;
-}
 
 const MIN_BAR_PERCENT_HEIGHT = 0.01;
+
+
 
 function getXLineProps(totalHeight, mode) {
 	let startAt = totalHeight + 6, height, textStartAt, axisLineClass = '';
@@ -166,10 +265,11 @@ function getXLineProps(totalHeight, mode) {
 	return [startAt, height, textStartAt, axisLineClass];
 }
 
-function getYLineProps(totalWidth, mode, specific=false) {
-	if(specific) {
-		return[totalWidth, totalWidth + 5, 'specific-value', 0];
-	}
+// export function getYLineProps(totalWidth, mode, specific=false) {
+function getYLineProps(totalWidth, mode) {
+	// if(specific) {
+	// 	return[totalWidth, totalWidth + 5, 'specific-value', 0];
+	// }
 	let width, text_end_at = -9, axisLineClass = '', startAt = 0;
 	if(mode === 'span') {		// long spanning lines
 		width = totalWidth + 6;
@@ -181,6 +281,27 @@ function getYLineProps(totalWidth, mode, specific=false) {
 
 	return [width, text_end_at, axisLineClass, startAt];
 }
+
+// let char_width = 8;
+// let allowed_space = avg_unit_width * 1.5;
+// let allowed_letters = allowed_space / 8;
+
+// return values.map((value, i) => {
+// 	let space_taken = getStringWidth(value, char_width) + 2;
+// 	if(space_taken > allowed_space) {
+// 		if(is_series) {
+// 			// Skip some axis lines if X axis is a series
+// 			let skips = 1;
+// 			while((space_taken/skips)*2 > allowed_space) {
+// 				skips++;
+// 			}
+// 			if(i % skips !== 0) {
+// 				return;
+// 			}
+// 		} else {
+// 			value = value.slice(0, allowed_letters-3) + " ...";
+// 		}
+// 	}
 
 function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
 	let height, y;
@@ -217,8 +338,13 @@ function equilizeNoOfElements(array1, array2,
 	return [array1, array2];
 }
 
-const X_AXIS_LINE_CLASS = 'x-value-text';
-function $$2(expr, con) {
+const X_LABEL_CLASS = 'x-value-text';
+const Y_LABEL_CLASS = 'y-value-text';
+
+// const X_AXIS_LINE_CLASS = 'x-value-text';
+// const Y_AXIS_LINE_CLASS = 'y-value-text';
+
+function $$1(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
@@ -229,10 +355,10 @@ function createSVG(tag, o) {
 		var val = o[i];
 
 		if (i === "inside") {
-			$$2(val).appendChild(element);
+			$$1(val).appendChild(element);
 		}
 		else if (i === "around") {
-			var ref = $$2(val);
+			var ref = $$1(val);
 			ref.parentNode.insertBefore(element, ref);
 			element.appendChild(ref);
 
@@ -351,74 +477,17 @@ function makeText(className, x, y, content) {
 	});
 }
 
-function makeXLine(xPos, startAt, height, textStartAt, point, labelClass, axisLineClass) {
-	let line = createSVG('line', {
-		x1: 0,
-		x2: 0,
-		y1: startAt,
-		y2: height
-	});
-
-	let text = createSVG('text', {
-		className: labelClass,
-		x: 0,
-		y: textStartAt,
-		dy: '.71em',
-		innerHTML: point
-	});
-
-	let xLine = createSVG('g', {
-		className: `tick ${X_AXIS_LINE_CLASS}`,
-		transform: `translate(${ xPos }, 0)`
-	});
-
-	xLine.appendChild(line);
-	xLine.appendChild(text);
-
-	return xLine;
-}
-
-function makeYLine(startAt, width, textEndAt, point, labelClass, axisLineClass, yPos, darker=false, lineType="") {
-	let line = createSVG('line', {
-		className: lineType === "dashed" ? "dashed": "",
-		x1: startAt,
-		x2: width,
-		y1: 0,
-		y2: 0
-	});
-
-	let text = createSVG('text', {
-		className: labelClass,
-		x: textEndAt,
-		y: 0,
-		dy: '.32em',
-		innerHTML: point+""
-	});
-
-	let yLine = createSVG('g', {
-		className: `tick ${axisLineClass}`,
-		transform: `translate(0, ${yPos})`,
-		'stroke-opacity': 1
-	});
-
-	if(darker) {
-		line.style.stroke = "rgba(27, 31, 35, 0.6)";
-	}
-
-	yLine.appendChild(line);
-	yLine.appendChild(text);
-
-	return yLine;
-}
-
-var UnitRenderer = (function() {
-	var UnitRenderer = function(totalHeight, zeroLine, avgUnitWidth) {
+var AxisChartRenderer = (function() {
+	var AxisChartRenderer = function(totalHeight, totalWidth, zeroLine, avgUnitWidth, xAxisMode, yAxisMode) {
 		this.totalHeight = totalHeight;
+		this.totalWidth = totalWidth;
 		this.zeroLine = zeroLine;
 		this.avgUnitWidth = avgUnitWidth;
+		this.xAxisMode = xAxisMode;
+		this.yAxisMode = yAxisMode;
 	};
 
-	UnitRenderer.prototype = {
+	AxisChartRenderer.prototype = {
 		bar: function (x, yTop, args, color, index, datasetIndex, noOfDatasets) {
 			let totalWidth = this.avgUnitWidth - args.spaceWidth;
 			let startX = x - totalWidth/2;
@@ -447,11 +516,460 @@ var UnitRenderer = (function() {
 				cy: y,
 				r: args.radius
 			});
-		}
+		},
+
+		xLine: function(x, label, mode=this.xAxisMode) {
+			// Draw X axis line in span/tick mode with optional label
+			let [startAt, height, textStartAt, axisLineClass] = getXLineProps(this.totalHeight, mode);
+			let l = createSVG('line', {
+				x1: 0,
+				x2: 0,
+				y1: startAt,
+				y2: height
+			});
+
+			let text = createSVG('text', {
+				className: X_LABEL_CLASS,
+				x: 0,
+				y: textStartAt,
+				dy: '.71em',
+				innerHTML: label
+			});
+
+			let line = createSVG('g', {
+				className: `tick ${axisLineClass}`,
+				transform: `translate(${ x }, 0)`
+			});
+
+			line.appendChild(l);
+			line.appendChild(text);
+
+			return line;
+		},
+
+		yLine: function(y, label, mode=this.yAxisMode) {
+			// TODO: stroke type
+			let lineType = '';
+
+			let [width, textEndAt, axisLineClass, startAt] = getYLineProps(this.totalWidth, mode);
+			let l = createSVG('line', {
+				className: lineType === "dashed" ? "dashed": "",
+				x1: startAt,
+				x2: width,
+				y1: 0,
+				y2: 0
+			});
+
+			let text = createSVG('text', {
+				className: Y_LABEL_CLASS,
+				x: textEndAt,
+				y: 0,
+				dy: '.32em',
+				innerHTML: label+""
+			});
+
+			let line = createSVG('g', {
+				className: `tick ${axisLineClass}`,
+				transform: `translate(0, ${y})`,
+				'stroke-opacity': 1
+			});
+
+			// if(darker) {
+			// 	line.style.stroke = "rgba(27, 31, 35, 0.6)";
+			// }
+
+			line.appendChild(l);
+			line.appendChild(text);
+
+			return line;
+		},
+
+		xRegion: function(x1, x2, label) { },
+
+		yRegion: function(y1, y2, label) { }
 	};
 
-	return UnitRenderer;
+	return AxisChartRenderer;
 })();
+
+const PRESET_COLOR_MAP = {
+	'light-blue': '#7cd6fd',
+	'blue': '#5e64ff',
+	'violet': '#743ee2',
+	'red': '#ff5858',
+	'orange': '#ffa00a',
+	'yellow': '#feef72',
+	'green': '#28a745',
+	'light-green': '#98d85b',
+	'purple': '#b554ff',
+	'magenta': '#ffa3ef',
+	'black': '#36114C',
+	'grey': '#bdd3e6',
+	'light-grey': '#f0f4f7',
+	'dark-grey': '#b8c2cc'
+};
+
+const DEFAULT_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
+	'yellow', 'green', 'light-green', 'purple', 'magenta'];
+
+function limitColor(r){
+	if (r > 255) return 255;
+	else if (r < 0) return 0;
+	return r;
+}
+
+function lightenDarkenColor(color, amt) {
+	let col = getColor(color);
+	let usePound = false;
+	if (col[0] == "#") {
+		col = col.slice(1);
+		usePound = true;
+	}
+	let num = parseInt(col,16);
+	let r = limitColor((num >> 16) + amt);
+	let b = limitColor(((num >> 8) & 0x00FF) + amt);
+	let g = limitColor((num & 0x0000FF) + amt);
+	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
+}
+
+function isValidColor(string) {
+	// https://stackoverflow.com/a/8027444/6495043
+	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
+}
+
+const getColor = (color) => {
+	return PRESET_COLOR_MAP[color] || color;
+};
+
+const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
+
+const COMPATIBLE_CHARTS = {
+	bar: ['line', 'scatter', 'percentage', 'pie'],
+	line: ['scatter', 'bar', 'percentage', 'pie'],
+	pie: ['line', 'scatter', 'percentage', 'bar'],
+	scatter: ['line', 'bar', 'percentage', 'pie'],
+	percentage: ['bar', 'line', 'scatter', 'pie'],
+	heatmap: []
+};
+
+// Needs structure as per only labels/datasets
+const COLOR_COMPATIBLE_CHARTS = {
+	bar: ['line', 'scatter'],
+	line: ['scatter', 'bar'],
+	pie: ['percentage'],
+	scatter: ['line', 'bar'],
+	percentage: ['pie'],
+	heatmap: []
+};
+
+class BaseChart {
+	constructor({
+		height = 240,
+
+		title = '',
+		subtitle = '',
+		colors = [],
+
+		is_navigable = 0,
+
+		type = '',
+
+		parent,
+		data
+	}) {
+		this.raw_chart_args = arguments[0];
+
+		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
+		this.title = title;
+		this.subtitle = subtitle;
+
+		this.data = data;
+
+		this.is_navigable = is_navigable;
+		if(this.is_navigable) {
+			this.current_index = 0;
+		}
+
+		this.setupConfiguration(arguments[0]);
+	}
+
+	setupConfiguration(args) {
+		// Make a this.config, that has stuff like showTooltip,
+		// showLegend, which then all functions will check
+		this.setColors(args.colors, args.type);
+		this.set_margins(args.height);
+
+		this.config = {
+			showTooltip: 1,
+			showLegend: 1,
+			isNavigable: 0
+		};
+	}
+
+	setColors(colors, type) {
+		this.colors = colors;
+
+		// Needs structure as per only labels/datasets
+		const list = type === 'percentage' || type === 'pie'
+			? this.data.labels
+			: this.data.datasets;
+
+		if(!this.colors || (list && this.colors.length < list.length)) {
+			this.colors = DEFAULT_COLORS;
+		}
+
+		this.colors = this.colors.map(color => getColor(color));
+	}
+
+	set_margins(height) {
+		this.baseHeight = height;
+		this.height = height - 40;
+		this.translate_x = 60;
+		this.translate_y = 10;
+	}
+
+	validate(){
+		if(!this.parent) {
+			console.error("No parent element to render on was provided.");
+			return false;
+		}
+		if(!this.validateAndPrepareData()) {
+			return false;
+		}
+		return true;
+	}
+
+	validateAndPrepareData() {
+		return true;
+	}
+
+	setup() {
+		if(this.validate()) {
+			this._setup();
+		}
+	}
+
+	_setup() {
+		this.bindWindowEvents();
+		this.setupConstants();
+
+		// this.setupEmptyValues();
+		// this.setupComponents();
+
+		this.makeContainer();
+		this.makeTooltip(); // without binding
+		this.draw(true);
+	}
+
+	draw(init=false) {
+		// (draw everything, layers, groups, units)
+		this.setWidth();
+
+		// these both dependent on width >.<, how can this be decoupled
+		this.setupEmptyValues();
+		this.setupComponents();
+
+		this.makeChartArea();
+		this.makeLayers();
+
+		this.renderComponents(); // with zero values
+		this.renderLegend();
+		this.setupNavigation(init);
+
+		if(init) this.update(this.data);
+	}
+
+	update(data, animate=true) {
+		this.oldData = Object.assign({}, this.data);
+		this.data = this.prepareNewData(data);
+
+		this.calculateValues();
+		this.updateComponents(animate);
+	}
+
+	prepareNewData(newData) {
+		// handle all types of passed data?
+		return newData;
+	}
+
+	bindWindowEvents() {
+		window.addEventListener('resize', () => this.draw());
+		window.addEventListener('orientationchange', () => this.draw());
+	}
+
+	setWidth() {
+		let special_values_width = 0;
+		// let char_width = 8;
+		// this.specific_values.map(val => {
+		// 	let str_width = getStringWidth((val.title + ""), char_width);
+		// 	if(str_width > special_values_width) {
+		// 		special_values_width = str_width - 40;
+		// 	}
+		// });
+		this.baseWidth = getElementContentWidth(this.parent) - special_values_width;
+		this.width = this.baseWidth - this.translate_x * 2;
+	}
+
+	setupConstants() {}
+
+	setupEmptyValues() {}
+
+	setupComponents() {
+		// Components config
+		this.components = [];
+	}
+
+	makeContainer() {
+		this.container = $.create('div', {
+			className: 'chart-container',
+			innerHTML: `<h6 class="title">${this.title}</h6>
+				<h6 class="sub-title uppercase">${this.subtitle}</h6>
+				<div class="frappe-chart graphics"></div>
+				<div class="graph-stats-container"></div>`
+		});
+
+		// Chart needs a dedicated parent element
+		this.parent.innerHTML = '';
+		this.parent.appendChild(this.container);
+
+		this.chart_wrapper = this.container.querySelector('.frappe-chart');
+		this.stats_wrapper = this.container.querySelector('.graph-stats-container');
+	}
+
+	makeChartArea() {
+		this.svg = makeSVGContainer(
+			this.chart_wrapper,
+			'chart',
+			this.baseWidth,
+			this.baseHeight
+		);
+		this.svg_defs = makeSVGDefs(this.svg);
+
+		this.drawArea = makeSVGGroup(
+			this.svg,
+			this.type + '-chart',
+			`translate(${this.translate_x}, ${this.translate_y})`
+		);
+	}
+
+
+	makeLayers() {
+		this.components.forEach((component) => {
+			component.layer = this.makeLayer(component.layerClass);
+		});
+	}
+
+	calculateValues() {}
+
+	renderComponents() {
+		this.components.forEach(c => {
+			c.store = c.make(...c.makeArgs);
+			c.layer.textContent = '';
+			c.store.forEach(element => {c.layer.appendChild(element);});
+		});
+	}
+
+	updateComponents() {
+		// this.components.forEach((component) => {
+		// 	//
+		// });
+	}
+
+	makeTooltip() {
+		this.tip = new SvgTip({
+			parent: this.chart_wrapper,
+			colors: this.colors
+		});
+		this.bind_tooltip();
+	}
+
+	show_summary() {}
+	show_custom_summary() {
+		this.summary.map(d => {
+			let stats = $.create('div', {
+				className: 'stats',
+				innerHTML: `<span class="indicator">
+					<i style="background:${d.color}"></i>
+					${d.title}: ${d.value}
+				</span>`
+			});
+			this.stats_wrapper.appendChild(stats);
+		});
+	}
+	renderLegend() {}
+
+	setupNavigation(init=false) {
+		if(this.is_navigable) return;
+
+		this.make_overlay();
+
+		if(init) {
+			this.bind_overlay();
+
+			document.addEventListener('keydown', (e) => {
+				if(isElementInViewport(this.chart_wrapper)) {
+					e = e || window.event;
+
+					if (e.keyCode == '37') {
+						this.on_left_arrow();
+					} else if (e.keyCode == '39') {
+						this.on_right_arrow();
+					} else if (e.keyCode == '38') {
+						this.on_up_arrow();
+					} else if (e.keyCode == '40') {
+						this.on_down_arrow();
+					} else if (e.keyCode == '13') {
+						this.on_enter_key();
+					}
+				}
+			});
+		}
+	}
+
+	make_overlay() {}
+	bind_overlay() {}
+	bind_units() {}
+
+	on_left_arrow() {}
+	on_right_arrow() {}
+	on_up_arrow() {}
+	on_down_arrow() {}
+	on_enter_key() {}
+
+	getDataPoint() {}
+	updateCurrentDataPoint() {}
+
+	makeLayer(className, transform='') {
+		return makeSVGGroup(this.drawArea, className, transform);
+	}
+
+	get_different_chart(type) {
+		if(type === this.type) return;
+
+		if(!ALL_CHART_TYPES.includes(type)) {
+			console.error(`'${type}' is not a valid chart type.`);
+		}
+
+		if(!COMPATIBLE_CHARTS[this.type].includes(type)) {
+			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
+		}
+
+		// whether the new chart can use the existing colors
+		const use_color = COLOR_COMPATIBLE_CHARTS[this.type].includes(type);
+
+		// Okay, this is anticlimactic
+		// this function will need to actually be 'change_chart_type(type)'
+		// that will update only the required elements, but for now ...
+		return new Chart({
+			parent: this.raw_chart_args.parent,
+			title: this.title,
+			data: this.raw_chart_args.data,
+			type: type,
+			height: this.raw_chart_args.height,
+			colors: use_color ? this.colors : undefined
+		});
+	}
+}
 
 const UNIT_ANIM_DUR = 350;
 const PATH_ANIM_DUR = 650;
@@ -847,505 +1365,6 @@ function getMaxCheckpoint(value, distribution) {
 	return distribution.filter(d => d < value).length;
 }
 
-class SvgTip {
-	constructor({
-		parent = null,
-		colors = []
-	}) {
-		this.parent = parent;
-		this.colors = colors;
-		this.title_name = '';
-		this.title_value = '';
-		this.list_values = [];
-		this.title_value_first = 0;
-
-		this.x = 0;
-		this.y = 0;
-
-		this.top = 0;
-		this.left = 0;
-
-		this.setup();
-	}
-
-	setup() {
-		this.make_tooltip();
-	}
-
-	refresh() {
-		this.fill();
-		this.calc_position();
-		// this.show_tip();
-	}
-
-	make_tooltip() {
-		this.container = $$1.create('div', {
-			inside: this.parent,
-			className: 'graph-svg-tip comparison',
-			innerHTML: `<span class="title"></span>
-				<ul class="data-point-list"></ul>
-				<div class="svg-pointer"></div>`
-		});
-		this.hide_tip();
-
-		this.title = this.container.querySelector('.title');
-		this.data_point_list = this.container.querySelector('.data-point-list');
-
-		this.parent.addEventListener('mouseleave', () => {
-			this.hide_tip();
-		});
-	}
-
-	fill() {
-		let title;
-		if(this.title_value_first) {
-			title = `<strong>${this.title_value}</strong>${this.title_name}`;
-		} else {
-			title = `${this.title_name}<strong>${this.title_value}</strong>`;
-		}
-		this.title.innerHTML = title;
-		this.data_point_list.innerHTML = '';
-
-		this.list_values.map((set, i) => {
-			const color = this.colors[i] || 'black';
-
-			let li = $$1.create('li', {
-				styles: {
-					'border-top': `3px solid ${color}`
-				},
-				innerHTML: `<strong style="display: block;">${ set.value === 0 || set.value ? set.value : '' }</strong>
-					${set.title ? set.title : '' }`
-			});
-
-			this.data_point_list.appendChild(li);
-		});
-	}
-
-	calc_position() {
-		let width = this.container.offsetWidth;
-
-		this.top = this.y - this.container.offsetHeight;
-		this.left = this.x - width/2;
-		let max_left = this.parent.offsetWidth - width;
-
-		let pointer = this.container.querySelector('.svg-pointer');
-
-		if(this.left < 0) {
-			pointer.style.left = `calc(50% - ${-1 * this.left}px)`;
-			this.left = 0;
-		} else if(this.left > max_left) {
-			let delta = this.left - max_left;
-			let pointer_offset = `calc(50% + ${delta}px)`;
-			pointer.style.left = pointer_offset;
-
-			this.left = max_left;
-		} else {
-			pointer.style.left = `50%`;
-		}
-	}
-
-	set_values(x, y, title_name = '', title_value = '', list_values = [], title_value_first = 0) {
-		this.title_name = title_name;
-		this.title_value = title_value;
-		this.list_values = list_values;
-		this.x = x;
-		this.y = y;
-		this.title_value_first = title_value_first;
-		this.refresh();
-	}
-
-	hide_tip() {
-		this.container.style.top = '0px';
-		this.container.style.left = '0px';
-		this.container.style.opacity = '0';
-	}
-
-	show_tip() {
-		this.container.style.top = this.top + 'px';
-		this.container.style.left = this.left + 'px';
-		this.container.style.opacity = '1';
-	}
-}
-
-const PRESET_COLOR_MAP = {
-	'light-blue': '#7cd6fd',
-	'blue': '#5e64ff',
-	'violet': '#743ee2',
-	'red': '#ff5858',
-	'orange': '#ffa00a',
-	'yellow': '#feef72',
-	'green': '#28a745',
-	'light-green': '#98d85b',
-	'purple': '#b554ff',
-	'magenta': '#ffa3ef',
-	'black': '#36114C',
-	'grey': '#bdd3e6',
-	'light-grey': '#f0f4f7',
-	'dark-grey': '#b8c2cc'
-};
-
-const DEFAULT_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
-	'yellow', 'green', 'light-green', 'purple', 'magenta'];
-
-function limitColor(r){
-	if (r > 255) return 255;
-	else if (r < 0) return 0;
-	return r;
-}
-
-function lightenDarkenColor(color, amt) {
-	let col = getColor(color);
-	let usePound = false;
-	if (col[0] == "#") {
-		col = col.slice(1);
-		usePound = true;
-	}
-	let num = parseInt(col,16);
-	let r = limitColor((num >> 16) + amt);
-	let b = limitColor(((num >> 8) & 0x00FF) + amt);
-	let g = limitColor((num & 0x0000FF) + amt);
-	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
-}
-
-function isValidColor(string) {
-	// https://stackoverflow.com/a/8027444/6495043
-	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
-}
-
-const getColor = (color) => {
-	return PRESET_COLOR_MAP[color] || color;
-};
-
-const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
-
-const COMPATIBLE_CHARTS = {
-	bar: ['line', 'scatter', 'percentage', 'pie'],
-	line: ['scatter', 'bar', 'percentage', 'pie'],
-	pie: ['line', 'scatter', 'percentage', 'bar'],
-	scatter: ['line', 'bar', 'percentage', 'pie'],
-	percentage: ['bar', 'line', 'scatter', 'pie'],
-	heatmap: []
-};
-
-// Needs structure as per only labels/datasets
-const COLOR_COMPATIBLE_CHARTS = {
-	bar: ['line', 'scatter'],
-	line: ['scatter', 'bar'],
-	pie: ['percentage'],
-	scatter: ['line', 'bar'],
-	percentage: ['pie'],
-	heatmap: []
-};
-
-class BaseChart {
-	constructor({
-		height = 240,
-
-		title = '',
-		subtitle = '',
-		colors = [],
-
-		is_navigable = 0,
-
-		type = '',
-
-		parent,
-		data
-	}) {
-		this.raw_chart_args = arguments[0];
-
-		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
-		this.title = title;
-		this.subtitle = subtitle;
-
-		this.data = data;
-
-		this.is_navigable = is_navigable;
-		if(this.is_navigable) {
-			this.current_index = 0;
-		}
-
-		this.setupConfiguration(arguments[0]);
-	}
-
-	setupConfiguration(args) {
-		// Make a this.config, that has stuff like showTooltip,
-		// showLegend, which then all functions will check
-		this.setColors(args.colors, args.type);
-		this.set_margins(args.height);
-
-		this.config = {
-			showTooltip: 1,
-			showLegend: 1,
-			isNavigable: 0
-		};
-	}
-
-	setColors(colors, type) {
-		this.colors = colors;
-
-		// Needs structure as per only labels/datasets
-		const list = type === 'percentage' || type === 'pie'
-			? this.data.labels
-			: this.data.datasets;
-
-		if(!this.colors || (list && this.colors.length < list.length)) {
-			this.colors = DEFAULT_COLORS;
-		}
-
-		this.colors = this.colors.map(color => getColor(color));
-	}
-
-	set_margins(height) {
-		this.baseHeight = height;
-		this.height = height - 40;
-		this.translate_x = 60;
-		this.translate_y = 10;
-	}
-
-	validate(){
-		if(!this.parent) {
-			console.error("No parent element to render on was provided.");
-			return false;
-		}
-		if(!this.validateAndPrepareData()) {
-			return false;
-		}
-		return true;
-	}
-
-	validateAndPrepareData() {
-		return true;
-	}
-
-	setup() {
-		if(this.validate()) {
-			this._setup();
-		}
-	}
-
-	_setup() {
-		this.bindWindowEvents();
-		this.setupConstants();
-
-		// this.setupEmptyValues();
-		// this.setupComponents();
-
-		this.makeContainer();
-		this.makeTooltip(); // without binding
-		this.draw(true);
-	}
-
-	draw(init=false) {
-		// (everything, layers, groups, units)
-		this.setWidth();
-
-		// these both dependent on width >.<, how can this be decoupled
-		this.setupEmptyValues();
-		this.setupComponents();
-
-		this.makeChartArea();
-		this.makeLayers();
-
-		this.renderComponents(); // with zero values
-		this.renderLegend();
-		this.setupNavigation(init);
-
-		if(init) this.update(this.data);
-	}
-
-	update(data, animate=true) {
-		this.oldData = Object.assign({}, this.data);
-		this.data = this.prepareNewData(data);
-
-		this.calculateValues();
-		this.updateComponents(animate);
-	}
-
-	prepareNewData(newData) {
-		// handle all types of passed data?
-		return newData;
-	}
-
-	bindWindowEvents() {
-		window.addEventListener('resize', () => this.draw());
-		window.addEventListener('orientationchange', () => this.draw());
-	}
-
-	setWidth() {
-		let special_values_width = 0;
-		let char_width = 8;
-		this.specific_values.map(val => {
-			let str_width = getStringWidth((val.title + ""), char_width);
-			if(str_width > special_values_width) {
-				special_values_width = str_width - 40;
-			}
-		});
-		this.base_width = getElementContentWidth(this.parent) - special_values_width;
-		this.width = this.base_width - this.translate_x * 2;
-	}
-
-	setupConstants() {}
-
-	setupEmptyValues() {}
-
-	setupComponents() {
-		// Components config
-		this.components = [];
-	}
-
-	makeContainer() {
-		this.container = $$1.create('div', {
-			className: 'chart-container',
-			innerHTML: `<h6 class="title">${this.title}</h6>
-				<h6 class="sub-title uppercase">${this.subtitle}</h6>
-				<div class="frappe-chart graphics"></div>
-				<div class="graph-stats-container"></div>`
-		});
-
-		// Chart needs a dedicated parent element
-		this.parent.innerHTML = '';
-		this.parent.appendChild(this.container);
-
-		this.chart_wrapper = this.container.querySelector('.frappe-chart');
-		this.stats_wrapper = this.container.querySelector('.graph-stats-container');
-	}
-
-	makeChartArea() {
-		this.svg = makeSVGContainer(
-			this.chart_wrapper,
-			'chart',
-			this.baseWidth,
-			this.baseHeight
-		);
-		this.svg_defs = makeSVGDefs(this.svg);
-
-		this.drawArea = makeSVGGroup(
-			this.svg,
-			this.type + '-chart',
-			`translate(${this.translate_x}, ${this.translate_y})`
-		);
-	}
-
-
-	makeLayers() {
-		this.components.forEach((component) => {
-			component.layer = this.makeLayer(component.layerClass);
-		});
-	}
-
-	calculateValues() {}
-
-	renderComponents() {
-		this.components.forEach(c => {
-			c.store = c.make(...c.makeArgs);
-			c.layer.textContent = '';
-			c.store.forEach(element => {c.layer.appendChild(element);});
-		});
-	}
-
-	updateComponents() {
-		// this.components.forEach((component) => {
-		// 	//
-		// });
-	}
-
-	makeTooltip() {
-		this.tip = new SvgTip({
-			parent: this.chart_wrapper,
-			colors: this.colors
-		});
-		this.bind_tooltip();
-	}
-
-	show_summary() {}
-	show_custom_summary() {
-		this.summary.map(d => {
-			let stats = $$1.create('div', {
-				className: 'stats',
-				innerHTML: `<span class="indicator">
-					<i style="background:${d.color}"></i>
-					${d.title}: ${d.value}
-				</span>`
-			});
-			this.stats_wrapper.appendChild(stats);
-		});
-	}
-	renderLegend() {}
-
-	setupNavigation(init=false) {
-		if(this.is_navigable) return;
-
-		this.make_overlay();
-
-		if(init) {
-			this.bind_overlay();
-
-			document.addEventListener('keydown', (e) => {
-				if(isElementInViewport(this.chart_wrapper)) {
-					e = e || window.event;
-
-					if (e.keyCode == '37') {
-						this.on_left_arrow();
-					} else if (e.keyCode == '39') {
-						this.on_right_arrow();
-					} else if (e.keyCode == '38') {
-						this.on_up_arrow();
-					} else if (e.keyCode == '40') {
-						this.on_down_arrow();
-					} else if (e.keyCode == '13') {
-						this.on_enter_key();
-					}
-				}
-			});
-		}
-	}
-
-	make_overlay() {}
-	bind_overlay() {}
-	bind_units() {}
-
-	on_left_arrow() {}
-	on_right_arrow() {}
-	on_up_arrow() {}
-	on_down_arrow() {}
-	on_enter_key() {}
-
-	getDataPoint() {}
-	updateCurrentDataPoint() {}
-
-	makeLayer(className, transform='') {
-		return makeSVGGroup(this.drawArea, className, transform);
-	}
-
-	get_different_chart(type) {
-		if(type === this.type) return;
-
-		if(!ALL_CHART_TYPES.includes(type)) {
-			console.error(`'${type}' is not a valid chart type.`);
-		}
-
-		if(!COMPATIBLE_CHARTS[this.type].includes(type)) {
-			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
-		}
-
-		// whether the new chart can use the existing colors
-		const use_color = COLOR_COMPATIBLE_CHARTS[this.type].includes(type);
-
-		// Okay, this is anticlimactic
-		// this function will need to actually be 'change_chart_type(type)'
-		// that will update only the required elements, but for now ...
-		return new Chart({
-			parent: this.raw_chart_args.parent,
-			title: this.title,
-			data: this.raw_chart_args.data,
-			type: type,
-			height: this.raw_chart_args.height,
-			colors: use_color ? this.colors : undefined
-		});
-	}
-}
-
 class AxisChart extends BaseChart {
 	constructor(args) {
 		super(args);
@@ -1373,25 +1392,35 @@ class AxisChart extends BaseChart {
 		this.xAxisLabels = ['0', '5', '10'];
 	}
 
+	// this should be inherent in BaseChart
+	getRenderer() {
+		// These args are basically the current state/config of the chart,
+		// with constant and alive params mixed
+
+
+		return new AxisChartRenderer(this.height, this.width,
+			this.zero_line, this.avg_unit_width, this.xAxisMode, this.yAxisMode);
+	}
+
 	setupComponents() {
 		let self = this;
+		let renderer = this.getRenderer();
 		this.yAxis = {
 			layerClass: 'y axis',
 			layer: undefined,
 			make: self.makeYLines,
-			makeArgs: [self.yAxisPositions, self.yAxisLabels,
-				self.width, self.y_axis_mode],
+			makeArgs: [renderer, self.yAxisPositions, self.yAxisLabels],
 			store: [],
 			animate: self.animateYLines,
-			// indexed: 1
+			// indexed: 1 // ?? As per datasets?
 		};
 		this.xAxis = {
 			layerClass: 'x axis',
 			layer: undefined,
 			make: self.makeXLines,
-			// Need avg_unit_width here
-			makeArgs: [self.xPositions, self.xAxisLabels,
-				self.height, self.x_axis_mode, 200, self.is_series],
+			// TODO: better context of renderer
+			// TODO: will implement series skip with avgUnitWidth and isSeries later
+			makeArgs: [renderer, self.xPositions, self.xAxisLabels],
 			store: [],
 			animate: self.animateXLines
 		};
@@ -1514,87 +1543,14 @@ class AxisChart extends BaseChart {
 		// if(!this.oldYAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
 	}
 
-	// setupLayers() {
-	// 	super.setupLayers();
+	makeXLines(renderer, positions, values) {
+		// TODO: draw as per condition
 
-	// 	// For markers
-	// 	this.y_axis_group = this.makeLayer('y axis');
-	// 	this.x_axis_group = this.makeLayer('x axis');
-	// 	this.specific_y_group = this.makeLayer('specific axis');
-
-	// 	// For Aggregation
-	// 	// this.sumGroup = this.makeLayer('data-points');
-	// 	// this.averageGroup = this.makeLayer('chart-area');
-
-	// 	this.setupPreUnitLayers && this.setupPreUnitLayers();
-
-	// 	// For Graph points
-	// 	this.svg_units_groups = [];
-	// 	this.y.map((d, i) => {
-	// 		this.svg_units_groups[i] = this.makeLayer(
-	// 			'data-points data-points-' + i);
-	// 	});
-	// }
-
-	// renderComponents(init) {
-	// 	this.makeYLines(this.yAxisPositions, this.yAxisLabels);
-	// 	this.makeXLines(this.xPositions, this.xAxisLabels);
-	// 	this.draw_graph(init);
-	// 	// this.make_y_specifics(this.yAnnotationPositions, this.specific_values);
-	// }
-
-	makeXLines(positions, values, total_height, mode, avg_unit_width, is_series) {
-		let [startAt, height, text_start_at,
-			axis_line_class] = getXLineProps(total_height, mode);
-
-		let char_width = 8;
-		let allowed_space = avg_unit_width * 1.5;
-		let allowed_letters = allowed_space / 8;
-
-		return values.map((value, i) => {
-			let space_taken = getStringWidth(value, char_width) + 2;
-			if(space_taken > allowed_space) {
-				if(is_series) {
-					// Skip some axis lines if X axis is a series
-					let skips = 1;
-					while((space_taken/skips)*2 > allowed_space) {
-						skips++;
-					}
-					if(i % skips !== 0) {
-						return;
-					}
-				} else {
-					value = value.slice(0, allowed_letters-3) + " ...";
-				}
-			}
-
-			return makeXLine(
-				positions[i],
-				startAt,
-				height,
-				text_start_at,
-				value,
-				'x-value-text',
-				axis_line_class
-			);
-		});
+		return positions.map((position, i) => renderer.xLine(position, values[i]));
 	}
 
-	makeYLines(positions, values, totalWidth, mode) {
-		let [width, text_end_at, axis_line_class,
-			start_at] = getYLineProps(totalWidth, mode);
-		return values.map((value, i) => {
-			return makeYLine(
-				start_at,
-				width,
-				text_end_at,
-				value,
-				'y-value-text',
-				axis_line_class,
-				positions[i],
-				(value === 0 && i !== 0) // Non-first Zero line
-			);
-		});
+	makeYLines(renderer, positions, values) {
+		return positions.map((position, i) => renderer.yLine(position, values[i]));
 	}
 
 	draw_graph(init=false) {
@@ -1667,10 +1623,10 @@ class AxisChart extends BaseChart {
 		units_group.textContent = '';
 		units_array.length = 0;
 
-		let unit_renderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
+		let unit_AxisChartRenderer = new AxisChartRenderer(this.height, this.zero_line, this.avg_unit_width);
 
 		y_values.map((y, i) => {
-			let data_unit = unit_renderer[unit.type](
+			let data_unit = unit_AxisChartRenderer[unit.type](
 				x_values[i],
 				y,
 				unit.args,
@@ -1691,9 +1647,9 @@ class AxisChart extends BaseChart {
 	bind_tooltip() {
 		// TODO: could be in tooltip itself, as it is a given functionality for its parent
 		this.chart_wrapper.addEventListener('mousemove', (e) => {
-			let o = offset(this.chart_wrapper);
-			let relX = e.pageX - o.left - this.translate_x;
-			let relY = e.pageY - o.top - this.translate_y;
+			let offset = get_offset(this.chart_wrapper);
+			let relX = e.pageX - offset.left - this.translate_x;
+			let relY = e.pageY - offset.top - this.translate_y;
 
 			if(relY < this.height + this.translate_y * 2) {
 				this.mapTooltipXPosition(relX);
@@ -1905,7 +1861,7 @@ class AxisChart extends BaseChart {
 		if(index >= this.xAxisLabels.length) index = this.xAxisLabels.length - 1;
 		if(index === this.current_index) return;
 		this.current_index = index;
-		$.fire(this.parent, "data-select", this.getDataPoint());
+		fire(this.parent, "data-select", this.getDataPoint());
 	}
 
 	set_avg_unit_width_and_x_offset() {
@@ -1946,8 +1902,8 @@ class BarChart extends AxisChart {
 		super(args);
 
 		this.type = 'bar';
-		this.x_axis_mode = args.x_axis_mode || 'tick';
-		this.y_axis_mode = args.y_axis_mode || 'span';
+		this.xAxisMode = args.xAxisMode || 'tick';
+		this.yAxisMode = args.yAxisMode || 'span';
 		this.setup();
 	}
 
@@ -2025,8 +1981,8 @@ class LineChart extends AxisChart {
 	constructor(args) {
 		super(args);
 
-		this.x_axis_mode = args.x_axis_mode || 'span';
-		this.y_axis_mode = args.y_axis_mode || 'span';
+		this.xAxisMode = args.xAxisMode || 'span';
+		this.yAxisMode = args.yAxisMode || 'span';
 
 		if(args.hasOwnProperty('show_dots')) {
 			this.show_dots = args.show_dots;
@@ -2152,19 +2108,19 @@ class PercentageChart extends BaseChart {
 		this.stats_wrapper.style.marginBottom = '30px';
 		this.stats_wrapper.style.paddingTop = '0px';
 
-		this.chartDiv = $$1.create('div', {
+		this.chartDiv = $.create('div', {
 			className: 'div',
 			inside: this.chart_wrapper
 		});
 
-		this.chart = $$1.create('div', {
+		this.chart = $.create('div', {
 			className: 'progress-chart',
 			inside: this.chartDiv
 		});
 	}
 
 	setupLayers() {
-		this.percentageBar = $$1.create('div', {
+		this.percentageBar = $.create('div', {
 			className: 'progress',
 			inside: this.chart
 		});
@@ -2209,7 +2165,7 @@ class PercentageChart extends BaseChart {
 		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
 		this.slices = [];
 		this.slice_totals.map((total, i) => {
-			let slice = $$1.create('div', {
+			let slice = $.create('div', {
 				className: `progress-bar`,
 				inside: this.percentageBar,
 				styles: {
@@ -2224,7 +2180,7 @@ class PercentageChart extends BaseChart {
 	bind_tooltip() {
 		this.slices.map((slice, i) => {
 			slice.addEventListener('mouseenter', () => {
-				let g_off = offset(this.chart_wrapper), p_off = offset(slice);
+				let g_off = get_offset(this.chart_wrapper), p_off = get_offset(slice);
 
 				let x = p_off.left - g_off.left + slice.offsetWidth/2;
 				let y = p_off.top - g_off.top - 6;
@@ -2243,7 +2199,7 @@ class PercentageChart extends BaseChart {
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {
 			if(d) {
-				let stats = $$1.create('div', {
+				let stats = $.create('div', {
 					className: 'stats',
 					inside: this.stats_wrapper
 				});
@@ -2387,7 +2343,7 @@ class PieChart extends BaseChart {
 		if(flag){
 			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
 			path.style.fill = lightenDarkenColor(color,50);
-			let g_off = offset(this.svg);
+			let g_off = get_offset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
 			let title = (this.formatted_labels && this.formatted_labels.length>0
@@ -2431,7 +2387,7 @@ class PieChart extends BaseChart {
 			const color = this.colors[i];
 
 			if(d) {
-				let stats = $$1.create('div', {
+				let stats = $.create('div', {
 					className: 'stats',
 					inside: this.stats_wrapper
 				});
@@ -2737,14 +2693,6 @@ class Heatmap extends BaseChart {
 		this.bind_tooltip();
 	}
 }
-
-// if ("development" !== 'production') {
-// 	// Enable LiveReload
-// 	document.write(
-// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
-// 		':35729/livereload.js?snipver=1"></' + 'script>'
-// 	);
-// }
 
 const chartTypes = {
 	line: LineChart,
