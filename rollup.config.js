@@ -33,6 +33,7 @@ export default [
 					resolve({ code: result.css.toString() })
 				}),
 				extensions: [ '.scss' ],
+				sourceMap: true,
 				// extract: 'dist/frappe-charts.min.css',
 				plugins: [
 					nested(),
@@ -70,6 +71,7 @@ export default [
 					resolve({ code: result.css.toString() })
 				}),
 				extensions: [ '.scss' ],
+				sourceMap: true,
 				extract: 'dist/frappe-charts.min.css',
 				plugins: [
 					nested(),
@@ -108,6 +110,7 @@ export default [
 					resolve({ code: result.css.toString() })
 				}),
 				extensions: [ '.scss' ],
+				sourceMap: true,
 				plugins: [
 					nested(),
 					cssnext({ warnForDuplicates: false }),
