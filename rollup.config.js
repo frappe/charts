@@ -26,6 +26,7 @@ export default [
 				format: 'es',
 			}
 		],
+		sourceMap: true,
 		plugins: [
 			postcss({
 				preprocessor: (content, id) => new Promise((resolve, reject) => {
@@ -103,6 +104,7 @@ export default [
 			}
 		],
 		name: 'Chart',
+		sourceMap: true,
 		plugins: [
 			postcss({
 				preprocessor: (content, id) => new Promise((resolve, reject) => {
