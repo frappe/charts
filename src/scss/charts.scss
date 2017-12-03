@@ -51,7 +51,6 @@
 		}
 	}
 	.axis, .chart-label {
-		font-size: 11px;
 		fill: #555b51;
 		line {
 			stroke: #dadada;
@@ -78,17 +77,18 @@
 	line.dashed {
 		stroke-dasharray: 5,3;
 	}
-	.tick {
-		&.x-axis-label {
-			display: block;
-		}
+	.axis-line {
+		// &.x-axis-label {
+		// 	display: block;
+		// }
+		// TODO: hack dy attr to be settable via styles
 		.specific-value {
 			text-anchor: start;
 		}
-		.y-value-text {
+		.y-line {
 			text-anchor: end;
 		}
-		.x-value-text {
+		.x-line {
 			text-anchor: middle;
 		}
 	}

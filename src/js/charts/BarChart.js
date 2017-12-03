@@ -12,11 +12,11 @@ export default class BarChart extends AxisChart {
 
 	setup_values() {
 		super.setup_values();
-		this.x_offset = this.avg_unit_width;
+		this.x_offset = this.avgUnitWidth;
 		this.unit_args = {
 			type: 'bar',
 			args: {
-				spaceWidth: this.avg_unit_width/2,
+				spaceWidth: this.avgUnitWidth/2,
 			}
 		};
 	}
@@ -74,8 +74,8 @@ export default class BarChart extends AxisChart {
 		this.updateCurrentDataPoint(this.currentIndex + 1);
 	}
 
-	set_avg_unit_width_and_x_offset() {
-		this.avg_unit_width = this.width/(this.xAxisLabels.length + 1);
-		this.x_offset = this.avg_unit_width;
+	set_avgUnitWidth_and_x_offset() {
+		this.avgUnitWidth = this.width/(this.xAxisLabels.length + 1);
+		this.x_offset = this.avgUnitWidth;
 	}
 }

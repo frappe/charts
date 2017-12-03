@@ -247,62 +247,6 @@ function fillArray(array, count, element, start=false) {
 
 const MIN_BAR_PERCENT_HEIGHT = 0.01;
 
-
-
-function getXLineProps(totalHeight, mode) {
-	let startAt = totalHeight + 6, height, textStartAt, axisLineClass = '';
-	if(mode === 'span') {		// long spanning lines
-		startAt = -7;
-		height = totalHeight + 15;
-		textStartAt = totalHeight + 25;
-	} else if(mode === 'tick'){	// short label lines
-		startAt = totalHeight;
-		height = 6;
-		textStartAt = 9;
-		axisLineClass = 'x-axis-label';
-	}
-
-	return [startAt, height, textStartAt, axisLineClass];
-}
-
-// export function getYLineProps(totalWidth, mode, specific=false) {
-function getYLineProps(totalWidth, mode) {
-	// if(specific) {
-	// 	return[totalWidth, totalWidth + 5, 'specific-value', 0];
-	// }
-	let width, text_end_at = -9, axisLineClass = '', startAt = 0;
-	if(mode === 'span') {		// long spanning lines
-		width = totalWidth + 6;
-		startAt = -6;
-	} else if(mode === 'tick'){	// short label lines
-		width = -6;
-		axisLineClass = 'y-axis-label';
-	}
-
-	return [width, text_end_at, axisLineClass, startAt];
-}
-
-// let char_width = 8;
-// let allowed_space = avg_unit_width * 1.5;
-// let allowed_letters = allowed_space / 8;
-
-// return values.map((value, i) => {
-// 	let space_taken = getStringWidth(value, char_width) + 2;
-// 	if(space_taken > allowed_space) {
-// 		if(is_series) {
-// 			// Skip some axis lines if X axis is a series
-// 			let skips = 1;
-// 			while((space_taken/skips)*2 > allowed_space) {
-// 				skips++;
-// 			}
-// 			if(i % skips !== 0) {
-// 				return;
-// 			}
-// 		} else {
-// 			value = value.slice(0, allowed_letters-3) + " ...";
-// 		}
-// 	}
-
 function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
 	let height, y;
 	if (yTop <= zeroLine) {
@@ -338,11 +282,30 @@ function equilizeNoOfElements(array1, array2,
 	return [array1, array2];
 }
 
-const X_LABEL_CLASS = 'x-value-text';
-const Y_LABEL_CLASS = 'y-value-text';
+// let char_width = 8;
+// let allowed_space = avgUnitWidth * 1.5;
+// let allowed_letters = allowed_space / 8;
 
-// const X_AXIS_LINE_CLASS = 'x-value-text';
-// const Y_AXIS_LINE_CLASS = 'y-value-text';
+// return values.map((value, i) => {
+// 	let space_taken = getStringWidth(value, char_width) + 2;
+// 	if(space_taken > allowed_space) {
+// 		if(is_series) {
+// 			// Skip some axis lines if X axis is a series
+// 			let skips = 1;
+// 			while((space_taken/skips)*2 > allowed_space) {
+// 				skips++;
+// 			}
+// 			if(i % skips !== 0) {
+// 				return;
+// 			}
+// 		} else {
+// 			value = value.slice(0, allowed_letters-3) + " ...";
+// 		}
+// 	}
+
+const AXIS_TICK_LENGTH = 6;
+const LABEL_MARGIN = 4;
+const FONT_SIZE = 10;
 
 function $$1(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
@@ -472,125 +435,136 @@ function makeText(className, x, y, content) {
 		className: className,
 		x: x,
 		y: y,
-		dy: '.32em',
+		dy: (FONT_SIZE / 2) + 'px',
+		'font-size': FONT_SIZE + 'px',
 		innerHTML: content
 	});
 }
 
-var AxisChartRenderer = (function() {
-	var AxisChartRenderer = function(totalHeight, totalWidth, zeroLine, avgUnitWidth, xAxisMode, yAxisMode) {
-		this.totalHeight = totalHeight;
-		this.totalWidth = totalWidth;
-		this.zeroLine = zeroLine;
-		this.avgUnitWidth = avgUnitWidth;
-		this.xAxisMode = xAxisMode;
-		this.yAxisMode = yAxisMode;
-	};
+function makeVertXLine(x, label, totalHeight, mode) {
+	let height = mode === 'span' ? -1 * AXIS_TICK_LENGTH : totalHeight;
 
-	AxisChartRenderer.prototype = {
-		bar: function (x, yTop, args, color, index, datasetIndex, noOfDatasets) {
-			let totalWidth = this.avgUnitWidth - args.spaceWidth;
-			let startX = x - totalWidth/2;
+	let l = createSVG('line', {
+		x1: 0,
+		x2: 0,
+		y1: totalHeight + AXIS_TICK_LENGTH,
+		y2: height
+	});
 
-			let width = totalWidth / noOfDatasets;
-			let currentX = startX + width * datasetIndex;
+	let text = createSVG('text', {
+		x: 0,
+		y: totalHeight + AXIS_TICK_LENGTH + LABEL_MARGIN,
+		dy: FONT_SIZE + 'px',
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'middle',
+		innerHTML: label
+	});
 
-			let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
+	let line = createSVG('g', {
+		transform: `translate(${ x }, 0)`
+	});
 
-			return createSVG('rect', {
-				className: `bar mini`,
-				style: `fill: ${color}`,
-				'data-point-index': index,
-				x: currentX,
-				y: y,
-				width: width,
-				height: height
-			});
-		},
+	line.appendChild(l);
+	line.appendChild(text);
 
-		dot: function(x, y, args, color, index) {
-			return createSVG('circle', {
-				style: `fill: ${color}`,
-				'data-point-index': index,
-				cx: x,
-				cy: y,
-				r: args.radius
-			});
-		},
+	return line;
+}
 
-		xLine: function(x, label, mode=this.xAxisMode) {
-			// Draw X axis line in span/tick mode with optional label
-			let [startAt, height, textStartAt, axisLineClass] = getXLineProps(this.totalHeight, mode);
-			let l = createSVG('line', {
-				x1: 0,
-				x2: 0,
-				y1: startAt,
-				y2: height
-			});
+function makeHoriYLine(y, label, totalWidth, mode) {
+	let lineType = '';
+	let width = mode === 'span' ? totalWidth + AXIS_TICK_LENGTH : AXIS_TICK_LENGTH;
 
-			let text = createSVG('text', {
-				className: X_LABEL_CLASS,
-				x: 0,
-				y: textStartAt,
-				dy: '.71em',
-				innerHTML: label
-			});
+	let l = createSVG('line', {
+		className: lineType === "dashed" ? "dashed": "",
+		x1: -1 * AXIS_TICK_LENGTH,
+		x2: width,
+		y1: 0,
+		y2: 0
+	});
 
-			let line = createSVG('g', {
-				className: `tick ${axisLineClass}`,
-				transform: `translate(${ x }, 0)`
-			});
+	let text = createSVG('text', {
+		x: -1 * (LABEL_MARGIN + AXIS_TICK_LENGTH),
+		y: 0,
+		dy: (FONT_SIZE / 2 - 2) + 'px',
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'end',
+		innerHTML: label+""
+	});
 
-			line.appendChild(l);
-			line.appendChild(text);
+	let line = createSVG('g', {
+		transform: `translate(0, ${y})`,
+		'stroke-opacity': 1
+	});
 
-			return line;
-		},
+	if(text === 0 || text === '0') {
+		line.style.stroke = "rgba(27, 31, 35, 0.6)";
+	}
 
-		yLine: function(y, label, mode=this.yAxisMode) {
-			// TODO: stroke type
-			let lineType = '';
+	line.appendChild(l);
+	line.appendChild(text);
 
-			let [width, textEndAt, axisLineClass, startAt] = getYLineProps(this.totalWidth, mode);
-			let l = createSVG('line', {
-				className: lineType === "dashed" ? "dashed": "",
-				x1: startAt,
-				x2: width,
-				y1: 0,
-				y2: 0
-			});
+	return line;
+}
 
-			let text = createSVG('text', {
-				className: Y_LABEL_CLASS,
-				x: textEndAt,
-				y: 0,
-				dy: '.32em',
-				innerHTML: label+""
-			});
+class AxisChartRenderer {
+	constructor(state) {
+		this.updateState(state);
+	}
 
-			let line = createSVG('g', {
-				className: `tick ${axisLineClass}`,
-				transform: `translate(0, ${y})`,
-				'stroke-opacity': 1
-			});
+	updateState(state) {
+		this.totalHeight = state.totalHeight;
+		this.totalWidth = state.totalWidth;
+		this.zeroLine = state.zeroLine;
+		this.avgUnitWidth = state.avgUnitWidth;
+		this.xAxisMode = state.xAxisMode;
+		this.yAxisMode = state.yAxisMode;
+	}
 
-			// if(darker) {
-			// 	line.style.stroke = "rgba(27, 31, 35, 0.6)";
-			// }
+	bar(x, yTop, args, color, index, datasetIndex, noOfDatasets) {
+		let totalWidth = this.avgUnitWidth - args.spaceWidth;
+		let startX = x - totalWidth/2;
 
-			line.appendChild(l);
-			line.appendChild(text);
+		let width = totalWidth / noOfDatasets;
+		let currentX = startX + width * datasetIndex;
 
-			return line;
-		},
+		let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
 
-		xRegion: function(x1, x2, label) { },
+		return createSVG('rect', {
+			className: `bar mini`,
+			style: `fill: ${color}`,
+			'data-point-index': index,
+			x: currentX,
+			y: y,
+			width: width,
+			height: height
+		});
+	}
 
-		yRegion: function(y1, y2, label) { }
-	};
+	dot(x, y, args, color, index) {
+		return createSVG('circle', {
+			style: `fill: ${color}`,
+			'data-point-index': index,
+			cx: x,
+			cy: y,
+			r: args.radius
+		});
+	}
 
-	return AxisChartRenderer;
-})();
+	xLine(x, label, mode=this.xAxisMode) {
+		// Draw X axis line in span/tick mode with optional label
+		return makeVertXLine(x, label, this.totalHeight, mode);
+	}
+
+	yLine(y, label, mode=this.yAxisMode) {
+		return makeHoriYLine(y, label, this.totalWidth, mode);
+	}
+
+	xMarker() {}
+	yMarker() {}
+
+	xRegion() {}
+	yRegion() {}
+}
 
 const PRESET_COLOR_MAP = {
 	'light-blue': '#7cd6fd',
@@ -725,10 +699,12 @@ class BaseChart {
 		this.setColors();
 		this.setMargins();
 
+		// constants
 		this.config = {
 			showTooltip: 1,
 			showLegend: 1,
-			isNavigable: 0
+			isNavigable: 0,
+			animate: 1
 		};
 	}
 
@@ -770,16 +746,20 @@ class BaseChart {
 
 	parseData() {
 		let data = this.rawChartArgs.data;
-		// Check and all
+		let valid = this.checkData(data);
+		if(!valid) return false;
 
-
-
-		// If all good
-		this.data = data;
-
-
+		if(!this.config.animate) {
+			this.data = data;
+		} else {
+			[this.data, this.firstUpdateData] =
+				this.getFirstUpdateData(data);
+		}
 		return true;
 	}
+
+	checkData() {}
+	getFirstUpdateData(data) {}
 
 	setup() {
 		if(this.validate()) {
@@ -791,55 +771,18 @@ class BaseChart {
 		this.bindWindowEvents();
 		this.setupConstants();
 
+		// this.setupComponents();
 
 		this.makeContainer();
 		this.makeTooltip(); // without binding
 		this.draw(true);
 	}
 
-	draw(init=false) {
-		// (draw everything, layers, groups, units)
-		this.calc();
-		this.setupRenderer(); // this chart's rendered with the config
-		this.setupComponents();
-
-
-		this.makeChartArea();
-		this.makeLayers();
-
-		this.renderComponents(); // with zero values
-		this.renderLegend();
-		this.setupNavigation(init);
-
-		if(init) this.update(this.data);
-	}
-
 	bindWindowEvents() {
-		window.addEventListener('resize', () => this.draw());
-		window.addEventListener('orientationchange', () => this.draw());
-	}
-
-	calcWidth() {
-		let outerAnnotationsWidth = 0;
-		// let charWidth = 8;
-		// this.specificValues.map(val => {
-		// 	let strWidth = getStringWidth((val.title + ""), charWidth);
-		// 	if(strWidth > outerAnnotationsWidth) {
-		// 		outerAnnotationsWidth = strWidth - 40;
-		// 	}
-		// });
-		this.baseWidth = getElementContentWidth(this.parent) - outerAnnotationsWidth;
-		this.width = this.baseWidth - this.translateX * 2;
+		window.addEventListener('resize orientationchange', () => this.draw());
 	}
 
 	setupConstants() {}
-
-	calc() {
-		this.calcWidth();
-		this.reCalc();
-	}
-
-	setupRenderer() {}
 
 	setupComponents() {
 		// Components config
@@ -861,6 +804,58 @@ class BaseChart {
 
 		this.chartWrapper = this.container.querySelector('.frappe-chart');
 		this.statsWrapper = this.container.querySelector('.graph-stats-container');
+	}
+
+	makeTooltip() {
+		this.tip = new SvgTip({
+			parent: this.chartWrapper,
+			colors: this.colors
+		});
+		this.bindTooltip();
+	}
+
+	draw(init=false) {
+		// difference from update(): draw the whole object due to groudbreaking event (init, resize, etc.)
+		// (draw everything, layers, groups, units)
+		this.calc();
+		this.refreshRenderer(); // this chart's rendered with the config
+		this.setupComponents();
+
+		this.makeChartArea();
+		this.makeLayers();
+
+		this.renderComponents(); // with zero values
+		this.renderLegend();
+		this.setupNavigation(init);
+
+		if(this.config.animate) this.update(this.firstUpdateData);
+	}
+
+	update() {
+		// difference from draw(): yes you do rerender everything here as well,
+		// but not things like the chart itself, mosty only at component level
+		this.reCalc();
+		this.reRender();
+	}
+
+	refreshRenderer() {}
+
+	calcWidth() {
+		let outerAnnotationsWidth = 0;
+		// let charWidth = 8;
+		// this.specificValues.map(val => {
+		// 	let strWidth = getStringWidth((val.title + ""), charWidth);
+		// 	if(strWidth > outerAnnotationsWidth) {
+		// 		outerAnnotationsWidth = strWidth - 40;
+		// 	}
+		// });
+		this.baseWidth = getElementContentWidth(this.parent) - outerAnnotationsWidth;
+		this.width = this.baseWidth - this.translateX * 2;
+	}
+
+	calc() {
+		this.calcWidth();
+		this.reCalc();
 	}
 
 	makeChartArea() {
@@ -896,11 +891,6 @@ class BaseChart {
 		});
 	}
 
-	update() {
-		this.reCalc();
-		this.reRender();
-	}
-
 	reCalc() {
 		// Will update values(state)
 		// Will recalc specific parts depending on the update
@@ -931,13 +921,6 @@ class BaseChart {
 
 	calcInitStage() {}
 
-	makeTooltip() {
-		this.tip = new SvgTip({
-			parent: this.chartWrapper,
-			colors: this.colors
-		});
-		this.bindTooltip();
-	}
 
 	renderLegend() {}
 
@@ -1391,7 +1374,7 @@ class AxisChart extends BaseChart {
 		this.is_series = args.is_series;
 		this.format_tooltip_y = args.format_tooltip_y;
 		this.format_tooltip_x = args.format_tooltip_x;
-		this.zero_line = this.height;
+		this.zeroLine = this.height;
 	}
 
 	parseData() {
@@ -1457,22 +1440,27 @@ class AxisChart extends BaseChart {
 	}
 
 	// this should be inherent in BaseChart
-	getRenderer() {
-		// These args are basically the current state/config of the chart,
+	refreshRenderer() {
+		// These args are basically the current state of the chart,
 		// with constant and alive params mixed
-		return new AxisChartRenderer(this.height, this.width,
-			this.zero_line, this.avg_unit_width, this.xAxisMode, this.yAxisMode);
+		this.renderer = new AxisChartRenderer({
+			totalHeight: this.height,
+			totalWidth: this.width,
+			zeroLine: this.zeroLine,
+			avgUnitWidth: this.avgUnitWidth,
+			xAxisMode: this.xAxisMode,
+			yAxisMode: this.yAxisMode
+		});
 	}
 
 	setupComponents() {
 		// Must have access to all current data things
 		let self = this;
-		let renderer = this.getRenderer();
 		this.yAxis = {
 			layerClass: 'y axis',
 			layer: undefined,
-			make: self.makeYLines,
-			makeArgs: [renderer, self.yAxisPositions, self.yAxisLabels],
+			make: self.makeYLines.bind(self),
+			makeArgs: [self.yAxisPositions, self.yAxisLabels],
 			store: [],
 			// animate? or update? will come to while implementing
 			animate: self.animateYLines,
@@ -1481,10 +1469,9 @@ class AxisChart extends BaseChart {
 		this.xAxis = {
 			layerClass: 'x axis',
 			layer: undefined,
-			make: self.makeXLines,
-			// TODO: better context of renderer
+			make: self.makeXLines.bind(self),
 			// TODO: will implement series skip with avgUnitWidth and isSeries later
-			makeArgs: [renderer, self.xPositions, self.xAxisLabels],
+			makeArgs: [self.xPositions, self.xAxisLabels],
 			store: [],
 			animate: self.animateXLines
 		};
@@ -1535,12 +1522,12 @@ class AxisChart extends BaseChart {
 	}
 
 	setup_x() {
-		this.set_avg_unit_width_and_x_offset();
+		this.set_avgUnitWidth_and_x_offset();
 		if(this.xPositions) {
 			this.x_old_axis_positions =  this.xPositions.slice();
 		}
 		this.xPositions = this.xAxisLabels.map((d, i) =>
-			floatTwo(this.x_offset + i * this.avg_unit_width));
+			floatTwo(this.x_offset + i * this.avgUnitWidth));
 
 		if(!this.x_old_axis_positions) {
 			this.x_old_axis_positions = this.xPositions.slice();
@@ -1592,28 +1579,27 @@ class AxisChart extends BaseChart {
 			zero_index = (-1) * max / interval + (y_pts.length - 1);
 		}
 
-		if(this.zero_line) this.old_zero_line = this.zero_line;
-		this.zero_line = this.height - (zero_index * interval_height);
-		if(!this.old_zero_line) this.old_zero_line = this.zero_line;
+		if(this.zeroLine) this.old_zeroLine = this.zeroLine;
+		this.zeroLine = this.height - (zero_index * interval_height);
+		if(!this.old_zeroLine) this.old_zeroLine = this.zeroLine;
 
 		// Make positions arrays for y elements
 		if(this.yAxisPositions) this.oldYAxisPositions = this.yAxisPositions;
-		this.yAxisPositions = this.yAxisLabels.map(d => this.zero_line - d * this.multiplier);
+		this.yAxisPositions = this.yAxisLabels.map(d => this.zeroLine - d * this.multiplier);
 		if(!this.oldYAxisPositions) this.oldYAxisPositions = this.yAxisPositions;
 
 		// if(this.yAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
-		// this.yAnnotationPositions = this.specific_values.map(d => this.zero_line - d.value * this.multiplier);
+		// this.yAnnotationPositions = this.specific_values.map(d => this.zeroLine - d.value * this.multiplier);
 		// if(!this.oldYAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
 	}
 
-	makeXLines(renderer, positions, values) {
-		// TODO: draw as per condition
-
-		return positions.map((position, i) => renderer.xLine(position, values[i]));
+	makeXLines(positions, values) {
+		// TODO: draw as per condition (with/without label etc.)
+		return positions.map((position, i) => this.renderer.xLine(position, values[i]));
 	}
 
-	makeYLines(renderer, positions, values) {
-		return positions.map((position, i) => renderer.yLine(position, values[i]));
+	makeYLines(positions, values) {
+		return positions.map((position, i) => this.renderer.yLine(position, values[i]));
 	}
 
 	draw_graph(init=false) {
@@ -1642,7 +1628,7 @@ class AxisChart extends BaseChart {
 		let data = [];
 		this.y.map((d, i) => {
 			// Anim: Don't draw initial values, store them and update later
-			d.yUnitPositions = new Array(d.values.length).fill(this.zero_line); // no value
+			d.yUnitPositions = new Array(d.values.length).fill(this.zeroLine); // no value
 			data.push({values: d.values});
 			d.svg_units = [];
 
@@ -1686,7 +1672,7 @@ class AxisChart extends BaseChart {
 		units_group.textContent = '';
 		units_array.length = 0;
 
-		let unit_AxisChartRenderer = new AxisChartRenderer(this.height, this.zero_line, this.avg_unit_width);
+		let unit_AxisChartRenderer = new AxisChartRenderer(this.height, this.zeroLine, this.avgUnitWidth);
 
 		y_values.map((y, i) => {
 			let data_unit = unit_AxisChartRenderer[unit.type](
@@ -1734,8 +1720,8 @@ class AxisChart extends BaseChart {
 
 		for(var i=this.xPositions.length - 1; i >= 0 ; i--) {
 			let x_val = this.xPositions[i];
-			// let delta = i === 0 ? this.avg_unit_width : x_val - this.xPositions[i-1];
-			if(relX > x_val - this.avg_unit_width/2) {
+			// let delta = i === 0 ? this.avgUnitWidth : x_val - this.xPositions[i-1];
+			if(relX > x_val - this.avgUnitWidth/2) {
 				let x = x_val + this.translateX;
 				let y = this.y_min_tops[i] + this.translateY;
 
@@ -1778,7 +1764,7 @@ class AxisChart extends BaseChart {
 		this.calcYDependencies();
 
 		// Got the values? Now begin drawing
-		this.animator = new Animator(this.height, this.width, this.zero_line, this.avg_unit_width);
+		this.animator = new Animator(this.height, this.width, this.zeroLine, this.avgUnitWidth);
 
 		this.animate_graphs();
 
@@ -1927,9 +1913,9 @@ class AxisChart extends BaseChart {
 		fire(this.parent, "data-select", this.getDataPoint());
 	}
 
-	set_avg_unit_width_and_x_offset() {
+	set_avgUnitWidth_and_x_offset() {
 		// Set the ... you get it
-		this.avg_unit_width = this.width/(this.xAxisLabels.length - 1);
+		this.avgUnitWidth = this.width/(this.xAxisLabels.length - 1);
 		this.x_offset = 0;
 	}
 
@@ -1948,7 +1934,7 @@ class AxisChart extends BaseChart {
 	calcYDependencies() {
 		this.y_min_tops = new Array(this.xAxisLabels.length).fill(9999);
 		this.y.map(d => {
-			d.yUnitPositions = d.values.map( val => floatTwo(this.zero_line - val * this.multiplier));
+			d.yUnitPositions = d.values.map( val => floatTwo(this.zeroLine - val * this.multiplier));
 			d.yUnitPositions.map( (yUnitPosition, i) => {
 				if(yUnitPosition < this.y_min_tops[i]) {
 					this.y_min_tops[i] = yUnitPosition;
@@ -1972,11 +1958,11 @@ class BarChart extends AxisChart {
 
 	setup_values() {
 		super.setup_values();
-		this.x_offset = this.avg_unit_width;
+		this.x_offset = this.avgUnitWidth;
 		this.unit_args = {
 			type: 'bar',
 			args: {
-				spaceWidth: this.avg_unit_width/2,
+				spaceWidth: this.avgUnitWidth/2,
 			}
 		};
 	}
@@ -2034,9 +2020,9 @@ class BarChart extends AxisChart {
 		this.updateCurrentDataPoint(this.currentIndex + 1);
 	}
 
-	set_avg_unit_width_and_x_offset() {
-		this.avg_unit_width = this.width/(this.xAxisLabels.length + 1);
-		this.x_offset = this.avg_unit_width;
+	set_avgUnitWidth_and_x_offset() {
+		this.avgUnitWidth = this.width/(this.xAxisLabels.length + 1);
+		this.x_offset = this.avgUnitWidth;
 	}
 }
 
@@ -2118,7 +2104,7 @@ class LineChart extends AxisChart {
 
 	fill_region_for_dataset(d, color, points_str) {
 		let gradient_id = makeGradient(this.svg_defs, color, true);
-		let pathStr = "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`;
+		let pathStr = "M" + `0,${this.zeroLine}L` + points_str + `L${this.width},${this.zeroLine}`;
 
 		d.regionPath = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id})`);
 		this.paths_groups[d.index].appendChild(d.regionPath);

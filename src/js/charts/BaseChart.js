@@ -41,10 +41,12 @@ export default class BaseChart {
 		this.setColors();
 		this.setMargins();
 
+		// constants
 		this.config = {
 			showTooltip: 1,
 			showLegend: 1,
-			isNavigable: 0
+			isNavigable: 0,
+			animate: 1
 		};
 	}
 
@@ -88,16 +90,20 @@ export default class BaseChart {
 
 	parseData() {
 		let data = this.rawChartArgs.data;
-		// Check and all
+		let valid = this.checkData(data);
+		if(!valid) return false;
 
-
-
-		// If all good
-		this.data = data;
-
-
+		if(!this.config.animate) {
+			this.data = data;
+		} else {
+			[this.data, this.firstUpdateData] =
+				this.getFirstUpdateData(data);
+		}
 		return true;
 	}
+
+	checkData() {}
+	getFirstUpdateData(data) {}
 
 	setup() {
 		if(this.validate()) {
@@ -109,55 +115,18 @@ export default class BaseChart {
 		this.bindWindowEvents();
 		this.setupConstants();
 
+		// this.setupComponents();
 
 		this.makeContainer();
 		this.makeTooltip(); // without binding
 		this.draw(true);
 	}
 
-	draw(init=false) {
-		// (draw everything, layers, groups, units)
-		this.calc();
-		this.setupRenderer(); // this chart's rendered with the config
-		this.setupComponents();
-
-
-		this.makeChartArea();
-		this.makeLayers();
-
-		this.renderComponents(); // with zero values
-		this.renderLegend();
-		this.setupNavigation(init);
-
-		if(init) this.update(this.data);
-	}
-
 	bindWindowEvents() {
-		window.addEventListener('resize', () => this.draw());
-		window.addEventListener('orientationchange', () => this.draw());
-	}
-
-	calcWidth() {
-		let outerAnnotationsWidth = 0;
-		// let charWidth = 8;
-		// this.specificValues.map(val => {
-		// 	let strWidth = getStringWidth((val.title + ""), charWidth);
-		// 	if(strWidth > outerAnnotationsWidth) {
-		// 		outerAnnotationsWidth = strWidth - 40;
-		// 	}
-		// });
-		this.baseWidth = getElementContentWidth(this.parent) - outerAnnotationsWidth;
-		this.width = this.baseWidth - this.translateX * 2;
+		window.addEventListener('resize orientationchange', () => this.draw());
 	}
 
 	setupConstants() {}
-
-	calc() {
-		this.calcWidth();
-		this.reCalc();
-	}
-
-	setupRenderer() {}
 
 	setupComponents() {
 		// Components config
@@ -179,6 +148,58 @@ export default class BaseChart {
 
 		this.chartWrapper = this.container.querySelector('.frappe-chart');
 		this.statsWrapper = this.container.querySelector('.graph-stats-container');
+	}
+
+	makeTooltip() {
+		this.tip = new SvgTip({
+			parent: this.chartWrapper,
+			colors: this.colors
+		});
+		this.bindTooltip();
+	}
+
+	draw(init=false) {
+		// difference from update(): draw the whole object due to groudbreaking event (init, resize, etc.)
+		// (draw everything, layers, groups, units)
+		this.calc();
+		this.refreshRenderer() // this chart's rendered with the config
+		this.setupComponents();
+
+		this.makeChartArea();
+		this.makeLayers();
+
+		this.renderComponents(); // with zero values
+		this.renderLegend();
+		this.setupNavigation(init);
+
+		if(this.config.animate) this.update(this.firstUpdateData);
+	}
+
+	update() {
+		// difference from draw(): yes you do rerender everything here as well,
+		// but not things like the chart itself, mosty only at component level
+		this.reCalc();
+		this.reRender();
+	}
+
+	refreshRenderer() {}
+
+	calcWidth() {
+		let outerAnnotationsWidth = 0;
+		// let charWidth = 8;
+		// this.specificValues.map(val => {
+		// 	let strWidth = getStringWidth((val.title + ""), charWidth);
+		// 	if(strWidth > outerAnnotationsWidth) {
+		// 		outerAnnotationsWidth = strWidth - 40;
+		// 	}
+		// });
+		this.baseWidth = getElementContentWidth(this.parent) - outerAnnotationsWidth;
+		this.width = this.baseWidth - this.translateX * 2;
+	}
+
+	calc() {
+		this.calcWidth();
+		this.reCalc();
 	}
 
 	makeChartArea() {
@@ -214,11 +235,6 @@ export default class BaseChart {
 		});
 	}
 
-	update() {
-		this.reCalc();
-		this.reRender();
-	}
-
 	reCalc() {
 		// Will update values(state)
 		// Will recalc specific parts depending on the update
@@ -249,13 +265,6 @@ export default class BaseChart {
 
 	calcInitStage() {}
 
-	makeTooltip() {
-		this.tip = new SvgTip({
-			parent: this.chartWrapper,
-			colors: this.colors
-		});
-		this.bindTooltip();
-	}
 
 	renderLegend() {}
 

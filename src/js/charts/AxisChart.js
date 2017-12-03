@@ -13,7 +13,7 @@ export default class AxisChart extends BaseChart {
 		this.is_series = args.is_series;
 		this.format_tooltip_y = args.format_tooltip_y;
 		this.format_tooltip_x = args.format_tooltip_x;
-		this.zero_line = this.height;
+		this.zeroLine = this.height;
 	}
 
 	parseData() {
@@ -79,22 +79,27 @@ export default class AxisChart extends BaseChart {
 	}
 
 	// this should be inherent in BaseChart
-	getRenderer() {
-		// These args are basically the current state/config of the chart,
+	refreshRenderer() {
+		// These args are basically the current state of the chart,
 		// with constant and alive params mixed
-		return new AxisChartRenderer(this.height, this.width,
-			this.zero_line, this.avg_unit_width, this.xAxisMode, this.yAxisMode);
+		this.renderer = new AxisChartRenderer({
+			totalHeight: this.height,
+			totalWidth: this.width,
+			zeroLine: this.zeroLine,
+			avgUnitWidth: this.avgUnitWidth,
+			xAxisMode: this.xAxisMode,
+			yAxisMode: this.yAxisMode
+		});
 	}
 
 	setupComponents() {
 		// Must have access to all current data things
 		let self = this;
-		let renderer = this.getRenderer();
 		this.yAxis = {
 			layerClass: 'y axis',
 			layer: undefined,
-			make: self.makeYLines,
-			makeArgs: [renderer, self.yAxisPositions, self.yAxisLabels],
+			make: self.makeYLines.bind(self),
+			makeArgs: [self.yAxisPositions, self.yAxisLabels],
 			store: [],
 			// animate? or update? will come to while implementing
 			animate: self.animateYLines,
@@ -103,10 +108,9 @@ export default class AxisChart extends BaseChart {
 		this.xAxis = {
 			layerClass: 'x axis',
 			layer: undefined,
-			make: self.makeXLines,
-			// TODO: better context of renderer
+			make: self.makeXLines.bind(self),
 			// TODO: will implement series skip with avgUnitWidth and isSeries later
-			makeArgs: [renderer, self.xPositions, self.xAxisLabels],
+			makeArgs: [self.xPositions, self.xAxisLabels],
 			store: [],
 			animate: self.animateXLines
 		};
@@ -157,12 +161,12 @@ export default class AxisChart extends BaseChart {
 	}
 
 	setup_x() {
-		this.set_avg_unit_width_and_x_offset();
+		this.set_avgUnitWidth_and_x_offset();
 		if(this.xPositions) {
 			this.x_old_axis_positions =  this.xPositions.slice();
 		}
 		this.xPositions = this.xAxisLabels.map((d, i) =>
-			floatTwo(this.x_offset + i * this.avg_unit_width));
+			floatTwo(this.x_offset + i * this.avgUnitWidth));
 
 		if(!this.x_old_axis_positions) {
 			this.x_old_axis_positions = this.xPositions.slice();
@@ -214,28 +218,27 @@ export default class AxisChart extends BaseChart {
 			zero_index = (-1) * max / interval + (y_pts.length - 1);
 		}
 
-		if(this.zero_line) this.old_zero_line = this.zero_line;
-		this.zero_line = this.height - (zero_index * interval_height);
-		if(!this.old_zero_line) this.old_zero_line = this.zero_line;
+		if(this.zeroLine) this.old_zeroLine = this.zeroLine;
+		this.zeroLine = this.height - (zero_index * interval_height);
+		if(!this.old_zeroLine) this.old_zeroLine = this.zeroLine;
 
 		// Make positions arrays for y elements
 		if(this.yAxisPositions) this.oldYAxisPositions = this.yAxisPositions;
-		this.yAxisPositions = this.yAxisLabels.map(d => this.zero_line - d * this.multiplier);
+		this.yAxisPositions = this.yAxisLabels.map(d => this.zeroLine - d * this.multiplier);
 		if(!this.oldYAxisPositions) this.oldYAxisPositions = this.yAxisPositions;
 
 		// if(this.yAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
-		// this.yAnnotationPositions = this.specific_values.map(d => this.zero_line - d.value * this.multiplier);
+		// this.yAnnotationPositions = this.specific_values.map(d => this.zeroLine - d.value * this.multiplier);
 		// if(!this.oldYAnnotationPositions) this.oldYAnnotationPositions = this.yAnnotationPositions;
 	}
 
-	makeXLines(renderer, positions, values) {
-		// TODO: draw as per condition
-
-		return positions.map((position, i) => renderer.xLine(position, values[i]));
+	makeXLines(positions, values) {
+		// TODO: draw as per condition (with/without label etc.)
+		return positions.map((position, i) => this.renderer.xLine(position, values[i]));
 	}
 
-	makeYLines(renderer, positions, values) {
-		return positions.map((position, i) => renderer.yLine(position, values[i]));
+	makeYLines(positions, values) {
+		return positions.map((position, i) => this.renderer.yLine(position, values[i]));
 	}
 
 	draw_graph(init=false) {
@@ -264,7 +267,7 @@ export default class AxisChart extends BaseChart {
 		let data = [];
 		this.y.map((d, i) => {
 			// Anim: Don't draw initial values, store them and update later
-			d.yUnitPositions = new Array(d.values.length).fill(this.zero_line); // no value
+			d.yUnitPositions = new Array(d.values.length).fill(this.zeroLine); // no value
 			data.push({values: d.values});
 			d.svg_units = [];
 
@@ -308,7 +311,7 @@ export default class AxisChart extends BaseChart {
 		units_group.textContent = '';
 		units_array.length = 0;
 
-		let unit_AxisChartRenderer = new AxisChartRenderer(this.height, this.zero_line, this.avg_unit_width);
+		let unit_AxisChartRenderer = new AxisChartRenderer(this.height, this.zeroLine, this.avgUnitWidth);
 
 		y_values.map((y, i) => {
 			let data_unit = unit_AxisChartRenderer[unit.type](
@@ -356,8 +359,8 @@ export default class AxisChart extends BaseChart {
 
 		for(var i=this.xPositions.length - 1; i >= 0 ; i--) {
 			let x_val = this.xPositions[i];
-			// let delta = i === 0 ? this.avg_unit_width : x_val - this.xPositions[i-1];
-			if(relX > x_val - this.avg_unit_width/2) {
+			// let delta = i === 0 ? this.avgUnitWidth : x_val - this.xPositions[i-1];
+			if(relX > x_val - this.avgUnitWidth/2) {
 				let x = x_val + this.translateX;
 				let y = this.y_min_tops[i] + this.translateY;
 
@@ -400,7 +403,7 @@ export default class AxisChart extends BaseChart {
 		this.calcYDependencies();
 
 		// Got the values? Now begin drawing
-		this.animator = new Animator(this.height, this.width, this.zero_line, this.avg_unit_width);
+		this.animator = new Animator(this.height, this.width, this.zeroLine, this.avgUnitWidth);
 
 		this.animate_graphs();
 
@@ -549,9 +552,9 @@ export default class AxisChart extends BaseChart {
 		fire(this.parent, "data-select", this.getDataPoint());
 	}
 
-	set_avg_unit_width_and_x_offset() {
+	set_avgUnitWidth_and_x_offset() {
 		// Set the ... you get it
-		this.avg_unit_width = this.width/(this.xAxisLabels.length - 1);
+		this.avgUnitWidth = this.width/(this.xAxisLabels.length - 1);
 		this.x_offset = 0;
 	}
 
@@ -570,7 +573,7 @@ export default class AxisChart extends BaseChart {
 	calcYDependencies() {
 		this.y_min_tops = new Array(this.xAxisLabels.length).fill(9999);
 		this.y.map(d => {
-			d.yUnitPositions = d.values.map( val => floatTwo(this.zero_line - val * this.multiplier));
+			d.yUnitPositions = d.values.map( val => floatTwo(this.zeroLine - val * this.multiplier));
 			d.yUnitPositions.map( (yUnitPosition, i) => {
 				if(yUnitPosition < this.y_min_tops[i]) {
 					this.y_min_tops[i] = yUnitPosition;

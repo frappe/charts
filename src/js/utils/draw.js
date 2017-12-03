@@ -1,10 +1,8 @@
-import { getBarHeightAndYAttr, getXLineProps, getYLineProps } from './draw-utils';
+import { getBarHeightAndYAttr } from './draw-utils';
 
-const X_LABEL_CLASS = 'x-value-text';
-const Y_LABEL_CLASS = 'y-value-text';
-
-// const X_AXIS_LINE_CLASS = 'x-value-text';
-// const Y_AXIS_LINE_CLASS = 'y-value-text';
+const AXIS_TICK_LENGTH = 6;
+const LABEL_MARGIN = 4;
+const FONT_SIZE = 10;
 
 function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
@@ -134,122 +132,133 @@ export function makeText(className, x, y, content) {
 		className: className,
 		x: x,
 		y: y,
-		dy: '.32em',
+		dy: (FONT_SIZE / 2) + 'px',
+		'font-size': FONT_SIZE + 'px',
 		innerHTML: content
 	});
 }
 
-export var AxisChartRenderer = (function() {
-	var AxisChartRenderer = function(totalHeight, totalWidth, zeroLine, avgUnitWidth, xAxisMode, yAxisMode) {
-		this.totalHeight = totalHeight;
-		this.totalWidth = totalWidth;
-		this.zeroLine = zeroLine;
-		this.avgUnitWidth = avgUnitWidth;
-		this.xAxisMode = xAxisMode;
-		this.yAxisMode = yAxisMode;
-	};
+export function makeVertXLine(x, label, totalHeight, mode) {
+	let height = mode === 'span' ? -1 * AXIS_TICK_LENGTH : totalHeight;
 
-	AxisChartRenderer.prototype = {
-		bar: function (x, yTop, args, color, index, datasetIndex, noOfDatasets) {
-			let totalWidth = this.avgUnitWidth - args.spaceWidth;
-			let startX = x - totalWidth/2;
+	let l = createSVG('line', {
+		x1: 0,
+		x2: 0,
+		y1: totalHeight + AXIS_TICK_LENGTH,
+		y2: height
+	});
 
-			let width = totalWidth / noOfDatasets;
-			let currentX = startX + width * datasetIndex;
+	let text = createSVG('text', {
+		x: 0,
+		y: totalHeight + AXIS_TICK_LENGTH + LABEL_MARGIN,
+		dy: FONT_SIZE + 'px',
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'middle',
+		innerHTML: label
+	});
 
-			let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
+	let line = createSVG('g', {
+		transform: `translate(${ x }, 0)`
+	});
 
-			return createSVG('rect', {
-				className: `bar mini`,
-				style: `fill: ${color}`,
-				'data-point-index': index,
-				x: currentX,
-				y: y,
-				width: width,
-				height: height
-			});
-		},
+	line.appendChild(l);
+	line.appendChild(text);
 
-		dot: function(x, y, args, color, index) {
-			return createSVG('circle', {
-				style: `fill: ${color}`,
-				'data-point-index': index,
-				cx: x,
-				cy: y,
-				r: args.radius
-			});
-		},
+	return line;
+}
 
-		xLine: function(x, label, mode=this.xAxisMode) {
-			// Draw X axis line in span/tick mode with optional label
-			let [startAt, height, textStartAt, axisLineClass] = getXLineProps(this.totalHeight, mode);
-			let l = createSVG('line', {
-				x1: 0,
-				x2: 0,
-				y1: startAt,
-				y2: height
-			});
+export function makeHoriYLine(y, label, totalWidth, mode) {
+	let lineType = '';
+	let width = mode === 'span' ? totalWidth + AXIS_TICK_LENGTH : AXIS_TICK_LENGTH;
 
-			let text = createSVG('text', {
-				className: X_LABEL_CLASS,
-				x: 0,
-				y: textStartAt,
-				dy: '.71em',
-				innerHTML: label
-			});
+	let l = createSVG('line', {
+		className: lineType === "dashed" ? "dashed": "",
+		x1: -1 * AXIS_TICK_LENGTH,
+		x2: width,
+		y1: 0,
+		y2: 0
+	});
 
-			let line = createSVG('g', {
-				className: `tick ${axisLineClass}`,
-				transform: `translate(${ x }, 0)`
-			});
+	let text = createSVG('text', {
+		x: -1 * (LABEL_MARGIN + AXIS_TICK_LENGTH),
+		y: 0,
+		dy: (FONT_SIZE / 2 - 2) + 'px',
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'end',
+		innerHTML: label+""
+	});
 
-			line.appendChild(l);
-			line.appendChild(text);
+	let line = createSVG('g', {
+		transform: `translate(0, ${y})`,
+		'stroke-opacity': 1
+	});
 
-			return line;
-		},
+	if(text === 0 || text === '0') {
+		line.style.stroke = "rgba(27, 31, 35, 0.6)";
+	}
 
-		yLine: function(y, label, mode=this.yAxisMode) {
-			// TODO: stroke type
-			let lineType = '';
+	line.appendChild(l);
+	line.appendChild(text);
 
-			let [width, textEndAt, axisLineClass, startAt] = getYLineProps(this.totalWidth, mode);
-			let l = createSVG('line', {
-				className: lineType === "dashed" ? "dashed": "",
-				x1: startAt,
-				x2: width,
-				y1: 0,
-				y2: 0
-			});
+	return line;
+}
 
-			let text = createSVG('text', {
-				className: Y_LABEL_CLASS,
-				x: textEndAt,
-				y: 0,
-				dy: '.32em',
-				innerHTML: label+""
-			});
+export class AxisChartRenderer {
+	constructor(state) {
+		this.updateState(state);
+	}
 
-			let line = createSVG('g', {
-				className: `tick ${axisLineClass}`,
-				transform: `translate(0, ${y})`,
-				'stroke-opacity': 1
-			});
+	updateState(state) {
+		this.totalHeight = state.totalHeight;
+		this.totalWidth = state.totalWidth;
+		this.zeroLine = state.zeroLine;
+		this.avgUnitWidth = state.avgUnitWidth;
+		this.xAxisMode = state.xAxisMode;
+		this.yAxisMode = state.yAxisMode;
+	}
 
-			// if(darker) {
-			// 	line.style.stroke = "rgba(27, 31, 35, 0.6)";
-			// }
+	bar(x, yTop, args, color, index, datasetIndex, noOfDatasets) {
+		let totalWidth = this.avgUnitWidth - args.spaceWidth;
+		let startX = x - totalWidth/2;
 
-			line.appendChild(l);
-			line.appendChild(text);
+		let width = totalWidth / noOfDatasets;
+		let currentX = startX + width * datasetIndex;
 
-			return line;
-		},
+		let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
 
-		xRegion: function(x1, x2, label) { },
+		return createSVG('rect', {
+			className: `bar mini`,
+			style: `fill: ${color}`,
+			'data-point-index': index,
+			x: currentX,
+			y: y,
+			width: width,
+			height: height
+		});
+	}
 
-		yRegion: function(y1, y2, label) { }
-	};
+	dot(x, y, args, color, index) {
+		return createSVG('circle', {
+			style: `fill: ${color}`,
+			'data-point-index': index,
+			cx: x,
+			cy: y,
+			r: args.radius
+		});
+	}
 
-	return AxisChartRenderer;
-})();
+	xLine(x, label, mode=this.xAxisMode) {
+		// Draw X axis line in span/tick mode with optional label
+		return makeVertXLine(x, label, this.totalHeight, mode);
+	}
+
+	yLine(y, label, mode=this.yAxisMode) {
+		return makeHoriYLine(y, label, this.totalWidth, mode);
+	}
+
+	xMarker() {}
+	yMarker() {}
+
+	xRegion() {}
+	yRegion() {}
+}

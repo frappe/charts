@@ -79,7 +79,7 @@ export default class LineChart extends AxisChart {
 
 	fill_region_for_dataset(d, color, points_str) {
 		let gradient_id = makeGradient(this.svg_defs, color, true);
-		let pathStr = "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`;
+		let pathStr = "M" + `0,${this.zeroLine}L` + points_str + `L${this.width},${this.zeroLine}`;
 
 		d.regionPath = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id})`);
 		this.paths_groups[d.index].appendChild(d.regionPath);
