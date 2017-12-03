@@ -15,7 +15,7 @@ import pkg from './package.json';
 
 export default [
 	{
-		input: 'src/js/charts.js',
+		input: 'src/js/chart.js',
 		output: [
 			{
 				file: 'docs/assets/js/frappe-charts.min.js',
@@ -56,7 +56,7 @@ export default [
 		]
 	},
 	{
-		input: 'src/js/charts.js',
+		input: 'src/js/chart.js',
 		output: [
 			{
 				file: pkg.main,
@@ -96,7 +96,7 @@ export default [
 		],
 	},
 	{
-		input: 'src/js/charts.js',
+		input: 'src/js/chart.js',
 		output: [
 			{
 				file: pkg.src,

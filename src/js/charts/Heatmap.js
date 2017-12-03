@@ -36,7 +36,7 @@ export default class Heatmap extends BaseChart {
 		// More colors are difficult to parse visually
 		this.distribution_size = 5;
 
-		this.translate_x = 0;
+		this.translateX = 0;
 		// this.setup();
 	}
 
@@ -72,7 +72,7 @@ export default class Heatmap extends BaseChart {
 		this.no_of_cols = getWeeksBetween(this.first_week_start + '', this.last_week_start + '') + 1;
 	}
 
-	setWidth() {
+	calcWidth() {
 		this.baseWidth = (this.no_of_cols + 3) * 12 ;
 
 		if(this.discrete_domains) {
@@ -227,11 +227,11 @@ export default class Heatmap extends BaseChart {
 		).map(d => {
 			d.style.display = 'None';
 		});
-		this.chart_wrapper.style.marginTop = '0px';
-		this.chart_wrapper.style.paddingTop = '0px';
+		this.chartWrapper.style.marginTop = '0px';
+		this.chartWrapper.style.paddingTop = '0px';
 	}
 
-	bind_tooltip() {
+	bindTooltip() {
 		Array.prototype.slice.call(
 			document.querySelectorAll(".data-group .day")
 		).map(el => {
@@ -241,7 +241,7 @@ export default class Heatmap extends BaseChart {
 
 				let month = this.month_names[parseInt(date_parts[1])-1].substring(0, 3);
 
-				let g_off = this.chart_wrapper.getBoundingClientRect(), p_off = e.target.getBoundingClientRect();
+				let g_off = this.chartWrapper.getBoundingClientRect(), p_off = e.target.getBoundingClientRect();
 
 				let width = parseInt(e.target.getAttribute('width'));
 				let x = p_off.left - g_off.left + (width+2)/2;
@@ -258,6 +258,6 @@ export default class Heatmap extends BaseChart {
 	update(data) {
 		this.data = data;
 		this.setup_values();
-		this.bind_tooltip();
+		this.bindTooltip();
 	}
 }

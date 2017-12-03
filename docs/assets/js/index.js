@@ -50,7 +50,7 @@ let bar_composite_chart = new Chart ({
 	type: 'bar',
 	height: 180,
 	colors: ['orange'],
-	is_navigable: 1,
+	isNavigable: 1,
 	is_series: 1
 	// region_fill: 1
 });
@@ -110,7 +110,7 @@ Array.prototype.slice.call(
 		let btn = e.target;
 		let type = btn.getAttribute('data-type');
 
-		let newChart = type_chart.get_different_chart(type);
+		let newChart = type_chart.getDifferentChart(type);
 		if(newChart){
 			type_chart = newChart;
 		}
@@ -300,7 +300,7 @@ let events_chart = new Chart({
 	type: 'bar',
 	height: 250,
 	colors: ['grey'],
-	is_navigable: 1,
+	isNavigable: 1,
 });
 
 let data_div = document.querySelector('.chart-events-data');

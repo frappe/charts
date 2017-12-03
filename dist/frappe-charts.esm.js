@@ -35,7 +35,7 @@ $.create = (tag, o) => {
 	return element;
 };
 
-function get_offset(element) {
+function getOffset(element) {
 	let rect = element.getBoundingClientRect();
 	return {
 		// https://stackoverflow.com/a/7436602/6495043
@@ -662,6 +662,33 @@ const COLOR_COMPATIBLE_CHARTS = {
 	heatmap: []
 };
 
+function getDifferentChart(type, current_type, args) {
+	if(type === current_type) return;
+
+	if(!ALL_CHART_TYPES.includes(type)) {
+		console.error(`'${type}' is not a valid chart type.`);
+	}
+
+	if(!COMPATIBLE_CHARTS[current_type].includes(type)) {
+		console.error(`'${current_type}' chart cannot be converted to a '${type}' chart.`);
+	}
+
+	// whether the new chart can use the existing colors
+	const useColor = COLOR_COMPATIBLE_CHARTS[current_type].includes(type);
+
+	// Okay, this is anticlimactic
+	// this function will need to actually be 'changeChartType(type)'
+	// that will update only the required elements, but for now ...
+	return new Chart({
+		parent: args.parent,
+		title: args.title,
+		data: args.data,
+		type: type,
+		height: args.height,
+		colors: useColor ? args.colors : undefined
+	});
+}
+
 class BaseChart {
 	constructor({
 		height = 240,
@@ -670,34 +697,33 @@ class BaseChart {
 		subtitle = '',
 		colors = [],
 
-		is_navigable = 0,
+		isNavigable = 0,
 
 		type = '',
 
 		parent,
 		data
 	}) {
-		this.raw_chart_args = arguments[0];
+		this.rawChartArgs = arguments[0];
 
 		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
 		this.title = title;
 		this.subtitle = subtitle;
 
-		this.data = data;
-
-		this.is_navigable = is_navigable;
-		if(this.is_navigable) {
-			this.current_index = 0;
+		this.isNavigable = isNavigable;
+		if(this.isNavigable) {
+			this.currentIndex = 0;
 		}
 
-		this.setupConfiguration(arguments[0]);
+		this.setupConfiguration();
 	}
 
-	setupConfiguration(args) {
+	setupConfiguration() {
 		// Make a this.config, that has stuff like showTooltip,
 		// showLegend, which then all functions will check
-		this.setColors(args.colors, args.type);
-		this.set_margins(args.height);
+
+		this.setColors();
+		this.setMargins();
 
 		this.config = {
 			showTooltip: 1,
@@ -706,26 +732,29 @@ class BaseChart {
 		};
 	}
 
-	setColors(colors, type) {
-		this.colors = colors;
+	setColors() {
+		let args = this.rawChartArgs;
 
-		// Needs structure as per only labels/datasets
-		const list = type === 'percentage' || type === 'pie'
-			? this.data.labels
-			: this.data.datasets;
+		// Needs structure as per only labels/datasets, from config
+		const list = args.type === 'percentage' || args.type === 'pie'
+			? args.data.labels
+			: args.data.datasets;
 
-		if(!this.colors || (list && this.colors.length < list.length)) {
+		if(!args.colors || (list && args.colors.length < list.length)) {
 			this.colors = DEFAULT_COLORS;
+		} else {
+			this.colors = args.colors;
 		}
 
 		this.colors = this.colors.map(color => getColor(color));
 	}
 
-	set_margins(height) {
+	setMargins() {
+		let height = this.rawChartArgs.height;
 		this.baseHeight = height;
 		this.height = height - 40;
-		this.translate_x = 60;
-		this.translate_y = 10;
+		this.translateX = 60;
+		this.translateY = 10;
 	}
 
 	validate(){
@@ -733,13 +762,22 @@ class BaseChart {
 			console.error("No parent element to render on was provided.");
 			return false;
 		}
-		if(!this.validateAndPrepareData()) {
+		if(!this.parseData()) {
 			return false;
 		}
 		return true;
 	}
 
-	validateAndPrepareData() {
+	parseData() {
+		let data = this.rawChartArgs.data;
+		// Check and all
+
+
+
+		// If all good
+		this.data = data;
+
+
 		return true;
 	}
 
@@ -753,8 +791,6 @@ class BaseChart {
 		this.bindWindowEvents();
 		this.setupConstants();
 
-		// this.setupEmptyValues();
-		// this.setupComponents();
 
 		this.makeContainer();
 		this.makeTooltip(); // without binding
@@ -763,11 +799,10 @@ class BaseChart {
 
 	draw(init=false) {
 		// (draw everything, layers, groups, units)
-		this.setWidth();
-
-		// these both dependent on width >.<, how can this be decoupled
-		this.setupEmptyValues();
+		this.calc();
+		this.setupRenderer(); // this chart's rendered with the config
 		this.setupComponents();
+
 
 		this.makeChartArea();
 		this.makeLayers();
@@ -779,40 +814,32 @@ class BaseChart {
 		if(init) this.update(this.data);
 	}
 
-	update(data, animate=true) {
-		this.oldData = Object.assign({}, this.data);
-		this.data = this.prepareNewData(data);
-
-		this.calculateValues();
-		this.updateComponents(animate);
-	}
-
-	prepareNewData(newData) {
-		// handle all types of passed data?
-		return newData;
-	}
-
 	bindWindowEvents() {
 		window.addEventListener('resize', () => this.draw());
 		window.addEventListener('orientationchange', () => this.draw());
 	}
 
-	setWidth() {
-		let special_values_width = 0;
-		// let char_width = 8;
-		// this.specific_values.map(val => {
-		// 	let str_width = getStringWidth((val.title + ""), char_width);
-		// 	if(str_width > special_values_width) {
-		// 		special_values_width = str_width - 40;
+	calcWidth() {
+		let outerAnnotationsWidth = 0;
+		// let charWidth = 8;
+		// this.specificValues.map(val => {
+		// 	let strWidth = getStringWidth((val.title + ""), charWidth);
+		// 	if(strWidth > outerAnnotationsWidth) {
+		// 		outerAnnotationsWidth = strWidth - 40;
 		// 	}
 		// });
-		this.baseWidth = getElementContentWidth(this.parent) - special_values_width;
-		this.width = this.baseWidth - this.translate_x * 2;
+		this.baseWidth = getElementContentWidth(this.parent) - outerAnnotationsWidth;
+		this.width = this.baseWidth - this.translateX * 2;
 	}
 
 	setupConstants() {}
 
-	setupEmptyValues() {}
+	calc() {
+		this.calcWidth();
+		this.reCalc();
+	}
+
+	setupRenderer() {}
 
 	setupComponents() {
 		// Components config
@@ -832,13 +859,13 @@ class BaseChart {
 		this.parent.innerHTML = '';
 		this.parent.appendChild(this.container);
 
-		this.chart_wrapper = this.container.querySelector('.frappe-chart');
-		this.stats_wrapper = this.container.querySelector('.graph-stats-container');
+		this.chartWrapper = this.container.querySelector('.frappe-chart');
+		this.statsWrapper = this.container.querySelector('.graph-stats-container');
 	}
 
 	makeChartArea() {
 		this.svg = makeSVGContainer(
-			this.chart_wrapper,
+			this.chartWrapper,
 			'chart',
 			this.baseWidth,
 			this.baseHeight
@@ -848,7 +875,7 @@ class BaseChart {
 		this.drawArea = makeSVGGroup(
 			this.svg,
 			this.type + '-chart',
-			`translate(${this.translate_x}, ${this.translate_y})`
+			`translate(${this.translateX}, ${this.translateY})`
 		);
 	}
 
@@ -869,72 +896,88 @@ class BaseChart {
 		});
 	}
 
-	updateComponents() {
-		// this.components.forEach((component) => {
-		// 	//
-		// });
+	update() {
+		this.reCalc();
+		this.reRender();
 	}
+
+	reCalc() {
+		// Will update values(state)
+		// Will recalc specific parts depending on the update
+	}
+
+	reRender(animate=true) {
+		if(!animate) {
+			this.renderComponents();
+			return;
+		}
+		this.animateComponents();
+		setTimeout(() => {
+			this.renderComponents();
+		}, 400);
+		// TODO: should be max anim duration required
+		// (opt, should not redraw if still in animate?)
+	}
+
+	animateComponents() {
+		this.intermedValues = this.calcIntermediateValues();
+		this.components.forEach(c => {
+			// c.store = c.animate(...c.animateArgs);
+			// c.layer.textContent = '';
+			// c.store.forEach(element => {c.layer.appendChild(element);});
+		});
+	}
+
+
+	calcInitStage() {}
 
 	makeTooltip() {
 		this.tip = new SvgTip({
-			parent: this.chart_wrapper,
+			parent: this.chartWrapper,
 			colors: this.colors
 		});
-		this.bind_tooltip();
+		this.bindTooltip();
 	}
 
-	show_summary() {}
-	show_custom_summary() {
-		this.summary.map(d => {
-			let stats = $.create('div', {
-				className: 'stats',
-				innerHTML: `<span class="indicator">
-					<i style="background:${d.color}"></i>
-					${d.title}: ${d.value}
-				</span>`
-			});
-			this.stats_wrapper.appendChild(stats);
-		});
-	}
 	renderLegend() {}
 
 	setupNavigation(init=false) {
-		if(this.is_navigable) return;
+		if(this.isNavigable) return;
 
-		this.make_overlay();
+		this.makeOverlay();
 
 		if(init) {
-			this.bind_overlay();
+			this.bindOverlay();
 
 			document.addEventListener('keydown', (e) => {
-				if(isElementInViewport(this.chart_wrapper)) {
+				if(isElementInViewport(this.chartWrapper)) {
 					e = e || window.event;
 
 					if (e.keyCode == '37') {
-						this.on_left_arrow();
+						this.onLeftArrow();
 					} else if (e.keyCode == '39') {
-						this.on_right_arrow();
+						this.onRightArrow();
 					} else if (e.keyCode == '38') {
-						this.on_up_arrow();
+						this.onUpArrow();
 					} else if (e.keyCode == '40') {
-						this.on_down_arrow();
+						this.onDownArrow();
 					} else if (e.keyCode == '13') {
-						this.on_enter_key();
+						this.onEnterKey();
 					}
 				}
 			});
 		}
 	}
 
-	make_overlay() {}
-	bind_overlay() {}
+	makeOverlay() {}
+	bindOverlay() {}
 	bind_units() {}
 
-	on_left_arrow() {}
-	on_right_arrow() {}
-	on_up_arrow() {}
-	on_down_arrow() {}
-	on_enter_key() {}
+	onLeftArrow() {}
+	onRightArrow() {}
+	onUpArrow() {}
+	onDownArrow() {}
+	onEnterKey() {}
 
 	getDataPoint() {}
 	updateCurrentDataPoint() {}
@@ -943,31 +986,8 @@ class BaseChart {
 		return makeSVGGroup(this.drawArea, className, transform);
 	}
 
-	get_different_chart(type) {
-		if(type === this.type) return;
-
-		if(!ALL_CHART_TYPES.includes(type)) {
-			console.error(`'${type}' is not a valid chart type.`);
-		}
-
-		if(!COMPATIBLE_CHARTS[this.type].includes(type)) {
-			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
-		}
-
-		// whether the new chart can use the existing colors
-		const use_color = COLOR_COMPATIBLE_CHARTS[this.type].includes(type);
-
-		// Okay, this is anticlimactic
-		// this function will need to actually be 'change_chart_type(type)'
-		// that will update only the required elements, but for now ...
-		return new Chart({
-			parent: this.raw_chart_args.parent,
-			title: this.title,
-			data: this.raw_chart_args.data,
-			type: type,
-			height: this.raw_chart_args.height,
-			colors: use_color ? this.colors : undefined
-		});
+	getDifferentChart(type) {
+		return getDifferentChart(type, this.type, this.rawChartArgs);
 	}
 }
 
@@ -1374,9 +1394,10 @@ class AxisChart extends BaseChart {
 		this.zero_line = this.height;
 	}
 
-	validateAndPrepareData() {
-		this.xAxisLabels = this.data.labels || [];
-		this.y = this.data.datasets || [];
+	parseData() {
+		let args = this.rawChartArgs;
+		this.xAxisLabels = args.data.labels || [];
+		this.y = args.data.datasets || [];
 
 		this.y.forEach(function(d, i) {
 			d.index = i;
@@ -1384,25 +1405,67 @@ class AxisChart extends BaseChart {
 		return true;
 	}
 
-	setupEmptyValues() {
+	reCalc() {
+		// examples:
+
+		// [A] Dimension change:
+
+		// [B] Data change:
+		// 1. X values update
+		// 2. Y values update
+
+
+		// Aka all the values(state), these all will be documented in an old values object
+
+		// Backup first!
+		this.oldValues = ["everything"];
+
+		// extracted, raw args will remain in their own object
+		this.datasetsLabels = [];
+		this.datasetsValues = [[[12, 34, 68], [10, 5, 46]], [[20, 20, 20]]];
+
+		// CALCULATION: we'll need the first batch of calcs
+		// List of what will happen:
+			// this.xOffset = 0;
+			// this.unitWidth = 0;
+			// this.scaleMultipliers = [];
+			// this.datasetsPoints =
+
+		// Now, the function calls
+
+		// var merged = [].concat(...arrays)
+
+
+
+		// INIT
+		// axes
 		this.yAxisPositions = [this.height, this.height/2, 0];
 		this.yAxisLabels = ['0', '5', '10'];
 
 		this.xPositions = [0, this.width/2, this.width];
 		this.xAxisLabels = ['0', '5', '10'];
+
+
+	}
+
+	calcInitStage() {
+		// will borrow from the full recalc function
+	}
+
+	calcIntermediateValues() {
+		//
 	}
 
 	// this should be inherent in BaseChart
 	getRenderer() {
 		// These args are basically the current state/config of the chart,
 		// with constant and alive params mixed
-
-
 		return new AxisChartRenderer(this.height, this.width,
 			this.zero_line, this.avg_unit_width, this.xAxisMode, this.yAxisMode);
 	}
 
 	setupComponents() {
+		// Must have access to all current data things
 		let self = this;
 		let renderer = this.getRenderer();
 		this.yAxis = {
@@ -1411,6 +1474,7 @@ class AxisChart extends BaseChart {
 			make: self.makeYLines,
 			makeArgs: [renderer, self.yAxisPositions, self.yAxisLabels],
 			store: [],
+			// animate? or update? will come to while implementing
 			animate: self.animateYLines,
 			// indexed: 1 // ?? As per datasets?
 		};
@@ -1424,6 +1488,16 @@ class AxisChart extends BaseChart {
 			store: [],
 			animate: self.animateXLines
 		};
+		// Indexed according to dataset
+		// this.dataUnits = {
+		// 	layerClass: 'y marker axis',
+		// 	layer: undefined,
+		// 	make: makeXLines,
+		// 	makeArgs: [this.xPositions, this.xAxisLabels],
+		// 	store: [],
+		// 	animate: animateXLines,
+		// 	indexed: 1
+		// };
 		this.yMarkerLines = {
 			// layerClass: 'y marker axis',
 			// layer: undefined,
@@ -1436,23 +1510,12 @@ class AxisChart extends BaseChart {
 			// layerClass: 'x marker axis',
 			// layer: undefined,
 			// make: makeXMarkerLines,
-			// makeArgs: [this.yMarkerPositions, this.xMarker],
+			// makeArgs: [this.xMarkerPositions, this.xMarker],
 			// store: [],
 			// animate: animateXMarkerLines
 		};
 
 		// Marker Regions
-
-		// Indexed according to dataset
-		this.dataUnits = {
-			layerClass: 'y marker axis',
-			layer: undefined,
-			// make: makeXLines,
-			// makeArgs: [this.xPositions, this.xAxisLabels],
-			// store: [],
-			// animate: animateXLines,
-			indexed: 1
-		};
 
 		this.components = [
 			this.yAxis,
@@ -1639,19 +1702,19 @@ class AxisChart extends BaseChart {
 			units_array.push(data_unit);
 		});
 
-		if(this.is_navigable) {
+		if(this.isNavigable) {
 			this.bind_units(units_array);
 		}
 	}
 
-	bind_tooltip() {
+	bindTooltip() {
 		// TODO: could be in tooltip itself, as it is a given functionality for its parent
-		this.chart_wrapper.addEventListener('mousemove', (e) => {
-			let offset = get_offset(this.chart_wrapper);
-			let relX = e.pageX - offset.left - this.translate_x;
-			let relY = e.pageY - offset.top - this.translate_y;
+		this.chartWrapper.addEventListener('mousemove', (e) => {
+			let offset = getOffset(this.chartWrapper);
+			let relX = e.pageX - offset.left - this.translateX;
+			let relY = e.pageY - offset.top - this.translateY;
 
-			if(relY < this.height + this.translate_y * 2) {
+			if(relY < this.height + this.translateY * 2) {
 				this.mapTooltipXPosition(relX);
 			} else {
 				this.tip.hide_tip();
@@ -1673,8 +1736,8 @@ class AxisChart extends BaseChart {
 			let x_val = this.xPositions[i];
 			// let delta = i === 0 ? this.avg_unit_width : x_val - this.xPositions[i-1];
 			if(relX > x_val - this.avg_unit_width/2) {
-				let x = x_val + this.translate_x;
-				let y = this.y_min_tops[i] + this.translate_y;
+				let x = x_val + this.translateX;
+				let y = this.y_min_tops[i] + this.translateY;
 
 				let title = titles[i];
 				let values = this.y.map((set, j) => {
@@ -1766,7 +1829,7 @@ class AxisChart extends BaseChart {
 			this.animate_units(d, newX, newY);
 		});
 
-		runSMILAnimation(this.chart_wrapper, this.svg, this.elements_to_animate);
+		runSMILAnimation(this.chartWrapper, this.svg, this.elements_to_animate);
 
 		setTimeout(() => {
 			this.y.map(d => {
@@ -1841,7 +1904,7 @@ class AxisChart extends BaseChart {
 		this.updateData(newY, newX);
 	}
 
-	getDataPoint(index=this.current_index) {
+	getDataPoint(index=this.currentIndex) {
 		// check for length
 		let data_point = {
 			index: index
@@ -1859,8 +1922,8 @@ class AxisChart extends BaseChart {
 		index = parseInt(index);
 		if(index < 0) index = 0;
 		if(index >= this.xAxisLabels.length) index = this.xAxisLabels.length - 1;
-		if(index === this.current_index) return;
-		this.current_index = index;
+		if(index === this.currentIndex) return;
+		this.currentIndex = index;
 		fire(this.parent, "data-select", this.getDataPoint());
 	}
 
@@ -1892,7 +1955,7 @@ class AxisChart extends BaseChart {
 				}
 			});
 		});
-		// this.chart_wrapper.removeChild(this.tip.container);
+		// this.chartWrapper.removeChild(this.tip.container);
 		// this.make_tooltip();
 	}
 }
@@ -1918,7 +1981,7 @@ class BarChart extends AxisChart {
 		};
 	}
 
-	// make_overlay() {
+	// makeOverlay() {
 	// 	// Just make one out of the first element
 	// 	let index = this.xAxisLabels.length - 1;
 	// 	let unit = this.y[0].svg_units[index];
@@ -1933,7 +1996,7 @@ class BarChart extends AxisChart {
 	// 	this.drawArea.appendChild(this.overlay);
 	// }
 
-	// bind_overlay() {
+	// bindOverlay() {
 	// 	// on event, update overlay
 	// 	this.parent.addEventListener('data-select', (e) => {
 	// 		this.update_overlay(e.svg_unit);
@@ -1963,12 +2026,12 @@ class BarChart extends AxisChart {
 		this.overlay.style.opacity = '0.4';
 	}
 
-	on_left_arrow() {
-		this.updateCurrentDataPoint(this.current_index - 1);
+	onLeftArrow() {
+		this.updateCurrentDataPoint(this.currentIndex - 1);
 	}
 
-	on_right_arrow() {
-		this.updateCurrentDataPoint(this.current_index + 1);
+	onRightArrow() {
+		this.updateCurrentDataPoint(this.currentIndex + 1);
 	}
 
 	set_avg_unit_width_and_x_offset() {
@@ -2101,16 +2164,16 @@ class PercentageChart extends BaseChart {
 	}
 
 	makeChartArea() {
-		this.chart_wrapper.className += ' ' + 'graph-focus-margin';
-		this.chart_wrapper.style.marginTop = '45px';
+		this.chartWrapper.className += ' ' + 'graph-focus-margin';
+		this.chartWrapper.style.marginTop = '45px';
 
-		this.stats_wrapper.className += ' ' + 'graph-focus-margin';
-		this.stats_wrapper.style.marginBottom = '30px';
-		this.stats_wrapper.style.paddingTop = '0px';
+		this.statsWrapper.className += ' ' + 'graph-focus-margin';
+		this.statsWrapper.style.marginBottom = '30px';
+		this.statsWrapper.style.paddingTop = '0px';
 
 		this.chartDiv = $.create('div', {
 			className: 'div',
-			inside: this.chart_wrapper
+			inside: this.chartWrapper
 		});
 
 		this.chart = $.create('div', {
@@ -2177,10 +2240,10 @@ class PercentageChart extends BaseChart {
 		});
 	}
 
-	bind_tooltip() {
+	bindTooltip() {
 		this.slices.map((slice, i) => {
 			slice.addEventListener('mouseenter', () => {
-				let g_off = get_offset(this.chart_wrapper), p_off = get_offset(slice);
+				let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
 
 				let x = p_off.left - g_off.left + slice.offsetWidth/2;
 				let y = p_off.top - g_off.top - 6;
@@ -2201,7 +2264,7 @@ class PercentageChart extends BaseChart {
 			if(d) {
 				let stats = $.create('div', {
 					className: 'stats',
-					inside: this.stats_wrapper
+					inside: this.statsWrapper
 				});
 				stats.innerHTML = `<span class="indicator">
 					<i style="background: ${this.colors[i]}"></i>
@@ -2328,7 +2391,7 @@ class PieChart extends BaseChart {
 
 		});
 		if(init){
-			runSMILAnimation(this.chart_wrapper, this.svg, this.elements_to_animate);
+			runSMILAnimation(this.chartWrapper, this.svg, this.elements_to_animate);
 		}
 	}
 
@@ -2343,7 +2406,7 @@ class PieChart extends BaseChart {
 		if(flag){
 			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
 			path.style.fill = lightenDarkenColor(color,50);
-			let g_off = get_offset(this.svg);
+			let g_off = getOffset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
 			let title = (this.formatted_labels && this.formatted_labels.length>0
@@ -2375,7 +2438,7 @@ class PieChart extends BaseChart {
 	mouseLeave(){
 		this.hoverSlice(this.curActiveSlice,this.curActiveSliceIndex,false);
 	}
-	bind_tooltip() {
+	bindTooltip() {
 		this.drawArea.addEventListener('mousemove',this.mouseMove);
 		this.drawArea.addEventListener('mouseleave',this.mouseLeave);
 	}
@@ -2389,7 +2452,7 @@ class PieChart extends BaseChart {
 			if(d) {
 				let stats = $.create('div', {
 					className: 'stats',
-					inside: this.stats_wrapper
+					inside: this.statsWrapper
 				});
 				stats.innerHTML = `<span class="indicator">
 					<i style="background-color:${color};"></i>
@@ -2468,7 +2531,7 @@ class Heatmap extends BaseChart {
 		// More colors are difficult to parse visually
 		this.distribution_size = 5;
 
-		this.translate_x = 0;
+		this.translateX = 0;
 		// this.setup();
 	}
 
@@ -2504,7 +2567,7 @@ class Heatmap extends BaseChart {
 		this.no_of_cols = getWeeksBetween(this.first_week_start + '', this.last_week_start + '') + 1;
 	}
 
-	setWidth() {
+	calcWidth() {
 		this.baseWidth = (this.no_of_cols + 3) * 12 ;
 
 		if(this.discrete_domains) {
@@ -2659,11 +2722,11 @@ class Heatmap extends BaseChart {
 		).map(d => {
 			d.style.display = 'None';
 		});
-		this.chart_wrapper.style.marginTop = '0px';
-		this.chart_wrapper.style.paddingTop = '0px';
+		this.chartWrapper.style.marginTop = '0px';
+		this.chartWrapper.style.paddingTop = '0px';
 	}
 
-	bind_tooltip() {
+	bindTooltip() {
 		Array.prototype.slice.call(
 			document.querySelectorAll(".data-group .day")
 		).map(el => {
@@ -2673,7 +2736,7 @@ class Heatmap extends BaseChart {
 
 				let month = this.month_names[parseInt(date_parts[1])-1].substring(0, 3);
 
-				let g_off = this.chart_wrapper.getBoundingClientRect(), p_off = e.target.getBoundingClientRect();
+				let g_off = this.chartWrapper.getBoundingClientRect(), p_off = e.target.getBoundingClientRect();
 
 				let width = parseInt(e.target.getAttribute('width'));
 				let x = p_off.left - g_off.left + (width+2)/2;
@@ -2690,7 +2753,7 @@ class Heatmap extends BaseChart {
 	update(data) {
 		this.data = data;
 		this.setup_values();
-		this.bind_tooltip();
+		this.bindTooltip();
 	}
 }
 

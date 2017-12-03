@@ -21,7 +21,7 @@ export default class BarChart extends AxisChart {
 		};
 	}
 
-	// make_overlay() {
+	// makeOverlay() {
 	// 	// Just make one out of the first element
 	// 	let index = this.xAxisLabels.length - 1;
 	// 	let unit = this.y[0].svg_units[index];
@@ -36,7 +36,7 @@ export default class BarChart extends AxisChart {
 	// 	this.drawArea.appendChild(this.overlay);
 	// }
 
-	// bind_overlay() {
+	// bindOverlay() {
 	// 	// on event, update overlay
 	// 	this.parent.addEventListener('data-select', (e) => {
 	// 		this.update_overlay(e.svg_unit);
@@ -66,12 +66,12 @@ export default class BarChart extends AxisChart {
 		this.overlay.style.opacity = '0.4';
 	}
 
-	on_left_arrow() {
-		this.updateCurrentDataPoint(this.current_index - 1);
+	onLeftArrow() {
+		this.updateCurrentDataPoint(this.currentIndex - 1);
 	}
 
-	on_right_arrow() {
-		this.updateCurrentDataPoint(this.current_index + 1);
+	onRightArrow() {
+		this.updateCurrentDataPoint(this.currentIndex + 1);
 	}
 
 	set_avg_unit_width_and_x_offset() {

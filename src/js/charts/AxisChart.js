@@ -1,5 +1,5 @@
 import BaseChart from './BaseChart';
-import { get_offset, fire } from '../utils/dom';
+import { getOffset, fire } from '../utils/dom';
 import { AxisChartRenderer } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import { Animator } from '../utils/animate';
@@ -16,9 +16,10 @@ export default class AxisChart extends BaseChart {
 		this.zero_line = this.height;
 	}
 
-	validateAndPrepareData() {
-		this.xAxisLabels = this.data.labels || [];
-		this.y = this.data.datasets || [];
+	parseData() {
+		let args = this.rawChartArgs;
+		this.xAxisLabels = args.data.labels || [];
+		this.y = args.data.datasets || [];
 
 		this.y.forEach(function(d, i) {
 			d.index = i;
@@ -26,25 +27,67 @@ export default class AxisChart extends BaseChart {
 		return true;
 	}
 
-	setupEmptyValues() {
+	reCalc() {
+		// examples:
+
+		// [A] Dimension change:
+
+		// [B] Data change:
+		// 1. X values update
+		// 2. Y values update
+
+
+		// Aka all the values(state), these all will be documented in an old values object
+
+		// Backup first!
+		this.oldValues = ["everything"];
+
+		// extracted, raw args will remain in their own object
+		this.datasetsLabels = [];
+		this.datasetsValues = [[[12, 34, 68], [10, 5, 46]], [[20, 20, 20]]];
+
+		// CALCULATION: we'll need the first batch of calcs
+		// List of what will happen:
+			// this.xOffset = 0;
+			// this.unitWidth = 0;
+			// this.scaleMultipliers = [];
+			// this.datasetsPoints =
+
+		// Now, the function calls
+
+		// var merged = [].concat(...arrays)
+
+
+
+		// INIT
+		// axes
 		this.yAxisPositions = [this.height, this.height/2, 0];
 		this.yAxisLabels = ['0', '5', '10'];
 
 		this.xPositions = [0, this.width/2, this.width];
 		this.xAxisLabels = ['0', '5', '10'];
+
+
+	}
+
+	calcInitStage() {
+		// will borrow from the full recalc function
+	}
+
+	calcIntermediateValues() {
+		//
 	}
 
 	// this should be inherent in BaseChart
 	getRenderer() {
 		// These args are basically the current state/config of the chart,
 		// with constant and alive params mixed
-
-
 		return new AxisChartRenderer(this.height, this.width,
 			this.zero_line, this.avg_unit_width, this.xAxisMode, this.yAxisMode);
 	}
 
 	setupComponents() {
+		// Must have access to all current data things
 		let self = this;
 		let renderer = this.getRenderer();
 		this.yAxis = {
@@ -53,6 +96,7 @@ export default class AxisChart extends BaseChart {
 			make: self.makeYLines,
 			makeArgs: [renderer, self.yAxisPositions, self.yAxisLabels],
 			store: [],
+			// animate? or update? will come to while implementing
 			animate: self.animateYLines,
 			// indexed: 1 // ?? As per datasets?
 		};
@@ -66,6 +110,16 @@ export default class AxisChart extends BaseChart {
 			store: [],
 			animate: self.animateXLines
 		};
+		// Indexed according to dataset
+		// this.dataUnits = {
+		// 	layerClass: 'y marker axis',
+		// 	layer: undefined,
+		// 	make: makeXLines,
+		// 	makeArgs: [this.xPositions, this.xAxisLabels],
+		// 	store: [],
+		// 	animate: animateXLines,
+		// 	indexed: 1
+		// };
 		this.yMarkerLines = {
 			// layerClass: 'y marker axis',
 			// layer: undefined,
@@ -78,23 +132,12 @@ export default class AxisChart extends BaseChart {
 			// layerClass: 'x marker axis',
 			// layer: undefined,
 			// make: makeXMarkerLines,
-			// makeArgs: [this.yMarkerPositions, this.xMarker],
+			// makeArgs: [this.xMarkerPositions, this.xMarker],
 			// store: [],
 			// animate: animateXMarkerLines
 		};
 
 		// Marker Regions
-
-		// Indexed according to dataset
-		this.dataUnits = {
-			layerClass: 'y marker axis',
-			layer: undefined,
-			// make: makeXLines,
-			// makeArgs: [this.xPositions, this.xAxisLabels],
-			// store: [],
-			// animate: animateXLines,
-			indexed: 1
-		};
 
 		this.components = [
 			this.yAxis,
@@ -281,19 +324,19 @@ export default class AxisChart extends BaseChart {
 			units_array.push(data_unit);
 		});
 
-		if(this.is_navigable) {
+		if(this.isNavigable) {
 			this.bind_units(units_array);
 		}
 	}
 
-	bind_tooltip() {
+	bindTooltip() {
 		// TODO: could be in tooltip itself, as it is a given functionality for its parent
-		this.chart_wrapper.addEventListener('mousemove', (e) => {
-			let offset = get_offset(this.chart_wrapper);
-			let relX = e.pageX - offset.left - this.translate_x;
-			let relY = e.pageY - offset.top - this.translate_y;
+		this.chartWrapper.addEventListener('mousemove', (e) => {
+			let offset = getOffset(this.chartWrapper);
+			let relX = e.pageX - offset.left - this.translateX;
+			let relY = e.pageY - offset.top - this.translateY;
 
-			if(relY < this.height + this.translate_y * 2) {
+			if(relY < this.height + this.translateY * 2) {
 				this.mapTooltipXPosition(relX);
 			} else {
 				this.tip.hide_tip();
@@ -315,8 +358,8 @@ export default class AxisChart extends BaseChart {
 			let x_val = this.xPositions[i];
 			// let delta = i === 0 ? this.avg_unit_width : x_val - this.xPositions[i-1];
 			if(relX > x_val - this.avg_unit_width/2) {
-				let x = x_val + this.translate_x;
-				let y = this.y_min_tops[i] + this.translate_y;
+				let x = x_val + this.translateX;
+				let y = this.y_min_tops[i] + this.translateY;
 
 				let title = titles[i];
 				let values = this.y.map((set, j) => {
@@ -408,7 +451,7 @@ export default class AxisChart extends BaseChart {
 			this.animate_units(d, newX, newY);
 		});
 
-		runSMILAnimation(this.chart_wrapper, this.svg, this.elements_to_animate);
+		runSMILAnimation(this.chartWrapper, this.svg, this.elements_to_animate);
 
 		setTimeout(() => {
 			this.y.map(d => {
@@ -483,7 +526,7 @@ export default class AxisChart extends BaseChart {
 		this.updateData(newY, newX);
 	}
 
-	getDataPoint(index=this.current_index) {
+	getDataPoint(index=this.currentIndex) {
 		// check for length
 		let data_point = {
 			index: index
@@ -501,8 +544,8 @@ export default class AxisChart extends BaseChart {
 		index = parseInt(index);
 		if(index < 0) index = 0;
 		if(index >= this.xAxisLabels.length) index = this.xAxisLabels.length - 1;
-		if(index === this.current_index) return;
-		this.current_index = index;
+		if(index === this.currentIndex) return;
+		this.currentIndex = index;
 		fire(this.parent, "data-select", this.getDataPoint());
 	}
 
@@ -534,7 +577,7 @@ export default class AxisChart extends BaseChart {
 				}
 			});
 		});
-		// this.chart_wrapper.removeChild(this.tip.container);
+		// this.chartWrapper.removeChild(this.tip.container);
 		// this.make_tooltip();
 	}
 }

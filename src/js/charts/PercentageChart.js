@@ -1,5 +1,5 @@
 import BaseChart from './BaseChart';
-import { $, get_offset } from '../utils/dom';
+import { $, getOffset } from '../utils/dom';
 
 export default class PercentageChart extends BaseChart {
 	constructor(args) {
@@ -13,16 +13,16 @@ export default class PercentageChart extends BaseChart {
 	}
 
 	makeChartArea() {
-		this.chart_wrapper.className += ' ' + 'graph-focus-margin';
-		this.chart_wrapper.style.marginTop = '45px';
+		this.chartWrapper.className += ' ' + 'graph-focus-margin';
+		this.chartWrapper.style.marginTop = '45px';
 
-		this.stats_wrapper.className += ' ' + 'graph-focus-margin';
-		this.stats_wrapper.style.marginBottom = '30px';
-		this.stats_wrapper.style.paddingTop = '0px';
+		this.statsWrapper.className += ' ' + 'graph-focus-margin';
+		this.statsWrapper.style.marginBottom = '30px';
+		this.statsWrapper.style.paddingTop = '0px';
 
 		this.chartDiv = $.create('div', {
 			className: 'div',
-			inside: this.chart_wrapper
+			inside: this.chartWrapper
 		});
 
 		this.chart = $.create('div', {
@@ -89,10 +89,10 @@ export default class PercentageChart extends BaseChart {
 		});
 	}
 
-	bind_tooltip() {
+	bindTooltip() {
 		this.slices.map((slice, i) => {
 			slice.addEventListener('mouseenter', () => {
-				let g_off = get_offset(this.chart_wrapper), p_off = get_offset(slice);
+				let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
 
 				let x = p_off.left - g_off.left + slice.offsetWidth/2;
 				let y = p_off.top - g_off.top - 6;
@@ -113,7 +113,7 @@ export default class PercentageChart extends BaseChart {
 			if(d) {
 				let stats = $.create('div', {
 					className: 'stats',
-					inside: this.stats_wrapper
+					inside: this.statsWrapper
 				});
 				stats.innerHTML = `<span class="indicator">
 					<i style="background: ${this.colors[i]}"></i>

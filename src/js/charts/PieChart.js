@@ -1,5 +1,5 @@
 import BaseChart from './BaseChart';
-import { $, get_offset } from '../utils/dom';
+import { $, getOffset } from '../utils/dom';
 import { makePath } from '../utils/draw';
 import { lightenDarkenColor } from '../utils/colors';
 import { runSMILAnimation, transform } from '../utils/animation';
@@ -118,7 +118,7 @@ export default class PieChart extends BaseChart {
 
 		});
 		if(init){
-			runSMILAnimation(this.chart_wrapper, this.svg, this.elements_to_animate);
+			runSMILAnimation(this.chartWrapper, this.svg, this.elements_to_animate);
 		}
 	}
 
@@ -133,7 +133,7 @@ export default class PieChart extends BaseChart {
 		if(flag){
 			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
 			path.style.fill = lightenDarkenColor(color,50);
-			let g_off = get_offset(this.svg);
+			let g_off = getOffset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
 			let title = (this.formatted_labels && this.formatted_labels.length>0
@@ -165,7 +165,7 @@ export default class PieChart extends BaseChart {
 	mouseLeave(){
 		this.hoverSlice(this.curActiveSlice,this.curActiveSliceIndex,false);
 	}
-	bind_tooltip() {
+	bindTooltip() {
 		this.drawArea.addEventListener('mousemove',this.mouseMove);
 		this.drawArea.addEventListener('mouseleave',this.mouseLeave);
 	}
@@ -179,7 +179,7 @@ export default class PieChart extends BaseChart {
 			if(d) {
 				let stats = $.create('div', {
 					className: 'stats',
-					inside: this.stats_wrapper
+					inside: this.statsWrapper
 				});
 				stats.innerHTML = `<span class="indicator">
 					<i style="background-color:${color};"></i>

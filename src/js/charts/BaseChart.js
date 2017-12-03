@@ -3,28 +3,7 @@ import { $, isElementInViewport, getElementContentWidth } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup } from '../utils/draw';
 import { getStringWidth } from '../utils/helpers';
 import { getColor, DEFAULT_COLORS } from '../utils/colors';
-import Chart from '../charts';
-
-const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
-
-const COMPATIBLE_CHARTS = {
-	bar: ['line', 'scatter', 'percentage', 'pie'],
-	line: ['scatter', 'bar', 'percentage', 'pie'],
-	pie: ['line', 'scatter', 'percentage', 'bar'],
-	scatter: ['line', 'bar', 'percentage', 'pie'],
-	percentage: ['bar', 'line', 'scatter', 'pie'],
-	heatmap: []
-};
-
-// Needs structure as per only labels/datasets
-const COLOR_COMPATIBLE_CHARTS = {
-	bar: ['line', 'scatter'],
-	line: ['scatter', 'bar'],
-	pie: ['percentage'],
-	scatter: ['line', 'bar'],
-	percentage: ['pie'],
-	heatmap: []
-};
+import { getDifferentChart } from '../config';
 
 export default class BaseChart {
 	constructor({
@@ -34,34 +13,33 @@ export default class BaseChart {
 		subtitle = '',
 		colors = [],
 
-		is_navigable = 0,
+		isNavigable = 0,
 
 		type = '',
 
 		parent,
 		data
 	}) {
-		this.raw_chart_args = arguments[0];
+		this.rawChartArgs = arguments[0];
 
 		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
 		this.title = title;
 		this.subtitle = subtitle;
 
-		this.data = data;
-
-		this.is_navigable = is_navigable;
-		if(this.is_navigable) {
-			this.current_index = 0;
+		this.isNavigable = isNavigable;
+		if(this.isNavigable) {
+			this.currentIndex = 0;
 		}
 
-		this.setupConfiguration(arguments[0]);
+		this.setupConfiguration();
 	}
 
-	setupConfiguration(args) {
+	setupConfiguration() {
 		// Make a this.config, that has stuff like showTooltip,
 		// showLegend, which then all functions will check
-		this.setColors(args.colors, args.type);
-		this.set_margins(args.height);
+
+		this.setColors();
+		this.setMargins();
 
 		this.config = {
 			showTooltip: 1,
@@ -70,40 +48,54 @@ export default class BaseChart {
 		};
 	}
 
-	setColors(colors, type) {
-		this.colors = colors;
+	setColors() {
+		let args = this.rawChartArgs;
 
-		// Needs structure as per only labels/datasets
-		const list = type === 'percentage' || type === 'pie'
-			? this.data.labels
-			: this.data.datasets;
+		// Needs structure as per only labels/datasets, from config
+		const list = args.type === 'percentage' || args.type === 'pie'
+			? args.data.labels
+			: args.data.datasets;
 
-		if(!this.colors || (list && this.colors.length < list.length)) {
+		if(!args.colors || (list && args.colors.length < list.length)) {
 			this.colors = DEFAULT_COLORS;
+		} else {
+			this.colors = args.colors;
 		}
 
 		this.colors = this.colors.map(color => getColor(color));
 	}
 
-	set_margins(height) {
+	setMargins() {
+		let height = this.rawChartArgs.height;
 		this.baseHeight = height;
 		this.height = height - 40;
-		this.translate_x = 60;
-		this.translate_y = 10;
+		this.translateX = 60;
+		this.translateY = 10;
 	}
 
 	validate(){
+		let args = this.rawChartArgs;
+		// Now yo have the args, set this stuff only after validating
 		if(!this.parent) {
 			console.error("No parent element to render on was provided.");
 			return false;
 		}
-		if(!this.validateAndPrepareData()) {
+		if(!this.parseData()) {
 			return false;
 		}
 		return true;
 	}
 
-	validateAndPrepareData() {
+	parseData() {
+		let data = this.rawChartArgs.data;
+		// Check and all
+
+
+
+		// If all good
+		this.data = data;
+
+
 		return true;
 	}
 
@@ -117,8 +109,6 @@ export default class BaseChart {
 		this.bindWindowEvents();
 		this.setupConstants();
 
-		// this.setupEmptyValues();
-		// this.setupComponents();
 
 		this.makeContainer();
 		this.makeTooltip(); // without binding
@@ -127,11 +117,10 @@ export default class BaseChart {
 
 	draw(init=false) {
 		// (draw everything, layers, groups, units)
-		this.setWidth();
-
-		// these both dependent on width >.<, how can this be decoupled
-		this.setupEmptyValues();
+		this.calc();
+		this.setupRenderer(); // this chart's rendered with the config
 		this.setupComponents();
+
 
 		this.makeChartArea();
 		this.makeLayers();
@@ -143,40 +132,32 @@ export default class BaseChart {
 		if(init) this.update(this.data);
 	}
 
-	update(data, animate=true) {
-		this.oldData = Object.assign({}, this.data);
-		this.data = this.prepareNewData(data);
-
-		this.calculateValues();
-		this.updateComponents(animate);
-	}
-
-	prepareNewData(newData) {
-		// handle all types of passed data?
-		return newData;
-	}
-
 	bindWindowEvents() {
 		window.addEventListener('resize', () => this.draw());
 		window.addEventListener('orientationchange', () => this.draw());
 	}
 
-	setWidth() {
-		let special_values_width = 0;
-		// let char_width = 8;
-		// this.specific_values.map(val => {
-		// 	let str_width = getStringWidth((val.title + ""), char_width);
-		// 	if(str_width > special_values_width) {
-		// 		special_values_width = str_width - 40;
+	calcWidth() {
+		let outerAnnotationsWidth = 0;
+		// let charWidth = 8;
+		// this.specificValues.map(val => {
+		// 	let strWidth = getStringWidth((val.title + ""), charWidth);
+		// 	if(strWidth > outerAnnotationsWidth) {
+		// 		outerAnnotationsWidth = strWidth - 40;
 		// 	}
 		// });
-		this.baseWidth = getElementContentWidth(this.parent) - special_values_width;
-		this.width = this.baseWidth - this.translate_x * 2;
+		this.baseWidth = getElementContentWidth(this.parent) - outerAnnotationsWidth;
+		this.width = this.baseWidth - this.translateX * 2;
 	}
 
 	setupConstants() {}
 
-	setupEmptyValues() {}
+	calc() {
+		this.calcWidth();
+		this.reCalc();
+	}
+
+	setupRenderer() {}
 
 	setupComponents() {
 		// Components config
@@ -196,13 +177,13 @@ export default class BaseChart {
 		this.parent.innerHTML = '';
 		this.parent.appendChild(this.container);
 
-		this.chart_wrapper = this.container.querySelector('.frappe-chart');
-		this.stats_wrapper = this.container.querySelector('.graph-stats-container');
+		this.chartWrapper = this.container.querySelector('.frappe-chart');
+		this.statsWrapper = this.container.querySelector('.graph-stats-container');
 	}
 
 	makeChartArea() {
 		this.svg = makeSVGContainer(
-			this.chart_wrapper,
+			this.chartWrapper,
 			'chart',
 			this.baseWidth,
 			this.baseHeight
@@ -212,7 +193,7 @@ export default class BaseChart {
 		this.drawArea = makeSVGGroup(
 			this.svg,
 			this.type + '-chart',
-			`translate(${this.translate_x}, ${this.translate_y})`
+			`translate(${this.translateX}, ${this.translateY})`
 		);
 	}
 
@@ -233,72 +214,88 @@ export default class BaseChart {
 		});
 	}
 
-	updateComponents() {
-		// this.components.forEach((component) => {
-		// 	//
-		// });
+	update() {
+		this.reCalc();
+		this.reRender();
 	}
+
+	reCalc() {
+		// Will update values(state)
+		// Will recalc specific parts depending on the update
+	}
+
+	reRender(animate=true) {
+		if(!animate) {
+			this.renderComponents();
+			return;
+		}
+		this.animateComponents();
+		setTimeout(() => {
+			this.renderComponents();
+		}, 400);
+		// TODO: should be max anim duration required
+		// (opt, should not redraw if still in animate?)
+	}
+
+	animateComponents() {
+		this.intermedValues = this.calcIntermediateValues();
+		this.components.forEach(c => {
+			// c.store = c.animate(...c.animateArgs);
+			// c.layer.textContent = '';
+			// c.store.forEach(element => {c.layer.appendChild(element);});
+		});
+	}
+
+
+	calcInitStage() {}
 
 	makeTooltip() {
 		this.tip = new SvgTip({
-			parent: this.chart_wrapper,
+			parent: this.chartWrapper,
 			colors: this.colors
 		});
-		this.bind_tooltip();
+		this.bindTooltip();
 	}
 
-	show_summary() {}
-	show_custom_summary() {
-		this.summary.map(d => {
-			let stats = $.create('div', {
-				className: 'stats',
-				innerHTML: `<span class="indicator">
-					<i style="background:${d.color}"></i>
-					${d.title}: ${d.value}
-				</span>`
-			});
-			this.stats_wrapper.appendChild(stats);
-		});
-	}
 	renderLegend() {}
 
 	setupNavigation(init=false) {
-		if(this.is_navigable) return;
+		if(this.isNavigable) return;
 
-		this.make_overlay();
+		this.makeOverlay();
 
 		if(init) {
-			this.bind_overlay();
+			this.bindOverlay();
 
 			document.addEventListener('keydown', (e) => {
-				if(isElementInViewport(this.chart_wrapper)) {
+				if(isElementInViewport(this.chartWrapper)) {
 					e = e || window.event;
 
 					if (e.keyCode == '37') {
-						this.on_left_arrow();
+						this.onLeftArrow();
 					} else if (e.keyCode == '39') {
-						this.on_right_arrow();
+						this.onRightArrow();
 					} else if (e.keyCode == '38') {
-						this.on_up_arrow();
+						this.onUpArrow();
 					} else if (e.keyCode == '40') {
-						this.on_down_arrow();
+						this.onDownArrow();
 					} else if (e.keyCode == '13') {
-						this.on_enter_key();
+						this.onEnterKey();
 					}
 				}
 			});
 		}
 	}
 
-	make_overlay() {}
-	bind_overlay() {}
+	makeOverlay() {}
+	bindOverlay() {}
 	bind_units() {}
 
-	on_left_arrow() {}
-	on_right_arrow() {}
-	on_up_arrow() {}
-	on_down_arrow() {}
-	on_enter_key() {}
+	onLeftArrow() {}
+	onRightArrow() {}
+	onUpArrow() {}
+	onDownArrow() {}
+	onEnterKey() {}
 
 	getDataPoint() {}
 	updateCurrentDataPoint() {}
@@ -307,30 +304,7 @@ export default class BaseChart {
 		return makeSVGGroup(this.drawArea, className, transform);
 	}
 
-	get_different_chart(type) {
-		if(type === this.type) return;
-
-		if(!ALL_CHART_TYPES.includes(type)) {
-			console.error(`'${type}' is not a valid chart type.`);
-		}
-
-		if(!COMPATIBLE_CHARTS[this.type].includes(type)) {
-			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
-		}
-
-		// whether the new chart can use the existing colors
-		const use_color = COLOR_COMPATIBLE_CHARTS[this.type].includes(type);
-
-		// Okay, this is anticlimactic
-		// this function will need to actually be 'change_chart_type(type)'
-		// that will update only the required elements, but for now ...
-		return new Chart({
-			parent: this.raw_chart_args.parent,
-			title: this.title,
-			data: this.raw_chart_args.data,
-			type: type,
-			height: this.raw_chart_args.height,
-			colors: use_color ? this.colors : undefined
-		});
+	getDifferentChart(type) {
+		return getDifferentChart(type, this.type, this.rawChartArgs);
 	}
 }
