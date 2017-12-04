@@ -1,7 +1,7 @@
 import BaseChart from './BaseChart';
 import { ChartComponent, IndexedChartComponent } from '../objects/ChartComponent';
 import { getOffset, fire } from '../utils/dom';
-import { AxisChartRenderer } from '../utils/draw';
+import { AxisChartRenderer, makePath, makeGradient } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import { Animator } from '../utils/animate';
 import { runSMILAnimation } from '../utils/animation';
@@ -84,7 +84,7 @@ export default class AxisChart extends BaseChart {
 		this.configUnits();
 
 		// temp
-		s.unitTypes = new Array(s.noOfDatasets).fill(this.state.unitArgs);
+		s.unitTypes = s.datasets.map(d => d.unitArgs ? d.unitArgs : this.state.unitArgs);
 	}
 
 	calcXPositions() {
@@ -130,8 +130,8 @@ export default class AxisChart extends BaseChart {
 	configUnits() {}
 
 	setUnitWidthAndXOffset() {
-		this.state.unitWidth = this.width/(this.state.datasetLength - 1);
-		this.state.xOffset = 0;
+		this.state.unitWidth = this.width/(this.state.datasetLength);
+		this.state.xOffset = this.state.unitWidth/2;
 	}
 
 	getAllYValues() {
@@ -187,7 +187,7 @@ export default class AxisChart extends BaseChart {
 			make: (renderer, xPosSet, yPosSet, color, unitType,
 				yValueSet, datasetIndex, noOfDatasets) => {
 
-				return yPosSet.map((y, i) => {
+				let unitSet = yPosSet.map((y, i) => {
 					return renderer[unitType.type](
 						xPosSet[i],
 						y,
@@ -198,11 +198,25 @@ export default class AxisChart extends BaseChart {
 						noOfDatasets
 					);
 				});
+
+				// temp
+				if(unitType.type === 'dot') {
+					let pointsList = yPosSet.map((y, i) => (xPosSet[i] + ',' + y));
+					let pointsStr = pointsList.join("L");
+
+					unitSet.unshift(makePath("M"+pointsStr, 'line-graph-path', color));
+				}
+				return unitSet;
 			},
 			argsKeys: ['xUnitPositions', 'yUnitPositions',
 				'colors', 'unitTypes', 'yUnitValues'],
 			animate: () => {}
 		});
+
+		// TODO: rebind new units
+		// if(this.isNavigable) {
+		// 	this.bind_units(units_array);
+		// }
 
 		this.yMarkerLines = {};
 		this.xMarkerLines = {};

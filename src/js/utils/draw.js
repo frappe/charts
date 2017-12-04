@@ -222,8 +222,12 @@ export class AxisChartRenderer {
 		let totalWidth = this.unitWidth - args.spaceWidth;
 		let startX = x - totalWidth/2;
 
-		let width = totalWidth / noOfDatasets;
-		let currentX = startX + width * datasetIndex;
+		// temp
+		// let width = totalWidth / noOfDatasets;
+		// let currentX = startX + width * datasetIndex;
+
+		let width = totalWidth;
+		let currentX = startX;
 
 		let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
 

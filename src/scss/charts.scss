@@ -61,10 +61,18 @@
 			margin-bottom: 0px;
 		}
 	}
-	.data-points {
+	.dataset-units {
+		// temp
 		circle {
-			stroke: #fff;
+			stroke: blue;
 			stroke-width: 2;
+		}
+
+		// temp
+		path {
+			fill: none;
+			stroke-opacity: 1;
+			stroke-width: 2px;
 		}
 	}
 	.path-group {

@@ -323,8 +323,11 @@ let aggr_data = {
 			"values": [25, 40, 30, 35, 8, 52, 17]
 		},
 		{
-			"values": [25, 50, -10, 15, 18, 32, 27]
-
+			"values": [25, 50, -10, 15, 18, 32, 27],
+			"unitArgs": {
+				type: 'dot',
+				args: { radius: 4 }
+			},
 		}
 	]
 };
@@ -334,7 +337,7 @@ let aggr_chart = new Chart({
 	data: aggr_data,
 	type: 'bar',
 	height: 250,
-	colors: ['purple', 'orange'],
+	colors: ['light-green', 'blue'],
 });
 
 document.querySelector('[data-aggregation="sums"]').addEventListener("click", (e) => {

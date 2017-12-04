@@ -13,10 +13,10 @@ export default class BarChart extends AxisChart {
 		this.config.yAxisMode = args.yAxisMode || 'span';
 	}
 
-	setUnitWidthAndXOffset() {
-		this.state.unitWidth = this.width/(this.state.datasetLength + 1);
-		this.state.xOffset = this.state.unitWidth;
-	}
+	// setUnitWidthAndXOffset() {
+	// 	this.state.unitWidth = this.width/(this.state.datasetLength);
+	// 	this.state.xOffset = this.state.unitWidth/2;
+	// }
 
 	configUnits() {
 		this.state.unitArgs = {
