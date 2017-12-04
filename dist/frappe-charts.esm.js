@@ -490,13 +490,14 @@ class AxisChartRenderer {
 		this.totalHeight = state.totalHeight;
 		this.totalWidth = state.totalWidth;
 		this.zeroLine = state.zeroLine;
-		this.avgUnitWidth = state.avgUnitWidth;
+		this.unitWidth = state.unitWidth;
 		this.xAxisMode = state.xAxisMode;
 		this.yAxisMode = state.yAxisMode;
 	}
 
 	bar(x, yTop, args, color, index, datasetIndex, noOfDatasets) {
-		let totalWidth = this.avgUnitWidth - args.spaceWidth;
+
+		let totalWidth = this.unitWidth - args.spaceWidth;
 		let startX = x - totalWidth/2;
 
 		let width = totalWidth / noOfDatasets;
@@ -684,7 +685,9 @@ class BaseChart {
 			animate: 0
 		};
 
-		this.state = {};
+		this.state = {
+			colors: this.colors
+		};
 	}
 
 	setColors() {
@@ -988,6 +991,51 @@ class ChartComponent {
 
 	makeLayer() {
 		this.layer = makeSVGGroup(this.parent, this.layerClass, this.layerTransform);
+	}
+}
+
+// Indexed according to dataset
+class IndexedChartComponent extends ChartComponent {
+	constructor(args) {
+		super(args);
+		this.stores = [];
+	}
+
+	refresh(args) {
+		super.refresh(args);
+		this.indexLength = this.chartState[this.argsKeys[0]].length;
+	}
+
+	makeLayer() {
+		super.makeLayer();
+		this.layers = [];
+		for(var i = 0; i < this.indexLength; i++) {
+			this.layers[i] = makeSVGGroup(this.layer, this.layerClass + '-' + i);
+		}
+	}
+
+	addLayer() {}
+
+	render() {
+		let datasetArrays = this.argsKeys.map(key => this.chartState[key]);
+
+		// datasetArrays will have something like an array of X positions sets
+		// i.e.: [ [[0,0,0], [1,1,1]],  ... ]
+		for(var i = 0; i < this.indexLength; i++) {
+			let args = datasetArrays.map(datasetArray => datasetArray[i]);
+			args.unshift(this.chartRenderer);
+
+			args.push(i);
+			args.push(this.indexLength);
+
+			this.stores.push(this.make(...args));
+
+			let layer = this.layers[i];
+			layer.textContent = '';
+			this.stores[i].forEach(element => {
+				layer.appendChild(element);
+			});
+		}
 	}
 }
 
@@ -1356,20 +1404,6 @@ class AxisChart extends BaseChart {
 		//
 	}
 
-	calcYDependencies() {
-		this.y_min_tops = new Array(this.xAxisLabels.length).fill(9999);
-		this.y.map(d => {
-			d.yUnitPositions = d.values.map( val => floatTwo(this.zeroLine - val * this.multiplier));
-			d.yUnitPositions.map( (yUnitPosition, i) => {
-				if(yUnitPosition < this.y_min_tops[i]) {
-					this.y_min_tops[i] = yUnitPosition;
-				}
-			});
-		});
-		// this.chartWrapper.removeChild(this.tip.container);
-		// this.make_tooltip();
-	}
-
 	prepareData() {
 		let s = this.state;
 		s.xAxisLabels = this.data.labels || [];
@@ -1377,11 +1411,11 @@ class AxisChart extends BaseChart {
 
 		let zeroArray = new Array(s.datasetLength).fill(0);
 
-		s.datasets = this.data.datasets;
+		s.datasets = this.data.datasets; // whole dataset info too
 		if(!this.data.datasets) {
 			// default
 			s.datasets = [{
-				values: zeroArray
+				values: zeroArray	// Proof that state version will be seen instead of this.data
 			}];
 		}
 
@@ -1403,6 +1437,8 @@ class AxisChart extends BaseChart {
 
 			d.index = i;
 		});
+
+		s.noOfDatasets = s.datasets.length;
 	}
 
 	reCalc() {
@@ -1415,20 +1451,28 @@ class AxisChart extends BaseChart {
 		// Y
 		s.datasetsLabels = this.data.datasets.map(d => d.label);
 
-		// s.datasetsValues = [[]]; indexed component
-		// s.datasetsValues = [[[12, 34, 68], [10, 5, 46]], [[20, 20, 20]]]; // array of indexed components
-		s.datasetsValues = s.datasets.map(d => d.values); // indexed component
+		// s.yUnitValues = [[]]; indexed component
+		// s.yUnitValues = [[[12, 34, 68], [10, 5, 46]], [[20, 20, 20]]]; // array of indexed components
+		s.yUnitValues = s.datasets.map(d => d.values); // indexed component
 		s.yAxisLabels = calcIntervals(this.getAllYValues(), this.type === 'line');
 		this.calcYAxisPositions();
 
-		// *** this.state.datasetsPoints =
+		this.calcYUnitPositions();
+
+		// should be state
+		this.configUnits();
+
+		// temp
+		s.unitTypes = new Array(s.noOfDatasets).fill(this.state.unitArgs);
 	}
 
 	calcXPositions() {
 		let s = this.state;
 		this.setUnitWidthAndXOffset();
-		s.xPositions = s.xAxisLabels.map((d, i) =>
+		s.xAxisPositions = s.xAxisLabels.map((d, i) =>
 			floatTwo(s.xOffset + i * s.unitWidth));
+
+		s.xUnitPositions = new Array(s.noOfDatasets).fill(s.xAxisPositions);
 	}
 
 	calcYAxisPositions() {
@@ -1442,6 +1486,28 @@ class AxisChart extends BaseChart {
 		s.yAxisPositions = yPts.map(d => s.zeroLine - d * s.scaleMultiplier);
 	}
 
+	calcYUnitPositions() {
+		let s = this.state;
+		s.yUnitPositions = s.yUnitValues.map(values =>
+			values.map(val => floatTwo(s.zeroLine - val * s.scaleMultiplier))
+		);
+
+		s.yUnitMinimums = new Array(s.datasetLength).fill(9999);
+		s.datasets.map((d, i) => {
+			s.yUnitPositions[i].map((pos, j) => {
+				if(pos < s.yUnitMinimums[j]) {
+					s.yUnitMinimums[j] = pos;
+				}
+			});
+		});
+
+		// Tooltip refresh should not be needed?
+		// this.chartWrapper.removeChild(this.tip.container);
+		// this.make_tooltip();
+	}
+
+	configUnits() {}
+
 	setUnitWidthAndXOffset() {
 		this.state.unitWidth = this.width/(this.state.datasetLength - 1);
 		this.state.xOffset = 0;
@@ -1449,14 +1515,13 @@ class AxisChart extends BaseChart {
 
 	getAllYValues() {
 		// TODO: yMarkers, regions, sums, every Y value ever
-		return [].concat(...this.state.datasetsValues);
+		return [].concat(...this.state.yUnitValues);
 	}
 
 	calcIntermedState() {
 		//
 	}
 
-	// this should be inherent in BaseChart
 	refreshRenderer() {
 		// These args are basically the current state of the chart,
 		// with constant and alive params mixed
@@ -1492,20 +1557,31 @@ class AxisChart extends BaseChart {
 			make: (renderer, positions, values) => {
 				return positions.map((position, i) => renderer.xLine(position, values[i]));
 			},
-			argsKeys: ['xPositions', 'xAxisLabels'],
+			argsKeys: ['xAxisPositions', 'xAxisLabels'],
 			animate: () => {}
 		});
 
-		// Indexed according to dataset
+		this.dataUnits = new IndexedChartComponent({
+			layerClass: 'dataset-units',
+			make: (renderer, xPosSet, yPosSet, color, unitType,
+				yValueSet, datasetIndex, noOfDatasets) => {
 
-		// this.dataUnits = new IndexedChartComponent({
-		// 	layerClass: 'x axis',
-		// 	make: (renderer, positions, values) => {
-		// 		return positions.map((position, i) => renderer.xLine(position, values[i]));
-		// 	},
-		// 	argsKeys: ['xPositions', 'xAxisLabels'],
-		// 	animate: () => {}
-		// });
+				return yPosSet.map((y, i) => {
+					return renderer[unitType.type](
+						xPosSet[i],
+						y,
+						unitType.args,
+						color,
+						i,
+						datasetIndex,
+						noOfDatasets
+					);
+				});
+			},
+			argsKeys: ['xUnitPositions', 'yUnitPositions',
+				'colors', 'unitTypes', 'yUnitValues'],
+			animate: () => {}
+		});
 
 		this.yMarkerLines = {};
 		this.xMarkerLines = {};
@@ -1517,7 +1593,7 @@ class AxisChart extends BaseChart {
 			this.xAxis,
 			// this.yMarkerLines,
 			// this.xMarkerLines,
-			// this.dataUnits,
+			this.dataUnits,
 		];
 	}
 
@@ -1541,13 +1617,11 @@ class BarChart extends AxisChart {
 		this.state.xOffset = this.state.unitWidth;
 	}
 
-	setup_values() {
-		super.setup_values();
-		this.x_offset = this.avgUnitWidth;
-		this.unit_args = {
+	configUnits() {
+		this.state.unitArgs = {
 			type: 'bar',
 			args: {
-				spaceWidth: this.avgUnitWidth/2,
+				spaceWidth: this.state.unitWidth/2,
 			}
 		};
 	}
@@ -1574,37 +1648,36 @@ class BarChart extends AxisChart {
 	// 	});
 	// }
 
-	bind_units(units_array) {
-		units_array.map(unit => {
-			unit.addEventListener('click', () => {
-				let index = unit.getAttribute('data-point-index');
-				this.updateCurrentDataPoint(index);
-			});
-		});
-	}
+	// bind_units(units_array) {
+	// 	units_array.map(unit => {
+	// 		unit.addEventListener('click', () => {
+	// 			let index = unit.getAttribute('data-point-index');
+	// 			this.updateCurrentDataPoint(index);
+	// 		});
+	// 	});
+	// }
 
-	update_overlay(unit) {
-		let attributes = [];
-		Object.keys(unit.attributes).map(index => {
-			attributes.push(unit.attributes[index]);
-		});
+	// update_overlay(unit) {
+	// 	let attributes = [];
+	// 	Object.keys(unit.attributes).map(index => {
+	// 		attributes.push(unit.attributes[index]);
+	// 	});
 
-		attributes.filter(attr => attr.specified).map(attr => {
-			this.overlay.setAttribute(attr.name, attr.nodeValue);
-		});
+	// 	attributes.filter(attr => attr.specified).map(attr => {
+	// 		this.overlay.setAttribute(attr.name, attr.nodeValue);
+	// 	});
 
-		this.overlay.style.fill = '#000000';
-		this.overlay.style.opacity = '0.4';
-	}
+	// 	this.overlay.style.fill = '#000000';
+	// 	this.overlay.style.opacity = '0.4';
+	// }
 
-	onLeftArrow() {
-		this.updateCurrentDataPoint(this.currentIndex - 1);
-	}
+	// onLeftArrow() {
+	// 	this.updateCurrentDataPoint(this.currentIndex - 1);
+	// }
 
-	onRightArrow() {
-		this.updateCurrentDataPoint(this.currentIndex + 1);
-	}
-
+	// onRightArrow() {
+	// 	this.updateCurrentDataPoint(this.currentIndex + 1);
+	// }
 
 }
 
@@ -1625,11 +1698,18 @@ class LineChart extends AxisChart {
 		this.config.xAxisMode = args.xAxisMode || 'span';
 		this.config.yAxisMode = args.yAxisMode || 'span';
 
-		this.config.dot_radius = args.dot_radius || 4;
+		this.config.dotRadius = args.dotRadius || 4;
 
 		this.config.heatline = args.heatline || 0;
-		this.config.region_fill = args.region_fill || 0;
-		this.config.show_dots = args.show_dots || 1;
+		this.config.regionFill = args.regionFill || 0;
+		this.config.showDots = args.showDots || 1;
+	}
+
+	configUnits() {
+		this.state.unitArgs = {
+			type: 'dot',
+			args: { radius: this.config.dotRadius }
+		};
 	}
 
 	setupPreUnitLayers() {
@@ -1643,17 +1723,9 @@ class LineChart extends AxisChart {
 		});
 	}
 
-	setup_values() {
-		super.setup_values();
-		this.unit_args = {
-			type: 'dot',
-			args: { radius: this.dot_radius }
-		};
-	}
-
 	makeDatasetUnits(x_values, y_values, color, dataset_index,
 		no_of_datasets, units_group, units_array, unit) {
-		if(this.show_dots) {
+		if(this.showDots) {
 			super.makeDatasetUnits(x_values, y_values, color, dataset_index,
 				no_of_datasets, units_group, units_array, unit);
 		}
@@ -1661,7 +1733,7 @@ class LineChart extends AxisChart {
 
 	make_paths() {
 		this.y.map(d => {
-			this.make_path(d, this.xPositions, d.yUnitPositions, d.color || this.colors[d.index]);
+			this.make_path(d, this.xAxisPositions, d.yUnitPositions, d.color || this.colors[d.index]);
 		});
 	}
 
@@ -1679,7 +1751,7 @@ class LineChart extends AxisChart {
 			d.path.style.stroke = `url(#${gradient_id})`;
 		}
 
-		if(this.region_fill) {
+		if(this.regionFill) {
 			this.fill_region_for_dataset(d, color, points_str);
 		}
 	}
@@ -1699,10 +1771,10 @@ class ScatterChart extends LineChart {
 
 		this.type = 'scatter';
 
-		if(!args.dot_radius) {
-			this.dot_radius = 8;
+		if(!args.dotRadius) {
+			this.dotRadius = 8;
 		} else {
-			this.dot_radius = args.dot_radius;
+			this.dotRadius = args.dotRadius;
 		}
 
 		this.setup();
@@ -1712,7 +1784,7 @@ class ScatterChart extends LineChart {
 		super.setup_values();
 		this.unit_args = {
 			type: 'dot',
-			args: { radius: this.dot_radius }
+			args: { radius: this.dotRadius }
 		};
 	}
 

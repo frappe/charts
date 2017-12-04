@@ -52,7 +52,7 @@ let bar_composite_chart = new Chart ({
 	colors: ['orange'],
 	isNavigable: 1,
 	is_series: 1
-	// region_fill: 1
+	// regionFill: 1
 });
 
 let line_composite_chart = new Chart ({
@@ -149,7 +149,7 @@ let plot_chart_args = {
 	height: 250,
 	colors: ['blue'],
 	is_series: 1,
-	show_dots: 0,
+	showDots: 0,
 	heatline: 1,
 	xAxisMode: 'tick',
 	yAxisMode: 'span'
@@ -173,9 +173,9 @@ Array.prototype.slice.call(
 			config = [0, 1, 0];
 		}
 
-		plot_chart_args.show_dots = config[0];
+		plot_chart_args.showDots = config[0];
 		plot_chart_args.heatline = config[1];
-		plot_chart_args.region_fill = config[2];
+		plot_chart_args.regionFill = config[2];
 
 		plot_chart_args.init = false;
 
@@ -226,7 +226,7 @@ let update_chart = new Chart({
 	height: 250,
 	colors: ['red'],
 	is_series: 1,
-	region_fill: 1
+	regionFill: 1
 });
 
 let chart_update_buttons = document.querySelector('.chart-update-buttons');

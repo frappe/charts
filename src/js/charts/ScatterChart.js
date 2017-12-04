@@ -6,10 +6,10 @@ export default class ScatterChart extends LineChart {
 
 		this.type = 'scatter';
 
-		if(!args.dot_radius) {
-			this.dot_radius = 8;
+		if(!args.dotRadius) {
+			this.dotRadius = 8;
 		} else {
-			this.dot_radius = args.dot_radius;
+			this.dotRadius = args.dotRadius;
 		}
 
 		this.setup();
@@ -19,7 +19,7 @@ export default class ScatterChart extends LineChart {
 		super.setup_values();
 		this.unit_args = {
 			type: 'dot',
-			args: { radius: this.dot_radius }
+			args: { radius: this.dotRadius }
 		};
 	}
 

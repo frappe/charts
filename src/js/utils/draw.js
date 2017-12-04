@@ -212,13 +212,14 @@ export class AxisChartRenderer {
 		this.totalHeight = state.totalHeight;
 		this.totalWidth = state.totalWidth;
 		this.zeroLine = state.zeroLine;
-		this.avgUnitWidth = state.avgUnitWidth;
+		this.unitWidth = state.unitWidth;
 		this.xAxisMode = state.xAxisMode;
 		this.yAxisMode = state.yAxisMode;
 	}
 
 	bar(x, yTop, args, color, index, datasetIndex, noOfDatasets) {
-		let totalWidth = this.avgUnitWidth - args.spaceWidth;
+
+		let totalWidth = this.unitWidth - args.spaceWidth;
 		let startX = x - totalWidth/2;
 
 		let width = totalWidth / noOfDatasets;

@@ -18,11 +18,18 @@ export default class LineChart extends AxisChart {
 		this.config.xAxisMode = args.xAxisMode || 'span';
 		this.config.yAxisMode = args.yAxisMode || 'span';
 
-		this.config.dot_radius = args.dot_radius || 4;
+		this.config.dotRadius = args.dotRadius || 4;
 
 		this.config.heatline = args.heatline || 0;
-		this.config.region_fill = args.region_fill || 0;
-		this.config.show_dots = args.show_dots || 1;
+		this.config.regionFill = args.regionFill || 0;
+		this.config.showDots = args.showDots || 1;
+	}
+
+	configUnits() {
+		this.state.unitArgs = {
+			type: 'dot',
+			args: { radius: this.config.dotRadius }
+		};
 	}
 
 	setupPreUnitLayers() {
@@ -36,17 +43,9 @@ export default class LineChart extends AxisChart {
 		});
 	}
 
-	setup_values() {
-		super.setup_values();
-		this.unit_args = {
-			type: 'dot',
-			args: { radius: this.dot_radius }
-		};
-	}
-
 	makeDatasetUnits(x_values, y_values, color, dataset_index,
 		no_of_datasets, units_group, units_array, unit) {
-		if(this.show_dots) {
+		if(this.showDots) {
 			super.makeDatasetUnits(x_values, y_values, color, dataset_index,
 				no_of_datasets, units_group, units_array, unit);
 		}
@@ -54,7 +53,7 @@ export default class LineChart extends AxisChart {
 
 	make_paths() {
 		this.y.map(d => {
-			this.make_path(d, this.xPositions, d.yUnitPositions, d.color || this.colors[d.index]);
+			this.make_path(d, this.xAxisPositions, d.yUnitPositions, d.color || this.colors[d.index]);
 		});
 	}
 
@@ -72,7 +71,7 @@ export default class LineChart extends AxisChart {
 			d.path.style.stroke = `url(#${gradient_id})`;
 		}
 
-		if(this.region_fill) {
+		if(this.regionFill) {
 			this.fill_region_for_dataset(d, color, points_str);
 		}
 	}

@@ -18,13 +18,11 @@ export default class BarChart extends AxisChart {
 		this.state.xOffset = this.state.unitWidth;
 	}
 
-	setup_values() {
-		super.setup_values();
-		this.x_offset = this.avgUnitWidth;
-		this.unit_args = {
+	configUnits() {
+		this.state.unitArgs = {
 			type: 'bar',
 			args: {
-				spaceWidth: this.avgUnitWidth/2,
+				spaceWidth: this.state.unitWidth/2,
 			}
 		};
 	}
@@ -51,36 +49,35 @@ export default class BarChart extends AxisChart {
 	// 	});
 	// }
 
-	bind_units(units_array) {
-		units_array.map(unit => {
-			unit.addEventListener('click', () => {
-				let index = unit.getAttribute('data-point-index');
-				this.updateCurrentDataPoint(index);
-			});
-		});
-	}
+	// bind_units(units_array) {
+	// 	units_array.map(unit => {
+	// 		unit.addEventListener('click', () => {
+	// 			let index = unit.getAttribute('data-point-index');
+	// 			this.updateCurrentDataPoint(index);
+	// 		});
+	// 	});
+	// }
 
-	update_overlay(unit) {
-		let attributes = [];
-		Object.keys(unit.attributes).map(index => {
-			attributes.push(unit.attributes[index]);
-		});
+	// update_overlay(unit) {
+	// 	let attributes = [];
+	// 	Object.keys(unit.attributes).map(index => {
+	// 		attributes.push(unit.attributes[index]);
+	// 	});
 
-		attributes.filter(attr => attr.specified).map(attr => {
-			this.overlay.setAttribute(attr.name, attr.nodeValue);
-		});
+	// 	attributes.filter(attr => attr.specified).map(attr => {
+	// 		this.overlay.setAttribute(attr.name, attr.nodeValue);
+	// 	});
 
-		this.overlay.style.fill = '#000000';
-		this.overlay.style.opacity = '0.4';
-	}
+	// 	this.overlay.style.fill = '#000000';
+	// 	this.overlay.style.opacity = '0.4';
+	// }
 
-	onLeftArrow() {
-		this.updateCurrentDataPoint(this.currentIndex - 1);
-	}
+	// onLeftArrow() {
+	// 	this.updateCurrentDataPoint(this.currentIndex - 1);
+	// }
 
-	onRightArrow() {
-		this.updateCurrentDataPoint(this.currentIndex + 1);
-	}
-
+	// onRightArrow() {
+	// 	this.updateCurrentDataPoint(this.currentIndex + 1);
+	// }
 
 }

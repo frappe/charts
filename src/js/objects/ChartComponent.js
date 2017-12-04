@@ -46,6 +46,47 @@ export class ChartComponent {
 	}
 }
 
+// Indexed according to dataset
 export class IndexedChartComponent extends ChartComponent {
-	//
+	constructor(args) {
+		super(args);
+		this.stores = [];
+	}
+
+	refresh(args) {
+		super.refresh(args);
+		this.indexLength = this.chartState[this.argsKeys[0]].length;
+	}
+
+	makeLayer() {
+		super.makeLayer();
+		this.layers = [];
+		for(var i = 0; i < this.indexLength; i++) {
+			this.layers[i] = makeSVGGroup(this.layer, this.layerClass + '-' + i);
+		}
+	}
+
+	addLayer() {}
+
+	render() {
+		let datasetArrays = this.argsKeys.map(key => this.chartState[key]);
+
+		// datasetArrays will have something like an array of X positions sets
+		// i.e.: [ [[0,0,0], [1,1,1]],  ... ]
+		for(var i = 0; i < this.indexLength; i++) {
+			let args = datasetArrays.map(datasetArray => datasetArray[i]);
+			args.unshift(this.chartRenderer);
+
+			args.push(i);
+			args.push(this.indexLength);
+
+			this.stores.push(this.make(...args));
+
+			let layer = this.layers[i];
+			layer.textContent = '';
+			this.stores[i].forEach(element => {
+				layer.appendChild(element);
+			});
+		}
+	}
 }

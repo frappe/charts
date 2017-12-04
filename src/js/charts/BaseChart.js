@@ -51,7 +51,9 @@ export default class BaseChart {
 			animate: 0
 		};
 
-		this.state = {};
+		this.state = {
+			colors: this.colors
+		};
 	}
 
 	setColors() {

@@ -25,20 +25,6 @@ export default class AxisChart extends BaseChart {
 		//
 	}
 
-	calcYDependencies() {
-		this.y_min_tops = new Array(this.xAxisLabels.length).fill(9999);
-		this.y.map(d => {
-			d.yUnitPositions = d.values.map( val => floatTwo(this.zeroLine - val * this.multiplier));
-			d.yUnitPositions.map( (yUnitPosition, i) => {
-				if(yUnitPosition < this.y_min_tops[i]) {
-					this.y_min_tops[i] = yUnitPosition;
-				}
-			});
-		});
-		// this.chartWrapper.removeChild(this.tip.container);
-		// this.make_tooltip();
-	}
-
 	prepareData() {
 		let s = this.state;
 		s.xAxisLabels = this.data.labels || [];
@@ -46,11 +32,11 @@ export default class AxisChart extends BaseChart {
 
 		let zeroArray = new Array(s.datasetLength).fill(0);
 
-		s.datasets = this.data.datasets;
+		s.datasets = this.data.datasets; // whole dataset info too
 		if(!this.data.datasets) {
 			// default
 			s.datasets = [{
-				values: zeroArray
+				values: zeroArray	// Proof that state version will be seen instead of this.data
 			}];
 		}
 
@@ -72,6 +58,8 @@ export default class AxisChart extends BaseChart {
 
 			d.index = i;
 		});
+
+		s.noOfDatasets = s.datasets.length;
 	}
 
 	reCalc() {
@@ -84,20 +72,28 @@ export default class AxisChart extends BaseChart {
 		// Y
 		s.datasetsLabels = this.data.datasets.map(d => d.label);
 
-		// s.datasetsValues = [[]]; indexed component
-		// s.datasetsValues = [[[12, 34, 68], [10, 5, 46]], [[20, 20, 20]]]; // array of indexed components
-		s.datasetsValues = s.datasets.map(d => d.values); // indexed component
+		// s.yUnitValues = [[]]; indexed component
+		// s.yUnitValues = [[[12, 34, 68], [10, 5, 46]], [[20, 20, 20]]]; // array of indexed components
+		s.yUnitValues = s.datasets.map(d => d.values); // indexed component
 		s.yAxisLabels = calcIntervals(this.getAllYValues(), this.type === 'line');
 		this.calcYAxisPositions();
 
-		// *** this.state.datasetsPoints =
+		this.calcYUnitPositions();
+
+		// should be state
+		this.configUnits();
+
+		// temp
+		s.unitTypes = new Array(s.noOfDatasets).fill(this.state.unitArgs);
 	}
 
 	calcXPositions() {
 		let s = this.state;
 		this.setUnitWidthAndXOffset();
-		s.xPositions = s.xAxisLabels.map((d, i) =>
+		s.xAxisPositions = s.xAxisLabels.map((d, i) =>
 			floatTwo(s.xOffset + i * s.unitWidth));
+
+		s.xUnitPositions = new Array(s.noOfDatasets).fill(s.xAxisPositions);
 	}
 
 	calcYAxisPositions() {
@@ -111,6 +107,28 @@ export default class AxisChart extends BaseChart {
 		s.yAxisPositions = yPts.map(d => s.zeroLine - d * s.scaleMultiplier);
 	}
 
+	calcYUnitPositions() {
+		let s = this.state;
+		s.yUnitPositions = s.yUnitValues.map(values =>
+			values.map(val => floatTwo(s.zeroLine - val * s.scaleMultiplier))
+		);
+
+		s.yUnitMinimums = new Array(s.datasetLength).fill(9999);
+		s.datasets.map((d, i) => {
+			s.yUnitPositions[i].map((pos, j) => {
+				if(pos < s.yUnitMinimums[j]) {
+					s.yUnitMinimums[j] = pos;
+				}
+			});
+		});
+
+		// Tooltip refresh should not be needed?
+		// this.chartWrapper.removeChild(this.tip.container);
+		// this.make_tooltip();
+	}
+
+	configUnits() {}
+
 	setUnitWidthAndXOffset() {
 		this.state.unitWidth = this.width/(this.state.datasetLength - 1);
 		this.state.xOffset = 0;
@@ -118,14 +136,13 @@ export default class AxisChart extends BaseChart {
 
 	getAllYValues() {
 		// TODO: yMarkers, regions, sums, every Y value ever
-		return [].concat(...this.state.datasetsValues);
+		return [].concat(...this.state.yUnitValues);
 	}
 
 	calcIntermedState() {
 		//
 	}
 
-	// this should be inherent in BaseChart
 	refreshRenderer() {
 		// These args are basically the current state of the chart,
 		// with constant and alive params mixed
@@ -161,20 +178,31 @@ export default class AxisChart extends BaseChart {
 			make: (renderer, positions, values) => {
 				return positions.map((position, i) => renderer.xLine(position, values[i]));
 			},
-			argsKeys: ['xPositions', 'xAxisLabels'],
+			argsKeys: ['xAxisPositions', 'xAxisLabels'],
 			animate: () => {}
 		});
 
-		// Indexed according to dataset
+		this.dataUnits = new IndexedChartComponent({
+			layerClass: 'dataset-units',
+			make: (renderer, xPosSet, yPosSet, color, unitType,
+				yValueSet, datasetIndex, noOfDatasets) => {
 
-		// this.dataUnits = new IndexedChartComponent({
-		// 	layerClass: 'x axis',
-		// 	make: (renderer, positions, values) => {
-		// 		return positions.map((position, i) => renderer.xLine(position, values[i]));
-		// 	},
-		// 	argsKeys: ['xPositions', 'xAxisLabels'],
-		// 	animate: () => {}
-		// });
+				return yPosSet.map((y, i) => {
+					return renderer[unitType.type](
+						xPosSet[i],
+						y,
+						unitType.args,
+						color,
+						i,
+						datasetIndex,
+						noOfDatasets
+					);
+				});
+			},
+			argsKeys: ['xUnitPositions', 'yUnitPositions',
+				'colors', 'unitTypes', 'yUnitValues'],
+			animate: () => {}
+		});
 
 		this.yMarkerLines = {};
 		this.xMarkerLines = {};
@@ -186,7 +214,7 @@ export default class AxisChart extends BaseChart {
 			this.xAxis,
 			// this.yMarkerLines,
 			// this.xMarkerLines,
-			// this.dataUnits,
+			this.dataUnits,
 		];
 	}
 
