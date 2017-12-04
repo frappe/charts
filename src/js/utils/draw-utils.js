@@ -1,4 +1,4 @@
-import { fillArray } from '../utils/helpers';
+import { fillArray } from './helpers';
 
 const MIN_BAR_PERCENT_HEIGHT = 0.01;
 

@@ -205,10 +205,10 @@ export function makeHoriYLine(y, label, totalWidth, mode) {
 
 export class AxisChartRenderer {
 	constructor(state) {
-		this.updateState(state);
+		this.refreshState(state);
 	}
 
-	updateState(state) {
+	refreshState(state) {
 		this.totalHeight = state.totalHeight;
 		this.totalWidth = state.totalWidth;
 		this.zeroLine = state.zeroLine;

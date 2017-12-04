@@ -4,25 +4,25 @@ import { makeSVGGroup, makePath, makeGradient } from '../utils/draw';
 export default class LineChart extends AxisChart {
 	constructor(args) {
 		super(args);
-
-		this.xAxisMode = args.xAxisMode || 'span';
-		this.yAxisMode = args.yAxisMode || 'span';
-
-		if(args.hasOwnProperty('show_dots')) {
-			this.show_dots = args.show_dots;
-		} else {
-			this.show_dots = 1;
-		}
-		this.region_fill = args.region_fill;
+		this.type = 'line';
 
 		if(Object.getPrototypeOf(this) !== LineChart.prototype) {
 			return;
 		}
-		this.dot_radius = args.dot_radius || 4;
-		this.heatline = args.heatline;
-		this.type = 'line';
 
 		this.setup();
+	}
+
+	configure(args) {
+		super.configure(args);
+		this.config.xAxisMode = args.xAxisMode || 'span';
+		this.config.yAxisMode = args.yAxisMode || 'span';
+
+		this.config.dot_radius = args.dot_radius || 4;
+
+		this.config.heatline = args.heatline || 0;
+		this.config.region_fill = args.region_fill || 0;
+		this.config.show_dots = args.show_dots || 1;
 	}
 
 	setupPreUnitLayers() {

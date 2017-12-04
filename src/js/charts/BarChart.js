@@ -3,11 +3,19 @@ import AxisChart from './AxisChart';
 export default class BarChart extends AxisChart {
 	constructor(args) {
 		super(args);
-
 		this.type = 'bar';
-		this.xAxisMode = args.xAxisMode || 'tick';
-		this.yAxisMode = args.yAxisMode || 'span';
 		this.setup();
+	}
+
+	configure(args) {
+		super.configure(args);
+		this.config.xAxisMode = args.xAxisMode || 'tick';
+		this.config.yAxisMode = args.yAxisMode || 'span';
+	}
+
+	setUnitWidthAndXOffset() {
+		this.state.unitWidth = this.width/(this.state.datasetLength + 1);
+		this.state.xOffset = this.state.unitWidth;
 	}
 
 	setup_values() {
@@ -74,8 +82,5 @@ export default class BarChart extends AxisChart {
 		this.updateCurrentDataPoint(this.currentIndex + 1);
 	}
 
-	set_avgUnitWidth_and_x_offset() {
-		this.avgUnitWidth = this.width/(this.xAxisLabels.length + 1);
-		this.x_offset = this.avgUnitWidth;
-	}
+
 }

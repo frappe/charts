@@ -14,6 +14,7 @@ export default class BaseChart {
 		colors = [],
 
 		isNavigable = 0,
+		showLegend = 1,
 
 		type = '',
 
@@ -31,23 +32,26 @@ export default class BaseChart {
 			this.currentIndex = 0;
 		}
 
-		this.setupConfiguration();
+		this.configure(arguments[0]);
 	}
 
-	setupConfiguration() {
+	configure(args) {
 		// Make a this.config, that has stuff like showTooltip,
 		// showLegend, which then all functions will check
 
 		this.setColors();
-		this.setMargins();
+		this.setMargins(args);
 
 		// constants
 		this.config = {
-			showTooltip: 1,
+			showTooltip: 1, // calculate
 			showLegend: 1,
 			isNavigable: 0,
-			animate: 1
+			// animate: 1
+			animate: 0
 		};
+
+		this.state = {};
 	}
 
 	setColors() {
@@ -67,8 +71,8 @@ export default class BaseChart {
 		this.colors = this.colors.map(color => getColor(color));
 	}
 
-	setMargins() {
-		let height = this.rawChartArgs.height;
+	setMargins(args) {
+		let height = args.height;
 		this.baseHeight = height;
 		this.height = height - 40;
 		this.translateX = 60;
@@ -103,7 +107,7 @@ export default class BaseChart {
 	}
 
 	checkData() {}
-	getFirstUpdateData(data) {}
+	getFirstUpdateData() {}
 
 	setup() {
 		if(this.validate()) {
@@ -114,9 +118,7 @@ export default class BaseChart {
 	_setup() {
 		this.bindWindowEvents();
 		this.setupConstants();
-
-		// this.setupComponents();
-
+		this.setupComponents();
 		this.makeContainer();
 		this.makeTooltip(); // without binding
 		this.draw(true);
@@ -158,31 +160,34 @@ export default class BaseChart {
 		this.bindTooltip();
 	}
 
+	bindTooltip() {}
+
 	draw(init=false) {
 		// difference from update(): draw the whole object due to groudbreaking event (init, resize, etc.)
 		// (draw everything, layers, groups, units)
-		this.calc();
-		this.refreshRenderer() // this chart's rendered with the config
-		this.setupComponents();
+
+		this.calcWidth();
+		this.refresh(); // refresh conponent with chart a
 
 		this.makeChartArea();
-		this.makeLayers();
+		this.setComponentParent();
+		this.makeComponentLayers();
 
-		this.renderComponents(); // with zero values
 		this.renderLegend();
 		this.setupNavigation(init);
+
+		this.renderComponents(); // first time plain render, so no rerender
 
 		if(this.config.animate) this.update(this.firstUpdateData);
 	}
 
 	update() {
 		// difference from draw(): yes you do rerender everything here as well,
-		// but not things like the chart itself, mosty only at component level
-		this.reCalc();
+		// but not things like the chart itself or layers, mosty only at component level
+		// HERE IS WHERE THE ACTUAL STATE CHANGES, and old one matters, not in draw
+		this.refresh();
 		this.reRender();
 	}
-
-	refreshRenderer() {}
 
 	calcWidth() {
 		let outerAnnotationsWidth = 0;
@@ -197,9 +202,12 @@ export default class BaseChart {
 		this.width = this.baseWidth - this.translateX * 2;
 	}
 
-	calc() {
-		this.calcWidth();
+	refresh() { //?? refresh?
+		this.oldState = this.state ? Object.assign({}, this.state) : {};
+		this.prepareData();
 		this.reCalc();
+		this.refreshRenderer();
+		this.refreshComponents();
 	}
 
 	makeChartArea() {
@@ -218,33 +226,21 @@ export default class BaseChart {
 		);
 	}
 
+	prepareData() {}
 
-	makeLayers() {
-		this.components.forEach((component) => {
-			component.layer = this.makeLayer(component.layerClass);
-		});
-	}
+	reCalc() {}
+	// Will update values(state)
+	// Will recalc specific parts depending on the update
 
-	calculateValues() {}
-
-	renderComponents() {
-		this.components.forEach(c => {
-			c.store = c.make(...c.makeArgs);
-			c.layer.textContent = '';
-			c.store.forEach(element => {c.layer.appendChild(element);});
-		});
-	}
-
-	reCalc() {
-		// Will update values(state)
-		// Will recalc specific parts depending on the update
-	}
+	refreshRenderer() {}
 
 	reRender(animate=true) {
 		if(!animate) {
 			this.renderComponents();
 			return;
 		}
+		this.intermedState = this.calcIntermedState();
+		this.refreshComponents();
 		this.animateComponents();
 		setTimeout(() => {
 			this.renderComponents();
@@ -253,18 +249,22 @@ export default class BaseChart {
 		// (opt, should not redraw if still in animate?)
 	}
 
-	animateComponents() {
-		this.intermedValues = this.calcIntermediateValues();
-		this.components.forEach(c => {
-			// c.store = c.animate(...c.animateArgs);
-			// c.layer.textContent = '';
-			// c.store.forEach(element => {c.layer.appendChild(element);});
-		});
+	calcIntermedState() {}
+
+	// convenient component array abstractions
+	setComponentParent() { this.components.forEach(c => c.setupParent(this.drawArea)); };
+	makeComponentLayers() { this.components.forEach(c => c.makeLayer()); }
+	renderComponents() { this.components.forEach(c => c.render()); }
+	animateComponents() { this.components.forEach(c => c.animate()); }
+	refreshComponents() {
+		let args = {
+			chartState: this.state,
+			oldChartState: this.oldState,
+			intermedState: this.intermedState,
+			chartRenderer: this.renderer
+		};
+		this.components.forEach(c => c.refresh(args));
 	}
-
-
-	calcInitStage() {}
-
 
 	renderLegend() {}
 
@@ -308,10 +308,6 @@ export default class BaseChart {
 
 	getDataPoint() {}
 	updateCurrentDataPoint() {}
-
-	makeLayer(className, transform='') {
-		return makeSVGGroup(this.drawArea, className, transform);
-	}
 
 	getDifferentChart(type) {
 		return getDifferentChart(type, this.type, this.rawChartArgs);

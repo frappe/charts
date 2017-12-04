@@ -8,7 +8,7 @@ let bar_composite_data = {
 		"2013", "2014", "2015", "2016", "2017"],
 
 	datasets: [{
-		"title": "Events",
+		"label": "Events",
 		"values": report_count_list,
 		// "formatted": report_count_list.map(d => d + " reports")
 	}]
@@ -77,15 +77,15 @@ let type_data = {
 
 	datasets: [
 		{
-			title: "Some Data",
+			label: "Some Data",
 			values: [25, 40, 30, 35, 8, 52, 17, -4]
 		},
 		{
-			title: "Another Set",
+			label: "Another Set",
 			values: [25, 50, -10, 15, 18, 32, 27, 14]
 		},
 		{
-			title: "Yet Another",
+			label: "Yet Another",
 			values: [15, 20, -3, -15, 58, 12, -17, 37]
 		}
 	]
@@ -211,8 +211,8 @@ let update_data = {
 	}],
 	"specific_values": [
 		{
-			title: "Altitude",
-			// title: "A very long text",
+			label: "Altitude",
+			// label: "A very long text",
 			line_type: "dashed",
 			value: 38
 		},

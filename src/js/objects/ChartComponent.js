@@ -1,26 +1,51 @@
-// export default class ChartComponent {
-// 	constructor({
-// 		parent = null,
-// 		colors = []
-// 	}) {
-// 		this.parent = parent;
-// 		this.colors = colors;
-// 		this.title_name = '';
-// 		this.title_value = '';
-// 		this.list_values = [];
-// 		this.title_value_first = 0;
+import { makeSVGGroup } from '../utils/draw';
 
-// 		this.x = 0;
-// 		this.y = 0;
+export class ChartComponent {
+	constructor({
+		layerClass = '',
+		layerTransform = '',
+		make,
+		argsKeys,
+		animate
+	}) {
+		this.layerClass = layerClass; // 'y axis'
+		this.layerTransform = layerTransform;
+		this.make = make;
+		this.argsKeys = argsKeys;//['yAxisPositions', 'yAxisLabels'];
+		this.animate = animate;
 
-// 		this.top = 0;
-// 		this.left = 0;
+		this.layer = undefined;
+		this.store = []; //[[]]  depends on indexed
+	}
 
-// 		this.setup();
-// 	}
+	refresh(args) {
+		this.chartState = args.chartState;
+		this.oldChartState = args.oldChartState;
+		this.intermedState = args.intermedState;
 
-// 	setup() {
-// 		this.make_tooltip();
-// 	}
+		this.chartRenderer = args.chartRenderer;
+	}
 
-// }
+	render() {
+		let args = this.argsKeys.map(key => this.chartState[key]);
+		args.unshift(this.chartRenderer);
+		this.store = this.make(...args);
+
+		this.layer.textContent = '';
+		this.store.forEach(element => {
+			this.layer.appendChild(element);
+		});
+	}
+
+	setupParent(parent) {
+		this.parent = parent;
+	}
+
+	makeLayer() {
+		this.layer = makeSVGGroup(this.parent, this.layerClass, this.layerTransform);
+	}
+}
+
+export class IndexedChartComponent extends ChartComponent {
+	//
+}

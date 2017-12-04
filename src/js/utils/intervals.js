@@ -153,6 +153,35 @@ export function calcIntervals(values, withMinimum=false) {
 	return intervals;
 }
 
+export function getZeroIndex(yPts) {
+	let zeroIndex;
+	let interval = getIntervalSize(yPts);
+	if(yPts.indexOf(0) >= 0) {
+		// the range has a given zero
+		// zero-line on the chart
+		zeroIndex = yPts.indexOf(0);
+	} else if(yPts[0] > 0) {
+		// Minimum value is positive
+		// zero-line is off the chart: below
+		let min = yPts[0];
+		zeroIndex = (-1) * min / interval;
+	} else {
+		// Maximum value is negative
+		// zero-line is off the chart: above
+		let max = yPts[yPts.length - 1];
+		zeroIndex = (-1) * max / interval + (yPts.length - 1);
+	}
+	return zeroIndex;
+}
+
+export function getIntervalSize(orderedArray) {
+	return orderedArray[1] - orderedArray[0];
+}
+
+export function getValueRange(orderedArray) {
+	return orderedArray[orderedArray.length-1] - orderedArray[0];
+}
+
 export function calcDistribution(values, distributionSize) {
 	// Assume non-negative values,
 	// implying distribution minimum at zero
