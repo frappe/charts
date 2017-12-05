@@ -78,26 +78,26 @@ let type_data = {
 	datasets: [
 		{
 			label: "Some Data",
-			values: [25, 40, 30, 35, 8, 52, 17, -4]
+			values: [18, 40, 30, 35, 8, 52, 17, -4]
 		},
 		{
 			label: "Another Set",
-			values: [25, 50, -10, 15, 18, 32, 27, 14]
+			values: [30, 50, -10, 15, 18, 32, 27, 14]
 		},
-		{
-			label: "Yet Another",
-			values: [15, 20, -3, -15, 58, 12, -17, 37]
-		}
+		// {
+		// 	label: "Yet Another",
+		// 	values: [15, 20, -3, -15, 58, 12, -17, 37]
+		// }
 	]
 };
 
 let type_chart = new Chart({
 	parent: "#chart-types",
-	title: "My Awesome Chart",
+	// title: "My Awesome Chart",
 	data: type_data,
 	type: 'bar',
 	height: 250,
-	colors: ['light-blue', 'violet', 'blue'],
+	colors: ['purple', 'magenta'],
 	is_series: 1,
     format_tooltip_x: d => (d + '').toUpperCase(),
     format_tooltip_y: d => d + ' pts'

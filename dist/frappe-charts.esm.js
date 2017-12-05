@@ -445,24 +445,40 @@ function makeVertXLine(x, label, totalHeight, mode) {
 	return line;
 }
 
-function makeHoriYLine(y, label, totalWidth, mode) {
+function makeHoriYLine(y, label, totalWidth, mode, pos='left') {
 	let lineType = '';
-	let width = mode === 'span' ? totalWidth + AXIS_TICK_LENGTH : AXIS_TICK_LENGTH;
+	let w2 = mode === 'span' ? totalWidth + AXIS_TICK_LENGTH : 0;
+
+	// temp
+	let x1, x2, textX, anchor;
+	if(mode === 'tick') {
+		if(pos === 'right') {
+			x1 = totalWidth;
+			x2 = totalWidth + AXIS_TICK_LENGTH;
+			textX = totalWidth + AXIS_TICK_LENGTH + LABEL_MARGIN;
+			anchor = 'start';
+		} else {
+			x1 = -1 * AXIS_TICK_LENGTH;
+			x2 = w2;
+			textX = -1 * (LABEL_MARGIN + AXIS_TICK_LENGTH);
+			anchor = 'end';
+		}
+	}
 
 	let l = createSVG('line', {
 		className: lineType === "dashed" ? "dashed": "",
-		x1: -1 * AXIS_TICK_LENGTH,
-		x2: width,
+		x1: x1,
+		x2: x2,
 		y1: 0,
 		y2: 0
 	});
 
 	let text = createSVG('text', {
-		x: -1 * (LABEL_MARGIN + AXIS_TICK_LENGTH),
+		x: textX,
 		y: 0,
 		dy: (FONT_SIZE / 2 - 2) + 'px',
 		'font-size': FONT_SIZE + 'px',
-		'text-anchor': 'end',
+		'text-anchor': anchor,
 		innerHTML: label+""
 	});
 
@@ -535,8 +551,8 @@ class AxisChartRenderer {
 		return makeVertXLine(x, label, this.totalHeight, mode);
 	}
 
-	yLine(y, label, mode=this.yAxisMode) {
-		return makeHoriYLine(y, label, this.totalWidth, mode);
+	yLine(y, label, mode=this.yAxisMode, pos='left') {
+		return makeHoriYLine(y, label, this.totalWidth, mode, pos);
 	}
 
 	xMarker() {}
@@ -1562,7 +1578,13 @@ class AxisChart extends BaseChart {
 				return positions.map((position, i) => renderer.xLine(position, values[i]));
 			},
 			argsKeys: ['xAxisPositions', 'xAxisLabels'],
-			animate: () => {}
+			animate: (animator, lines, oldX, newX) => {
+				lines.map((xLine, i) => {
+					elements_to_animate.push(animator.verticalLine(
+						xLine, newX[i], oldX[i]
+					));
+				});
+			}
 		});
 
 		this.dataUnits = new IndexedChartComponent({
@@ -1582,13 +1604,11 @@ class AxisChart extends BaseChart {
 					);
 				});
 
-				// temp
-				if(unitType.type === 'dot') {
-					let pointsList = yPosSet.map((y, i) => (xPosSet[i] + ',' + y));
-					let pointsStr = pointsList.join("L");
+				let pointsList = yPosSet.map((y, i) => (xPosSet[i] + ',' + y));
+				let pointsStr = pointsList.join("L");
 
-					unitSet.unshift(makePath("M"+pointsStr, 'line-graph-path', color));
-				}
+				unitSet.unshift(makePath("M"+pointsStr, 'line-graph-path', color));
+
 				return unitSet;
 			},
 			argsKeys: ['xUnitPositions', 'yUnitPositions',
@@ -1606,7 +1626,9 @@ class AxisChart extends BaseChart {
 
 		// Marker Regions
 
+		// temp
 		this.components = [
+			this.yAxisAux,
 			this.yAxis,
 			this.xAxis,
 			// this.yMarkerLines,
@@ -1714,7 +1736,10 @@ class LineChart extends AxisChart {
 	configure(args) {
 		super.configure(args);
 		this.config.xAxisMode = args.xAxisMode || 'span';
-		this.config.yAxisMode = args.yAxisMode || 'span';
+		// this.config.yAxisMode = args.yAxisMode || 'span';
+
+		// temp
+		this.config.yAxisMode = args.yAxisMode || 'tick';
 
 		this.config.dotRadius = args.dotRadius || 4;
 
@@ -1730,11 +1755,11 @@ class LineChart extends AxisChart {
 		};
 	}
 
-	// // temp
-	// setUnitWidthAndXOffset() {
-	// 	this.state.unitWidth = this.width/(this.state.datasetLength - 1);
-	// 	this.state.xOffset = 0;
-	// }
+	// temp commented
+	setUnitWidthAndXOffset() {
+		this.state.unitWidth = this.width/(this.state.datasetLength - 1);
+		this.state.xOffset = 0;
+	}
 
 	// setupComponents() {
 	// 	super.setupComponents();

@@ -179,7 +179,13 @@ export default class AxisChart extends BaseChart {
 				return positions.map((position, i) => renderer.xLine(position, values[i]));
 			},
 			argsKeys: ['xAxisPositions', 'xAxisLabels'],
-			animate: () => {}
+			animate: (animator, lines, oldX, newX) => {
+				lines.map((xLine, i) => {
+					elements_to_animate.push(animator.verticalLine(
+						xLine, newX[i], oldX[i]
+					));
+				});
+			}
 		});
 
 		this.dataUnits = new IndexedChartComponent({
@@ -199,13 +205,11 @@ export default class AxisChart extends BaseChart {
 					);
 				});
 
-				// temp
-				if(unitType.type === 'dot') {
-					let pointsList = yPosSet.map((y, i) => (xPosSet[i] + ',' + y));
-					let pointsStr = pointsList.join("L");
+				let pointsList = yPosSet.map((y, i) => (xPosSet[i] + ',' + y));
+				let pointsStr = pointsList.join("L");
 
-					unitSet.unshift(makePath("M"+pointsStr, 'line-graph-path', color));
-				}
+				unitSet.unshift(makePath("M"+pointsStr, 'line-graph-path', color));
+
 				return unitSet;
 			},
 			argsKeys: ['xUnitPositions', 'yUnitPositions',
@@ -223,7 +227,9 @@ export default class AxisChart extends BaseChart {
 
 		// Marker Regions
 
+		// temp
 		this.components = [
+			this.yAxisAux,
 			this.yAxis,
 			this.xAxis,
 			// this.yMarkerLines,

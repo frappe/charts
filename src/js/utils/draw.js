@@ -167,24 +167,40 @@ export function makeVertXLine(x, label, totalHeight, mode) {
 	return line;
 }
 
-export function makeHoriYLine(y, label, totalWidth, mode) {
+export function makeHoriYLine(y, label, totalWidth, mode, pos='left') {
 	let lineType = '';
-	let width = mode === 'span' ? totalWidth + AXIS_TICK_LENGTH : AXIS_TICK_LENGTH;
+	let w2 = mode === 'span' ? totalWidth + AXIS_TICK_LENGTH : 0;
+
+	// temp
+	let x1, x2, textX, anchor;
+	if(mode === 'tick') {
+		if(pos === 'right') {
+			x1 = totalWidth;
+			x2 = totalWidth + AXIS_TICK_LENGTH;
+			textX = totalWidth + AXIS_TICK_LENGTH + LABEL_MARGIN;
+			anchor = 'start';
+		} else {
+			x1 = -1 * AXIS_TICK_LENGTH;
+			x2 = w2;
+			textX = -1 * (LABEL_MARGIN + AXIS_TICK_LENGTH);
+			anchor = 'end';
+		}
+	}
 
 	let l = createSVG('line', {
 		className: lineType === "dashed" ? "dashed": "",
-		x1: -1 * AXIS_TICK_LENGTH,
-		x2: width,
+		x1: x1,
+		x2: x2,
 		y1: 0,
 		y2: 0
 	});
 
 	let text = createSVG('text', {
-		x: -1 * (LABEL_MARGIN + AXIS_TICK_LENGTH),
+		x: textX,
 		y: 0,
 		dy: (FONT_SIZE / 2 - 2) + 'px',
 		'font-size': FONT_SIZE + 'px',
-		'text-anchor': 'end',
+		'text-anchor': anchor,
 		innerHTML: label+""
 	});
 
@@ -257,8 +273,8 @@ export class AxisChartRenderer {
 		return makeVertXLine(x, label, this.totalHeight, mode);
 	}
 
-	yLine(y, label, mode=this.yAxisMode) {
-		return makeHoriYLine(y, label, this.totalWidth, mode);
+	yLine(y, label, mode=this.yAxisMode, pos='left') {
+		return makeHoriYLine(y, label, this.totalWidth, mode, pos);
 	}
 
 	xMarker() {}

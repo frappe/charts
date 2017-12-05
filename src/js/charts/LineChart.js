@@ -16,7 +16,10 @@ export default class LineChart extends AxisChart {
 	configure(args) {
 		super.configure(args);
 		this.config.xAxisMode = args.xAxisMode || 'span';
-		this.config.yAxisMode = args.yAxisMode || 'span';
+		// this.config.yAxisMode = args.yAxisMode || 'span';
+
+		// temp
+		this.config.yAxisMode = args.yAxisMode || 'tick';
 
 		this.config.dotRadius = args.dotRadius || 4;
 
@@ -32,11 +35,11 @@ export default class LineChart extends AxisChart {
 		};
 	}
 
-	// // temp
-	// setUnitWidthAndXOffset() {
-	// 	this.state.unitWidth = this.width/(this.state.datasetLength - 1);
-	// 	this.state.xOffset = 0;
-	// }
+	// temp commented
+	setUnitWidthAndXOffset() {
+		this.state.unitWidth = this.width/(this.state.datasetLength - 1);
+		this.state.xOffset = 0;
+	}
 
 	// setupComponents() {
 	// 	super.setupComponents();
