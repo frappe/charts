@@ -169,7 +169,9 @@ export default class BaseChart {
 		// (draw everything, layers, groups, units)
 
 		this.calcWidth();
-		this.refresh(); // refresh conponent with chart a
+
+		// refresh conponent with chart
+		this.refresh();
 
 		this.makeChartArea();
 		this.setComponentParent();
@@ -178,7 +180,8 @@ export default class BaseChart {
 		this.renderLegend();
 		this.setupNavigation(init);
 
-		this.renderComponents(); // first time plain render, so no rerender
+		// first time plain render, so no rerender
+		this.renderComponents();
 
 		if(this.config.animate) this.update(this.firstUpdateData);
 	}

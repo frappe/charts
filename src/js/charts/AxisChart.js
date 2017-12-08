@@ -164,6 +164,18 @@ export default class AxisChart extends BaseChart {
 	}
 
 	setupComponents() {
+		// temp : will be an indexedchartcomponent
+		// this.yAxisAux = new ChartComponent({
+		// 	layerClass: 'y axis aux',
+		// 	make: (renderer, positions, values) => {
+		// 		positions = [0, 70, 140, 270];
+		// 		values = [300, 200, 100, 0];
+		// 		return positions.map((position, i) => renderer.yLine(position, values[i], 'right'));
+		// 	},
+		// 	argsKeys: ['yAxisPositions', 'yAxisLabels'],
+		// 	animate: () => {}
+		// });
+
 		this.yAxis = new ChartComponent({
 			layerClass: 'y axis',
 			make: (renderer, positions, values) => {
@@ -191,7 +203,7 @@ export default class AxisChart extends BaseChart {
 		this.dataUnits = new IndexedChartComponent({
 			layerClass: 'dataset-units',
 			make: (renderer, xPosSet, yPosSet, color, unitType,
-				yValueSet, datasetIndex, noOfDatasets) => {
+				yValueSet, datasetIndex, noOfDatasets) => {;
 
 				let unitSet = yPosSet.map((y, i) => {
 					return renderer[unitType.type](
@@ -205,10 +217,12 @@ export default class AxisChart extends BaseChart {
 					);
 				});
 
-				let pointsList = yPosSet.map((y, i) => (xPosSet[i] + ',' + y));
-				let pointsStr = pointsList.join("L");
+				if(this.type === 'line') {
+					let pointsList = yPosSet.map((y, i) => (xPosSet[i] + ',' + y));
+					let pointsStr = pointsList.join("L");
 
-				unitSet.unshift(makePath("M"+pointsStr, 'line-graph-path', color));
+					unitSet.unshift(makePath("M"+pointsStr, 'line-graph-path', color));
+				}
 
 				return unitSet;
 			},
@@ -227,9 +241,9 @@ export default class AxisChart extends BaseChart {
 
 		// Marker Regions
 
-		// temp
 		this.components = [
-			this.yAxisAux,
+			// temp
+			// this.yAxisAux,
 			this.yAxis,
 			this.xAxis,
 			// this.yMarkerLines,

@@ -416,14 +416,15 @@ function makeText(className, x, y, content) {
 	});
 }
 
-function makeVertXLine(x, label, totalHeight, mode) {
+function makeVertXLine(x, label, totalHeight, mode, stroke='#dadada') {
 	let height = mode === 'span' ? -1 * AXIS_TICK_LENGTH : totalHeight;
 
 	let l = createSVG('line', {
 		x1: 0,
 		x2: 0,
 		y1: totalHeight + AXIS_TICK_LENGTH,
-		y2: height
+		y2: height,
+		stroke: stroke
 	});
 
 	let text = createSVG('text', {
@@ -449,7 +450,7 @@ function makeHoriYLine(y, label, totalWidth, mode, pos='left') {
 	let lineType = '';
 	let w2 = mode === 'span' ? totalWidth + AXIS_TICK_LENGTH : 0;
 
-	// temp
+	// temp : works correctly
 	let x1, x2, textX, anchor;
 	if(mode === 'tick') {
 		if(pos === 'right') {
@@ -463,6 +464,11 @@ function makeHoriYLine(y, label, totalWidth, mode, pos='left') {
 			textX = -1 * (LABEL_MARGIN + AXIS_TICK_LENGTH);
 			anchor = 'end';
 		}
+	} else {
+		x1 = -1 * AXIS_TICK_LENGTH;
+		x2 = w2;
+		textX = -1 * (LABEL_MARGIN + AXIS_TICK_LENGTH);
+		anchor = 'end';
 	}
 
 	let l = createSVG('line', {
@@ -511,15 +517,16 @@ class AxisChartRenderer {
 		this.yAxisMode = state.yAxisMode;
 	}
 
-	bar(x, yTop, args, color, index, datasetIndex, noOfDatasets) {
+	bar(x, yTop, args, color, index, datasetIndex, noOfDatasets, prevX, prevY) {
 
 		let totalWidth = this.unitWidth - args.spaceWidth;
 		let startX = x - totalWidth/2;
 
-		// temp
+		// temp commented
 		// let width = totalWidth / noOfDatasets;
 		// let currentX = startX + width * datasetIndex;
 
+		// temp
 		let width = totalWidth;
 		let currentX = startX;
 
@@ -546,12 +553,13 @@ class AxisChartRenderer {
 		});
 	}
 
-	xLine(x, label, mode=this.xAxisMode) {
+	// temp: stroke
+	xLine(x, label, pos='bottom', stroke='', mode=this.xAxisMode) {
 		// Draw X axis line in span/tick mode with optional label
 		return makeVertXLine(x, label, this.totalHeight, mode);
 	}
 
-	yLine(y, label, mode=this.yAxisMode, pos='left') {
+	yLine(y, label, pos='left', mode=this.yAxisMode) {
 		return makeHoriYLine(y, label, this.totalWidth, mode, pos);
 	}
 
@@ -821,7 +829,9 @@ class BaseChart {
 		// (draw everything, layers, groups, units)
 
 		this.calcWidth();
-		this.refresh(); // refresh conponent with chart a
+
+		// refresh conponent with chart
+		this.refresh();
 
 		this.makeChartArea();
 		this.setComponentParent();
@@ -830,7 +840,8 @@ class BaseChart {
 		this.renderLegend();
 		this.setupNavigation(init);
 
-		this.renderComponents(); // first time plain render, so no rerender
+		// first time plain render, so no rerender
+		this.renderComponents();
 
 		if(this.config.animate) this.update(this.firstUpdateData);
 	}
@@ -1023,13 +1034,13 @@ class IndexedChartComponent extends ChartComponent {
 
 	refresh(args) {
 		super.refresh(args);
-		this.indexLength = this.chartState[this.argsKeys[0]].length;
+		this.totalIndices = this.chartState[this.argsKeys[0]].length;
 	}
 
 	makeLayer() {
 		super.makeLayer();
 		this.layers = [];
-		for(var i = 0; i < this.indexLength; i++) {
+		for(var i = 0; i < this.totalIndices; i++) {
 			this.layers[i] = makeSVGGroup(this.layer, this.layerClass + '-' + i);
 		}
 	}
@@ -1040,13 +1051,17 @@ class IndexedChartComponent extends ChartComponent {
 		let datasetArrays = this.argsKeys.map(key => this.chartState[key]);
 
 		// datasetArrays will have something like an array of X positions sets
+		// datasetArrays = [
+		// 		xUnitPositions, yUnitPositions, colors, unitTypes, yUnitValues
+		// ]
+		// where xUnitPositions = [[0,0,0], [1,1,1]]
 		// i.e.: [ [[0,0,0], [1,1,1]],  ... ]
-		for(var i = 0; i < this.indexLength; i++) {
+		for(var i = 0; i < this.totalIndices; i++) {
 			let args = datasetArrays.map(datasetArray => datasetArray[i]);
 			args.unshift(this.chartRenderer);
 
 			args.push(i);
-			args.push(this.indexLength);
+			args.push(this.totalIndices);
 
 			this.stores.push(this.make(...args));
 
@@ -1563,6 +1578,18 @@ class AxisChart extends BaseChart {
 	}
 
 	setupComponents() {
+		// temp : will be an indexedchartcomponent
+		// this.yAxisAux = new ChartComponent({
+		// 	layerClass: 'y axis aux',
+		// 	make: (renderer, positions, values) => {
+		// 		positions = [0, 70, 140, 270];
+		// 		values = [300, 200, 100, 0];
+		// 		return positions.map((position, i) => renderer.yLine(position, values[i], 'right'));
+		// 	},
+		// 	argsKeys: ['yAxisPositions', 'yAxisLabels'],
+		// 	animate: () => {}
+		// });
+
 		this.yAxis = new ChartComponent({
 			layerClass: 'y axis',
 			make: (renderer, positions, values) => {
@@ -1604,10 +1631,12 @@ class AxisChart extends BaseChart {
 					);
 				});
 
-				let pointsList = yPosSet.map((y, i) => (xPosSet[i] + ',' + y));
-				let pointsStr = pointsList.join("L");
+				if(this.type === 'line') {
+					let pointsList = yPosSet.map((y, i) => (xPosSet[i] + ',' + y));
+					let pointsStr = pointsList.join("L");
 
-				unitSet.unshift(makePath("M"+pointsStr, 'line-graph-path', color));
+					unitSet.unshift(makePath("M"+pointsStr, 'line-graph-path', color));
+				}
 
 				return unitSet;
 			},
@@ -1626,9 +1655,9 @@ class AxisChart extends BaseChart {
 
 		// Marker Regions
 
-		// temp
 		this.components = [
-			this.yAxisAux,
+			// temp
+			// this.yAxisAux,
 			this.yAxis,
 			this.xAxis,
 			// this.yMarkerLines,

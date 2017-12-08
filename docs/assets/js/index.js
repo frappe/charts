@@ -88,6 +88,20 @@ let type_data = {
 		// 	label: "Yet Another",
 		// 	values: [15, 20, -3, -15, 58, 12, -17, 37]
 		// }
+
+		// temp : Stacked
+		// {
+		// 	label: "Some Data",
+		// 	values:[25, 30, 50, 45, 18, 12, 27, 14]
+		// },
+		// {
+		// 	label: "Another Set",
+		// 	values: [18, 20, 30, 35, 8, 7, 17, 4]
+		// },
+		// {
+		// 	label: "Another Set",
+		// 	values: [11, 8, 19, 15, 3, 4, 10, 2]
+		// },
 	]
 };
 

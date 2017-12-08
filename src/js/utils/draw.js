@@ -138,14 +138,15 @@ export function makeText(className, x, y, content) {
 	});
 }
 
-export function makeVertXLine(x, label, totalHeight, mode) {
+export function makeVertXLine(x, label, totalHeight, mode, stroke='#dadada') {
 	let height = mode === 'span' ? -1 * AXIS_TICK_LENGTH : totalHeight;
 
 	let l = createSVG('line', {
 		x1: 0,
 		x2: 0,
 		y1: totalHeight + AXIS_TICK_LENGTH,
-		y2: height
+		y2: height,
+		stroke: stroke
 	});
 
 	let text = createSVG('text', {
@@ -171,7 +172,7 @@ export function makeHoriYLine(y, label, totalWidth, mode, pos='left') {
 	let lineType = '';
 	let w2 = mode === 'span' ? totalWidth + AXIS_TICK_LENGTH : 0;
 
-	// temp
+	// temp : works correctly
 	let x1, x2, textX, anchor;
 	if(mode === 'tick') {
 		if(pos === 'right') {
@@ -185,6 +186,11 @@ export function makeHoriYLine(y, label, totalWidth, mode, pos='left') {
 			textX = -1 * (LABEL_MARGIN + AXIS_TICK_LENGTH);
 			anchor = 'end';
 		}
+	} else {
+		x1 = -1 * AXIS_TICK_LENGTH;
+		x2 = w2;
+		textX = -1 * (LABEL_MARGIN + AXIS_TICK_LENGTH);
+		anchor = 'end';
 	}
 
 	let l = createSVG('line', {
@@ -233,15 +239,16 @@ export class AxisChartRenderer {
 		this.yAxisMode = state.yAxisMode;
 	}
 
-	bar(x, yTop, args, color, index, datasetIndex, noOfDatasets) {
+	bar(x, yTop, args, color, index, datasetIndex, noOfDatasets, prevX, prevY) {
 
 		let totalWidth = this.unitWidth - args.spaceWidth;
 		let startX = x - totalWidth/2;
 
-		// temp
+		// temp commented
 		// let width = totalWidth / noOfDatasets;
 		// let currentX = startX + width * datasetIndex;
 
+		// temp
 		let width = totalWidth;
 		let currentX = startX;
 
@@ -268,12 +275,13 @@ export class AxisChartRenderer {
 		});
 	}
 
-	xLine(x, label, mode=this.xAxisMode) {
+	// temp: stroke
+	xLine(x, label, pos='bottom', stroke='', mode=this.xAxisMode) {
 		// Draw X axis line in span/tick mode with optional label
 		return makeVertXLine(x, label, this.totalHeight, mode);
 	}
 
-	yLine(y, label, mode=this.yAxisMode, pos='left') {
+	yLine(y, label, pos='left', mode=this.yAxisMode) {
 		return makeHoriYLine(y, label, this.totalWidth, mode, pos);
 	}
 

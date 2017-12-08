@@ -55,13 +55,13 @@ export class IndexedChartComponent extends ChartComponent {
 
 	refresh(args) {
 		super.refresh(args);
-		this.indexLength = this.chartState[this.argsKeys[0]].length;
+		this.totalIndices = this.chartState[this.argsKeys[0]].length;
 	}
 
 	makeLayer() {
 		super.makeLayer();
 		this.layers = [];
-		for(var i = 0; i < this.indexLength; i++) {
+		for(var i = 0; i < this.totalIndices; i++) {
 			this.layers[i] = makeSVGGroup(this.layer, this.layerClass + '-' + i);
 		}
 	}
@@ -72,13 +72,17 @@ export class IndexedChartComponent extends ChartComponent {
 		let datasetArrays = this.argsKeys.map(key => this.chartState[key]);
 
 		// datasetArrays will have something like an array of X positions sets
+		// datasetArrays = [
+		// 		xUnitPositions, yUnitPositions, colors, unitTypes, yUnitValues
+		// ]
+		// where xUnitPositions = [[0,0,0], [1,1,1]]
 		// i.e.: [ [[0,0,0], [1,1,1]],  ... ]
-		for(var i = 0; i < this.indexLength; i++) {
+		for(var i = 0; i < this.totalIndices; i++) {
 			let args = datasetArrays.map(datasetArray => datasetArray[i]);
 			args.unshift(this.chartRenderer);
 
 			args.push(i);
-			args.push(this.indexLength);
+			args.push(this.totalIndices);
 
 			this.stores.push(this.make(...args));
 
