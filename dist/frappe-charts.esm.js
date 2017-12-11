@@ -954,6 +954,7 @@ class BaseChart {
 			this.current_index = 0;
 		}
 		this.has_legend = has_legend;
+		this.bindRefresh = this.refresh.bind(this);
 
 		this.setColors(colors, type);
 		this.set_margins(height);
@@ -1024,8 +1025,13 @@ class BaseChart {
 	}
 
 	bind_window_events() {
-		window.addEventListener('resize', () => this.refresh());
-		window.addEventListener('orientationchange', () => this.refresh());
+		window.addEventListener('resize', this.bindRefresh);
+		window.addEventListener('orientationchange', this.bindRefresh);
+	}
+
+	unbind_window_events(){
+		window.removeEventListener('resize', this.bindRefresh);
+		window.removeEventListener('orientationchange', this.bindRefresh);
 	}
 
 	refresh(init=false) {
