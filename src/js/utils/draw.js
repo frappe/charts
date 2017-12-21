@@ -93,12 +93,15 @@ export function makePath(pathStr, className='', stroke='none', fill='none') {
 	});
 }
 
-export function makeGradient(svgDefElem, color, lighter = false) {
+export function makeGradient(svgDefElem, color, lighter = false, reverse = false) {
 	let gradientId ='path-fill-gradient' + '-' + color;
 	let gradientDef = renderVerticalGradient(svgDefElem, gradientId);
 	let opacities = [1, 0.6, 0.2];
 	if(lighter) {
 		opacities = [0.4, 0.2, 0];
+	}
+	if(reverse) {
+		opacities.reverse();
 	}
 
 	setGradientStop(gradientDef, "0%", color, opacities[0]);

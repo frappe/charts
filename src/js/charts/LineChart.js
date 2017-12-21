@@ -72,7 +72,8 @@ export default class LineChart extends AxisChart {
 		this.paths_groups[i].appendChild(d.path);
 
 		if(this.heatline) {
-			let gradient_id = makeGradient(this.svg_defs, color);
+			const reverse = d.values.every(val => val <= 0);
+			let gradient_id = makeGradient(this.svg_defs, color, false, reverse);
 			d.path.style.stroke = `url(#${gradient_id})`;
 		}
 
@@ -82,7 +83,8 @@ export default class LineChart extends AxisChart {
 	}
 
 	fill_region_for_dataset(d, i, color, points_str) {
-		let gradient_id = makeGradient(this.svg_defs, color, true);
+		const reverse = d.values.every(val => val <= 0);
+		let gradient_id = makeGradient(this.svg_defs, color, true, reverse);
 		let pathStr = "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`;
 
 		d.regionPath = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id})`);
