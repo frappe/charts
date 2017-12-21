@@ -219,12 +219,15 @@ function makePath(pathStr, className='', stroke='none', fill='none') {
 	});
 }
 
-function makeGradient(svgDefElem, color, lighter = false) {
+function makeGradient(svgDefElem, color, lighter = false, reverse = false) {
 	let gradientId ='path-fill-gradient' + '-' + color;
 	let gradientDef = renderVerticalGradient(svgDefElem, gradientId);
 	let opacities = [1, 0.6, 0.2];
 	if(lighter) {
 		opacities = [0.4, 0.2, 0];
+	}
+	if(reverse) {
+		opacities.reverse();
 	}
 
 	setGradientStop(gradientDef, "0%", color, opacities[0]);
@@ -2177,7 +2180,8 @@ class LineChart extends AxisChart {
 		this.paths_groups[i].appendChild(d.path);
 
 		if(this.heatline) {
-			let gradient_id = makeGradient(this.svg_defs, color);
+			const reverse = d.values.every(val => val <= 0);
+			let gradient_id = makeGradient(this.svg_defs, color, false, reverse);
 			d.path.style.stroke = `url(#${gradient_id})`;
 		}
 
@@ -2187,7 +2191,8 @@ class LineChart extends AxisChart {
 	}
 
 	fill_region_for_dataset(d, i, color, points_str) {
-		let gradient_id = makeGradient(this.svg_defs, color, true);
+		const reverse = d.values.every(val => val <= 0);
+		let gradient_id = makeGradient(this.svg_defs, color, true, reverse);
 		let pathStr = "M" + `0,${this.zero_line}L` + points_str + `L${this.width},${this.zero_line}`;
 
 		d.regionPath = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id})`);
