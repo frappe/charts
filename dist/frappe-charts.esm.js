@@ -924,6 +924,8 @@ const COLOR_COMPATIBLE_CHARTS = {
 class BaseChart {
 	constructor({
 		height = 240,
+		margin_x = 60,
+		margin_y = 10,
 
 		title = '',
 		subtitle = '',
@@ -956,7 +958,7 @@ class BaseChart {
 		this.has_legend = has_legend;
 
 		this.setColors(colors, type);
-		this.set_margins(height);
+		this.set_margins(height, margin_x, margin_y);
 	}
 
 	get_different_chart(type) {
@@ -1001,11 +1003,11 @@ class BaseChart {
 		this.colors = this.colors.map(color => getColor(color));
 	}
 
-	set_margins(height) {
+	set_margins(height, margin_x, margin_y) {
 		this.base_height = height;
-		this.height = height - 40;
-		this.translate_x = 60;
-		this.translate_y = 10;
+		this.height = height - 2 * margin_y - 20;
+		this.translate_x = margin_x;
+		this.translate_y = margin_y;
 	}
 
 	setup() {
@@ -1062,7 +1064,7 @@ class BaseChart {
 			}
 		});
 		this.base_width = getElementContentWidth(this.parent) - special_values_width;
-		this.width = this.base_width - this.translate_x * 2;
+		this.width = this.base_width - 2 * this.translate_x;
 	}
 
 	setup_base_values() {}
