@@ -1,5 +1,6 @@
 import BaseChart from './BaseChart';
-import { ChartComponent, IndexedChartComponent } from '../objects/ChartComponent';
+import { Y_AXIS_MARGIN } from '../utils/margins';
+import { ChartComponent } from '../objects/ChartComponent';
 import { getOffset, fire } from '../utils/dom';
 import { AxisChartRenderer, makePath, makeGradient } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
@@ -14,7 +15,13 @@ export default class AxisChart extends BaseChart {
 		this.is_series = args.is_series;
 		this.format_tooltip_y = args.format_tooltip_y;
 		this.format_tooltip_x = args.format_tooltip_x;
+
 		this.zeroLine = this.height;
+	}
+
+	setHorizontalMargin() {
+		this.translateXLeft = Y_AXIS_MARGIN;
+		this.translateXRight = Y_AXIS_MARGIN;
 	}
 
 	checkData(data) {
@@ -27,7 +34,10 @@ export default class AxisChart extends BaseChart {
 
 	prepareData() {
 		let s = this.state;
+
 		s.xAxisLabels = this.data.labels || [];
+		s.xAxisPositions = [];
+
 		s.datasetLength = s.xAxisLabels.length;
 
 		let zeroArray = new Array(s.datasetLength).fill(0);
@@ -60,6 +70,16 @@ export default class AxisChart extends BaseChart {
 		});
 
 		s.noOfDatasets = s.datasets.length;
+
+		// s.yAxis = [];
+		this.prepareYAxis();
+	}
+
+	prepareYAxis() {
+		this.state.yAxis = {
+			labels: [],
+			positions: []
+		};
 	}
 
 	reCalc() {
@@ -70,21 +90,26 @@ export default class AxisChart extends BaseChart {
 		this.calcXPositions();
 
 		// Y
-		s.datasetsLabels = this.data.datasets.map(d => d.label);
+		s.datasetsLabels = this.data.datasets.map(d => d.name);
 
 		// s.yUnitValues = [[]]; indexed component
 		// s.yUnitValues = [[[12, 34, 68], [10, 5, 46]], [[20, 20, 20]]]; // array of indexed components
 		s.yUnitValues = s.datasets.map(d => d.values); // indexed component
-		s.yAxisLabels = calcIntervals(this.getAllYValues(), this.type === 'line');
-		this.calcYAxisPositions();
 
-		this.calcYUnitPositions();
+		this.setYAxis();
+
+		this.calcYUnits();
 
 		// should be state
 		this.configUnits();
 
 		// temp
 		s.unitTypes = s.datasets.map(d => d.unitArgs ? d.unitArgs : this.state.unitArgs);
+	}
+
+	setYAxis() {
+		this.calcYAxisParameters(this.state.yAxis, this.getAllYValues(), this.type === 'line');
+		this.state.zeroLine = this.state.yAxis.zeroLine;
 	}
 
 	calcXPositions() {
@@ -96,18 +121,18 @@ export default class AxisChart extends BaseChart {
 		s.xUnitPositions = new Array(s.noOfDatasets).fill(s.xAxisPositions);
 	}
 
-	calcYAxisPositions() {
-		let s = this.state;
-		const yPts = s.yAxisLabels;
+	calcYAxisParameters(yAxis, dataValues, withMinimum = 'false') {
+		yAxis.labels = calcIntervals(dataValues, withMinimum);
+		const yPts = yAxis.labels;
 
-		s.scaleMultiplier = this.height / getValueRange(yPts);
-		const intervalHeight = getIntervalSize(yPts) * s.scaleMultiplier;
-		s.zeroLine = this.height - (getZeroIndex(yPts) * intervalHeight);
+		yAxis.scaleMultiplier = this.height / getValueRange(yPts);
+		const intervalHeight = getIntervalSize(yPts) * yAxis.scaleMultiplier;
+		yAxis.zeroLine = this.height - (getZeroIndex(yPts) * intervalHeight);
 
-		s.yAxisPositions = yPts.map(d => s.zeroLine - d * s.scaleMultiplier);
+		yAxis.positions = yPts.map(d => yAxis.zeroLine - d * yAxis.scaleMultiplier);
 	}
 
-	calcYUnitPositions() {
+	calcYUnits() {
 		let s = this.state;
 		s.yUnitPositions = s.yUnitValues.map(values =>
 			values.map(val => floatTwo(s.zeroLine - val * s.scaleMultiplier))
@@ -143,6 +168,105 @@ export default class AxisChart extends BaseChart {
 		//
 	}
 
+	setupValues() {}
+
+	setupComponents() {
+		// temp : will be an indexedchartcomponent
+		// this.yAxisAux = new ChartComponent({
+		// 	layerClass: 'y axis aux',
+		// 	make: (renderer, positions, values) => {
+		// 		positions = [0, 70, 140, 270];
+		// 		values = [300, 200, 100, 0];
+		// 		return positions.map((position, i) => renderer.yLine(position, values[i], 'right'));
+		// 	},
+		// 	animate: () => {}
+		// });
+
+		this.setupYAxesComponents();
+
+		this.xAxis = new ChartComponent({
+			layerClass: 'x axis',
+			make: () => {
+				let s = this.state;
+				return s.xAxisPositions.map((position, i) =>
+					this.renderer.xLine(position, s.xAxisLabels[i], {pos:'top'})
+				);
+			},
+			// animate: (animator, lines, oldX, newX) => {
+			// 	lines.map((xLine, i) => {
+			// 		elements_to_animate.push(animator.verticalLine(
+			// 			xLine, newX[i], oldX[i]
+			// 		));
+			// 	});
+			// }
+		});
+
+		// this.dataUnits = new IndexedChartComponent({
+		// 	layerClass: 'dataset-units',
+		// 	make: (renderer, xPosSet, yPosSet, color, unitType,
+		// 		yValueSet, datasetIndex, noOfDatasets) => {;
+
+		// 		let unitSet = yPosSet.map((y, i) => {
+		// 			return renderer[unitType.type](
+		// 				xPosSet[i],
+		// 				y,
+		// 				unitType.args,
+		// 				color,
+		// 				i,
+		// 				datasetIndex,
+		// 				noOfDatasets
+		// 			);
+		// 		});
+
+		// 		if(this.type === 'line') {
+		// 			let pointsList = yPosSet.map((y, i) => (xPosSet[i] + ',' + y));
+		// 			let pointsStr = pointsList.join("L");
+
+		// 			unitSet.unshift(makePath("M"+pointsStr, 'line-graph-path', color));
+		// 		}
+
+		// 		return unitSet;
+		// 	},
+		// 	argsKeys: ['xUnitPositions', 'yUnitPositions',
+		// 		'colors', 'unitTypes', 'yUnitValues'],
+		// 	animate: () => {}
+		// });
+
+		// TODO: rebind new units
+		// if(this.isNavigable) {
+		// 	this.bind_units(units_array);
+		// }
+
+		this.yMarkerLines = {};
+		this.xMarkerLines = {};
+
+		// Marker Regions
+
+		this.components = [
+			// temp
+			// this.yAxesAux,
+			...this.yAxesComponents,
+			this.xAxis,
+			// this.yMarkerLines,
+			// this.xMarkerLines,
+
+			// this.dataUnits,
+		];
+	}
+
+	setupYAxesComponents() {
+		this.yAxesComponents = [ new ChartComponent({
+			layerClass: 'y axis',
+			make: () => {
+				let s = this.state;
+				return s.yAxis.positions.map((position, i) =>
+					this.renderer.yLine(position, s.yAxis.labels[i], {pos:'right'})
+				);
+			},
+			animate: () => {}
+		})];
+	}
+
 	refreshRenderer() {
 		// These args are basically the current state of the chart,
 		// with constant and alive params mixed
@@ -161,95 +285,6 @@ export default class AxisChart extends BaseChart {
 		} else {
 			this.renderer.refreshState(state);
 		}
-	}
-
-	setupComponents() {
-		// temp : will be an indexedchartcomponent
-		// this.yAxisAux = new ChartComponent({
-		// 	layerClass: 'y axis aux',
-		// 	make: (renderer, positions, values) => {
-		// 		positions = [0, 70, 140, 270];
-		// 		values = [300, 200, 100, 0];
-		// 		return positions.map((position, i) => renderer.yLine(position, values[i], 'right'));
-		// 	},
-		// 	argsKeys: ['yAxisPositions', 'yAxisLabels'],
-		// 	animate: () => {}
-		// });
-
-		this.yAxis = new ChartComponent({
-			layerClass: 'y axis',
-			make: (renderer, positions, values) => {
-				return positions.map((position, i) => renderer.yLine(position, values[i]));
-			},
-			argsKeys: ['yAxisPositions', 'yAxisLabels'],
-			animate: () => {}
-		});
-
-		this.xAxis = new ChartComponent({
-			layerClass: 'x axis',
-			make: (renderer, positions, values) => {
-				return positions.map((position, i) => renderer.xLine(position, values[i]));
-			},
-			argsKeys: ['xAxisPositions', 'xAxisLabels'],
-			animate: (animator, lines, oldX, newX) => {
-				lines.map((xLine, i) => {
-					elements_to_animate.push(animator.verticalLine(
-						xLine, newX[i], oldX[i]
-					));
-				});
-			}
-		});
-
-		this.dataUnits = new IndexedChartComponent({
-			layerClass: 'dataset-units',
-			make: (renderer, xPosSet, yPosSet, color, unitType,
-				yValueSet, datasetIndex, noOfDatasets) => {;
-
-				let unitSet = yPosSet.map((y, i) => {
-					return renderer[unitType.type](
-						xPosSet[i],
-						y,
-						unitType.args,
-						color,
-						i,
-						datasetIndex,
-						noOfDatasets
-					);
-				});
-
-				if(this.type === 'line') {
-					let pointsList = yPosSet.map((y, i) => (xPosSet[i] + ',' + y));
-					let pointsStr = pointsList.join("L");
-
-					unitSet.unshift(makePath("M"+pointsStr, 'line-graph-path', color));
-				}
-
-				return unitSet;
-			},
-			argsKeys: ['xUnitPositions', 'yUnitPositions',
-				'colors', 'unitTypes', 'yUnitValues'],
-			animate: () => {}
-		});
-
-		// TODO: rebind new units
-		// if(this.isNavigable) {
-		// 	this.bind_units(units_array);
-		// }
-
-		this.yMarkerLines = {};
-		this.xMarkerLines = {};
-
-		// Marker Regions
-
-		this.components = [
-			// temp
-			// this.yAxisAux,
-			this.yAxis,
-			this.xAxis,
-			// this.yMarkerLines,
-			// this.xMarkerLines,
-			this.dataUnits,
-		];
 	}
 
 }

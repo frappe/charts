@@ -5,31 +5,21 @@ export class ChartComponent {
 		layerClass = '',
 		layerTransform = '',
 		make,
-		argsKeys,
 		animate
 	}) {
 		this.layerClass = layerClass; // 'y axis'
 		this.layerTransform = layerTransform;
 		this.make = make;
-		this.argsKeys = argsKeys;//['yAxisPositions', 'yAxisLabels'];
 		this.animate = animate;
 
 		this.layer = undefined;
 		this.store = []; //[[]]  depends on indexed
 	}
 
-	refresh(args) {
-		this.chartState = args.chartState;
-		this.oldChartState = args.oldChartState;
-		this.intermedState = args.intermedState;
-
-		this.chartRenderer = args.chartRenderer;
-	}
+	refresh(args) {}
 
 	render() {
-		let args = this.argsKeys.map(key => this.chartState[key]);
-		args.unshift(this.chartRenderer);
-		this.store = this.make(...args);
+		this.store = this.make();
 
 		this.layer.textContent = '';
 		this.store.forEach(element => {
@@ -79,7 +69,6 @@ export class IndexedChartComponent extends ChartComponent {
 		// i.e.: [ [[0,0,0], [1,1,1]],  ... ]
 		for(var i = 0; i < this.totalIndices; i++) {
 			let args = datasetArrays.map(datasetArray => datasetArray[i]);
-			args.unshift(this.chartRenderer);
 
 			args.push(i);
 			args.push(this.totalIndices);

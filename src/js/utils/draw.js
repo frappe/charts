@@ -3,6 +3,7 @@ import { getBarHeightAndYAttr } from './draw-utils';
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 const FONT_SIZE = 10;
+const BASE_LINE_COLOR = '#dadada';
 
 function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
@@ -138,20 +139,22 @@ export function makeText(className, x, y, content) {
 	});
 }
 
-export function makeVertXLine(x, label, totalHeight, mode, stroke='#dadada') {
-	let height = mode === 'span' ? -1 * AXIS_TICK_LENGTH : totalHeight;
-
+export function makeVertLine(x, label, y1, y2, options={}) {
+	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	let l = createSVG('line', {
+		className: 'line-vertical ' + options.className,
 		x1: 0,
 		x2: 0,
-		y1: totalHeight + AXIS_TICK_LENGTH,
-		y2: height,
-		stroke: stroke
+		y1: y1,
+		y2: y2,
+		styles: {
+			stroke: options.stroke
+		}
 	});
 
 	let text = createSVG('text', {
 		x: 0,
-		y: totalHeight + AXIS_TICK_LENGTH + LABEL_MARGIN,
+		y: y1 > y2 ? y1 + LABEL_MARGIN : y1 - LABEL_MARGIN - FONT_SIZE,
 		dy: FONT_SIZE + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': 'middle',
@@ -168,50 +171,34 @@ export function makeVertXLine(x, label, totalHeight, mode, stroke='#dadada') {
 	return line;
 }
 
-export function makeHoriYLine(y, label, totalWidth, mode, pos='left') {
-	let lineType = '';
-	let w2 = mode === 'span' ? totalWidth + AXIS_TICK_LENGTH : 0;
-
-	// temp : works correctly
-	let x1, x2, textX, anchor;
-	if(mode === 'tick') {
-		if(pos === 'right') {
-			x1 = totalWidth;
-			x2 = totalWidth + AXIS_TICK_LENGTH;
-			textX = totalWidth + AXIS_TICK_LENGTH + LABEL_MARGIN;
-			anchor = 'start';
-		} else {
-			x1 = -1 * AXIS_TICK_LENGTH;
-			x2 = w2;
-			textX = -1 * (LABEL_MARGIN + AXIS_TICK_LENGTH);
-			anchor = 'end';
-		}
-	} else {
-		x1 = -1 * AXIS_TICK_LENGTH;
-		x2 = w2;
-		textX = -1 * (LABEL_MARGIN + AXIS_TICK_LENGTH);
-		anchor = 'end';
-	}
+export function makeHoriLine(y, label, x1, x2, options={}) {
+	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
+	if(!options.lineType) options.lineType = '';
+	let className = 'line-horizontal ' + options.className +
+		(options.lineType === "dashed" ? "dashed": "");
 
 	let l = createSVG('line', {
-		className: lineType === "dashed" ? "dashed": "",
+		className: className,
 		x1: x1,
 		x2: x2,
 		y1: 0,
-		y2: 0
+		y2: 0,
+		styles: {
+			stroke: options.stroke
+		}
 	});
 
 	let text = createSVG('text', {
-		x: textX,
+		x: x1 < x2 ? x1 - LABEL_MARGIN : x1 + LABEL_MARGIN,
 		y: 0,
 		dy: (FONT_SIZE / 2 - 2) + 'px',
 		'font-size': FONT_SIZE + 'px',
-		'text-anchor': anchor,
+		'text-anchor': x1 < x2 ? 'end' : 'start',
 		innerHTML: label+""
 	});
 
 	let line = createSVG('g', {
-		transform: `translate(0, ${y})`,
+		transform: `translate(0, ${ y })`,
 		'stroke-opacity': 1
 	});
 
@@ -237,6 +224,10 @@ export class AxisChartRenderer {
 		this.unitWidth = state.unitWidth;
 		this.xAxisMode = state.xAxisMode;
 		this.yAxisMode = state.yAxisMode;
+	}
+
+	setZeroline(zeroLine) {
+		this.zeroLine = zeroLine;
 	}
 
 	bar(x, yTop, args, color, index, datasetIndex, noOfDatasets, prevX, prevY) {
@@ -275,14 +266,63 @@ export class AxisChartRenderer {
 		});
 	}
 
-	// temp: stroke
-	xLine(x, label, pos='bottom', stroke='', mode=this.xAxisMode) {
+	xLine(x, label, options={}) {
+		if(!options.pos) options.pos = 'bottom';
+		if(!options.offset) options.offset = 0;
+		if(!options.mode) options.mode = this.xAxisMode;
+		if(!options.stroke) options.stroke = BASE_LINE_COLOR;
+		if(!options.className) options.className = '';
+
 		// Draw X axis line in span/tick mode with optional label
-		return makeVertXLine(x, label, this.totalHeight, mode);
+		//                        	y2(span)
+		// 						|
+		// 						|
+		//				x line	|
+		//						|
+		// 					   	|
+		// ---------------------+-- y2(tick)
+		//						|
+		//							y1
+
+		let y1 = this.totalHeight + AXIS_TICK_LENGTH;
+		let y2 = options.mode === 'span' ? -1 * AXIS_TICK_LENGTH : this.totalHeight;
+
+		if(options.mode === 'tick' && options.pos === 'top') {
+			// top axis ticks
+			y1 = -1 * AXIS_TICK_LENGTH;
+			y2 = 0;
+		}
+
+		return makeVertLine(x, label, y1, y2, {
+			stroke: options.stroke,
+			className: options.className
+		});
 	}
 
-	yLine(y, label, pos='left', mode=this.yAxisMode) {
-		return makeHoriYLine(y, label, this.totalWidth, mode, pos);
+	yLine(y, label, options={}) {
+		if(!options.pos) options.pos = 'left';
+		if(!options.offset) options.offset = 0;
+		if(!options.mode) options.mode = this.yAxisMode;
+		if(!options.stroke) options.stroke = BASE_LINE_COLOR;
+		if(!options.className) options.className = '';
+
+		let x1 = -1 * AXIS_TICK_LENGTH;
+		let x2 = options.mode === 'span' ? this.totalWidth + AXIS_TICK_LENGTH : 0;
+
+		if(options.mode === 'tick' && options.pos === 'right') {
+			x1 = this.totalWidth + AXIS_TICK_LENGTH
+			x2 = this.totalWidth;
+		}
+
+		let offset = options.pos === 'left' ? -1 * options.offset : options.offset;
+
+		x1 += options.offset;
+		x2 += options.offset;
+
+		return makeHoriLine(y, label, x1, x2, {
+			stroke: options.stroke,
+			className: options.className
+		});
 	}
 
 	xMarker() {}

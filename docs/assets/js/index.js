@@ -8,7 +8,7 @@ let bar_composite_data = {
 		"2013", "2014", "2015", "2016", "2017"],
 
 	datasets: [{
-		"label": "Events",
+		"name": "Events",
 		"values": report_count_list,
 		// "formatted": report_count_list.map(d => d + " reports")
 	}]
@@ -77,29 +77,31 @@ let type_data = {
 
 	datasets: [
 		{
-			label: "Some Data",
-			values: [18, 40, 30, 35, 8, 52, 17, -4]
+			name: "Some Data",
+			values: [18, 40, 30, 35, 8, 52, 17, -4],
+			axisPosition: 'right'
 		},
 		{
-			label: "Another Set",
-			values: [30, 50, -10, 15, 18, 32, 27, 14]
+			name: "Another Set",
+			values: [30, 50, -10, 15, 18, 32, 27, 14],
+			axisPosition: 'right'
 		},
 		// {
-		// 	label: "Yet Another",
+		// 	name: "Yet Another",
 		// 	values: [15, 20, -3, -15, 58, 12, -17, 37]
 		// }
 
 		// temp : Stacked
 		// {
-		// 	label: "Some Data",
+		// 	name: "Some Data",
 		// 	values:[25, 30, 50, 45, 18, 12, 27, 14]
 		// },
 		// {
-		// 	label: "Another Set",
+		// 	name: "Another Set",
 		// 	values: [18, 20, 30, 35, 8, 7, 17, 4]
 		// },
 		// {
-		// 	label: "Another Set",
+		// 	name: "Another Set",
 		// 	values: [11, 8, 19, 15, 3, 4, 10, 2]
 		// },
 	]
@@ -109,7 +111,7 @@ let type_chart = new Chart({
 	parent: "#chart-types",
 	// title: "My Awesome Chart",
 	data: type_data,
-	type: 'bar',
+	type: 'multiaxis',
 	height: 250,
 	colors: ['purple', 'magenta'],
 	is_series: 1,
@@ -225,8 +227,8 @@ let update_data = {
 	}],
 	"specific_values": [
 		{
-			label: "Altitude",
-			// label: "A very long text",
+			name: "Altitude",
+			// name: "A very long text",
 			line_type: "dashed",
 			value: 38
 		},

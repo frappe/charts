@@ -26,6 +26,7 @@ export default class BaseChart {
 		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
 		this.title = title;
 		this.subtitle = subtitle;
+		this.argHeight = height;
 
 		this.isNavigable = isNavigable;
 		if(this.isNavigable) {
@@ -40,7 +41,6 @@ export default class BaseChart {
 		// showLegend, which then all functions will check
 
 		this.setColors();
-		this.setMargins(args);
 
 		// constants
 		this.config = {
@@ -73,12 +73,19 @@ export default class BaseChart {
 		this.colors = this.colors.map(color => getColor(color));
 	}
 
-	setMargins(args) {
-		let height = args.height;
+	setMargins() {
+		// TODO: think for all
+		let height = this.argHeight;
 		this.baseHeight = height;
-		this.height = height - 40;
-		this.translateX = 60;
-		this.translateY = 10;
+		this.height = height - 40; // change
+		this.translateY = 20;
+
+		this.setHorizontalMargin();
+	}
+
+	setHorizontalMargin() {
+		this.translateXLeft = 60;
+		this.translateXRight = 40;
 	}
 
 	validate(){
@@ -120,7 +127,10 @@ export default class BaseChart {
 	_setup() {
 		this.bindWindowEvents();
 		this.setupConstants();
+		this.prepareData();
 		this.setupComponents();
+
+		this.setMargins();
 		this.makeContainer();
 		this.makeTooltip(); // without binding
 		this.draw(true);
@@ -204,15 +214,16 @@ export default class BaseChart {
 		// 	}
 		// });
 		this.baseWidth = getElementContentWidth(this.parent) - outerAnnotationsWidth;
-		this.width = this.baseWidth - this.translateX * 2;
+		this.width = this.baseWidth - (this.translateXLeft + this.translateXRight);
 	}
 
 	refresh() { //?? refresh?
 		this.oldState = this.state ? Object.assign({}, this.state) : {};
+		this.intermedState = {};
+
 		this.prepareData();
 		this.reCalc();
 		this.refreshRenderer();
-		this.refreshComponents();
 	}
 
 	makeChartArea() {
@@ -227,7 +238,7 @@ export default class BaseChart {
 		this.drawArea = makeSVGGroup(
 			this.svg,
 			this.type + '-chart',
-			`translate(${this.translateX}, ${this.translateY})`
+			`translate(${this.translateXLeft}, ${this.translateY})`
 		);
 	}
 
@@ -245,7 +256,6 @@ export default class BaseChart {
 			return;
 		}
 		this.intermedState = this.calcIntermedState();
-		this.refreshComponents();
 		this.animateComponents();
 		setTimeout(() => {
 			this.renderComponents();
@@ -254,22 +264,15 @@ export default class BaseChart {
 		// (opt, should not redraw if still in animate?)
 	}
 
-	calcIntermedState() {}
+	calcIntermedState() {
+		this.intermedState = {};
+	}
 
 	// convenient component array abstractions
 	setComponentParent() { this.components.forEach(c => c.setupParent(this.drawArea)); };
 	makeComponentLayers() { this.components.forEach(c => c.makeLayer()); }
 	renderComponents() { this.components.forEach(c => c.render()); }
 	animateComponents() { this.components.forEach(c => c.animate()); }
-	refreshComponents() {
-		let args = {
-			chartState: this.state,
-			oldChartState: this.oldState,
-			intermedState: this.intermedState,
-			chartRenderer: this.renderer
-		};
-		this.components.forEach(c => c.refresh(args));
-	}
 
 	renderLegend() {}
 

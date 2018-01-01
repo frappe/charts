@@ -4,6 +4,12 @@
 		"Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
 		"Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
 
+	.multiaxis-chart {
+		.line-horizontal, .y-axis-guide {
+			stroke-width: 2px;
+		}
+	}
+
 	.graph-focus-margin {
 		margin: 0px 5%;
 	}
@@ -53,9 +59,9 @@
 	.axis, .chart-label {
 		fill: #555b51;
 		// temp commented
-		// line {
-		// 	stroke: #dadada;
-		// }
+		line {
+			stroke: #dadada;
+		}
 	}
 	.percentage-graph {
 		.progress {

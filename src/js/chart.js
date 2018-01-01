@@ -3,6 +3,7 @@ import '../scss/charts.scss';
 import BarChart from './charts/BarChart';
 import LineChart from './charts/LineChart';
 import ScatterChart from './charts/ScatterChart';
+import MultiAxisChart from './charts/MultiAxisChart';
 import PercentageChart from './charts/PercentageChart';
 import PieChart from './charts/PieChart';
 import Heatmap from './charts/Heatmap';
@@ -18,6 +19,7 @@ import Heatmap from './charts/Heatmap';
 const chartTypes = {
 	line: LineChart,
 	bar: BarChart,
+	multiaxis: MultiAxisChart,
 	scatter: ScatterChart,
 	percentage: PercentageChart,
 	heatmap: Heatmap,
