@@ -1,6 +1,7 @@
 import AxisChart from './AxisChart';
 import { Y_AXIS_MARGIN } from '../utils/margins';
 import { ChartComponent } from '../objects/ChartComponent';
+import { floatTwo } from '../utils/helpers';
 
 export default class MultiAxisChart extends AxisChart {
 	constructor(args) {
@@ -12,12 +13,11 @@ export default class MultiAxisChart extends AxisChart {
 
 	setHorizontalMargin() {
 		let noOfLeftAxes = this.data.datasets.filter(d => d.axisPosition === 'left').length;
-		this.translateXLeft = (noOfLeftAxes) * Y_AXIS_MARGIN;
+		this.translateXLeft = (noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
 		this.translateXRight = (this.data.datasets.length - noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
 	}
 
 	prepareYAxis() {
-		this.state.yAxes = [];
 		let sets = this.state.datasets;
 		// let axesLeft = sets.filter(d => d.axisPosition === 'left');
 		// let axesRight = sets.filter(d => d.axisPosition === 'right');
@@ -27,12 +27,10 @@ export default class MultiAxisChart extends AxisChart {
 		let leftCount = 0, rightCount = 0;
 
 		sets.forEach((d, i) => {
-			this.state.yAxes.push({
+			d.yAxis = {
 				position: d.axisPosition,
-				color: d.color,
-				dataValues: d.values,
 				index: d.axisPosition === 'left' ? leftCount++ : rightCount++
-			});
+			};
 		});
 	}
 
@@ -48,7 +46,7 @@ export default class MultiAxisChart extends AxisChart {
 	// }
 
 	configUnits() {
-		this.state.unitArgs = {
+		this.unitArgs = {
 			type: 'bar',
 			args: {
 				spaceWidth: this.state.unitWidth/2,
@@ -57,41 +55,75 @@ export default class MultiAxisChart extends AxisChart {
 	}
 
 	setYAxis() {
-		this.state.yAxes.map(yAxis => {
-			// console.log(yAxis);
-			this.calcYAxisParameters(yAxis, yAxis.dataValues, this.unitType === 'line');
-			// console.log(yAxis);
+		this.state.datasets.map(d => {
+			this.calcYAxisParameters(d.yAxis, d.values, this.unitType === 'line');
 		});
 	}
 
-	setupYAxesComponents() {
-		this.yAxesComponents = this.state.yAxes.map((e, i) => {
+	calcYUnits() {
+		this.state.datasets.map(d => {
+			d.positions = d.values.map(val => floatTwo(d.yAxis.zeroLine - val * d.yAxis.scaleMultiplier));
+		});
+	}
+
+	getYAxesComponents() {
+		return this.state.datasets.map((e, i) => {
 			return new ChartComponent({
 				layerClass: 'y axis y-axis-' + i,
 				make: () => {
-					let d = this.state.yAxes[i];
-					this.renderer.setZeroline(d.zeroline);
-					let axis = d.positions.map((position, j) =>
-						this.renderer.yLine(position, d.labels[j], {
-							pos: d.position,
-							mode: 'tick',
-							offset: d.index * Y_AXIS_MARGIN,
-							stroke: this.colors[i]
-						})
+					let yAxis = this.state.datasets[i].yAxis;
+					this.renderer.setZeroline(yAxis.zeroline);
+					let options = {
+						pos: yAxis.position,
+						mode: 'tick',
+						offset: yAxis.index * Y_AXIS_MARGIN,
+						stroke: this.colors[i]
+					};
+
+					let yAxisLines = yAxis.positions.map((position, j) =>
+						this.renderer.yLine(position, yAxis.labels[j], options)
 					);
 
-					let guidePos = d.position === 'left'
-						? -1 * d.index * Y_AXIS_MARGIN
-						: this.width + d.index * Y_AXIS_MARGIN;
+					let guidePos = yAxis.position === 'left'
+						? -1 * yAxis.index * Y_AXIS_MARGIN
+						: this.width + yAxis.index * Y_AXIS_MARGIN;
 
-					axis.push(this.renderer.xLine(guidePos, '', {
+					yAxisLines.push(this.renderer.xLine(guidePos, '', {
 						pos:'top',
 						mode: 'span',
 						stroke: this.colors[i],
 						className: 'y-axis-guide'
 					}));
 
-					return axis;
+					return yAxisLines;
+				},
+				animate: () => {}
+			});
+		});
+	}
+
+	getDataUnitsComponents() {
+		return this.state.datasets.map((d, index) => {
+			return new ChartComponent({
+				layerClass: 'dataset-units dataset-' + index,
+				make: () => {
+					let d = this.state.datasets[index];
+					let unitType = this.unitArgs;
+
+					// the only difference, should be tied to datasets or default
+					this.renderer.setZeroline(d.yAxis.zeroLine);
+
+					return d.positions.map((y, j) => {
+						return this.renderer[unitType.type](
+							this.state.xAxisPositions[j],
+							y,
+							unitType.args,
+							this.colors[index],
+							j,
+							index,
+							this.state.datasetLength
+						);
+					});
 				},
 				animate: () => {}
 			});

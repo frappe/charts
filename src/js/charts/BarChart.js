@@ -19,7 +19,7 @@ export default class BarChart extends AxisChart {
 	// }
 
 	configUnits() {
-		this.state.unitArgs = {
+		this.unitArgs = {
 			type: 'bar',
 			args: {
 				spaceWidth: this.state.unitWidth/2,

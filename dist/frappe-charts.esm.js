@@ -1029,13 +1029,13 @@ class ChartComponent {
 		make,
 		animate
 	}) {
-		this.layerClass = layerClass; // 'y axis'
+		this.layerClass = layerClass;
 		this.layerTransform = layerTransform;
 		this.make = make;
 		this.animate = animate;
 
 		this.layer = undefined;
-		this.store = []; //[[]]  depends on indexed
+		this.store = [];
 	}
 
 	refresh(args) {}
@@ -1057,8 +1057,6 @@ class ChartComponent {
 		this.layer = makeSVGGroup(this.parent, this.layerClass, this.layerTransform);
 	}
 }
-
-// Indexed according to dataset
 
 const REPLACE_ALL_NEW_DUR = 250;
 
@@ -1491,19 +1489,14 @@ class AxisChart extends BaseChart {
 		// Y
 		s.datasetsLabels = this.data.datasets.map(d => d.name);
 
-		// s.yUnitValues = [[]]; indexed component
-		// s.yUnitValues = [[[12, 34, 68], [10, 5, 46]], [[20, 20, 20]]]; // array of indexed components
-		s.yUnitValues = s.datasets.map(d => d.values); // indexed component
-
 		this.setYAxis();
 
 		this.calcYUnits();
 
+		this.calcYMaximums();
+
 		// should be state
 		this.configUnits();
-
-		// temp
-		s.unitTypes = s.datasets.map(d => d.unitArgs ? d.unitArgs : this.state.unitArgs);
 	}
 
 	setYAxis() {
@@ -1533,13 +1526,16 @@ class AxisChart extends BaseChart {
 
 	calcYUnits() {
 		let s = this.state;
-		s.yUnitPositions = s.yUnitValues.map(values =>
-			values.map(val => floatTwo(s.zeroLine - val * s.scaleMultiplier))
-		);
+		s.datasets.map(d => {
+			d.positions = d.values.map(val => floatTwo(s.yAxis.zeroLine - val * s.yAxis.scaleMultiplier));
+		});
+	}
 
+	calcYMaximums() {
+		let s = this.state;
 		s.yUnitMinimums = new Array(s.datasetLength).fill(9999);
 		s.datasets.map((d, i) => {
-			s.yUnitPositions[i].map((pos, j) => {
+			d.positions.map((pos, j) => {
 				if(pos < s.yUnitMinimums[j]) {
 					s.yUnitMinimums[j] = pos;
 				}
@@ -1560,7 +1556,7 @@ class AxisChart extends BaseChart {
 
 	getAllYValues() {
 		// TODO: yMarkers, regions, sums, every Y value ever
-		return [].concat(...this.state.yUnitValues);
+		return [].concat(...this.state.datasets.map(d => d.values));
 	}
 
 	calcIntermedState() {
@@ -1570,20 +1566,44 @@ class AxisChart extends BaseChart {
 	setupValues() {}
 
 	setupComponents() {
-		// temp : will be an indexedchartcomponent
-		// this.yAxisAux = new ChartComponent({
-		// 	layerClass: 'y axis aux',
-		// 	make: (renderer, positions, values) => {
-		// 		positions = [0, 70, 140, 270];
-		// 		values = [300, 200, 100, 0];
-		// 		return positions.map((position, i) => renderer.yLine(position, values[i], 'right'));
-		// 	},
-		// 	animate: () => {}
-		// });
 
-		this.setupYAxesComponents();
+		// TODO: rebind new units
+		// if(this.isNavigable) {
+		// 	this.bind_units(units_array);
+		// }
 
-		this.xAxis = new ChartComponent({
+		this.yMarkerLines = {};
+		this.xMarkerLines = {};
+
+		// Marker Regions
+
+		this.components = [
+			// temp
+			// this.yAxesAux,
+			...this.getYAxesComponents(),
+			this.getXAxisComponents(),
+			// this.yMarkerLines,
+			// this.xMarkerLines,
+			...this.getPathComponents(),
+			...this.getDataUnitsComponents(this.config),
+		];
+	}
+
+	getYAxesComponents() {
+		return [new ChartComponent({
+			layerClass: 'y axis',
+			make: () => {
+				let s = this.state;
+				return s.yAxis.positions.map((position, i) =>
+					this.renderer.yLine(position, s.yAxis.labels[i], {pos:'right'})
+				);
+			},
+			animate: () => {}
+		})];
+	}
+
+	getXAxisComponents() {
+		return new ChartComponent({
 			layerClass: 'x axis',
 			make: () => {
 				let s = this.state;
@@ -1599,71 +1619,35 @@ class AxisChart extends BaseChart {
 			// 	});
 			// }
 		});
-
-		// this.dataUnits = new IndexedChartComponent({
-		// 	layerClass: 'dataset-units',
-		// 	make: (renderer, xPosSet, yPosSet, color, unitType,
-		// 		yValueSet, datasetIndex, noOfDatasets) => {;
-
-		// 		let unitSet = yPosSet.map((y, i) => {
-		// 			return renderer[unitType.type](
-		// 				xPosSet[i],
-		// 				y,
-		// 				unitType.args,
-		// 				color,
-		// 				i,
-		// 				datasetIndex,
-		// 				noOfDatasets
-		// 			);
-		// 		});
-
-		// 		if(this.type === 'line') {
-		// 			let pointsList = yPosSet.map((y, i) => (xPosSet[i] + ',' + y));
-		// 			let pointsStr = pointsList.join("L");
-
-		// 			unitSet.unshift(makePath("M"+pointsStr, 'line-graph-path', color));
-		// 		}
-
-		// 		return unitSet;
-		// 	},
-		// 	argsKeys: ['xUnitPositions', 'yUnitPositions',
-		// 		'colors', 'unitTypes', 'yUnitValues'],
-		// 	animate: () => {}
-		// });
-
-		// TODO: rebind new units
-		// if(this.isNavigable) {
-		// 	this.bind_units(units_array);
-		// }
-
-		this.yMarkerLines = {};
-		this.xMarkerLines = {};
-
-		// Marker Regions
-
-		this.components = [
-			// temp
-			// this.yAxesAux,
-			...this.yAxesComponents,
-			this.xAxis,
-			// this.yMarkerLines,
-			// this.xMarkerLines,
-
-			// this.dataUnits,
-		];
 	}
 
-	setupYAxesComponents() {
-		this.yAxesComponents = [ new ChartComponent({
-			layerClass: 'y axis',
-			make: () => {
-				let s = this.state;
-				return s.yAxis.positions.map((position, i) =>
-					this.renderer.yLine(position, s.yAxis.labels[i], {pos:'right'})
-				);
-			},
-			animate: () => {}
-		})];
+	getDataUnitsComponents() {
+		return this.state.datasets.map((d, index) => {
+			return new ChartComponent({
+				layerClass: 'dataset-units dataset-' + index,
+				make: () => {
+					let d = this.state.datasets[index];
+					let unitType = this.unitArgs;
+
+					return d.positions.map((y, j) => {
+						return this.renderer[unitType.type](
+							this.state.xAxisPositions[j],
+							y,
+							unitType.args,
+							this.colors[index],
+							j,
+							index,
+							this.state.datasetLength
+						);
+					});
+				},
+				animate: () => {}
+			});
+		});
+	}
+
+	getPathComponents() {
+		return [];
 	}
 
 	refreshRenderer() {
@@ -1707,7 +1691,7 @@ class BarChart extends AxisChart {
 	// }
 
 	configUnits() {
-		this.state.unitArgs = {
+		this.unitArgs = {
 			type: 'bar',
 			args: {
 				spaceWidth: this.state.unitWidth/2,
@@ -1785,10 +1769,7 @@ class LineChart extends AxisChart {
 	configure(args) {
 		super.configure(args);
 		this.config.xAxisMode = args.xAxisMode || 'span';
-		// this.config.yAxisMode = args.yAxisMode || 'span';
-
-		// temp
-		this.config.yAxisMode = args.yAxisMode || 'tick';
+		this.config.yAxisMode = args.yAxisMode || 'span';
 
 		this.config.dotRadius = args.dotRadius || 4;
 
@@ -1798,7 +1779,7 @@ class LineChart extends AxisChart {
 	}
 
 	configUnits() {
-		this.state.unitArgs = {
+		this.unitArgs = {
 			type: 'dot',
 			args: { radius: this.config.dotRadius }
 		};
@@ -1810,77 +1791,48 @@ class LineChart extends AxisChart {
 		this.state.xOffset = 0;
 	}
 
-	// setupComponents() {
-	// 	super.setupComponents();
-
-	// 	this.paths = new IndexedChartComponent({
-	// 		layerClass: 'path',
-	// 		make: (renderer, xPosSet, yPosSet, color, unitType,
-	// 			yValueSet, datasetIndex, noOfDatasets) => {
-
-	// 			let pointsList = yPosSet.map((y, i) => (xPosSet[i] + ',' + y));
-	// 			let pointsStr = pointsList.join("L");
-
-	// 			return [makePath("M"+pointsStr, 'line-graph-path', color)];
-	// 		},
-	// 		argsKeys: ['xUnitPositions', 'yUnitPositions',
-	// 			'colors', 'unitTypes', 'yUnitValues'],
-	// 		animate: () => {}
-	// 	});
-
-	// 	this.components.push(this.paths);
-	// }
-
-	make_path(d, x_positions, y_positions, color) {
-		let pointsList = y_positions.map((y, i) => (x_positions[i] + ',' + y));
-		let pointsStr = pointsList.join("L");
-
-		this.paths_groups[d.index].textContent = '';
-
-		d.path = makePath("M"+pointsStr, 'line-graph-path', color);
-		this.paths_groups[d.index].appendChild(d.path);
-
-		if(this.heatline) {
-			let gradient_id = makeGradient(this.svg_defs, color);
-			d.path.style.stroke = `url(#${gradient_id})`;
-		}
-
-		if(this.regionFill) {
-			this.fill_region_for_dataset(d, color, pointsStr);
+	getDataUnitsComponents(config) {
+		if(!config.showDots) {
+			return [];
+		} else {
+			return super.getDataUnitsComponents();
 		}
 	}
 
-	setupPreUnitLayers() {
-		// Path groups
-		this.paths_groups = [];
-		this.y.map((d, i) => {
-			this.paths_groups[i] = makeSVGGroup(
-				this.drawArea,
-				'path-group path-group-' + i
-			);
+	getPathComponents() {
+		return this.state.datasets.map((d, index) => {
+			return new ChartComponent({
+				layerClass: 'path dataset-path',
+				make: () => {
+					let d = this.state.datasets[index];
+					let color = this.colors[index];
+
+					let pointsList = d.positions.map((y, i) => (this.state.xAxisPositions[i] + ',' + y));
+					let pointsStr = pointsList.join("L");
+					let path = makePath("M"+pointsStr, 'line-graph-path', color);
+
+					// HeatLine
+					if(this.config.heatline) {
+						let gradient_id = makeGradient(this.svg_defs, color);
+						path.style.stroke = `url(#${gradient_id})`;
+					}
+
+					let components = [path];
+
+					// Region
+					if(this.config.regionFill) {
+						let gradient_id_region = makeGradient(this.svg_defs, color, true);
+
+						let zeroLine = this.state.yAxis.zeroLine;
+						let pathStr = "M" + `0,${zeroLine}L` + pointsStr + `L${this.width},${zeroLine}`;
+						components.push(makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`));
+					}
+
+					return components;
+				},
+				animate: () => {}
+			});
 		});
-	}
-
-	makeDatasetUnits(x_values, y_values, color, dataset_index,
-		no_of_datasets, units_group, units_array, unit) {
-		if(this.showDots) {
-			super.makeDatasetUnits(x_values, y_values, color, dataset_index,
-				no_of_datasets, units_group, units_array, unit);
-		}
-	}
-
-	make_paths() {
-		this.y.map(d => {
-			this.make_path(d, this.xAxisPositions, d.yUnitPositions, d.color || this.colors[d.index]);
-		});
-	}
-
-	fill_region_for_dataset(d, color, pointsStr) {
-		let gradient_id = makeGradient(this.svg_defs, color, true);
-		let pathStr = "M" + `0,${this.zeroLine}L` + pointsStr + `L${this.width},${this.zeroLine}`;
-
-		d.regionPath = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id})`);
-		this.paths_groups[d.index].appendChild(d.regionPath);
 	}
 }
 
@@ -1921,12 +1873,11 @@ class MultiAxisChart extends AxisChart {
 
 	setHorizontalMargin() {
 		let noOfLeftAxes = this.data.datasets.filter(d => d.axisPosition === 'left').length;
-		this.translateXLeft = (noOfLeftAxes) * Y_AXIS_MARGIN;
+		this.translateXLeft = (noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
 		this.translateXRight = (this.data.datasets.length - noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
 	}
 
 	prepareYAxis() {
-		this.state.yAxes = [];
 		let sets = this.state.datasets;
 		// let axesLeft = sets.filter(d => d.axisPosition === 'left');
 		// let axesRight = sets.filter(d => d.axisPosition === 'right');
@@ -1936,12 +1887,10 @@ class MultiAxisChart extends AxisChart {
 		let leftCount = 0, rightCount = 0;
 
 		sets.forEach((d, i) => {
-			this.state.yAxes.push({
+			d.yAxis = {
 				position: d.axisPosition,
-				color: d.color,
-				dataValues: d.values,
 				index: d.axisPosition === 'left' ? leftCount++ : rightCount++
-			});
+			};
 		});
 	}
 
@@ -1957,7 +1906,7 @@ class MultiAxisChart extends AxisChart {
 	// }
 
 	configUnits() {
-		this.state.unitArgs = {
+		this.unitArgs = {
 			type: 'bar',
 			args: {
 				spaceWidth: this.state.unitWidth/2,
@@ -1966,41 +1915,75 @@ class MultiAxisChart extends AxisChart {
 	}
 
 	setYAxis() {
-		this.state.yAxes.map(yAxis => {
-			// console.log(yAxis);
-			this.calcYAxisParameters(yAxis, yAxis.dataValues, this.unitType === 'line');
-			// console.log(yAxis);
+		this.state.datasets.map(d => {
+			this.calcYAxisParameters(d.yAxis, d.values, this.unitType === 'line');
 		});
 	}
 
-	setupYAxesComponents() {
-		this.yAxesComponents = this.state.yAxes.map((e, i) => {
+	calcYUnits() {
+		this.state.datasets.map(d => {
+			d.positions = d.values.map(val => floatTwo(d.yAxis.zeroLine - val * d.yAxis.scaleMultiplier));
+		});
+	}
+
+	getYAxesComponents() {
+		return this.state.datasets.map((e, i) => {
 			return new ChartComponent({
 				layerClass: 'y axis y-axis-' + i,
 				make: () => {
-					let d = this.state.yAxes[i];
-					this.renderer.setZeroline(d.zeroline);
-					let axis = d.positions.map((position, j) =>
-						this.renderer.yLine(position, d.labels[j], {
-							pos: d.position,
-							mode: 'tick',
-							offset: d.index * Y_AXIS_MARGIN,
-							stroke: this.colors[i]
-						})
+					let yAxis = this.state.datasets[i].yAxis;
+					this.renderer.setZeroline(yAxis.zeroline);
+					let options = {
+						pos: yAxis.position,
+						mode: 'tick',
+						offset: yAxis.index * Y_AXIS_MARGIN,
+						stroke: this.colors[i]
+					};
+
+					let yAxisLines = yAxis.positions.map((position, j) =>
+						this.renderer.yLine(position, yAxis.labels[j], options)
 					);
 
-					let guidePos = d.position === 'left'
-						? -1 * d.index * Y_AXIS_MARGIN
-						: this.width + d.index * Y_AXIS_MARGIN;
+					let guidePos = yAxis.position === 'left'
+						? -1 * yAxis.index * Y_AXIS_MARGIN
+						: this.width + yAxis.index * Y_AXIS_MARGIN;
 
-					axis.push(this.renderer.xLine(guidePos, '', {
+					yAxisLines.push(this.renderer.xLine(guidePos, '', {
 						pos:'top',
 						mode: 'span',
 						stroke: this.colors[i],
 						className: 'y-axis-guide'
 					}));
 
-					return axis;
+					return yAxisLines;
+				},
+				animate: () => {}
+			});
+		});
+	}
+
+	getDataUnitsComponents() {
+		return this.state.datasets.map((d, index) => {
+			return new ChartComponent({
+				layerClass: 'dataset-units dataset-' + index,
+				make: () => {
+					let d = this.state.datasets[index];
+					let unitType = this.unitArgs;
+
+					// the only difference, should be tied to datasets or default
+					this.renderer.setZeroline(d.yAxis.zeroLine);
+
+					return d.positions.map((y, j) => {
+						return this.renderer[unitType.type](
+							this.state.xAxisPositions[j],
+							y,
+							unitType.args,
+							this.colors[index],
+							j,
+							index,
+							this.state.datasetLength
+						);
+					});
 				},
 				animate: () => {}
 			});
