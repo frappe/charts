@@ -31,6 +31,10 @@ export class ChartComponent {
 		this.parent = parent;
 	}
 
+	loadAnimatedComponents() {
+		this.animate(this.store);
+	}
+
 	makeLayer() {
 		this.layer = makeSVGGroup(this.parent, this.layerClass, this.layerTransform);
 	}

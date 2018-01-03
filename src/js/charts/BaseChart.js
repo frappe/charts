@@ -4,6 +4,7 @@ import { makeSVGContainer, makeSVGDefs, makeSVGGroup } from '../utils/draw';
 import { getStringWidth } from '../utils/helpers';
 import { getColor, DEFAULT_COLORS } from '../utils/colors';
 import { getDifferentChart } from '../config';
+import { runSMILAnimation } from '../utils/animation';
 
 export default class BaseChart {
 	constructor({
@@ -127,7 +128,6 @@ export default class BaseChart {
 	_setup() {
 		this.bindWindowEvents();
 		this.setupConstants();
-		this.prepareData();
 		this.setupComponents();
 
 		this.setMargins();
@@ -181,7 +181,7 @@ export default class BaseChart {
 		this.calcWidth();
 
 		// refresh conponent with chart
-		this.refresh();
+		this.refresh(this.data);
 
 		this.makeChartArea();
 		this.setComponentParent();
@@ -192,15 +192,16 @@ export default class BaseChart {
 
 		// first time plain render, so no rerender
 		this.renderComponents();
+		this.renderConstants();
 
 		if(this.config.animate) this.update(this.firstUpdateData);
 	}
 
-	update() {
+	update(data) {
 		// difference from draw(): yes you do rerender everything here as well,
 		// but not things like the chart itself or layers, mosty only at component level
 		// HERE IS WHERE THE ACTUAL STATE CHANGES, and old one matters, not in draw
-		this.refresh();
+		this.refresh(data);
 		this.reRender();
 	}
 
@@ -217,11 +218,11 @@ export default class BaseChart {
 		this.width = this.baseWidth - (this.translateXLeft + this.translateXRight);
 	}
 
-	refresh() { //?? refresh?
-		this.oldState = this.state ? Object.assign({}, this.state) : {};
-		this.intermedState = {};
+	refresh(data) { //?? refresh?
+		this.oldState = this.state ? JSON.parse(JSON.stringify(this.state)) : {};
+		this.intermedState = {}; // use this for the extra position problems?
 
-		this.prepareData();
+		this.prepareData(data);
 		this.reCalc();
 		this.refreshRenderer();
 	}
@@ -233,7 +234,7 @@ export default class BaseChart {
 			this.baseWidth,
 			this.baseHeight
 		);
-		this.svg_defs = makeSVGDefs(this.svg);
+		this.svgDefs = makeSVGDefs(this.svg);
 
 		this.drawArea = makeSVGGroup(
 			this.svg,
@@ -243,6 +244,8 @@ export default class BaseChart {
 	}
 
 	prepareData() {}
+
+	renderConstants() {}
 
 	reCalc() {}
 	// Will update values(state)
@@ -255,8 +258,9 @@ export default class BaseChart {
 			this.renderComponents();
 			return;
 		}
-		this.intermedState = this.calcIntermedState();
-		this.animateComponents();
+		this.elementsToAnimate = [];
+		this.loadAnimatedComponents();
+		runSMILAnimation(this.chartWrapper, this.svg, this.elementsToAnimate);
 		setTimeout(() => {
 			this.renderComponents();
 		}, 400);
@@ -264,15 +268,11 @@ export default class BaseChart {
 		// (opt, should not redraw if still in animate?)
 	}
 
-	calcIntermedState() {
-		this.intermedState = {};
-	}
-
 	// convenient component array abstractions
 	setComponentParent() { this.components.forEach(c => c.setupParent(this.drawArea)); };
 	makeComponentLayers() { this.components.forEach(c => c.makeLayer()); }
 	renderComponents() { this.components.forEach(c => c.render()); }
-	animateComponents() { this.components.forEach(c => c.animate()); }
+	loadAnimatedComponents() { this.components.forEach(c => c.loadAnimatedComponents()); }
 
 	renderLegend() {}
 

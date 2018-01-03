@@ -1,4 +1,5 @@
 import { getBarHeightAndYAttr } from './draw-utils';
+import { STD_EASING, UNIT_ANIM_DUR, MARKER_LINE_ANIM_DUR, PATH_ANIM_DUR } from './animate';
 
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
@@ -230,7 +231,7 @@ export class AxisChartRenderer {
 		this.zeroLine = zeroLine;
 	}
 
-	bar(x, yTop, args, color, index, datasetIndex, noOfDatasets, prevX, prevY) {
+	bar(x, yTop, args, color, index, datasetIndex, noOfDatasets) {
 
 		let totalWidth = this.unitWidth - args.spaceWidth;
 		let startX = x - totalWidth/2;
@@ -325,9 +326,66 @@ export class AxisChartRenderer {
 		});
 	}
 
+
 	xMarker() {}
 	yMarker() {}
 
 	xRegion() {}
 	yRegion() {}
+
+	animatebar(bar, x, yTop, index, noOfDatasets) {
+		let start = x - this.avgUnitWidth/4;
+		let width = (this.avgUnitWidth/2)/noOfDatasets;
+		let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
+
+		x = start + (width * index);
+
+		return [bar, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING];
+		// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
+	}
+
+	animatedot(dot, x, yTop) {
+		return [dot, {cx: x, cy: yTop}, UNIT_ANIM_DUR, STD_EASING];
+		// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
+	}
+
+	animatepath(paths, pathStr) {
+		let pathComponents = [];
+		const animPath = [paths[0], {d:"M"+pathStr}, PATH_ANIM_DUR, STD_EASING];
+		pathComponents.push(animPath);
+
+		if(paths[1]) {
+			let regStartPt = `0,${this.zeroLine}L`;
+			let regEndPt = `L${this.totalWidth}, ${this.zeroLine}`;
+
+			const animRegion = [
+				paths[1],
+				{d:"M" + regStartPt + pathStr + regEndPt},
+				PATH_ANIM_DUR,
+				STD_EASING
+			];
+			pathComponents.push(animRegion);
+		}
+
+		return pathComponents;
+	}
+
+	translate(unit, oldCoord, newCoord, duration) {
+		return [
+			unit,
+			{transform: newCoord.join(', ')},
+			duration,
+			STD_EASING,
+			"translate",
+			{transform: oldCoord.join(', ')}
+		];
+	}
+
+	translateVertLine(xLine, newX, oldX) {
+		return this.translate(xLine, [oldX, 0], [newX, 0], MARKER_LINE_ANIM_DUR);
+	}
+
+	translateHoriLine(yLine, newY, oldY) {
+		return this.translate(yLine, [0, oldY], [0, newY], MARKER_LINE_ANIM_DUR);
+	}
 }

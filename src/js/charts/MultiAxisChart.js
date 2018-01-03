@@ -17,7 +17,10 @@ export default class MultiAxisChart extends AxisChart {
 		this.translateXRight = (this.data.datasets.length - noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
 	}
 
-	prepareYAxis() {
+	prepareYAxis() { }
+
+	prepareData(data) {
+		super.prepareData(data);
 		let sets = this.state.datasets;
 		// let axesLeft = sets.filter(d => d.axisPosition === 'left');
 		// let axesRight = sets.filter(d => d.axisPosition === 'right');
@@ -66,8 +69,22 @@ export default class MultiAxisChart extends AxisChart {
 		});
 	}
 
+	renderConstants() {
+		this.state.datasets.map(d => {
+			let guidePos = d.yAxis.position === 'left'
+				? -1 * d.yAxis.index * Y_AXIS_MARGIN
+				: this.width + d.yAxis.index * Y_AXIS_MARGIN;
+			this.renderer.xLine(guidePos, '', {
+				pos:'top',
+				mode: 'span',
+				stroke: this.colors[i],
+				className: 'y-axis-guide'
+			})
+		});
+	}
+
 	getYAxesComponents() {
-		return this.state.datasets.map((e, i) => {
+		return this.data.datasets.map((e, i) => {
 			return new ChartComponent({
 				layerClass: 'y axis y-axis-' + i,
 				make: () => {
@@ -80,30 +97,18 @@ export default class MultiAxisChart extends AxisChart {
 						stroke: this.colors[i]
 					};
 
-					let yAxisLines = yAxis.positions.map((position, j) =>
+					return yAxis.positions.map((position, j) =>
 						this.renderer.yLine(position, yAxis.labels[j], options)
 					);
-
-					let guidePos = yAxis.position === 'left'
-						? -1 * yAxis.index * Y_AXIS_MARGIN
-						: this.width + yAxis.index * Y_AXIS_MARGIN;
-
-					yAxisLines.push(this.renderer.xLine(guidePos, '', {
-						pos:'top',
-						mode: 'span',
-						stroke: this.colors[i],
-						className: 'y-axis-guide'
-					}));
-
-					return yAxisLines;
 				},
 				animate: () => {}
 			});
 		});
 	}
 
+	// TODO remove renderer zeroline from above and below
 	getDataUnitsComponents() {
-		return this.state.datasets.map((d, index) => {
+		return this.data.datasets.map((d, index) => {
 			return new ChartComponent({
 				layerClass: 'dataset-units dataset-' + index,
 				make: () => {
@@ -125,7 +130,38 @@ export default class MultiAxisChart extends AxisChart {
 						);
 					});
 				},
-				animate: () => {}
+				animate: (svgUnits) => {
+					let d = this.state.datasets[index];
+					let unitType = this.unitArgs.type;
+
+					// have been updated in axis render;
+					let newX = this.state.xAxisPositions;
+					let newY = this.state.datasets[index].positions;
+
+					let lastUnit = svgUnits[svgUnits.length - 1];
+					let parentNode = lastUnit.parentNode;
+
+					if(this.oldState.xExtra > 0) {
+						for(var i = 0; i<this.oldState.xExtra; i++) {
+							let unit = lastUnit.cloneNode(true);
+							parentNode.appendChild(unit);
+							svgUnits.push(unit);
+						}
+					}
+
+					this.renderer.setZeroline(d.yAxis.zeroLine);
+
+					svgUnits.map((unit, i) => {
+						if(newX[i] === undefined || newY[i] === undefined) return;
+						this.elementsToAnimate.push(this.renderer['animate' + unitType](
+							unit, // unit, with info to replace where it came from in the data
+							newX[i],
+							newY[i],
+							index,
+							this.state.noOfDatasets
+						));
+					});
+				}
 			});
 		});
 	}

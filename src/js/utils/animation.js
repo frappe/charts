@@ -72,24 +72,18 @@ function animateSVG(svgContainer, elements) {
 	let animElements = [];
 
 	elements.map(element => {
-		let obj = element[0];
-		let parent = obj.unit.parentNode;
+		let unit = element[0];
+		let parent = unit.parentNode;
 
 		let animElement, newElement;
 
-		element[0] = obj.unit;
+		element[0] = unit;
 		[animElement, newElement] = animateSVGElement(...element);
 
 		newElements.push(newElement);
 		animElements.push([animElement, parent]);
 
-		parent.replaceChild(animElement, obj.unit);
-
-		if(obj.array) {
-			obj.array[obj.index] = newElement;
-		} else {
-			obj.object[obj.key] = newElement;
-		}
+		parent.replaceChild(animElement, unit);
 	});
 
 	let animSvg = svgContainer.cloneNode(true);

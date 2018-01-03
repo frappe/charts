@@ -32,18 +32,26 @@ export default class AxisChart extends BaseChart {
 		//
 	}
 
-	prepareData() {
+	setupConstants() {
+		this.state = {
+			xAxisLabels: [],
+			xAxisPositions: [],
+		}
+
+		this.prepareYAxis();
+	}
+
+	prepareData(data) {
 		let s = this.state;
 
-		s.xAxisLabels = this.data.labels || [];
-		s.xAxisPositions = [];
+		s.xAxisLabels = data.labels || [];
 
 		s.datasetLength = s.xAxisLabels.length;
 
 		let zeroArray = new Array(s.datasetLength).fill(0);
 
-		s.datasets = this.data.datasets; // whole dataset info too
-		if(!this.data.datasets) {
+		s.datasets = data.datasets; // whole dataset info too
+		if(!data.datasets) {
 			// default
 			s.datasets = [{
 				values: zeroArray	// Proof that state version will be seen instead of this.data
@@ -70,9 +78,6 @@ export default class AxisChart extends BaseChart {
 		});
 
 		s.noOfDatasets = s.datasets.length;
-
-		// s.yAxis = [];
-		this.prepareYAxis();
 	}
 
 	prepareYAxis() {
@@ -85,17 +90,12 @@ export default class AxisChart extends BaseChart {
 	reCalc() {
 		let s = this.state;
 
-		// X
 		s.xAxisLabels = this.data.labels;
 		this.calcXPositions();
 
-		// Y
 		s.datasetsLabels = this.data.datasets.map(d => d.name);
-
 		this.setYAxis();
-
 		this.calcYUnits();
-
 		this.calcYMaximums();
 
 		// should be state
@@ -175,18 +175,14 @@ export default class AxisChart extends BaseChart {
 		// 	this.bind_units(units_array);
 		// }
 
-		this.yMarkerLines = {};
-		this.xMarkerLines = {};
-
-		// Marker Regions
-
 		this.components = [
 			// temp
 			// this.yAxesAux,
 			...this.getYAxesComponents(),
 			this.getXAxisComponents(),
-			// this.yMarkerLines,
-			// this.xMarkerLines,
+			// this.getYMarkerLines(),
+			// this.getXMarkerLines(),
+			// TODO: regions too?
 			...this.getPathComponents(),
 			...this.getDataUnitsComponents(this.config),
 		];
@@ -201,7 +197,32 @@ export default class AxisChart extends BaseChart {
 					this.renderer.yLine(position, s.yAxis.labels[i], {pos:'right'})
 				);
 			},
-			animate: () => {}
+			animate: (yLines) => {
+				// Equilize
+				let newY = this.state.yAxis.positions;
+				let oldY = this.oldState.yAxis.positions;
+
+				let extra = newY.length - oldY.length;
+				let lastLine = yLines[yLines.length - 1];
+				let parentNode = lastLine.parentNode;
+
+				[oldY, newY] = equilizeNoOfElements(oldY, newY);
+				// console.log(newY.slice(), oldY.slice());
+				if(extra > 0) {
+					for(var i = 0; i<extra; i++) {
+						let line = lastLine.cloneNode(true);
+						parentNode.appendChild(line);
+						yLines.push(line);
+					}
+				}
+
+				yLines.map((line, i) => {
+					// console.log(line, newY[i], oldY[i]);
+					this.elementsToAnimate.push(this.renderer.translateHoriLine(
+						line, newY[i], oldY[i]
+					));
+				});
+			}
 		})];
 	}
 
@@ -210,22 +231,39 @@ export default class AxisChart extends BaseChart {
 			layerClass: 'x axis',
 			make: () => {
 				let s = this.state;
+				// TODO: xAxis Label spacing
 				return s.xAxisPositions.map((position, i) =>
 					this.renderer.xLine(position, s.xAxisLabels[i], {pos:'top'})
 				);
 			},
-			// animate: (animator, lines, oldX, newX) => {
-			// 	lines.map((xLine, i) => {
-			// 		elements_to_animate.push(animator.verticalLine(
-			// 			xLine, newX[i], oldX[i]
-			// 		));
-			// 	});
-			// }
+			animate: (xLines) => {
+				// Equilize
+				let newX = this.state.xAxisPositions;
+				let oldX = this.oldState.xAxisPositions;
+
+				this.oldState.xExtra = newX.length - oldX.length;
+				let lastLine = xLines[xLines.length - 1];
+				let parentNode = lastLine.parentNode;
+
+				[oldX, newX] = equilizeNoOfElements(oldX, newX);
+				if(this.oldState.xExtra > 0) {
+					for(var i = 0; i<this.oldState.xExtra; i++) {
+						let line = lastLine.cloneNode(true);
+						parentNode.appendChild(line);
+						xLines.push(line);
+					}
+				}
+				xLines.map((line, i) => {
+					this.elementsToAnimate.push(this.renderer.translateVertLine(
+						line, newX[i], oldX[i]
+					));
+				});
+			}
 		});
 	}
 
 	getDataUnitsComponents() {
-		return this.state.datasets.map((d, index) => {
+		return this.data.datasets.map((d, index) => {
 			return new ChartComponent({
 				layerClass: 'dataset-units dataset-' + index,
 				make: () => {
@@ -240,16 +278,52 @@ export default class AxisChart extends BaseChart {
 							this.colors[index],
 							j,
 							index,
-							this.state.datasetLength
+							this.state.noOfDatasets
 						);
 					});
 				},
-				animate: () => {}
+				animate: (svgUnits) => {
+					let unitType = this.unitArgs.type;
+
+					// have been updated in axis render;
+					let newX = this.state.xAxisPositions;
+					let newY = this.state.datasets[index].positions;
+
+					let lastUnit = svgUnits[svgUnits.length - 1];
+					let parentNode = lastUnit.parentNode;
+
+					if(this.oldState.xExtra > 0) {
+						for(var i = 0; i<this.oldState.xExtra; i++) {
+							let unit = lastUnit.cloneNode(true);
+							parentNode.appendChild(unit);
+							svgUnits.push(unit);
+						}
+					}
+
+					svgUnits.map((unit, i) => {
+						if(newX[i] === undefined || newY[i] === undefined) return;
+						this.elementsToAnimate.push(this.renderer['animate' + unitType](
+							unit, // unit, with info to replace where it came from in the data
+							newX[i],
+							newY[i],
+							index,
+							this.state.noOfDatasets
+						));
+					});
+				}
 			});
 		});
 	}
 
 	getPathComponents() {
+		return [];
+	}
+
+	getYMarkerLines() {
+		return [];
+	}
+
+	getXMarkerLines() {
 		return [];
 	}
 
@@ -273,4 +347,30 @@ export default class AxisChart extends BaseChart {
 		}
 	}
 
+	// API
+
+	addDataPoint(label, datasetValues, index=this.state.datasetLength) {
+		// console.log(label, datasetValues, this.data.labels);
+		this.data.labels.splice(index, 0, label);
+		this.data.datasets.map((d, i) => {
+			d.values.splice(index, 0, datasetValues[i]);
+		});
+		// console.log(this.data);
+		this.update(this.data);
+	}
+
+	removeDataPoint(index = this.state.datasetLength-1) {
+		this.data.labels.splice(index, 1);
+		this.data.datasets.map(d => {
+			d.values.splice(index, 1);
+		});
+		this.update(this.data);
+	}
+
+	updateData() {
+		// animate if same no. of datasets,
+		// else return new chart
+
+		//
+	}
 }
