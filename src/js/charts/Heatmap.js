@@ -197,7 +197,7 @@ export default class Heatmap extends BaseChart {
 	render_month_labels() {
 		// this.first_month_label = 1;
 		// if (this.first_week_start.getDate() > 8) {
-		// 	this.first_month_label = 0;
+		//	this.first_month_label = 0;
 		// }
 		// this.last_month_label = 1;
 
@@ -241,11 +241,11 @@ export default class Heatmap extends BaseChart {
 
 				let month = this.month_names[parseInt(date_parts[1])-1].substring(0, 3);
 
-				let g_off = this.chart_wrapper.getBoundingClientRect(), p_off = e.target.getBoundingClientRect();
+				let p_off = e.target.getBoundingClientRect();
 
 				let width = parseInt(e.target.getAttribute('width'));
-				let x = p_off.left - g_off.left + (width+2)/2;
-				let y = p_off.top - g_off.top - (width+2)/2;
+				let x = p_off.left + (width+2)/2;
+				let y = p_off.top - (width+2)/2;
 				let value = count + ' ' + this.count_label;
 				let name = ' on ' + month + ' ' + date_parts[0] + ', ' + date_parts[2];
 

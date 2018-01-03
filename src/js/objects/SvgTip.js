@@ -79,7 +79,7 @@ export default class SvgTip {
 
 		this.top = this.y - this.container.offsetHeight;
 		this.left = this.x - width/2;
-		let max_left = this.parent.offsetWidth - width;
+		let max_left = window.innerWidth - (width/2);
 
 		let pointer = this.container.querySelector('.svg-pointer');
 
