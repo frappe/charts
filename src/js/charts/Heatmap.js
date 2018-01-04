@@ -12,7 +12,8 @@ export default class Heatmap extends BaseChart {
 		data = {},
 		discrete_domains = 0,
 		count_label = '',
-		legend_colors = []
+		legend_colors = [],
+		labels = null,
 	}) {
 		super(arguments[0]);
 
@@ -23,6 +24,7 @@ export default class Heatmap extends BaseChart {
 		this.data = data;
 		this.discrete_domains = discrete_domains;
 		this.count_label = count_label;
+		this.labels = labels;
 
 		let today = new Date();
 		this.start = start || addDays(today, 365);
@@ -215,8 +217,15 @@ export default class Heatmap extends BaseChart {
 		this.month_start_points.pop();
 
 		this.month_start_points.map((start, i) => {
-			let month_name =  this.month_names[this.months[i]].substring(0, 3);
-			let text = makeText('y-value-text', start+12, 10, month_name);
+			let text;
+			if (this.labels) {
+				let label_name = this.labels[this.months[i]];
+				text = makeText('y-value-text', start+12, 10, label_name);
+			}
+			else {
+				let month_name =  this.month_names[this.months[i]].substring(0, 3);
+				text = makeText('y-value-text', start+12, 10, month_name);
+			}
 			this.domain_label_group.appendChild(text);
 		});
 	}
