@@ -109,8 +109,8 @@ export default class BaseChart {
 	set_margins(height) {
 		this.base_height = height;
 		this.height = height - 40;
-		this.translate_x = 60;
-		this.translate_y = 10;
+		this.translate_x = this.raw_chart_args.marginLeft || 60;
+		this.translate_y = this.raw_chart_args.marginTop || 10;
 	}
 
 	setup() {
