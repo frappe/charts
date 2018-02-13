@@ -21,6 +21,7 @@ export default class LineChart extends AxisChart {
 		this.dot_radius = args.dot_radius || 4;
 		this.heatline = args.heatline;
 		this.type = 'line';
+		this.y_axis_exp_based_on_range = args.y_axis_exp_based_on_range;
 
 		this.setup();
 	}

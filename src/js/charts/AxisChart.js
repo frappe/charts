@@ -60,7 +60,7 @@ export default class AxisChart extends BaseChart {
 			values = values.concat(this.y_sums);
 		}
 
-		this.y_axis_values = calcIntervals(values, this.type === 'line');
+		this.y_axis_values = calcIntervals(values, this.type === 'line', this.y_axis_exp_based_on_range === true);
 
 		if(!this.y_old_axis_values) {
 			this.y_old_axis_values = this.y_axis_values.slice();

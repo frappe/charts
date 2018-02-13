@@ -59,8 +59,17 @@ function getRangeIntervals(max, min=0) {
 	return intervals;
 }
 
-function getIntervals(maxValue, minValue=0) {
-	let [normalMaxValue, exponent] = normalize(maxValue);
+function getIntervals(maxValue, minValue=0, expBasedOnRange=false) {
+	let exponent, normalMaxValue;
+
+	if (expBasedOnRange) {
+		let range = maxValue - minValue;
+		exponent = normalize(range)[1];
+		normalMaxValue = maxValue/Math.pow(10, exponent);
+	} else {
+		[normalMaxValue, exponent] = normalize(maxValue);
+	}
+
 	let normalMinValue = minValue ? minValue/Math.pow(10, exponent): 0;
 
 	// Allow only 7 significant digits
@@ -71,7 +80,7 @@ function getIntervals(maxValue, minValue=0) {
 	return intervals;
 }
 
-export function calcIntervals(values, withMinimum=false) {
+export function calcIntervals(values, withMinimum=false, expBasedOnRange=false) {
 	//*** Where the magic happens ***
 
 	// Calculates best-fit y intervals from given values
@@ -104,7 +113,7 @@ export function calcIntervals(values, withMinimum=false) {
 		if(!withMinimum) {
 			intervals = getIntervals(maxValue);
 		} else {
-			intervals = getIntervals(maxValue, minValue);
+			intervals = getIntervals(maxValue, minValue, expBasedOnRange);
 		}
 	}
 
@@ -144,7 +153,7 @@ export function calcIntervals(values, withMinimum=false) {
 		if(!withMinimum) {
 			intervals = getIntervals(pseudoMaxValue);
 		} else {
-			intervals = getIntervals(pseudoMaxValue, pseudoMinValue);
+			intervals = getIntervals(pseudoMaxValue, pseudoMinValue, expBasedOnRange);
 		}
 
 		intervals = intervals.reverse().map(d => d * (-1));
