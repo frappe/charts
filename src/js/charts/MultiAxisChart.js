@@ -6,9 +6,12 @@ import { floatTwo } from '../utils/helpers';
 export default class MultiAxisChart extends AxisChart {
 	constructor(args) {
 		super(args);
+		// this.unitType = args.unitType || 'line';
+		// this.setup();
+	}
+
+	preSetup() {
 		this.type = 'multiaxis';
-		this.unitType = args.unitType || 'line';
-		this.setup();
 	}
 
 	setHorizontalMargin() {
@@ -107,7 +110,7 @@ export default class MultiAxisChart extends AxisChart {
 	}
 
 	// TODO remove renderer zeroline from above and below
-	getDataUnitsComponents() {
+	getChartComponents() {
 		return this.data.datasets.map((d, index) => {
 			return new ChartComponent({
 				layerClass: 'dataset-units dataset-' + index,

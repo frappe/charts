@@ -44,7 +44,7 @@ export function equilizeNoOfElements(array1, array2,
 // return values.map((value, i) => {
 // 	let space_taken = getStringWidth(value, char_width) + 2;
 // 	if(space_taken > allowed_space) {
-// 		if(is_series) {
+// 		if(isSeries) {
 // 			// Skip some axis lines if X axis is a series
 // 			let skips = 1;
 // 			while((space_taken/skips)*2 > allowed_space) {

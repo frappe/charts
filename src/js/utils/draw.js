@@ -1,16 +1,18 @@
 import { getBarHeightAndYAttr } from './draw-utils';
+import { getStringWidth } from './helpers';
 import { STD_EASING, UNIT_ANIM_DUR, MARKER_LINE_ANIM_DUR, PATH_ANIM_DUR } from './animate';
 
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
+const BASE_BG_COLOR = '#F7FAFC';
 
 function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
-function createSVG(tag, o) {
+export function createSVG(tag, o) {
 	var element = document.createElementNS("http://www.w3.org/2000/svg", tag);
 
 	for (var i in o) {
@@ -119,7 +121,7 @@ export function makeHeatSquare(className, x, y, size, fill='none', data={}) {
 		y: y,
 		width: size,
 		height: size,
-		fill: fill
+		fill: 1
 	};
 
 	Object.keys(data).map(key => {
@@ -140,7 +142,7 @@ export function makeText(className, x, y, content) {
 	});
 }
 
-export function makeVertLine(x, label, y1, y2, options={}) {
+function makeVertLine(x, label, y1, y2, options={}) {
 	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	let l = createSVG('line', {
 		className: 'line-vertical ' + options.className,
@@ -172,7 +174,7 @@ export function makeVertLine(x, label, y1, y2, options={}) {
 	return line;
 }
 
-export function makeHoriLine(y, label, x1, x2, options={}) {
+function makeHoriLine(y, label, x1, x2, options={}) {
 	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	if(!options.lineType) options.lineType = '';
 	let className = 'line-horizontal ' + options.className +
@@ -182,8 +184,8 @@ export function makeHoriLine(y, label, x1, x2, options={}) {
 		className: className,
 		x1: x1,
 		x2: x2,
-		y1: 0,
-		y2: 0,
+		y1: y,
+		y2: y,
 		styles: {
 			stroke: options.stroke
 		}
@@ -191,7 +193,7 @@ export function makeHoriLine(y, label, x1, x2, options={}) {
 
 	let text = createSVG('text', {
 		x: x1 < x2 ? x1 - LABEL_MARGIN : x1 + LABEL_MARGIN,
-		y: 0,
+		y: y,
 		dy: (FONT_SIZE / 2 - 2) + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': x1 < x2 ? 'end' : 'start',
@@ -199,7 +201,6 @@ export function makeHoriLine(y, label, x1, x2, options={}) {
 	});
 
 	let line = createSVG('g', {
-		transform: `translate(0, ${ y })`,
 		'stroke-opacity': 1
 	});
 
@@ -231,46 +232,11 @@ export class AxisChartRenderer {
 		this.zeroLine = zeroLine;
 	}
 
-	bar(x, yTop, args, color, index, datasetIndex, noOfDatasets) {
-
-		let totalWidth = this.unitWidth - args.spaceWidth;
-		let startX = x - totalWidth/2;
-
-		// temp commented
-		// let width = totalWidth / noOfDatasets;
-		// let currentX = startX + width * datasetIndex;
-
-		// temp
-		let width = totalWidth;
-		let currentX = startX;
-
-		let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
-
-		return createSVG('rect', {
-			className: `bar mini`,
-			style: `fill: ${color}`,
-			'data-point-index': index,
-			x: currentX,
-			y: y,
-			width: width,
-			height: height
-		});
-	}
-
-	dot(x, y, args, color, index) {
-		return createSVG('circle', {
-			style: `fill: ${color}`,
-			'data-point-index': index,
-			cx: x,
-			cy: y,
-			r: args.radius
-		});
-	}
-
 	xLine(x, label, options={}) {
 		if(!options.pos) options.pos = 'bottom';
 		if(!options.offset) options.offset = 0;
 		if(!options.mode) options.mode = this.xAxisMode;
+		console.log(this.xAxisMode);
 		if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 		if(!options.className) options.className = '';
 
@@ -296,7 +262,8 @@ export class AxisChartRenderer {
 
 		return makeVertLine(x, label, y1, y2, {
 			stroke: options.stroke,
-			className: options.className
+			className: options.className,
+			lineType: options.lineType
 		});
 	}
 
@@ -322,16 +289,102 @@ export class AxisChartRenderer {
 
 		return makeHoriLine(y, label, x1, x2, {
 			stroke: options.stroke,
-			className: options.className
+			className: options.className,
+			lineType: options.lineType
 		});
 	}
 
 
 	xMarker() {}
-	yMarker() {}
+	yMarker(y, label, options={}) {
+		let labelSvg = createSVG('text', {
+			className: 'chart-label',
+			x: this.totalWidth - getStringWidth(label, 5) - LABEL_MARGIN,
+			y: y - FONT_SIZE - 2,
+			dy: (FONT_SIZE / 2) + 'px',
+			'font-size': FONT_SIZE + 'px',
+			'text-anchor': 'start',
+			innerHTML: label+""
+		});
 
-	xRegion() {}
-	yRegion() {}
+		let line = makeHoriLine(y, '', 0, this.totalWidth, {
+			stroke: options.stroke || BASE_LINE_COLOR,
+			className: options.className || '',
+			lineType: options.lineType
+		});
+
+		line.appendChild(labelSvg);
+
+		return line;
+	}
+
+	xRegion() {
+		return createSVG('rect', {
+			className: `bar mini`, // remove class
+			style: `fill: rgba(228, 234, 239, 0.49)`,
+			// 'data-point-index': index,
+			x: 0,
+			y: y2,
+			width: this.totalWidth,
+			height: y1 - y2
+		});
+
+		return region;
+	}
+
+	yRegion(y1, y2, label) {
+		// return a group
+
+		let rect = createSVG('rect', {
+			className: `bar mini`, // remove class
+			style: `fill: rgba(228, 234, 239, 0.49)`,
+			// 'data-point-index': index,
+			x: 0,
+			y: y2,
+			width: this.totalWidth,
+			height: y1 - y2
+		});
+
+		let upperBorder = createSVG('line', {
+			className: 'line-horizontal',
+			x1: 0,
+			x2: this.totalWidth,
+			y1: y2,
+			y2: y2,
+			styles: {
+				stroke: BASE_LINE_COLOR
+			}
+		});
+		let lowerBorder = createSVG('line', {
+			className: 'line-horizontal',
+			x1: 0,
+			x2: this.totalWidth,
+			y1: y1,
+			y2: y1,
+			styles: {
+				stroke: BASE_LINE_COLOR
+			}
+		});
+
+		let labelSvg = createSVG('text', {
+			className: 'chart-label',
+			x: this.totalWidth - getStringWidth(label, 4.5) - LABEL_MARGIN,
+			y: y2 - FONT_SIZE - 2,
+			dy: (FONT_SIZE / 2) + 'px',
+			'font-size': FONT_SIZE + 'px',
+			'text-anchor': 'start',
+			innerHTML: label+""
+		});
+
+		let region = createSVG('g', {});
+
+		region.appendChild(rect);
+		region.appendChild(upperBorder);
+		region.appendChild(lowerBorder);
+		region.appendChild(labelSvg);
+
+		return region;
+	}
 
 	animatebar(bar, x, yTop, index, noOfDatasets) {
 		let start = x - this.avgUnitWidth/4;

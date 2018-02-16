@@ -1,20 +1,20 @@
-function $(expr, con) {
+function $$1(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
 
 
-$.create = (tag, o) => {
+$$1.create = (tag, o) => {
 	var element = document.createElement(tag);
 
 	for (var i in o) {
 		var val = o[i];
 
 		if (i === "inside") {
-			$(val).appendChild(element);
+			$$1(val).appendChild(element);
 		}
 		else if (i === "around") {
-			var ref = $(val);
+			var ref = $$1(val);
 			ref.parentNode.insertBefore(element, ref);
 			element.appendChild(ref);
 
@@ -98,7 +98,7 @@ class SvgTip {
 	}
 
 	make_tooltip() {
-		this.container = $.create('div', {
+		this.container = $$1.create('div', {
 			inside: this.parent,
 			className: 'graph-svg-tip comparison',
 			innerHTML: `<span class="title"></span>
@@ -128,7 +128,7 @@ class SvgTip {
 		this.list_values.map((set, i) => {
 			const color = this.colors[i] || 'black';
 
-			let li = $.create('li', {
+			let li = $$1.create('li', {
 				styles: {
 					'border-top': `3px solid ${color}`
 				},
@@ -228,6 +228,9 @@ function fillArray(array, count, element, start=false) {
  * @param {String} string
  * @param {Number} charWidth Width of single char in pixels
  */
+function getStringWidth(string, charWidth) {
+	return (string+"").length * charWidth;
+}
 
 const MIN_BAR_PERCENT_HEIGHT = 0.01;
 
@@ -273,7 +276,7 @@ function equilizeNoOfElements(array1, array2,
 // return values.map((value, i) => {
 // 	let space_taken = getStringWidth(value, char_width) + 2;
 // 	if(space_taken > allowed_space) {
-// 		if(is_series) {
+// 		if(isSeries) {
 // 			// Skip some axis lines if X axis is a series
 // 			let skips = 1;
 // 			while((space_taken/skips)*2 > allowed_space) {
@@ -298,8 +301,7 @@ const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
-
-function $$1(expr, con) {
+function $$2(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
@@ -310,10 +312,10 @@ function createSVG(tag, o) {
 		var val = o[i];
 
 		if (i === "inside") {
-			$$1(val).appendChild(element);
+			$$2(val).appendChild(element);
 		}
 		else if (i === "around") {
-			var ref = $$1(val);
+			var ref = $$2(val);
 			ref.parentNode.insertBefore(element, ref);
 			element.appendChild(ref);
 
@@ -412,7 +414,7 @@ function makeHeatSquare(className, x, y, size, fill='none', data={}) {
 		y: y,
 		width: size,
 		height: size,
-		fill: fill
+		fill: 1
 	};
 
 	Object.keys(data).map(key => {
@@ -475,8 +477,8 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 		className: className,
 		x1: x1,
 		x2: x2,
-		y1: 0,
-		y2: 0,
+		y1: y,
+		y2: y,
 		styles: {
 			stroke: options.stroke
 		}
@@ -484,7 +486,7 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 
 	let text = createSVG('text', {
 		x: x1 < x2 ? x1 - LABEL_MARGIN : x1 + LABEL_MARGIN,
-		y: 0,
+		y: y,
 		dy: (FONT_SIZE / 2 - 2) + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': x1 < x2 ? 'end' : 'start',
@@ -492,7 +494,6 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 	});
 
 	let line = createSVG('g', {
-		transform: `translate(0, ${ y })`,
 		'stroke-opacity': 1
 	});
 
@@ -524,46 +525,11 @@ class AxisChartRenderer {
 		this.zeroLine = zeroLine;
 	}
 
-	bar(x, yTop, args, color, index, datasetIndex, noOfDatasets) {
-
-		let totalWidth = this.unitWidth - args.spaceWidth;
-		let startX = x - totalWidth/2;
-
-		// temp commented
-		// let width = totalWidth / noOfDatasets;
-		// let currentX = startX + width * datasetIndex;
-
-		// temp
-		let width = totalWidth;
-		let currentX = startX;
-
-		let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
-
-		return createSVG('rect', {
-			className: `bar mini`,
-			style: `fill: ${color}`,
-			'data-point-index': index,
-			x: currentX,
-			y: y,
-			width: width,
-			height: height
-		});
-	}
-
-	dot(x, y, args, color, index) {
-		return createSVG('circle', {
-			style: `fill: ${color}`,
-			'data-point-index': index,
-			cx: x,
-			cy: y,
-			r: args.radius
-		});
-	}
-
 	xLine(x, label, options={}) {
 		if(!options.pos) options.pos = 'bottom';
 		if(!options.offset) options.offset = 0;
 		if(!options.mode) options.mode = this.xAxisMode;
+		console.log(this.xAxisMode);
 		if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 		if(!options.className) options.className = '';
 
@@ -589,7 +555,8 @@ class AxisChartRenderer {
 
 		return makeVertLine(x, label, y1, y2, {
 			stroke: options.stroke,
-			className: options.className
+			className: options.className,
+			lineType: options.lineType
 		});
 	}
 
@@ -613,16 +580,102 @@ class AxisChartRenderer {
 
 		return makeHoriLine(y, label, x1, x2, {
 			stroke: options.stroke,
-			className: options.className
+			className: options.className,
+			lineType: options.lineType
 		});
 	}
 
 
 	xMarker() {}
-	yMarker() {}
+	yMarker(y, label, options={}) {
+		let labelSvg = createSVG('text', {
+			className: 'chart-label',
+			x: this.totalWidth - getStringWidth(label, 5) - LABEL_MARGIN,
+			y: y - FONT_SIZE - 2,
+			dy: (FONT_SIZE / 2) + 'px',
+			'font-size': FONT_SIZE + 'px',
+			'text-anchor': 'start',
+			innerHTML: label+""
+		});
 
-	xRegion() {}
-	yRegion() {}
+		let line = makeHoriLine(y, '', 0, this.totalWidth, {
+			stroke: options.stroke || BASE_LINE_COLOR,
+			className: options.className || '',
+			lineType: options.lineType
+		});
+
+		line.appendChild(labelSvg);
+
+		return line;
+	}
+
+	xRegion() {
+		return createSVG('rect', {
+			className: `bar mini`, // remove class
+			style: `fill: rgba(228, 234, 239, 0.49)`,
+			// 'data-point-index': index,
+			x: 0,
+			y: y2,
+			width: this.totalWidth,
+			height: y1 - y2
+		});
+
+		return region;
+	}
+
+	yRegion(y1, y2, label) {
+		// return a group
+
+		let rect = createSVG('rect', {
+			className: `bar mini`, // remove class
+			style: `fill: rgba(228, 234, 239, 0.49)`,
+			// 'data-point-index': index,
+			x: 0,
+			y: y2,
+			width: this.totalWidth,
+			height: y1 - y2
+		});
+
+		let upperBorder = createSVG('line', {
+			className: 'line-horizontal',
+			x1: 0,
+			x2: this.totalWidth,
+			y1: y2,
+			y2: y2,
+			styles: {
+				stroke: BASE_LINE_COLOR
+			}
+		});
+		let lowerBorder = createSVG('line', {
+			className: 'line-horizontal',
+			x1: 0,
+			x2: this.totalWidth,
+			y1: y1,
+			y2: y1,
+			styles: {
+				stroke: BASE_LINE_COLOR
+			}
+		});
+
+		let labelSvg = createSVG('text', {
+			className: 'chart-label',
+			x: this.totalWidth - getStringWidth(label, 4.5) - LABEL_MARGIN,
+			y: y2 - FONT_SIZE - 2,
+			dy: (FONT_SIZE / 2) + 'px',
+			'font-size': FONT_SIZE + 'px',
+			'text-anchor': 'start',
+			innerHTML: label+""
+		});
+
+		let region = createSVG('g', {});
+
+		region.appendChild(rect);
+		region.appendChild(upperBorder);
+		region.appendChild(lowerBorder);
+		region.appendChild(labelSvg);
+
+		return region;
+	}
 
 	animatebar(bar, x, yTop, index, noOfDatasets) {
 		let start = x - this.avgUnitWidth/4;
@@ -1033,7 +1086,7 @@ class BaseChart {
 	}
 
 	makeContainer() {
-		this.container = $.create('div', {
+		this.container = $$1.create('div', {
 			className: 'chart-container',
 			innerHTML: `<h6 class="title">${this.title}</h6>
 				<h6 class="sub-title uppercase">${this.subtitle}</h6>
@@ -1249,6 +1302,196 @@ class ChartComponent {
 	}
 }
 
+class AxisChartController {
+	constructor(meta) {
+		// TODO: make configurable passing args
+		this.refreshMeta(meta);
+		this.setupArgs();
+	}
+
+	setupArgs() {}
+
+	refreshMeta(meta) {
+		this.meta = meta || {};
+	}
+
+	draw() {}
+	animate() {}
+}
+
+
+
+class BarChartController extends AxisChartController {
+	constructor(meta) {
+		super(meta);
+	}
+
+	setupArgs() {
+		this.args = {
+			spaceRatio: 0.5,
+		};
+	}
+
+	draw(x, yTop, color, index, datasetIndex, noOfDatasets) {
+		let totalWidth = this.meta.unitWidth - this.meta.unitWidth * this.args.spaceRatio;
+		let startX = x - totalWidth/2;
+
+		// temp commented
+		// let width = totalWidth / noOfDatasets;
+		// let currentX = startX + width * datasetIndex;
+
+		// temp
+		let width = totalWidth;
+		let currentX = startX;
+
+		let [height, y] = getBarHeightAndYAttr(yTop, this.meta.zeroLine, this.meta.totalHeight);
+
+		return createSVG('rect', {
+			className: `bar mini`,
+			style: `fill: ${color}`,
+			'data-point-index': index,
+			x: currentX,
+			y: y,
+			width: width,
+			height: height
+		});
+	}
+
+	animate(bar, x, yTop, index, noOfDatasets) {
+		let start = x - this.meta.avgUnitWidth/4;
+		let width = (this.meta.avgUnitWidth/2)/noOfDatasets;
+		let [height, y] = getBarHeightAndYAttr(yTop, this.meta.zeroLine, this.meta.totalHeight);
+
+		x = start + (width * index);
+
+		return [bar, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING];
+		// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
+	}
+}
+
+class LineChartController extends AxisChartController {
+	constructor(meta) {
+		super(meta);
+	}
+
+	setupArgs() {
+		console.log(this);
+		this.args = {
+			radius: this.meta.dotSize || 4
+		};
+	}
+
+	draw(x, y, color, index) {
+		return createSVG('circle', {
+			style: `fill: ${color}`,
+			'data-point-index': index,
+			cx: x,
+			cy: y,
+			r: this.args.radius
+		});
+	}
+
+	animate(dot, x, yTop) {
+		return [dot, {cx: x, cy: yTop}, UNIT_ANIM_DUR, STD_EASING];
+		// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
+	}
+}
+
+function getPaths(yList, xList, color, heatline=false, regionFill=false) {
+	let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
+	let pointsStr = pointsList.join("L");
+	let path = makePath("M"+pointsStr, 'line-graph-path', color);
+
+	// HeatLine
+	if(heatline) {
+		let gradient_id = makeGradient(this.svgDefs, color);
+		path.style.stroke = `url(#${gradient_id})`;
+	}
+
+	let components = [path];
+
+	// Region
+	if(regionFill) {
+		let gradient_id_region = makeGradient(this.svgDefs, color, true);
+
+		let zeroLine = this.state.yAxis.zeroLine;
+		// TODO: use zeroLine OR minimum
+		let pathStr = "M" + `0,${zeroLine}L` + pointsStr + `L${this.width},${zeroLine}`;
+		components.push(makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`));
+	}
+
+	return components;
+}
+
+// class BarChart extends AxisChart {
+// 	constructor(args) {
+// 		super(args);
+// 		this.type = 'bar';
+// 		this.setup();
+// 	}
+
+// 	configure(args) {
+// 		super.configure(args);
+// 		this.config.xAxisMode = args.xAxisMode || 'tick';
+// 		this.config.yAxisMode = args.yAxisMode || 'span';
+// 	}
+
+// 	// =================================
+
+// 	makeOverlay() {
+// 		// Just make one out of the first element
+// 		let index = this.xAxisLabels.length - 1;
+// 		let unit = this.y[0].svg_units[index];
+// 		this.updateCurrentDataPoint(index);
+
+// 		if(this.overlay) {
+// 			this.overlay.parentNode.removeChild(this.overlay);
+// 		}
+// 		this.overlay = unit.cloneNode();
+// 		this.overlay.style.fill = '#000000';
+// 		this.overlay.style.opacity = '0.4';
+// 		this.drawArea.appendChild(this.overlay);
+// 	}
+
+// 	bindOverlay() {
+// 		// on event, update overlay
+// 		this.parent.addEventListener('data-select', (e) => {
+// 			this.update_overlay(e.svg_unit);
+// 		});
+// 	}
+
+// 	bind_units(units_array) {
+// 		units_array.map(unit => {
+// 			unit.addEventListener('click', () => {
+// 				let index = unit.getAttribute('data-point-index');
+// 				this.updateCurrentDataPoint(index);
+// 			});
+// 		});
+// 	}
+
+// 	update_overlay(unit) {
+// 		let attributes = [];
+// 		Object.keys(unit.attributes).map(index => {
+// 			attributes.push(unit.attributes[index]);
+// 		});
+
+// 		attributes.filter(attr => attr.specified).map(attr => {
+// 			this.overlay.setAttribute(attr.name, attr.nodeValue);
+// 		});
+
+// 		this.overlay.style.fill = '#000000';
+// 		this.overlay.style.opacity = '0.4';
+// 	}
+
+// 	onLeftArrow() {
+// 		this.updateCurrentDataPoint(this.currentIndex - 1);
+// 	}
+
+// 	onRightArrow() {
+// 		this.updateCurrentDataPoint(this.currentIndex + 1);
+// 	}
+// }
+
 function normalize(x) {
 	// Calculates mantissa and exponent of a number
 	// Returns normalized number and exponent
@@ -1457,11 +1700,33 @@ function getMaxCheckpoint(value, distribution) {
 class AxisChart extends BaseChart {
 	constructor(args) {
 		super(args);
-		this.is_series = args.is_series;
-		this.format_tooltip_y = args.format_tooltip_y;
-		this.format_tooltip_x = args.format_tooltip_x;
+		this.isSeries = args.isSeries;
+		this.formatTooltipY = args.formatTooltipY;
+		this.formatTooltipX = args.formatTooltipX;
+		this.unitType = args.unitType || 'line';
+
+		this.setupUnitRenderer();
 
 		this.zeroLine = this.height;
+		this.preSetup();
+		this.setup();
+	}
+
+	configure(args) {
+		super.configure();
+
+		this.config.xAxisMode = args.xAxisMode;
+		this.config.yAxisMode = args.yAxisMode;
+	}
+
+	preSetup() {}
+
+	setupUnitRenderer() {
+		let options = this.rawChartArgs.options;
+		this.unitRenderers = {
+			bar: new BarChartController(options),
+			line: new LineChartController(options)
+		};
 	}
 
 	setHorizontalMargin() {
@@ -1481,7 +1746,15 @@ class AxisChart extends BaseChart {
 		this.state = {
 			xAxisLabels: [],
 			xAxisPositions: [],
+			xAxisMode: this.config.xAxisMode,
+			yAxisMode: this.config.yAxisMode
 		};
+
+		this.data.datasets.map(d => {
+			if(!d.chartType ) {
+				d.chartType = this.unitType;
+			}
+		});
 
 		this.prepareYAxis();
 	}
@@ -1523,6 +1796,8 @@ class AxisChart extends BaseChart {
 		});
 
 		s.noOfDatasets = s.datasets.length;
+		s.yMarkers = data.yMarkers;
+		s.yRegions = data.yRegions;
 	}
 
 	prepareYAxis() {
@@ -1542,6 +1817,7 @@ class AxisChart extends BaseChart {
 		this.setYAxis();
 		this.calcYUnits();
 		this.calcYMaximums();
+		this.calcYRegions();
 
 		// should be state
 		this.configUnits();
@@ -1556,7 +1832,8 @@ class AxisChart extends BaseChart {
 		let s = this.state;
 		this.setUnitWidthAndXOffset();
 		s.xAxisPositions = s.xAxisLabels.map((d, i) =>
-			floatTwo(s.xOffset + i * s.unitWidth));
+			floatTwo(s.xOffset + i * s.unitWidth)
+		);
 
 		s.xUnitPositions = new Array(s.noOfDatasets).fill(s.xAxisPositions);
 	}
@@ -1595,8 +1872,26 @@ class AxisChart extends BaseChart {
 		// this.make_tooltip();
 	}
 
+	calcYRegions() {
+		let s = this.state;
+		if(s.yMarkers) {
+			s.yMarkers = s.yMarkers.map(d => {
+				d.value = floatTwo(s.yAxis.zeroLine - d.value * s.yAxis.scaleMultiplier);
+				return d;
+			});
+		}
+		if(s.yRegions) {
+			s.yRegions = s.yRegions.map(d => {
+				d.start = floatTwo(s.yAxis.zeroLine - d.start * s.yAxis.scaleMultiplier);
+				d.end = floatTwo(s.yAxis.zeroLine - d.end * s.yAxis.scaleMultiplier);
+				return d;
+			});
+		}
+	}
+
 	configUnits() {}
 
+	// Default, as per bar, and mixed. Only line will be a special case
 	setUnitWidthAndXOffset() {
 		this.state.unitWidth = this.width/(this.state.datasetLength);
 		this.state.xOffset = this.state.unitWidth/2;
@@ -1625,11 +1920,11 @@ class AxisChart extends BaseChart {
 			// this.yAxesAux,
 			...this.getYAxesComponents(),
 			this.getXAxisComponents(),
-			// this.getYMarkerLines(),
-			// this.getXMarkerLines(),
-			// TODO: regions too?
-			...this.getPathComponents(),
-			...this.getDataUnitsComponents(this.config),
+			...this.getYRegions(),
+			...this.getXRegions(),
+			...this.getYMarkerLines(),
+			// ...this.getXMarkerLines(),
+			...this.getChartComponents(),
 		];
 	}
 
@@ -1678,7 +1973,9 @@ class AxisChart extends BaseChart {
 				let s = this.state;
 				// TODO: xAxis Label spacing
 				return s.xAxisPositions.map((position, i) =>
-					this.renderer.xLine(position, s.xAxisLabels[i], {pos:'top'})
+					this.renderer.xLine(position, s.xAxisLabels[i]
+						// , {pos:'top'}
+					)
 				);
 			},
 			animate: (xLines) => {
@@ -1707,68 +2004,156 @@ class AxisChart extends BaseChart {
 		});
 	}
 
-	getDataUnitsComponents() {
-		return this.data.datasets.map((d, index) => {
-			return new ChartComponent({
-				layerClass: 'dataset-units dataset-' + index,
-				make: () => {
-					let d = this.state.datasets[index];
-					let unitType = this.unitArgs;
+	getChartComponents() {
+		let dataUnitsComponents = [];
+		// this.state is not defined at this stage
+		this.data.datasets.forEach((d, index) => {
+			if(d.chartType === 'line') {
+				dataUnitsComponents.push(this.getPathComponent(d, index));
+			}
+			console.log(this.unitRenderers[d.chartType], d.chartType);
+			dataUnitsComponents.push(this.getDataUnitComponent(
+				d, index, this.unitRenderers[d.chartType]
+			));
+		});
+		return dataUnitsComponents;
+	}
 
-					return d.positions.map((y, j) => {
-						return this.renderer[unitType.type](
-							this.state.xAxisPositions[j],
-							y,
-							unitType.args,
-							this.colors[index],
-							j,
-							index,
-							this.state.noOfDatasets
-						);
-					});
-				},
-				animate: (svgUnits) => {
-					let unitType = this.unitArgs.type;
+	getDataUnitComponent(d, index, unitRenderer) {
+		return new ChartComponent({
+			layerClass: 'dataset-units dataset-' + index,
+			make: () => {
+				let d = this.state.datasets[index];
 
-					// have been updated in axis render;
-					let newX = this.state.xAxisPositions;
-					let newY = this.state.datasets[index].positions;
+				return d.positions.map((y, j) => {
+					return unitRenderer.draw(
+						this.state.xAxisPositions[j],
+						y,
+						this.colors[index],
+						j,
+						index,
+						this.state.noOfDatasets
+					);
+				});
+			},
+			animate: (svgUnits) => {
+				// have been updated in axis render;
+				let newX = this.state.xAxisPositions;
+				let newY = this.state.datasets[index].positions;
 
-					let lastUnit = svgUnits[svgUnits.length - 1];
-					let parentNode = lastUnit.parentNode;
+				let lastUnit = svgUnits[svgUnits.length - 1];
+				let parentNode = lastUnit.parentNode;
 
-					if(this.oldState.xExtra > 0) {
-						for(var i = 0; i<this.oldState.xExtra; i++) {
-							let unit = lastUnit.cloneNode(true);
-							parentNode.appendChild(unit);
-							svgUnits.push(unit);
-						}
+				if(this.oldState.xExtra > 0) {
+					for(var i = 0; i<this.oldState.xExtra; i++) {
+						let unit = lastUnit.cloneNode(true);
+						parentNode.appendChild(unit);
+						svgUnits.push(unit);
 					}
-
-					svgUnits.map((unit, i) => {
-						if(newX[i] === undefined || newY[i] === undefined) return;
-						this.elementsToAnimate.push(this.renderer['animate' + unitType](
-							unit, // unit, with info to replace where it came from in the data
-							newX[i],
-							newY[i],
-							index,
-							this.state.noOfDatasets
-						));
-					});
 				}
+
+				svgUnits.map((unit, i) => {
+					if(newX[i] === undefined || newY[i] === undefined) return;
+					this.elementsToAnimate.push(unitRenderer.animate(
+						unit, // unit, with info to replace where it came from in the data
+						newX[i],
+						newY[i],
+						index,
+						this.state.noOfDatasets
+					));
+				});
+			}
+		});
+	}
+
+	getPathComponent(d, index) {
+		return new ChartComponent({
+			layerClass: 'path dataset-path',
+			make: () => {
+				let d = this.state.datasets[index];
+				let color = this.colors[index];
+
+				return getPaths(
+					d.positions,
+					this.state.xAxisPositions,
+					color,
+					this.config.heatline,
+					this.config.regionFill
+				);
+			},
+			animate: (paths) => {
+				let newX = this.state.xAxisPositions;
+				let newY = this.state.datasets[index].positions;
+
+				let oldX = this.oldState.xAxisPositions;
+				let oldY = this.oldState.datasets[index].positions;
+
+
+				let parentNode = paths[0].parentNode;
+
+				[oldX, newX] = equilizeNoOfElements(oldX, newX);
+				[oldY, newY] = equilizeNoOfElements(oldY, newY);
+
+				if(this.oldState.xExtra > 0) {
+					paths = getPaths(
+						oldY, oldX, this.colors[index],
+						this.config.heatline,
+						this.config.regionFill
+					);
+					parentNode.textContent = '';
+					paths.map(path => parentNode.appendChild(path));
+				}
+
+				const newPointsList = newY.map((y, i) => (newX[i] + ',' + y));
+				this.elementsToAnimate = this.elementsToAnimate
+					.concat(this.renderer.animatepath(paths, newPointsList.join("L")));
+			}
+		});
+	}
+
+	getYMarkerLines() {
+		if(!this.data.yMarkers) {
+			return [];
+		}
+		return this.data.yMarkers.map((d, index) => {
+			return new ChartComponent({
+				layerClass: 'y-markers',
+				make: () => {
+					let s = this.state;
+					return s.yMarkers.map(marker =>
+						this.renderer.yMarker(marker.value, marker.name,
+							{pos:'right', mode: 'span', lineType: marker.type})
+					);
+				},
+				animate: () => {}
 			});
 		});
 	}
 
-	getPathComponents() {
-		return [];
+	// getXMarkerLines() {
+	// 	return [];
+	// }
+
+	getYRegions() {
+		if(!this.data.yRegions) {
+			return [];
+		}
+		// return [];
+		return this.data.yRegions.map((d, index) => {
+			return new ChartComponent({
+				layerClass: 'y-regions',
+				make: () => {
+					let s = this.state;
+					return s.yRegions.map(region =>
+						this.renderer.yRegion(region.start, region.end, region.name)
+					);
+				},
+				animate: () => {}
+			});
+		});
 	}
 
-	getYMarkerLines() {
-		return [];
-	}
-
-	getXMarkerLines() {
+	getXRegions() {
 		return [];
 	}
 
@@ -1790,6 +2175,88 @@ class AxisChart extends BaseChart {
 		} else {
 			this.renderer.refreshState(state);
 		}
+
+		let meta = {
+			totalHeight: this.height,
+			totalWidth: this.width,
+			zeroLine: this.state.zeroLine,
+			unitWidth: this.state.unitWidth,
+		};
+
+		Object.keys(this.unitRenderers).map(key => {
+			this.unitRenderers[key].refreshMeta(meta);
+		});
+	}
+
+	bindTooltip() {
+		// TODO: could be in tooltip itself, as it is a given functionality for its parent
+		this.chartWrapper.addEventListener('mousemove', (e) => {
+			let o = getOffset(this.chartWrapper);
+			let relX = e.pageX - o.left - this.translateXLeft;
+			let relY = e.pageY - o.top - this.translateY;
+
+			if(relY < this.height + this.translateY * 2) {
+				this.mapTooltipXPosition(relX);
+			} else {
+				this.tip.hide_tip();
+			}
+		});
+	}
+
+	mapTooltipXPosition(relX) {
+		let s = this.state;
+		if(!s.yUnitMinimums) return;
+
+		let titles = s.xAxisLabels;
+		if(this.formatTooltipX && this.formatTooltipX(titles[0])) {
+			titles = titles.map(d=>this.formatTooltipX(d));
+		}
+
+		let formatY = this.formatTooltipY && this.formatTooltipY(this.y[0].values[0]);
+
+		for(var i=s.datasetLength - 1; i >= 0 ; i--) {
+			let xVal = s.xAxisPositions[i];
+			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxisPositions[i-1];
+			if(relX > xVal - s.unitWidth/2) {
+				let x = xVal + this.translateXLeft;
+				let y = s.yUnitMinimums[i] + this.translateY;
+
+				let values = s.datasets.map((set, j) => {
+					return {
+						title: set.title,
+						value: formatY ? this.formatTooltipY(set.values[i]) : set.values[i],
+						color: this.colors[j],
+					};
+				});
+
+				this.tip.set_values(x, y, titles[i], '', values);
+				this.tip.show_tip();
+				break;
+			}
+		}
+	}
+
+	getDataPoint(index=this.current_index) {
+		// check for length
+		let data_point = {
+			index: index
+		};
+		let y = this.y[0];
+		['svg_units', 'yUnitPositions', 'values'].map(key => {
+			let data_key = key.slice(0, key.length-1);
+			data_point[data_key] = y[key][index];
+		});
+		data_point.label = this.xAxisLabels[index];
+		return data_point;
+	}
+
+	updateCurrentDataPoint(index) {
+		index = parseInt(index);
+		if(index < 0) index = 0;
+		if(index >= this.xAxisLabels.length) index = this.xAxisLabels.length - 1;
+		if(index === this.current_index) return;
+		this.current_index = index;
+		$.fire(this.parent, "data-select", this.getDataPoint());
 	}
 
 	// API
@@ -1820,87 +2287,8 @@ class AxisChart extends BaseChart {
 	}
 }
 
-class BarChart extends AxisChart {
-	constructor(args) {
-		super(args);
-		this.type = 'bar';
-		this.setup();
-	}
 
-	configure(args) {
-		super.configure(args);
-		this.config.xAxisMode = args.xAxisMode || 'tick';
-		this.config.yAxisMode = args.yAxisMode || 'span';
-	}
-
-	// setUnitWidthAndXOffset() {
-	// 	this.state.unitWidth = this.width/(this.state.datasetLength);
-	// 	this.state.xOffset = this.state.unitWidth/2;
-	// }
-
-	configUnits() {
-		this.unitArgs = {
-			type: 'bar',
-			args: {
-				spaceWidth: this.state.unitWidth/2,
-			}
-		};
-	}
-
-	// makeOverlay() {
-	// 	// Just make one out of the first element
-	// 	let index = this.xAxisLabels.length - 1;
-	// 	let unit = this.y[0].svg_units[index];
-	// 	this.updateCurrentDataPoint(index);
-
-	// 	if(this.overlay) {
-	// 		this.overlay.parentNode.removeChild(this.overlay);
-	// 	}
-	// 	this.overlay = unit.cloneNode();
-	// 	this.overlay.style.fill = '#000000';
-	// 	this.overlay.style.opacity = '0.4';
-	// 	this.drawArea.appendChild(this.overlay);
-	// }
-
-	// bindOverlay() {
-	// 	// on event, update overlay
-	// 	this.parent.addEventListener('data-select', (e) => {
-	// 		this.update_overlay(e.svg_unit);
-	// 	});
-	// }
-
-	// bind_units(units_array) {
-	// 	units_array.map(unit => {
-	// 		unit.addEventListener('click', () => {
-	// 			let index = unit.getAttribute('data-point-index');
-	// 			this.updateCurrentDataPoint(index);
-	// 		});
-	// 	});
-	// }
-
-	// update_overlay(unit) {
-	// 	let attributes = [];
-	// 	Object.keys(unit.attributes).map(index => {
-	// 		attributes.push(unit.attributes[index]);
-	// 	});
-
-	// 	attributes.filter(attr => attr.specified).map(attr => {
-	// 		this.overlay.setAttribute(attr.name, attr.nodeValue);
-	// 	});
-
-	// 	this.overlay.style.fill = '#000000';
-	// 	this.overlay.style.opacity = '0.4';
-	// }
-
-	// onLeftArrow() {
-	// 	this.updateCurrentDataPoint(this.currentIndex - 1);
-	// }
-
-	// onRightArrow() {
-	// 	this.updateCurrentDataPoint(this.currentIndex + 1);
-	// }
-
-}
+// keep a binding at the end of chart
 
 class LineChart extends AxisChart {
 	constructor(args) {
@@ -1939,87 +2327,6 @@ class LineChart extends AxisChart {
 		this.state.xOffset = 0;
 	}
 
-	getDataUnitsComponents(config) {
-		if(!config.showDots) {
-			return [];
-		}
-		else {
-			return super.getDataUnitsComponents();
-		}
-	}
-
-	getPathComponents() {
-		return this.data.datasets.map((d, index) => {
-			return new ChartComponent({
-				layerClass: 'path dataset-path',
-				make: () => {
-					let d = this.state.datasets[index];
-					let color = this.colors[index];
-
-					return this.getPaths(
-						d.positions,
-						this.state.xAxisPositions,
-						color,
-						this.config.heatline,
-						this.config.regionFill
-					);
-				},
-				animate: (paths) => {
-					let newX = this.state.xAxisPositions;
-					let newY = this.state.datasets[index].positions;
-
-					let oldX = this.oldState.xAxisPositions;
-					let oldY = this.oldState.datasets[index].positions;
-
-
-					let parentNode = paths[0].parentNode;
-
-					[oldX, newX] = equilizeNoOfElements(oldX, newX);
-					[oldY, newY] = equilizeNoOfElements(oldY, newY);
-
-					if(this.oldState.xExtra > 0) {
-						paths = this.getPaths(
-							oldY, oldX, this.colors[index],
-							this.config.heatline,
-							this.config.regionFill
-						);
-						parentNode.textContent = '';
-						paths.map(path => parentNode.appendChild(path));
-					}
-
-					const newPointsList = newY.map((y, i) => (newX[i] + ',' + y));
-					this.elementsToAnimate = this.elementsToAnimate
-						.concat(this.renderer.animatepath(paths, newPointsList.join("L")));
-				}
-			});
-		});
-	}
-
-	getPaths(yList, xList, color, heatline=false, regionFill=false) {
-		let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
-		let pointsStr = pointsList.join("L");
-		let path = makePath("M"+pointsStr, 'line-graph-path', color);
-
-		// HeatLine
-		if(heatline) {
-			let gradient_id = makeGradient(this.svgDefs, color);
-			path.style.stroke = `url(#${gradient_id})`;
-		}
-
-		let components = [path];
-
-		// Region
-		if(regionFill) {
-			let gradient_id_region = makeGradient(this.svgDefs, color, true);
-
-			let zeroLine = this.state.yAxis.zeroLine;
-			// TODO: use zeroLine OR minimum
-			let pathStr = "M" + `0,${zeroLine}L` + pointsStr + `L${this.width},${zeroLine}`;
-			components.push(makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`));
-		}
-
-		return components;
-	}
 }
 
 class ScatterChart extends LineChart {
@@ -2052,9 +2359,12 @@ class ScatterChart extends LineChart {
 class MultiAxisChart extends AxisChart {
 	constructor(args) {
 		super(args);
+		// this.unitType = args.unitType || 'line';
+		// this.setup();
+	}
+
+	preSetup() {
 		this.type = 'multiaxis';
-		this.unitType = args.unitType || 'line';
-		this.setup();
 	}
 
 	setHorizontalMargin() {
@@ -2153,7 +2463,7 @@ class MultiAxisChart extends AxisChart {
 	}
 
 	// TODO remove renderer zeroline from above and below
-	getDataUnitsComponents() {
+	getChartComponents() {
 		return this.data.datasets.map((d, index) => {
 			return new ChartComponent({
 				layerClass: 'dataset-units dataset-' + index,
@@ -2232,19 +2542,19 @@ class PercentageChart extends BaseChart {
 		this.statsWrapper.style.marginBottom = '30px';
 		this.statsWrapper.style.paddingTop = '0px';
 
-		this.chartDiv = $.create('div', {
+		this.chartDiv = $$1.create('div', {
 			className: 'div',
 			inside: this.chartWrapper
 		});
 
-		this.chart = $.create('div', {
+		this.chart = $$1.create('div', {
 			className: 'progress-chart',
 			inside: this.chartDiv
 		});
 	}
 
 	setupLayers() {
-		this.percentageBar = $.create('div', {
+		this.percentageBar = $$1.create('div', {
 			className: 'progress',
 			inside: this.chart
 		});
@@ -2289,7 +2599,7 @@ class PercentageChart extends BaseChart {
 		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
 		this.slices = [];
 		this.slice_totals.map((total, i) => {
-			let slice = $.create('div', {
+			let slice = $$1.create('div', {
 				className: `progress-bar`,
 				inside: this.percentageBar,
 				styles: {
@@ -2323,7 +2633,7 @@ class PercentageChart extends BaseChart {
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {
 			if(d) {
-				let stats = $.create('div', {
+				let stats = $$1.create('div', {
 					className: 'stats',
 					inside: this.statsWrapper
 				});
@@ -2511,7 +2821,7 @@ class PieChart extends BaseChart {
 			const color = this.colors[i];
 
 			if(d) {
-				let stats = $.create('div', {
+				let stats = $$1.create('div', {
 					className: 'stats',
 					inside: this.statsWrapper
 				});
@@ -2819,8 +3129,7 @@ class Heatmap extends BaseChart {
 }
 
 const chartTypes = {
-	line: LineChart,
-	bar: BarChart,
+	mixed: AxisChart,
 	multiaxis: MultiAxisChart,
 	scatter: ScatterChart,
 	percentage: PercentageChart,
@@ -2829,8 +3138,17 @@ const chartTypes = {
 };
 
 function getChartByType(chartType = 'line', options) {
+	if(chartType === 'line') {
+		options.unitType = 'line';
+		return new AxisChart(options);
+	} else if (chartType === 'bar') {
+		options.unitType = 'bar';
+		return new AxisChart(options);
+	}
+
 	if (!chartTypes[chartType]) {
-		return new LineChart(options);
+		console.error("Undefined chart type: " + chartType);
+		return;
 	}
 
 	return new chartTypes[chartType](options);

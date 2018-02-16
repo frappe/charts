@@ -1,8 +1,9 @@
 import BaseChart from './BaseChart';
 import { Y_AXIS_MARGIN } from '../utils/margins';
 import { ChartComponent } from '../objects/ChartComponent';
+import { BarChartController, LineChartController, getPaths } from '../objects/AxisChartControllers';
 import { getOffset, fire } from '../utils/dom';
-import { AxisChartRenderer, makePath, makeGradient } from '../utils/draw';
+import { AxisChartRenderer } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import { Animator } from '../utils/animate';
 import { runSMILAnimation } from '../utils/animation';
@@ -12,11 +13,33 @@ import { floatTwo, fillArray } from '../utils/helpers';
 export default class AxisChart extends BaseChart {
 	constructor(args) {
 		super(args);
-		this.is_series = args.is_series;
-		this.format_tooltip_y = args.format_tooltip_y;
-		this.format_tooltip_x = args.format_tooltip_x;
+		this.isSeries = args.isSeries;
+		this.formatTooltipY = args.formatTooltipY;
+		this.formatTooltipX = args.formatTooltipX;
+		this.unitType = args.unitType || 'line';
+
+		this.setupUnitRenderer();
 
 		this.zeroLine = this.height;
+		this.preSetup();
+		this.setup();
+	}
+
+	configure(args) {
+		super.configure();
+
+		this.config.xAxisMode = args.xAxisMode;
+		this.config.yAxisMode = args.yAxisMode;
+	}
+
+	preSetup() {}
+
+	setupUnitRenderer() {
+		let options = this.rawChartArgs.options;
+		this.unitRenderers = {
+			bar: new BarChartController(options),
+			line: new LineChartController(options)
+		};
 	}
 
 	setHorizontalMargin() {
@@ -36,7 +59,15 @@ export default class AxisChart extends BaseChart {
 		this.state = {
 			xAxisLabels: [],
 			xAxisPositions: [],
+			xAxisMode: this.config.xAxisMode,
+			yAxisMode: this.config.yAxisMode
 		}
+
+		this.data.datasets.map(d => {
+			if(!d.chartType ) {
+				d.chartType = this.unitType;
+			}
+		});
 
 		this.prepareYAxis();
 	}
@@ -78,6 +109,8 @@ export default class AxisChart extends BaseChart {
 		});
 
 		s.noOfDatasets = s.datasets.length;
+		s.yMarkers = data.yMarkers;
+		s.yRegions = data.yRegions;
 	}
 
 	prepareYAxis() {
@@ -97,6 +130,7 @@ export default class AxisChart extends BaseChart {
 		this.setYAxis();
 		this.calcYUnits();
 		this.calcYMaximums();
+		this.calcYRegions();
 
 		// should be state
 		this.configUnits();
@@ -111,7 +145,8 @@ export default class AxisChart extends BaseChart {
 		let s = this.state;
 		this.setUnitWidthAndXOffset();
 		s.xAxisPositions = s.xAxisLabels.map((d, i) =>
-			floatTwo(s.xOffset + i * s.unitWidth));
+			floatTwo(s.xOffset + i * s.unitWidth)
+		);
 
 		s.xUnitPositions = new Array(s.noOfDatasets).fill(s.xAxisPositions);
 	}
@@ -150,8 +185,26 @@ export default class AxisChart extends BaseChart {
 		// this.make_tooltip();
 	}
 
+	calcYRegions() {
+		let s = this.state;
+		if(s.yMarkers) {
+			s.yMarkers = s.yMarkers.map(d => {
+				d.value = floatTwo(s.yAxis.zeroLine - d.value * s.yAxis.scaleMultiplier);
+				return d;
+			});
+		}
+		if(s.yRegions) {
+			s.yRegions = s.yRegions.map(d => {
+				d.start = floatTwo(s.yAxis.zeroLine - d.start * s.yAxis.scaleMultiplier);
+				d.end = floatTwo(s.yAxis.zeroLine - d.end * s.yAxis.scaleMultiplier);
+				return d;
+			});
+		}
+	}
+
 	configUnits() {}
 
+	// Default, as per bar, and mixed. Only line will be a special case
 	setUnitWidthAndXOffset() {
 		this.state.unitWidth = this.width/(this.state.datasetLength);
 		this.state.xOffset = this.state.unitWidth/2;
@@ -180,11 +233,11 @@ export default class AxisChart extends BaseChart {
 			// this.yAxesAux,
 			...this.getYAxesComponents(),
 			this.getXAxisComponents(),
-			// this.getYMarkerLines(),
-			// this.getXMarkerLines(),
-			// TODO: regions too?
-			...this.getPathComponents(),
-			...this.getDataUnitsComponents(this.config),
+			...this.getYRegions(),
+			...this.getXRegions(),
+			...this.getYMarkerLines(),
+			// ...this.getXMarkerLines(),
+			...this.getChartComponents(),
 		];
 	}
 
@@ -233,7 +286,9 @@ export default class AxisChart extends BaseChart {
 				let s = this.state;
 				// TODO: xAxis Label spacing
 				return s.xAxisPositions.map((position, i) =>
-					this.renderer.xLine(position, s.xAxisLabels[i], {pos:'top'})
+					this.renderer.xLine(position, s.xAxisLabels[i]
+						// , {pos:'top'}
+					)
 				);
 			},
 			animate: (xLines) => {
@@ -262,68 +317,156 @@ export default class AxisChart extends BaseChart {
 		});
 	}
 
-	getDataUnitsComponents() {
-		return this.data.datasets.map((d, index) => {
-			return new ChartComponent({
-				layerClass: 'dataset-units dataset-' + index,
-				make: () => {
-					let d = this.state.datasets[index];
-					let unitType = this.unitArgs;
+	getChartComponents() {
+		let dataUnitsComponents = []
+		// this.state is not defined at this stage
+		this.data.datasets.forEach((d, index) => {
+			if(d.chartType === 'line') {
+				dataUnitsComponents.push(this.getPathComponent(d, index));
+			}
+			console.log(this.unitRenderers[d.chartType], d.chartType);
+			dataUnitsComponents.push(this.getDataUnitComponent(
+				d, index, this.unitRenderers[d.chartType]
+			));
+		});
+		return dataUnitsComponents;
+	}
 
-					return d.positions.map((y, j) => {
-						return this.renderer[unitType.type](
-							this.state.xAxisPositions[j],
-							y,
-							unitType.args,
-							this.colors[index],
-							j,
-							index,
-							this.state.noOfDatasets
-						);
-					});
-				},
-				animate: (svgUnits) => {
-					let unitType = this.unitArgs.type;
+	getDataUnitComponent(d, index, unitRenderer) {
+		return new ChartComponent({
+			layerClass: 'dataset-units dataset-' + index,
+			make: () => {
+				let d = this.state.datasets[index];
 
-					// have been updated in axis render;
-					let newX = this.state.xAxisPositions;
-					let newY = this.state.datasets[index].positions;
+				return d.positions.map((y, j) => {
+					return unitRenderer.draw(
+						this.state.xAxisPositions[j],
+						y,
+						this.colors[index],
+						j,
+						index,
+						this.state.noOfDatasets
+					);
+				});
+			},
+			animate: (svgUnits) => {
+				// have been updated in axis render;
+				let newX = this.state.xAxisPositions;
+				let newY = this.state.datasets[index].positions;
 
-					let lastUnit = svgUnits[svgUnits.length - 1];
-					let parentNode = lastUnit.parentNode;
+				let lastUnit = svgUnits[svgUnits.length - 1];
+				let parentNode = lastUnit.parentNode;
 
-					if(this.oldState.xExtra > 0) {
-						for(var i = 0; i<this.oldState.xExtra; i++) {
-							let unit = lastUnit.cloneNode(true);
-							parentNode.appendChild(unit);
-							svgUnits.push(unit);
-						}
+				if(this.oldState.xExtra > 0) {
+					for(var i = 0; i<this.oldState.xExtra; i++) {
+						let unit = lastUnit.cloneNode(true);
+						parentNode.appendChild(unit);
+						svgUnits.push(unit);
 					}
-
-					svgUnits.map((unit, i) => {
-						if(newX[i] === undefined || newY[i] === undefined) return;
-						this.elementsToAnimate.push(this.renderer['animate' + unitType](
-							unit, // unit, with info to replace where it came from in the data
-							newX[i],
-							newY[i],
-							index,
-							this.state.noOfDatasets
-						));
-					});
 				}
+
+				svgUnits.map((unit, i) => {
+					if(newX[i] === undefined || newY[i] === undefined) return;
+					this.elementsToAnimate.push(unitRenderer.animate(
+						unit, // unit, with info to replace where it came from in the data
+						newX[i],
+						newY[i],
+						index,
+						this.state.noOfDatasets
+					));
+				});
+			}
+		});
+	}
+
+	getPathComponent(d, index) {
+		return new ChartComponent({
+			layerClass: 'path dataset-path',
+			make: () => {
+				let d = this.state.datasets[index];
+				let color = this.colors[index];
+
+				return getPaths(
+					d.positions,
+					this.state.xAxisPositions,
+					color,
+					this.config.heatline,
+					this.config.regionFill
+				);
+			},
+			animate: (paths) => {
+				let newX = this.state.xAxisPositions;
+				let newY = this.state.datasets[index].positions;
+
+				let oldX = this.oldState.xAxisPositions;
+				let oldY = this.oldState.datasets[index].positions;
+
+
+				let parentNode = paths[0].parentNode;
+
+				[oldX, newX] = equilizeNoOfElements(oldX, newX);
+				[oldY, newY] = equilizeNoOfElements(oldY, newY);
+
+				if(this.oldState.xExtra > 0) {
+					paths = getPaths(
+						oldY, oldX, this.colors[index],
+						this.config.heatline,
+						this.config.regionFill
+					);
+					parentNode.textContent = '';
+					paths.map(path => parentNode.appendChild(path));
+				}
+
+				const newPointsList = newY.map((y, i) => (newX[i] + ',' + y));
+				this.elementsToAnimate = this.elementsToAnimate
+					.concat(this.renderer.animatepath(paths, newPointsList.join("L")));
+			}
+		});
+	}
+
+	getYMarkerLines() {
+		if(!this.data.yMarkers) {
+			return [];
+		}
+		return this.data.yMarkers.map((d, index) => {
+			return new ChartComponent({
+				layerClass: 'y-markers',
+				make: () => {
+					let s = this.state;
+					return s.yMarkers.map(marker =>
+						this.renderer.yMarker(marker.value, marker.name,
+							{pos:'right', mode: 'span', lineType: marker.type})
+					);
+				},
+				animate: () => {}
 			});
 		});
 	}
 
-	getPathComponents() {
-		return [];
+	// getXMarkerLines() {
+	// 	return [];
+	// }
+
+	getYRegions() {
+		if(!this.data.yRegions) {
+			return [];
+		}
+		// return [];
+		return this.data.yRegions.map((d, index) => {
+			return new ChartComponent({
+				layerClass: 'y-regions',
+				make: () => {
+					let s = this.state;
+					return s.yRegions.map(region =>
+						this.renderer.yRegion(region.start, region.end, region.name)
+					);
+				},
+				animate: () => {}
+			});
+		});
 	}
 
-	getYMarkerLines() {
-		return [];
-	}
-
-	getXMarkerLines() {
+	getXRegions() {
 		return [];
 	}
 
@@ -345,6 +488,88 @@ export default class AxisChart extends BaseChart {
 		} else {
 			this.renderer.refreshState(state);
 		}
+
+		let meta = {
+			totalHeight: this.height,
+			totalWidth: this.width,
+			zeroLine: this.state.zeroLine,
+			unitWidth: this.state.unitWidth,
+		};
+
+		Object.keys(this.unitRenderers).map(key => {
+			this.unitRenderers[key].refreshMeta(meta);
+		});
+	}
+
+	bindTooltip() {
+		// TODO: could be in tooltip itself, as it is a given functionality for its parent
+		this.chartWrapper.addEventListener('mousemove', (e) => {
+			let o = getOffset(this.chartWrapper);
+			let relX = e.pageX - o.left - this.translateXLeft;
+			let relY = e.pageY - o.top - this.translateY;
+
+			if(relY < this.height + this.translateY * 2) {
+				this.mapTooltipXPosition(relX);
+			} else {
+				this.tip.hide_tip();
+			}
+		});
+	}
+
+	mapTooltipXPosition(relX) {
+		let s = this.state;
+		if(!s.yUnitMinimums) return;
+
+		let titles = s.xAxisLabels;
+		if(this.formatTooltipX && this.formatTooltipX(titles[0])) {
+			titles = titles.map(d=>this.formatTooltipX(d));
+		}
+
+		let formatY = this.formatTooltipY && this.formatTooltipY(this.y[0].values[0]);
+
+		for(var i=s.datasetLength - 1; i >= 0 ; i--) {
+			let xVal = s.xAxisPositions[i];
+			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxisPositions[i-1];
+			if(relX > xVal - s.unitWidth/2) {
+				let x = xVal + this.translateXLeft;
+				let y = s.yUnitMinimums[i] + this.translateY;
+
+				let values = s.datasets.map((set, j) => {
+					return {
+						title: set.title,
+						value: formatY ? this.formatTooltipY(set.values[i]) : set.values[i],
+						color: this.colors[j],
+					};
+				});
+
+				this.tip.set_values(x, y, titles[i], '', values);
+				this.tip.show_tip();
+				break;
+			}
+		}
+	}
+
+	getDataPoint(index=this.current_index) {
+		// check for length
+		let data_point = {
+			index: index
+		};
+		let y = this.y[0];
+		['svg_units', 'yUnitPositions', 'values'].map(key => {
+			let data_key = key.slice(0, key.length-1);
+			data_point[data_key] = y[key][index];
+		});
+		data_point.label = this.xAxisLabels[index];
+		return data_point;
+	}
+
+	updateCurrentDataPoint(index) {
+		index = parseInt(index);
+		if(index < 0) index = 0;
+		if(index >= this.xAxisLabels.length) index = this.xAxisLabels.length - 1;
+		if(index === this.current_index) return;
+		this.current_index = index;
+		$.fire(this.parent, "data-select", this.getDataPoint());
 	}
 
 	// API
@@ -374,3 +599,7 @@ export default class AxisChart extends BaseChart {
 		//
 	}
 }
+
+
+// keep a binding at the end of chart
+

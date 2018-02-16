@@ -51,7 +51,7 @@ let bar_composite_chart = new Chart ({
 	height: 180,
 	colors: ['orange'],
 	isNavigable: 1,
-	is_series: 1
+	isSeries: 1
 	// regionFill: 1
 });
 
@@ -59,9 +59,12 @@ let line_composite_chart = new Chart ({
 	parent: c2,
 	data: line_composite_data,
 	type: 'line',
+	options: {
+		dotSize: 10
+	},
 	height: 180,
 	colors: ['green'],
-	is_series: 1
+	isSeries: 1
 });
 
 bar_composite_chart.parent.addEventListener('data-select', (e) => {
@@ -75,16 +78,48 @@ let type_data = {
 	labels: ["12am-3am", "3am-6am", "6am-9am", "9am-12pm",
 		"12pm-3pm", "3pm-6pm", "6pm-9pm", "9pm-12am"],
 
+	yMarkers: [
+		{
+			name: "Marker 1",
+			value: 42,
+			type: 'dashed'
+		},
+		{
+			name: "Marker 2",
+			value: 25,
+			type: 'dashed'
+		}
+	],
+
+	yRegions: [
+		{
+			name: "Region Y 1",
+			start: 10,
+			end: 50
+		},
+	],
+
+	// will depend on series code for calculating X values
+	// xRegions: [
+	// 	{
+	// 		name: "Region X 2",
+	// 		start: ,
+	// 		end: ,
+	// 	}
+	// ],
+
 	datasets: [
 		{
 			name: "Some Data",
 			values: [18, 40, 30, 35, 8, 52, 17, -4],
-			axisPosition: 'right'
+			axisPosition: 'right',
+			chartType: 'bar'
 		},
 		{
 			name: "Another Set",
 			values: [30, 50, -10, 15, 18, 32, 27, 14],
-			axisPosition: 'right'
+			axisPosition: 'right',
+			chartType: 'line'
 		},
 		// {
 		// 	name: "Yet Another",
@@ -111,12 +146,14 @@ let type_chart = new Chart({
 	parent: "#chart-types",
 	// title: "My Awesome Chart",
 	data: type_data,
-	type: 'multiaxis',
+	type: 'line',
 	height: 250,
 	colors: ['purple', 'magenta'],
-	is_series: 1,
-    format_tooltip_x: d => (d + '').toUpperCase(),
-    format_tooltip_y: d => d + ' pts'
+	isSeries: 1,
+	xAxisMode: 'tick',
+	yAxisMode: 'span',
+    // formatTooltipX: d => (d + '').toUpperCase(),
+    // formatTooltipY: d => d + ' pts'
 });
 
 Array.prototype.slice.call(
@@ -164,7 +201,7 @@ let plot_chart_args = {
 	type: 'line',
 	height: 250,
 	colors: ['blue'],
-	is_series: 1,
+	isSeries: 1,
 	showDots: 0,
 	heatline: 1,
 	xAxisMode: 'tick',
@@ -241,7 +278,7 @@ let update_chart = new Chart({
 	type: 'line',
 	height: 250,
 	colors: ['red'],
-	is_series: 1,
+	isSeries: 1,
 	regionFill: 1
 });
 

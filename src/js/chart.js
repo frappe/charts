@@ -1,12 +1,11 @@
 import '../scss/charts.scss';
 
-import BarChart from './charts/BarChart';
-import LineChart from './charts/LineChart';
 import ScatterChart from './charts/ScatterChart';
 import MultiAxisChart from './charts/MultiAxisChart';
 import PercentageChart from './charts/PercentageChart';
 import PieChart from './charts/PieChart';
 import Heatmap from './charts/Heatmap';
+import AxisChart from './charts/AxisChart';
 
 // if (ENV !== 'production') {
 // 	// Enable LiveReload
@@ -16,9 +15,13 @@ import Heatmap from './charts/Heatmap';
 // 	);
 // }
 
+// If type is bar
+
+
+
+
 const chartTypes = {
-	line: LineChart,
-	bar: BarChart,
+	mixed: AxisChart,
 	multiaxis: MultiAxisChart,
 	scatter: ScatterChart,
 	percentage: PercentageChart,
@@ -27,8 +30,17 @@ const chartTypes = {
 };
 
 function getChartByType(chartType = 'line', options) {
+	if(chartType === 'line') {
+		options.unitType = 'line';
+		return new AxisChart(options);
+	} else if (chartType === 'bar') {
+		options.unitType = 'bar';
+		return new AxisChart(options);
+	}
+
 	if (!chartTypes[chartType]) {
-		return new LineChart(options);
+		console.error("Undefined chart type: " + chartType);
+		return;
 	}
 
 	return new chartTypes[chartType](options);
