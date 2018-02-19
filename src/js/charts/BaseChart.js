@@ -236,6 +236,13 @@ export default class BaseChart {
 		);
 		this.svgDefs = makeSVGDefs(this.svg);
 
+		// I wish !!!
+		// this.svg = makeSVGGroup(
+		// 	svgContainer,
+		// 	'flipped-coord-system',
+		// 	`translate(0, ${this.baseHeight}) scale(1, -1)`
+		// );
+
 		this.drawArea = makeSVGGroup(
 			this.svg,
 			this.type + '-chart',

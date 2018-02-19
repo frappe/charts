@@ -119,12 +119,13 @@ let type_data = {
 			name: "Another Set",
 			values: [30, 50, -10, 15, 18, 32, 27, 14],
 			axisPosition: 'right',
-			chartType: 'line'
+			chartType: 'bar'
 		},
-		// {
-		// 	name: "Yet Another",
-		// 	values: [15, 20, -3, -15, 58, 12, -17, 37]
-		// }
+		{
+			name: "Yet Another",
+			values: [15, 20, -3, -15, 58, 12, -17, 37],
+			// chartType: 'line'
+		}
 
 		// temp : Stacked
 		// {
@@ -148,10 +149,13 @@ let type_chart = new Chart({
 	data: type_data,
 	type: 'line',
 	height: 250,
-	colors: ['purple', 'magenta'],
+	colors: ['purple', 'magenta', 'light-blue'],
 	isSeries: 1,
 	xAxisMode: 'tick',
 	yAxisMode: 'span',
+	barOptions: {
+		// stacked: 1
+	}
     // formatTooltipX: d => (d + '').toUpperCase(),
     // formatTooltipY: d => d + ' pts'
 });
@@ -202,8 +206,10 @@ let plot_chart_args = {
 	height: 250,
 	colors: ['blue'],
 	isSeries: 1,
-	showDots: 0,
-	heatline: 1,
+	lineOptions: {
+		showDots: 0,
+		heatline: 1,
+	},
 	xAxisMode: 'tick',
 	yAxisMode: 'span'
 };
@@ -377,10 +383,6 @@ let aggr_data = {
 		},
 		{
 			"values": [25, 50, -10, 15, 18, 32, 27],
-			"unitArgs": {
-				type: 'dot',
-				args: { radius: 4 }
-			},
 		}
 	]
 };
@@ -391,6 +393,9 @@ let aggr_chart = new Chart({
 	type: 'bar',
 	height: 250,
 	colors: ['light-green', 'blue'],
+	barOptions: {
+		stacked: 1
+	}
 });
 
 document.querySelector('[data-aggregation="sums"]').addEventListener("click", (e) => {

@@ -236,7 +236,6 @@ export class AxisChartRenderer {
 		if(!options.pos) options.pos = 'bottom';
 		if(!options.offset) options.offset = 0;
 		if(!options.mode) options.mode = this.xAxisMode;
-		console.log(this.xAxisMode);
 		if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 		if(!options.className) options.className = '';
 

@@ -1,8 +1,6 @@
 import { fillArray } from './helpers';
 
-const MIN_BAR_PERCENT_HEIGHT = 0.01;
-
-export function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
+export function getBarHeightAndYAttr(yTop, zeroLine) {
 	let height, y;
 	if (yTop <= zeroLine) {
 		height = zeroLine - yTop;
@@ -16,11 +14,6 @@ export function getBarHeightAndYAttr(yTop, zeroLine, totalHeight) {
 	} else {
 		height = yTop - zeroLine;
 		y = zeroLine;
-
-		// In case of invisible bars
-		if(height === 0) {
-			height = totalHeight * MIN_BAR_PERCENT_HEIGHT;
-		}
 	}
 
 	return [height, y];

@@ -2,17 +2,23 @@ import { getBarHeightAndYAttr } from '../utils/draw-utils';
 import { createSVG, makePath, makeGradient } from '../utils/draw';
 import { STD_EASING, UNIT_ANIM_DUR, MARKER_LINE_ANIM_DUR, PATH_ANIM_DUR } from '../utils/animate';
 
+const MIN_BAR_PERCENT_HEIGHT = 0.01;
+
 class AxisChartController {
 	constructor(meta) {
 		// TODO: make configurable passing args
-		this.refreshMeta(meta);
+		this.meta = meta || {};
 		this.setupArgs();
 	}
 
-	setupArgs() {}
+	setupArgs() {
+		this.consts = {};
+	}
+
+	setup() {}
 
 	refreshMeta(meta) {
-		this.meta = meta || {};
+		this.meta = Object.assign((this.meta || {}), meta);
 	}
 
 	draw() {}
@@ -24,15 +30,13 @@ export class AxisController extends AxisChartController {
 		super(meta);
 	}
 
-	setupArgs() {}
-
 	draw(x, y, color, index) {
 		return createSVG('circle', {
 			style: `fill: ${color}`,
 			'data-point-index': index,
 			cx: x,
 			cy: y,
-			r: this.args.radius
+			r: this.consts.radius
 		});
 	}
 
@@ -48,39 +52,40 @@ export class BarChartController extends AxisChartController {
 	}
 
 	setupArgs() {
-		this.args = {
+		this.consts = {
 			spaceRatio: 0.5,
+			minHeight: this.meta.totalHeight * MIN_BAR_PERCENT_HEIGHT
 		};
 	}
 
-	draw(x, yTop, color, index, datasetIndex, noOfDatasets) {
-		let totalWidth = this.meta.unitWidth - this.meta.unitWidth * this.args.spaceRatio;
-		let startX = x - totalWidth/2;
+	refreshMeta(meta) {
+		if(meta) {
+			super.refreshMeta(meta);
+		}
+		let m = this.meta;
+		this.consts.barsWidth = m.unitWidth - m.unitWidth * this.consts.spaceRatio;
 
-		// temp commented
-		// let width = totalWidth / noOfDatasets;
-		// let currentX = startX + width * datasetIndex;
+		this.consts.width = this.consts.barsWidth / (m.options && m.options.stacked
+			? m.options.stacked : m.noOfDatasets);
+	}
 
-		// temp
-		let width = totalWidth;
-		let currentX = startX;
-
-		let [height, y] = getBarHeightAndYAttr(yTop, this.meta.zeroLine, this.meta.totalHeight);
+	draw(x, yTop, color, index, offset=0) {
+		let [height, y] = getBarHeightAndYAttr(yTop, this.meta.zeroLine);
 
 		return createSVG('rect', {
 			className: `bar mini`,
 			style: `fill: ${color}`,
 			'data-point-index': index,
-			x: currentX,
-			y: y,
-			width: width,
-			height: height
+			x: x - this.consts.barsWidth/2,
+			y: y - offset,
+			width: this.consts.width,
+			height: height || this.consts.minHeight
 		});
 	}
 
 	animate(bar, x, yTop, index, noOfDatasets) {
-		let start = x - this.meta.avgUnitWidth/4;
-		let width = (this.meta.avgUnitWidth/2)/noOfDatasets;
+		let start = x - this.meta.unitWidth/4;
+		let width = (this.meta.unitWidth/2)/noOfDatasets;
 		let [height, y] = getBarHeightAndYAttr(yTop, this.meta.zeroLine, this.meta.totalHeight);
 
 		x = start + (width * index);
@@ -96,8 +101,7 @@ export class LineChartController extends AxisChartController {
 	}
 
 	setupArgs() {
-		console.log(this);
-		this.args = {
+		this.consts = {
 			radius: this.meta.dotSize || 4
 		};
 	}
@@ -108,7 +112,7 @@ export class LineChartController extends AxisChartController {
 			'data-point-index': index,
 			cx: x,
 			cy: y,
-			r: this.args.radius
+			r: this.consts.radius
 		});
 	}
 

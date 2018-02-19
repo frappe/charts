@@ -30,11 +30,12 @@ const chartTypes = {
 };
 
 function getChartByType(chartType = 'line', options) {
+	debugger;
 	if(chartType === 'line') {
-		options.unitType = 'line';
+		options.type = 'line';
 		return new AxisChart(options);
 	} else if (chartType === 'bar') {
-		options.unitType = 'bar';
+		options.type = 'bar';
 		return new AxisChart(options);
 	}
 

@@ -16,7 +16,9 @@ export default class AxisChart extends BaseChart {
 		this.isSeries = args.isSeries;
 		this.formatTooltipY = args.formatTooltipY;
 		this.formatTooltipX = args.formatTooltipX;
-		this.unitType = args.unitType || 'line';
+		this.barOptions = args.barOptions;
+		this.lineOptions = args.lineOptions;
+		this.type = args.type || 'line';
 
 		this.setupUnitRenderer();
 
@@ -35,6 +37,7 @@ export default class AxisChart extends BaseChart {
 	preSetup() {}
 
 	setupUnitRenderer() {
+		// TODO: this is empty
 		let options = this.rawChartArgs.options;
 		this.unitRenderers = {
 			bar: new BarChartController(options),
@@ -65,7 +68,7 @@ export default class AxisChart extends BaseChart {
 
 		this.data.datasets.map(d => {
 			if(!d.chartType ) {
-				d.chartType = this.unitType;
+				d.chartType = this.type;
 			}
 		});
 
@@ -165,17 +168,29 @@ export default class AxisChart extends BaseChart {
 	calcYUnits() {
 		let s = this.state;
 		s.datasets.map(d => {
-			d.positions = d.values.map(val => floatTwo(s.yAxis.zeroLine - val * s.yAxis.scaleMultiplier));
+			d.positions = d.values.map(val =>
+				floatTwo(s.yAxis.zeroLine - val * s.yAxis.scaleMultiplier));
 		});
+
+		if(this.barOptions && this.barOptions.stacked) {
+			s.datasets.map((d, i) => {
+				d.cumulativePositions = d.cumulativeYs.map(val =>
+					floatTwo(s.yAxis.zeroLine - val * s.yAxis.scaleMultiplier));
+			});
+		}
 	}
 
 	calcYMaximums() {
 		let s = this.state;
-		s.yUnitMinimums = new Array(s.datasetLength).fill(9999);
+		if(this.barOptions && this.barOptions.stacked) {
+			s.yExtremes = s.datasets[s.datasets.length - 1].cumulativePositions;
+			return;
+		}
+		s.yExtremes = new Array(s.datasetLength).fill(9999);
 		s.datasets.map((d, i) => {
 			d.positions.map((pos, j) => {
-				if(pos < s.yUnitMinimums[j]) {
-					s.yUnitMinimums[j] = pos;
+				if(pos < s.yExtremes[j]) {
+					s.yExtremes[j] = pos;
 				}
 			});
 		});
@@ -212,7 +227,19 @@ export default class AxisChart extends BaseChart {
 
 	getAllYValues() {
 		// TODO: yMarkers, regions, sums, every Y value ever
-		return [].concat(...this.state.datasets.map(d => d.values));
+
+		let key = 'values';
+
+		if(this.barOptions && this.barOptions.stacked) {
+			key = 'cumulativeYs';
+			let cumulative = new Array(this.state.datasetLength).fill(0);
+			this.state.datasets.map((d, i) => {
+				let values = this.state.datasets[i].values;
+				d[key] = cumulative = cumulative.map((c, i) => c + values[i]);
+			});
+		}
+
+		return [].concat(...this.state.datasets.map(d => d[key]));
 	}
 
 	calcIntermedState() {
@@ -324,30 +351,49 @@ export default class AxisChart extends BaseChart {
 			if(d.chartType === 'line') {
 				dataUnitsComponents.push(this.getPathComponent(d, index));
 			}
-			console.log(this.unitRenderers[d.chartType], d.chartType);
+
+			let renderer = this.unitRenderers[d.chartType];
 			dataUnitsComponents.push(this.getDataUnitComponent(
-				d, index, this.unitRenderers[d.chartType]
+				index, renderer
 			));
 		});
 		return dataUnitsComponents;
 	}
 
-	getDataUnitComponent(d, index, unitRenderer) {
+	getDataUnitComponent(index, unitRenderer) {
 		return new ChartComponent({
 			layerClass: 'dataset-units dataset-' + index,
+			preMake: () => { },
 			make: () => {
 				let d = this.state.datasets[index];
+
+				console.log('d.positions', d.positions);
+				console.log('d.cumulativePositions', d.cumulativePositions);
+				console.log('d.cumulativeYs', d.cumulativeYs);
 
 				return d.positions.map((y, j) => {
 					return unitRenderer.draw(
 						this.state.xAxisPositions[j],
 						y,
 						this.colors[index],
-						j,
-						index,
-						this.state.noOfDatasets
+						j
+						,
+						y - (d.cumulativePositions ? d.cumulativePositions[j] : y)
 					);
 				});
+			},
+			postMake: (store, layer) => {
+				let translate_layer = () => {
+					layer.setAttribute('transform', `translate(${unitRenderer.consts.width * index}, 0)`);
+				}
+
+				// let d = this.state.datasets[index];
+
+				if(this.type === 'bar' && (!this.barOptions
+					|| !this.barOptions.stacked)) {
+
+					translate_layer();
+				}
 			},
 			animate: (svgUnits) => {
 				// have been updated in axis render;
@@ -494,9 +540,13 @@ export default class AxisChart extends BaseChart {
 			totalWidth: this.width,
 			zeroLine: this.state.zeroLine,
 			unitWidth: this.state.unitWidth,
+			noOfDatasets: this.state.noOfDatasets,
 		};
 
+		meta = Object.assign(meta, this.rawChartArgs.options);
+
 		Object.keys(this.unitRenderers).map(key => {
+			meta.options = this[key + 'Options'];
 			this.unitRenderers[key].refreshMeta(meta);
 		});
 	}
@@ -518,7 +568,7 @@ export default class AxisChart extends BaseChart {
 
 	mapTooltipXPosition(relX) {
 		let s = this.state;
-		if(!s.yUnitMinimums) return;
+		if(!s.yExtremes) return;
 
 		let titles = s.xAxisLabels;
 		if(this.formatTooltipX && this.formatTooltipX(titles[0])) {
@@ -532,7 +582,7 @@ export default class AxisChart extends BaseChart {
 			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxisPositions[i-1];
 			if(relX > xVal - s.unitWidth/2) {
 				let x = xVal + this.translateXLeft;
-				let y = s.yUnitMinimums[i] + this.translateY;
+				let y = s.yExtremes[i] + this.translateY;
 
 				let values = s.datasets.map((set, j) => {
 					return {
