@@ -4,7 +4,7 @@ import { STD_EASING, UNIT_ANIM_DUR, MARKER_LINE_ANIM_DUR, PATH_ANIM_DUR } from '
 
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
-const FONT_SIZE = 10;
+export const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
 const BASE_BG_COLOR = '#F7FAFC';
 
@@ -86,6 +86,14 @@ export function makeSVGGroup(parent, className, transform='') {
 		inside: parent,
 		transform: transform
 	});
+}
+
+export function wrapInSVGGroup(elements, className='') {
+	let g = createSVG('g', {
+		className: className
+	});
+	elements.forEach(e => g.appendChild(e));
+	return g;
 }
 
 export function makePath(pathStr, className='', stroke='none', fill='none') {

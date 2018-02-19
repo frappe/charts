@@ -1,5 +1,5 @@
 import { getBarHeightAndYAttr } from '../utils/draw-utils';
-import { createSVG, makePath, makeGradient } from '../utils/draw';
+import { createSVG, makePath, makeGradient, wrapInSVGGroup, FONT_SIZE } from '../utils/draw';
 import { STD_EASING, UNIT_ANIM_DUR, MARKER_LINE_ANIM_DUR, PATH_ANIM_DUR } from '../utils/animate';
 
 const MIN_BAR_PERCENT_HEIGHT = 0.01;
@@ -69,10 +69,10 @@ export class BarChartController extends AxisChartController {
 			? m.options.stacked : m.noOfDatasets);
 	}
 
-	draw(x, yTop, color, index, offset=0) {
+	draw(x, yTop, color, label='', index=0, offset=0) {
 		let [height, y] = getBarHeightAndYAttr(yTop, this.meta.zeroLine);
 
-		return createSVG('rect', {
+		let rect = createSVG('rect', {
 			className: `bar mini`,
 			style: `fill: ${color}`,
 			'data-point-index': index,
@@ -81,6 +81,22 @@ export class BarChartController extends AxisChartController {
 			width: this.consts.width,
 			height: height || this.consts.minHeight
 		});
+
+		if(!label && !label.length) {
+			return rect;
+		} else {
+			let text = createSVG('text', {
+				className: 'data-point-value',
+				x: x,
+				y: y - offset,
+				dy: (FONT_SIZE / 2 * -1) + 'px',
+				'font-size': FONT_SIZE + 'px',
+				'text-anchor': 'middle',
+				innerHTML: label
+			});
+
+			return wrapInSVGGroup([rect, text]);
+		}
 	}
 
 	animate(bar, x, yTop, index, noOfDatasets) {
@@ -106,14 +122,30 @@ export class LineChartController extends AxisChartController {
 		};
 	}
 
-	draw(x, y, color, index) {
-		return createSVG('circle', {
+	draw(x, y, color, label='', index=0) {
+		let dot = createSVG('circle', {
 			style: `fill: ${color}`,
 			'data-point-index': index,
 			cx: x,
 			cy: y,
 			r: this.consts.radius
 		});
+
+		if(!label && !label.length) {
+			return dot;
+		} else {
+			let text = createSVG('text', {
+				className: 'data-point-value',
+				x: x,
+				y: y,
+				dy: (FONT_SIZE / 2 * -1 - this.consts.radius) + 'px',
+				'font-size': FONT_SIZE + 'px',
+				'text-anchor': 'middle',
+				innerHTML: label
+			});
+
+			return wrapInSVGGroup([dot, text]);
+		}
 	}
 
 	animate(dot, x, yTop) {

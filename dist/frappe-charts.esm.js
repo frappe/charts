@@ -374,6 +374,14 @@ function makeSVGGroup(parent, className, transform='') {
 	});
 }
 
+function wrapInSVGGroup(elements, className='') {
+	let g = createSVG('g', {
+		className: className
+	});
+	elements.forEach(e => g.appendChild(e));
+	return g;
+}
+
 function makePath(pathStr, className='', stroke='none', fill='none') {
 	return createSVG('path', {
 		className: className,
@@ -1358,10 +1366,10 @@ class BarChartController extends AxisChartController {
 			? m.options.stacked : m.noOfDatasets);
 	}
 
-	draw(x, yTop, color, index, offset=0) {
+	draw(x, yTop, color, label='', index=0, offset=0) {
 		let [height, y] = getBarHeightAndYAttr(yTop, this.meta.zeroLine);
 
-		return createSVG('rect', {
+		let rect = createSVG('rect', {
 			className: `bar mini`,
 			style: `fill: ${color}`,
 			'data-point-index': index,
@@ -1370,6 +1378,22 @@ class BarChartController extends AxisChartController {
 			width: this.consts.width,
 			height: height || this.consts.minHeight
 		});
+
+		if(!label && !label.length) {
+			return rect;
+		} else {
+			let text = createSVG('text', {
+				className: 'data-point-value',
+				x: x,
+				y: y - offset,
+				dy: (FONT_SIZE / 2 * -1) + 'px',
+				'font-size': FONT_SIZE + 'px',
+				'text-anchor': 'middle',
+				innerHTML: label
+			});
+
+			return wrapInSVGGroup([rect, text]);
+		}
 	}
 
 	animate(bar, x, yTop, index, noOfDatasets) {
@@ -1395,14 +1419,30 @@ class LineChartController extends AxisChartController {
 		};
 	}
 
-	draw(x, y, color, index) {
-		return createSVG('circle', {
+	draw(x, y, color, label='', index=0) {
+		let dot = createSVG('circle', {
 			style: `fill: ${color}`,
 			'data-point-index': index,
 			cx: x,
 			cy: y,
 			r: this.consts.radius
 		});
+
+		if(!label && !label.length) {
+			return dot;
+		} else {
+			let text = createSVG('text', {
+				className: 'data-point-value',
+				x: x,
+				y: y,
+				dy: (FONT_SIZE / 2 * -1 - this.consts.radius) + 'px',
+				'font-size': FONT_SIZE + 'px',
+				'text-anchor': 'middle',
+				innerHTML: label
+			});
+
+			return wrapInSVGGroup([dot, text]);
+		}
 	}
 
 	animate(dot, x, yTop) {
@@ -1715,6 +1755,7 @@ class AxisChart extends BaseChart {
 	constructor(args) {
 		super(args);
 		this.isSeries = args.isSeries;
+		this.valuesOverPoints = args.valuesOverPoints;
 		this.formatTooltipY = args.formatTooltipY;
 		this.formatTooltipX = args.formatTooltipX;
 		this.barOptions = args.barOptions;
@@ -2068,17 +2109,14 @@ class AxisChart extends BaseChart {
 			make: () => {
 				let d = this.state.datasets[index];
 
-				console.log('d.positions', d.positions);
-				console.log('d.cumulativePositions', d.cumulativePositions);
-				console.log('d.cumulativeYs', d.cumulativeYs);
-
 				return d.positions.map((y, j) => {
 					return unitRenderer.draw(
 						this.state.xAxisPositions[j],
 						y,
 						this.colors[index],
-						j
-						,
+						(this.valuesOverPoints ? (this.barOptions &&
+							this.barOptions.stacked ? d.cumulativeYs[j] : d.values[j]) : ''),
+						j,
 						y - (d.cumulativePositions ? d.cumulativePositions[j] : y)
 					);
 				});
@@ -2189,10 +2227,6 @@ class AxisChart extends BaseChart {
 			});
 		});
 	}
-
-	// getXMarkerLines() {
-	// 	return [];
-	// }
 
 	getYRegions() {
 		if(!this.data.yRegions) {

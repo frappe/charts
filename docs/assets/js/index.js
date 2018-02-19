@@ -51,7 +51,8 @@ let bar_composite_chart = new Chart ({
 	height: 180,
 	colors: ['orange'],
 	isNavigable: 1,
-	isSeries: 1
+	isSeries: 1,
+	valuesOverPoints: 1,
 	// regionFill: 1
 });
 
@@ -64,7 +65,8 @@ let line_composite_chart = new Chart ({
 	},
 	height: 180,
 	colors: ['green'],
-	isSeries: 1
+	isSeries: 1,
+	valuesOverPoints: 1,
 });
 
 bar_composite_chart.parent.addEventListener('data-select', (e) => {
@@ -124,7 +126,7 @@ let type_data = {
 		{
 			name: "Yet Another",
 			values: [15, 20, -3, -15, 58, 12, -17, 37],
-			// chartType: 'line'
+			chartType: 'line'
 		}
 
 		// temp : Stacked
@@ -147,12 +149,13 @@ let type_chart = new Chart({
 	parent: "#chart-types",
 	// title: "My Awesome Chart",
 	data: type_data,
-	type: 'line',
+	// type: 'bar',
 	height: 250,
 	colors: ['purple', 'magenta', 'light-blue'],
 	isSeries: 1,
 	xAxisMode: 'tick',
 	yAxisMode: 'span',
+	valuesOverPoints: 1,
 	barOptions: {
 		// stacked: 1
 	}
@@ -382,7 +385,7 @@ let aggr_data = {
 			"values": [25, 40, 30, 35, 8, 52, 17]
 		},
 		{
-			"values": [25, 50, -10, 15, 18, 32, 27],
+			"values": [25, 50, 10, 15, 18, 32, 27],
 		}
 	]
 };
@@ -393,6 +396,7 @@ let aggr_chart = new Chart({
 	type: 'bar',
 	height: 250,
 	colors: ['light-green', 'blue'],
+	valuesOverPoints: 1,
 	barOptions: {
 		stacked: 1
 	}

@@ -14,6 +14,7 @@ export default class AxisChart extends BaseChart {
 	constructor(args) {
 		super(args);
 		this.isSeries = args.isSeries;
+		this.valuesOverPoints = args.valuesOverPoints;
 		this.formatTooltipY = args.formatTooltipY;
 		this.formatTooltipX = args.formatTooltipX;
 		this.barOptions = args.barOptions;
@@ -367,17 +368,14 @@ export default class AxisChart extends BaseChart {
 			make: () => {
 				let d = this.state.datasets[index];
 
-				console.log('d.positions', d.positions);
-				console.log('d.cumulativePositions', d.cumulativePositions);
-				console.log('d.cumulativeYs', d.cumulativeYs);
-
 				return d.positions.map((y, j) => {
 					return unitRenderer.draw(
 						this.state.xAxisPositions[j],
 						y,
 						this.colors[index],
-						j
-						,
+						(this.valuesOverPoints ? (this.barOptions &&
+							this.barOptions.stacked ? d.cumulativeYs[j] : d.values[j]) : ''),
+						j,
 						y - (d.cumulativePositions ? d.cumulativePositions[j] : y)
 					);
 				});
@@ -488,10 +486,6 @@ export default class AxisChart extends BaseChart {
 			});
 		});
 	}
-
-	// getXMarkerLines() {
-	// 	return [];
-	// }
 
 	getYRegions() {
 		if(!this.data.yRegions) {
