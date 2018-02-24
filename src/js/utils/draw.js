@@ -208,8 +208,8 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 		className: className,
 		x1: x1,
 		x2: x2,
-		y1: y,
-		y2: y,
+		y1: 0,
+		y2: 0,
 		styles: {
 			stroke: options.stroke
 		}
@@ -217,7 +217,7 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 
 	let text = createSVG('text', {
 		x: x1 < x2 ? x1 - LABEL_MARGIN : x1 + LABEL_MARGIN,
-		y: y,
+		y: 0,
 		dy: (FONT_SIZE / 2 - 2) + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': x1 < x2 ? 'end' : 'start',
@@ -225,6 +225,7 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 	});
 
 	let line = createSVG('g', {
+		transform: `translate(0, ${y})`,
 		'stroke-opacity': 1
 	});
 
@@ -236,6 +237,33 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 	line.appendChild(text);
 
 	return line;
+}
+
+export function yLine(y, label, width, options={}) {
+	if(!options.pos) options.pos = 'left';
+	if(!options.offset) options.offset = 0;
+	if(!options.mode) options.mode = 'span';
+	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
+	if(!options.className) options.className = '';
+
+	let x1 = -1 * AXIS_TICK_LENGTH;
+	let x2 = options.mode === 'span' ? width + AXIS_TICK_LENGTH : 0;
+
+	if(options.mode === 'tick' && options.pos === 'right') {
+		x1 = width + AXIS_TICK_LENGTH
+		x2 = width;
+	}
+
+	let offset = options.pos === 'left' ? -1 * options.offset : options.offset;
+
+	x1 += options.offset;
+	x2 += options.offset;
+
+	return makeHoriLine(y, label, x1, x2, {
+		stroke: options.stroke,
+		className: options.className,
+		lineType: options.lineType
+	});
 }
 
 export class AxisChartRenderer {
@@ -259,7 +287,7 @@ export class AxisChartRenderer {
 	xLine(x, label, options={}) {
 		if(!options.pos) options.pos = 'bottom';
 		if(!options.offset) options.offset = 0;
-		if(!options.mode) options.mode = this.xAxisMode;
+		if(!options.mode) options.mode = 'span';
 		if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 		if(!options.className) options.className = '';
 
@@ -290,32 +318,7 @@ export class AxisChartRenderer {
 		});
 	}
 
-	yLine(y, label, options={}) {
-		if(!options.pos) options.pos = 'left';
-		if(!options.offset) options.offset = 0;
-		if(!options.mode) options.mode = this.yAxisMode;
-		if(!options.stroke) options.stroke = BASE_LINE_COLOR;
-		if(!options.className) options.className = '';
 
-		let x1 = -1 * AXIS_TICK_LENGTH;
-		let x2 = options.mode === 'span' ? this.totalWidth + AXIS_TICK_LENGTH : 0;
-
-		if(options.mode === 'tick' && options.pos === 'right') {
-			x1 = this.totalWidth + AXIS_TICK_LENGTH
-			x2 = this.totalWidth;
-		}
-
-		let offset = options.pos === 'left' ? -1 * options.offset : options.offset;
-
-		x1 += options.offset;
-		x2 += options.offset;
-
-		return makeHoriLine(y, label, x1, x2, {
-			stroke: options.stroke,
-			className: options.className,
-			lineType: options.lineType
-		});
-	}
 
 
 	xMarker() {}
@@ -444,24 +447,5 @@ export class AxisChartRenderer {
 		}
 
 		return pathComponents;
-	}
-
-	translate(unit, oldCoord, newCoord, duration) {
-		return [
-			unit,
-			{transform: newCoord.join(', ')},
-			duration,
-			STD_EASING,
-			"translate",
-			{transform: oldCoord.join(', ')}
-		];
-	}
-
-	translateVertLine(xLine, newX, oldX) {
-		return this.translate(xLine, [oldX, 0], [newX, 0], MARKER_LINE_ANIM_DUR);
-	}
-
-	translateHoriLine(yLine, newY, oldY) {
-		return this.translate(yLine, [0, oldY], [0, newY], MARKER_LINE_ANIM_DUR);
 	}
 }

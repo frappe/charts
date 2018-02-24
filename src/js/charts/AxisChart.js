@@ -1,13 +1,13 @@
 import BaseChart from './BaseChart';
 import { Y_AXIS_MARGIN } from '../utils/margins';
-import { ChartComponent } from '../objects/ChartComponent';
+import { getYAxisComponent } from '../objects/ChartComponents';
 import { BarChartController, LineChartController, getPaths } from '../objects/AxisChartControllers';
-import { getOffset, fire } from '../utils/dom';
 import { AxisChartRenderer } from '../utils/draw';
+import { getOffset, fire } from '../utils/dom';
 import { equilizeNoOfElements } from '../utils/draw-utils';
-import { Animator } from '../utils/animate';
+import { Animator, translateHoriLine } from '../utils/animate';
 import { runSMILAnimation } from '../utils/animation';
-import { calcIntervals, getIntervalSize, getValueRange, getZeroIndex } from '../utils/intervals';
+import { getRealIntervals, calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex } from '../utils/intervals';
 import { floatTwo, fillArray } from '../utils/helpers';
 
 export default class AxisChart extends BaseChart {
@@ -20,6 +20,9 @@ export default class AxisChart extends BaseChart {
 		this.barOptions = args.barOptions;
 		this.lineOptions = args.lineOptions;
 		this.type = args.type || 'line';
+
+		this.xAxisMode = args.xAxisMode || 'span';
+		this.yAxisMode = args.yAxisMode || 'span';
 
 		this.setupUnitRenderer();
 
@@ -124,7 +127,7 @@ export default class AxisChart extends BaseChart {
 		};
 	}
 
-	reCalc() {
+	calc() {
 		let s = this.state;
 
 		s.xAxisLabels = this.data.labels;
@@ -156,7 +159,7 @@ export default class AxisChart extends BaseChart {
 	}
 
 	calcYAxisParameters(yAxis, dataValues, withMinimum = 'false') {
-		yAxis.labels = calcIntervals(dataValues, withMinimum);
+		yAxis.labels = calcChartIntervals(dataValues, withMinimum);
 		const yPts = yAxis.labels;
 
 		yAxis.scaleMultiplier = this.height / getValueRange(yPts);
@@ -256,78 +259,63 @@ export default class AxisChart extends BaseChart {
 		// 	this.bind_units(units_array);
 		// }
 
+		this.yAxis = getYAxisComponent(
+			this.drawArea,
+			{
+				mode: this.yAxisMode,
+				width: this.width,
+				// pos: 'right'
+			},
+			{
+				positions: getRealIntervals(this.height, 4, 0, 0),
+				labels: getRealIntervals(this.height, 4, 0, 0).map(d => d + ""),
+			}
+		)
 		this.components = [
-			...this.getYAxesComponents(),
-			this.getXAxisComponents(),
-			...this.getYRegions(),
-			...this.getXRegions(),
-			...this.getYMarkerLines(),
-			// ...this.getXMarkerLines(),
-			...this.getChartComponents(),
-			...this.getChartLabels(),
+			this.yAxis
+			// this.getXAxisComponents(),
+			// ...this.getYRegions(),
+			// ...this.getXRegions(),
+			// ...this.getYMarkerLines(),
+			// // ...this.getXMarkerLines(),
+			// ...this.getChartComponents(),
+			// ...this.getChartLabels(),
 		];
 	}
 
-	getYAxesComponents() {
-		return [new ChartComponent({
-			layerClass: 'y axis',
-			setData: () => {
-				// let s = this.state;
+	refreshComponents() {
+		this.refreshYAxis();
+	}
 
-				// data = {};
-
-
-				// return data;
-			},
-			initializeData: function() {
-				this.axesPositions = this.state
-			},
-			make: () => {
-				// positions, labels, renderer
-				let s = this.state;
-				return s.yAxis.positions.map((position, i) =>
-					this.renderer.yLine(position, s.yAxis.labels[i], {pos:'right'})
-				);
-			},
-			animate: (yLines) => {
-				// Equilize
-				let newY = this.state.yAxis.positions;
-				let oldY = this.oldState.yAxis.positions;
-
-				let extra = newY.length - oldY.length;
-				let lastLine = yLines[yLines.length - 1];
-				let parentNode = lastLine.parentNode;
-
-				[oldY, newY] = equilizeNoOfElements(oldY, newY);
-				// console.log(newY.slice(), oldY.slice());
-				if(extra > 0) {
-					for(var i = 0; i<extra; i++) {
-						let line = lastLine.cloneNode(true);
-						parentNode.appendChild(line);
-						yLines.push(line);
-					}
-				}
-
-				yLines.map((line, i) => {
-					// console.log(line, newY[i], oldY[i]);
-					this.elementsToAnimate.push(this.renderer.translateHoriLine(
-						line, newY[i], oldY[i]
-					));
-				});
-			}
-		})];
+	refreshYAxis() {
+		let s = this.state;
+		this.yAxis.refresh({
+			positions: s.yAxis.positions,
+			labels: s.yAxis.labels,
+		});
 	}
 
 	getXAxisComponents() {
 		return new ChartComponent({
 			layerClass: 'x axis',
-			setData: () => {},
-			make: () => {
+			setData: () => {
+				let s = this.state;
+				let data = {
+					positions: s.xAxisPositions,
+					labels: s.xAxisLabels,
+				};
+				let constants = {
+					mode: this.xAxisMode,
+					height: this.height
+				}
+				return [data, constants];
+			},
+			makeElements: () => {
 				let s = this.state;
 				// positions
 				// TODO: xAxis Label spacing
 				return s.xAxisPositions.map((position, i) =>
-					this.renderer.xLine(position, s.xAxisLabels[i]
+					xLine(position, s.xAxisLabels[i], this.constants.height
 						// , {pos:'top'}
 					)
 				);
@@ -384,7 +372,7 @@ export default class AxisChart extends BaseChart {
 			layerClass: 'dataset-units dataset-' + index,
 			setData: () => {},
 			preMake: () => { },
-			make: () => {
+			makeElements: () => {
 				let d = this.state.datasets[index];
 
 				return d.positions.map((y, j) => {
@@ -446,7 +434,7 @@ export default class AxisChart extends BaseChart {
 		return new ChartComponent({
 			layerClass: 'path dataset-path',
 			setData: () => {},
-			make: () => {
+			makeElements: () => {
 				let d = this.state.datasets[index];
 				let color = this.colors[index];
 
@@ -496,7 +484,7 @@ export default class AxisChart extends BaseChart {
 			return new ChartComponent({
 				layerClass: 'y-markers',
 				setData: () => {},
-				make: () => {
+				makeElements: () => {
 					let s = this.state;
 					return s.yMarkers.map(marker =>
 						this.renderer.yMarker(marker.value, marker.name,
@@ -517,7 +505,7 @@ export default class AxisChart extends BaseChart {
 			return new ChartComponent({
 				layerClass: 'y-regions',
 				setData: () => {},
-				make: () => {
+				makeElements: () => {
 					let s = this.state;
 					return s.yRegions.map(region =>
 						this.renderer.yRegion(region.start, region.end, region.name)
@@ -526,10 +514,6 @@ export default class AxisChart extends BaseChart {
 				animate: () => {}
 			});
 		});
-	}
-
-	getXRegions() {
-		return [];
 	}
 
 	refreshRenderer() {
@@ -550,8 +534,6 @@ export default class AxisChart extends BaseChart {
 		} else {
 			this.renderer.refreshState(state);
 		}
-
-		this.refreshComponents();
 
 		let meta = {
 			totalHeight: this.height,

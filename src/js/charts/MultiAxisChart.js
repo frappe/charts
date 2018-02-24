@@ -1,6 +1,6 @@
 import AxisChart from './AxisChart';
 import { Y_AXIS_MARGIN } from '../utils/margins';
-import { ChartComponent } from '../objects/ChartComponent';
+// import { ChartComponent } from '../objects/ChartComponents';
 import { floatTwo } from '../utils/helpers';
 
 export default class MultiAxisChart extends AxisChart {

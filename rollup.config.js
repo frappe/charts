@@ -16,6 +16,7 @@ import pkg from './package.json';
 export default [
 	{
 		input: 'src/js/chart.js',
+		sourcemap: true,
 		output: [
 			{
 				file: 'docs/assets/js/frappe-charts.min.js',

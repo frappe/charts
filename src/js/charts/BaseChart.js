@@ -128,11 +128,15 @@ export default class BaseChart {
 	_setup() {
 		this.bindWindowEvents();
 		this.setupConstants();
-		this.setupComponents();
 
 		this.setMargins();
 		this.makeContainer();
 		this.makeTooltip(); // without binding
+
+		this.calcWidth();
+		this.makeChartArea();
+		this.setupComponents();
+
 		this.draw(true);
 	}
 
@@ -175,31 +179,13 @@ export default class BaseChart {
 	bindTooltip() {}
 
 	draw(init=false) {
-		// difference from update(): draw the whole object due to groudbreaking event (init, resize, etc.)
-		// (draw everything, layers, groups, units)
-
-		this.calcWidth();
-
-		// refresh conponent with chart
-		this.refresh(this.data);
-
-		this.makeChartArea();
-		this.setComponentParent();
-		this.makeComponentLayers();
-
+		this.components.forEach(c => c.make()); // or c.build()
 		this.renderLegend();
+
 		this.setupNavigation(init);
 
-		// first time plain render, so no rerender
-		this.renderComponents();
-		this.renderConstants();
-
-		if(this.config.animate) this.update(this.firstUpdateData);
-	}
-
-	update(data) {
-		this.refresh(data);
-		this.reRender();
+		// TODO: remove timeout and decrease post animate time in chart component
+		setTimeout(() => {this.update();}, 1000);
 	}
 
 	calcWidth() {
@@ -215,14 +201,33 @@ export default class BaseChart {
 		this.width = this.baseWidth - (this.translateXLeft + this.translateXRight);
 	}
 
-	refresh(data) { //?? refresh?
-		this.oldState = this.state ? JSON.parse(JSON.stringify(this.state)) : {};
-		this.intermedState = {}; // use this for the extra position problems?
-
+	update(data=this.data) {
 		this.prepareData(data);
-		this.reCalc();
+		this.calc(); // builds state
 		this.refreshRenderer();
+		this.render();
 	}
+
+	prepareData() {}
+
+	renderConstants() {}
+
+	calc() {} // builds state
+
+	refreshRenderer() {
+		this.renderer = {};
+	}
+
+	render(animate=true) {
+		this.refreshComponents();
+		this.elementsToAnimate = [].concat.apply([], this.components.map(c => c.update(animate)));
+		console.log(this.elementsToAnimate);
+		if(this.elementsToAnimate) {
+			runSMILAnimation(this.chartWrapper, this.svg, this.elementsToAnimate);
+		}
+	}
+
+	refreshComponents() {}
 
 	makeChartArea() {
 		this.svg = makeSVGContainer(
@@ -246,41 +251,6 @@ export default class BaseChart {
 			`translate(${this.translateXLeft}, ${this.translateY})`
 		);
 	}
-
-	prepareData() {}
-
-	renderConstants() {}
-
-	reCalc() {}
-	// Will update values(state)
-	// Will recalc specific parts depending on the update
-
-	refreshRenderer() {
-		this.renderer = {};
-	}
-
-	reRender(animate=true) {
-		if(!animate) {
-			this.renderComponents();
-			return;
-		}
-		this.elementsToAnimate = [];
-		this.loadAnimatedComponents();
-		runSMILAnimation(this.chartWrapper, this.svg, this.elementsToAnimate);
-		setTimeout(() => {
-			this.renderComponents();
-		}, 400);
-		// TODO: should be max anim duration required
-		// (opt, should not redraw if still in animate?)
-	}
-
-	// convenient component array abstractions
-	setComponentParent() { this.components.forEach(c => c.setupParent(this.drawArea)); };
-	makeComponentLayers() { this.components.forEach(c => c.makeLayer()); }
-	renderComponents() { this.components.forEach(c => c.render()); }
-	loadAnimatedComponents() { this.components.forEach(c => c.loadAnimatedComponents()); }
-
-	refreshComponents() { this.components.forEach(c => c.refresh(this.state, this.rawChartArgs)); }
 
 	renderLegend() {}
 

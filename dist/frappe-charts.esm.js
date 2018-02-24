@@ -290,6 +290,23 @@ const REPLACE_ALL_NEW_DUR = 250;
 
 const STD_EASING = 'easein';
 
+function translate(unit, oldCoord, newCoord, duration) {
+	return [
+		unit,
+		{transform: newCoord.join(', ')},
+		duration,
+		STD_EASING,
+		"translate",
+		{transform: oldCoord.join(', ')}
+	];
+}
+
+
+
+function translateHoriLine(yLine, newY, oldY) {
+	return translate(yLine, [0, oldY], [0, newY], MARKER_LINE_ANIM_DUR);
+}
+
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 const FONT_SIZE = 10;
@@ -478,8 +495,8 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 		className: className,
 		x1: x1,
 		x2: x2,
-		y1: y,
-		y2: y,
+		y1: 0,
+		y2: 0,
 		styles: {
 			stroke: options.stroke
 		}
@@ -487,7 +504,7 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 
 	let text = createSVG('text', {
 		x: x1 < x2 ? x1 - LABEL_MARGIN : x1 + LABEL_MARGIN,
-		y: y,
+		y: 0,
 		dy: (FONT_SIZE / 2 - 2) + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': x1 < x2 ? 'end' : 'start',
@@ -495,6 +512,7 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 	});
 
 	let line = createSVG('g', {
+		transform: `translate(0, ${y})`,
 		'stroke-opacity': 1
 	});
 
@@ -506,6 +524,31 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 	line.appendChild(text);
 
 	return line;
+}
+
+function yLine(y, label, width, options={}) {
+	if(!options.pos) options.pos = 'left';
+	if(!options.offset) options.offset = 0;
+	if(!options.mode) options.mode = 'span';
+	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
+	if(!options.className) options.className = '';
+
+	let x1 = -1 * AXIS_TICK_LENGTH;
+	let x2 = options.mode === 'span' ? width + AXIS_TICK_LENGTH : 0;
+
+	if(options.mode === 'tick' && options.pos === 'right') {
+		x1 = width + AXIS_TICK_LENGTH;
+		x2 = width;
+	}
+
+	x1 += options.offset;
+	x2 += options.offset;
+
+	return makeHoriLine(y, label, x1, x2, {
+		stroke: options.stroke,
+		className: options.className,
+		lineType: options.lineType
+	});
 }
 
 class AxisChartRenderer {
@@ -529,7 +572,7 @@ class AxisChartRenderer {
 	xLine(x, label, options={}) {
 		if(!options.pos) options.pos = 'bottom';
 		if(!options.offset) options.offset = 0;
-		if(!options.mode) options.mode = this.xAxisMode;
+		if(!options.mode) options.mode = 'span';
 		if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 		if(!options.className) options.className = '';
 
@@ -560,30 +603,7 @@ class AxisChartRenderer {
 		});
 	}
 
-	yLine(y, label, options={}) {
-		if(!options.pos) options.pos = 'left';
-		if(!options.offset) options.offset = 0;
-		if(!options.mode) options.mode = this.yAxisMode;
-		if(!options.stroke) options.stroke = BASE_LINE_COLOR;
-		if(!options.className) options.className = '';
 
-		let x1 = -1 * AXIS_TICK_LENGTH;
-		let x2 = options.mode === 'span' ? this.totalWidth + AXIS_TICK_LENGTH : 0;
-
-		if(options.mode === 'tick' && options.pos === 'right') {
-			x1 = this.totalWidth + AXIS_TICK_LENGTH;
-			x2 = this.totalWidth;
-		}
-
-		x1 += options.offset;
-		x2 += options.offset;
-
-		return makeHoriLine(y, label, x1, x2, {
-			stroke: options.stroke,
-			className: options.className,
-			lineType: options.lineType
-		});
-	}
 
 
 	xMarker() {}
@@ -712,25 +732,6 @@ class AxisChartRenderer {
 		}
 
 		return pathComponents;
-	}
-
-	translate(unit, oldCoord, newCoord, duration) {
-		return [
-			unit,
-			{transform: newCoord.join(', ')},
-			duration,
-			STD_EASING,
-			"translate",
-			{transform: oldCoord.join(', ')}
-		];
-	}
-
-	translateVertLine(xLine, newX, oldX) {
-		return this.translate(xLine, [oldX, 0], [newX, 0], MARKER_LINE_ANIM_DUR);
-	}
-
-	translateHoriLine(yLine, newY, oldY) {
-		return this.translate(yLine, [0, oldY], [0, newY], MARKER_LINE_ANIM_DUR);
 	}
 }
 
@@ -1066,11 +1067,15 @@ class BaseChart {
 	_setup() {
 		this.bindWindowEvents();
 		this.setupConstants();
-		this.setupComponents();
 
 		this.setMargins();
 		this.makeContainer();
 		this.makeTooltip(); // without binding
+
+		this.calcWidth();
+		this.makeChartArea();
+		this.setupComponents();
+
 		this.draw(true);
 	}
 
@@ -1113,31 +1118,13 @@ class BaseChart {
 	bindTooltip() {}
 
 	draw(init=false) {
-		// difference from update(): draw the whole object due to groudbreaking event (init, resize, etc.)
-		// (draw everything, layers, groups, units)
-
-		this.calcWidth();
-
-		// refresh conponent with chart
-		this.refresh(this.data);
-
-		this.makeChartArea();
-		this.setComponentParent();
-		this.makeComponentLayers();
-
+		this.components.forEach(c => c.make()); // or c.build()
 		this.renderLegend();
+
 		this.setupNavigation(init);
 
-		// first time plain render, so no rerender
-		this.renderComponents();
-		this.renderConstants();
-
-		if(this.config.animate) this.update(this.firstUpdateData);
-	}
-
-	update(data) {
-		this.refresh(data);
-		this.reRender();
+		// TODO: remove timeout and decrease post animate time in chart component
+		setTimeout(() => {this.update();}, 1000);
 	}
 
 	calcWidth() {
@@ -1153,14 +1140,33 @@ class BaseChart {
 		this.width = this.baseWidth - (this.translateXLeft + this.translateXRight);
 	}
 
-	refresh(data) { //?? refresh?
-		this.oldState = this.state ? JSON.parse(JSON.stringify(this.state)) : {};
-		this.intermedState = {}; // use this for the extra position problems?
-
+	update(data=this.data) {
 		this.prepareData(data);
-		this.reCalc();
+		this.calc(); // builds state
 		this.refreshRenderer();
+		this.render();
 	}
+
+	prepareData() {}
+
+	renderConstants() {}
+
+	calc() {} // builds state
+
+	refreshRenderer() {
+		this.renderer = {};
+	}
+
+	render(animate=true) {
+		this.refreshComponents();
+		this.elementsToAnimate = [].concat.apply([], this.components.map(c => c.update(animate)));
+		console.log(this.elementsToAnimate);
+		if(this.elementsToAnimate) {
+			runSMILAnimation(this.chartWrapper, this.svg, this.elementsToAnimate);
+		}
+	}
+
+	refreshComponents() {}
 
 	makeChartArea() {
 		this.svg = makeSVGContainer(
@@ -1184,41 +1190,6 @@ class BaseChart {
 			`translate(${this.translateXLeft}, ${this.translateY})`
 		);
 	}
-
-	prepareData() {}
-
-	renderConstants() {}
-
-	reCalc() {}
-	// Will update values(state)
-	// Will recalc specific parts depending on the update
-
-	refreshRenderer() {
-		this.renderer = {};
-	}
-
-	reRender(animate=true) {
-		if(!animate) {
-			this.renderComponents();
-			return;
-		}
-		this.elementsToAnimate = [];
-		this.loadAnimatedComponents();
-		runSMILAnimation(this.chartWrapper, this.svg, this.elementsToAnimate);
-		setTimeout(() => {
-			this.renderComponents();
-		}, 400);
-		// TODO: should be max anim duration required
-		// (opt, should not redraw if still in animate?)
-	}
-
-	// convenient component array abstractions
-	setComponentParent() { this.components.forEach(c => c.setupParent(this.drawArea)); };
-	makeComponentLayers() { this.components.forEach(c => c.makeLayer()); }
-	renderComponents() { this.components.forEach(c => c.render()); }
-	loadAnimatedComponents() { this.components.forEach(c => c.loadAnimatedComponents()); }
-
-	refreshComponents() { this.components.forEach(c => c.refresh(this.state, this.rawChartArgs)); }
 
 	renderLegend() {}
 
@@ -1299,66 +1270,107 @@ class BaseChart {
 
 const Y_AXIS_MARGIN = 60;
 
-class ChartComponent {
+class ChartComponent$1 {
 	constructor({
 		layerClass = '',
 		layerTransform = '',
-		initData,
+		parent,
+		constants,
+		data,
 
 		// called on update
-		setData,
 		preMake,
-		make,
+		makeElements,
 		postMake,
-		animate
+		animateElements
 	}) {
+		this.parent = parent;
 		this.layerClass = layerClass;
 		this.layerTransform = layerTransform;
-
-		this.initData = initData;
-		this.setData = setData;
+		this.constants = constants;
 
 		this.preMake = preMake;
-		this.make = make;
+		this.makeElements = makeElements;
 		this.postMake = postMake;
 
-		this.animate = animate;
+		this.animateElements = animateElements;
 
-		this.layer = undefined;
 		this.store = [];
+		this.layer = makeSVGGroup(this.parent, this.layerClass, this.layerTransform);
+
+		this.data = data;
+
+		this.make();
 	}
 
-	refresh(state, args) {
-		this.meta = Object.assign((this.meta || {}), args);
-		this.state = state;
+	refresh(data) {
+		this.data = data;
 	}
 
-
-	render() {
-		this.data = this.setData(); // The only without this function?
-
+	make() {
 		this.preMake && this.preMake();
-		this.store = this.make();
+		this.render(this.data);
+		this.postMake && this.postMake();
+		this.oldData = this.data;
+	}
+
+	render(data) {
+		this.store = this.makeElements(data);
 
 		this.layer.textContent = '';
 		this.store.forEach(element => {
 			this.layer.appendChild(element);
 		});
-
-		this.postMake && this.postMake();
 	}
 
-	setupParent(parent) {
-		this.parent = parent;
+	update(animate = true) {
+		let animateElements = [];
+		if(animate) {
+			animateElements = this.animateElements(this.data);
+		}
+		// TODO: Can we remove this?
+		setTimeout(() => {
+			this.make();
+		}, 1400);
+		return animateElements;
 	}
+}
 
-	loadAnimatedComponents() {
-		this.animate(this.store);
-	}
+function getYAxisComponent(parent, constants, initData) {
+	return new ChartComponent$1({
+		parent: parent,
+		layerClass: 'y axis',
+		constants: constants,
+		data: initData,
+		makeElements: function(data) {
+			return data.positions.map((position, i) =>
+				yLine(position, data.labels[i], this.constants.width,
+					{mode: this.constants.mode, pos: this.constants.pos})
+			);
+		},
 
-	makeLayer() {
-		this.layer = makeSVGGroup(this.parent, this.layerClass, this.layerTransform);
-	}
+		animateElements: function(newData) {
+			let newPos =  newData.positions;
+			let newLabels =  newData.labels;
+
+			let oldPos = this.oldData.positions;
+			let oldLabels = this.oldData.labels;
+
+			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
+			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+
+			this.render({
+				positions: oldPos,
+				labels: newLabels
+			});
+
+			return this.store.map((line, i) => {
+				return translateHoriLine(
+					line, newPos[i], oldPos[i]
+				);
+			});
+		}
+	})
 }
 
 const MIN_BAR_PERCENT_HEIGHT$1 = 0.01;
@@ -1612,7 +1624,7 @@ function normalize(x) {
 	return [sig * man, exp];
 }
 
-function getRangeIntervals(max, min=0) {
+function getChartRangeIntervals(max, min=0) {
 	let upperBound = Math.ceil(max);
 	let lowerBound = Math.floor(min);
 	let range = upperBound - lowerBound;
@@ -1650,19 +1662,19 @@ function getRangeIntervals(max, min=0) {
 	return intervals;
 }
 
-function getIntervals(maxValue, minValue=0) {
+function getChartIntervals(maxValue, minValue=0) {
 	let [normalMaxValue, exponent] = normalize(maxValue);
 	let normalMinValue = minValue ? minValue/Math.pow(10, exponent): 0;
 
 	// Allow only 7 significant digits
 	normalMaxValue = normalMaxValue.toFixed(6);
 
-	let intervals = getRangeIntervals(normalMaxValue, normalMinValue);
+	let intervals = getChartRangeIntervals(normalMaxValue, normalMinValue);
 	intervals = intervals.map(value => value * Math.pow(10, exponent));
 	return intervals;
 }
 
-function calcIntervals(values, withMinimum=false) {
+function calcChartIntervals(values, withMinimum=false) {
 	//*** Where the magic happens ***
 
 	// Calculates best-fit y intervals from given values
@@ -1675,7 +1687,7 @@ function calcIntervals(values, withMinimum=false) {
 	let exponent = 0, intervals = []; // eslint-disable-line no-unused-vars
 
 	function getPositiveFirstIntervals(maxValue, absMinValue) {
-		let intervals = getIntervals(maxValue);
+		let intervals = getChartIntervals(maxValue);
 
 		let intervalSize = intervals[1] - intervals[0];
 
@@ -1693,9 +1705,9 @@ function calcIntervals(values, withMinimum=false) {
 	if(maxValue >= 0 && minValue >= 0) {
 		exponent = normalize(maxValue)[1];
 		if(!withMinimum) {
-			intervals = getIntervals(maxValue);
+			intervals = getChartIntervals(maxValue);
 		} else {
-			intervals = getIntervals(maxValue, minValue);
+			intervals = getChartIntervals(maxValue, minValue);
 		}
 	}
 
@@ -1733,9 +1745,9 @@ function calcIntervals(values, withMinimum=false) {
 
 		exponent = normalize(pseudoMaxValue)[1];
 		if(!withMinimum) {
-			intervals = getIntervals(pseudoMaxValue);
+			intervals = getChartIntervals(pseudoMaxValue);
 		} else {
-			intervals = getIntervals(pseudoMaxValue, pseudoMinValue);
+			intervals = getChartIntervals(pseudoMaxValue, pseudoMinValue);
 		}
 
 		intervals = intervals.reverse().map(d => d * (-1));
@@ -1763,6 +1775,18 @@ function getZeroIndex(yPts) {
 		zeroIndex = (-1) * max / interval + (yPts.length - 1);
 	}
 	return zeroIndex;
+}
+
+function getRealIntervals(max, noOfIntervals, min = 0, asc = 1) {
+	let range = max - min;
+	let part = range * 1.0 / noOfIntervals;
+	let intervals = [];
+
+	for(var i = 0; i <= noOfIntervals; i++) {
+		intervals.push(min + part * i);
+	}
+
+	return asc ? intervals : intervals.reverse();
 }
 
 function getIntervalSize(orderedArray) {
@@ -1804,6 +1828,9 @@ class AxisChart extends BaseChart {
 		this.barOptions = args.barOptions;
 		this.lineOptions = args.lineOptions;
 		this.type = args.type || 'line';
+
+		this.xAxisMode = args.xAxisMode || 'span';
+		this.yAxisMode = args.yAxisMode || 'span';
 
 		this.setupUnitRenderer();
 
@@ -1908,7 +1935,7 @@ class AxisChart extends BaseChart {
 		};
 	}
 
-	reCalc() {
+	calc() {
 		let s = this.state;
 
 		s.xAxisLabels = this.data.labels;
@@ -1940,7 +1967,7 @@ class AxisChart extends BaseChart {
 	}
 
 	calcYAxisParameters(yAxis, dataValues, withMinimum = 'false') {
-		yAxis.labels = calcIntervals(dataValues, withMinimum);
+		yAxis.labels = calcChartIntervals(dataValues, withMinimum);
 		const yPts = yAxis.labels;
 
 		yAxis.scaleMultiplier = this.height / getValueRange(yPts);
@@ -2040,78 +2067,63 @@ class AxisChart extends BaseChart {
 		// 	this.bind_units(units_array);
 		// }
 
+		this.yAxis = getYAxisComponent(
+			this.drawArea,
+			{
+				mode: this.yAxisMode,
+				width: this.width,
+				// pos: 'right'
+			},
+			{
+				positions: getRealIntervals(this.height, 4, 0, 0),
+				labels: getRealIntervals(this.height, 4, 0, 0).map(d => d + ""),
+			}
+		);
 		this.components = [
-			...this.getYAxesComponents(),
-			this.getXAxisComponents(),
-			...this.getYRegions(),
-			...this.getXRegions(),
-			...this.getYMarkerLines(),
-			// ...this.getXMarkerLines(),
-			...this.getChartComponents(),
-			...this.getChartLabels(),
+			this.yAxis
+			// this.getXAxisComponents(),
+			// ...this.getYRegions(),
+			// ...this.getXRegions(),
+			// ...this.getYMarkerLines(),
+			// // ...this.getXMarkerLines(),
+			// ...this.getChartComponents(),
+			// ...this.getChartLabels(),
 		];
 	}
 
-	getYAxesComponents() {
-		return [new ChartComponent({
-			layerClass: 'y axis',
-			setData: () => {
-				// let s = this.state;
+	refreshComponents() {
+		this.refreshYAxis();
+	}
 
-				// data = {};
-
-
-				// return data;
-			},
-			initializeData: function() {
-				this.axesPositions = this.state;
-			},
-			make: () => {
-				// positions, labels, renderer
-				let s = this.state;
-				return s.yAxis.positions.map((position, i) =>
-					this.renderer.yLine(position, s.yAxis.labels[i], {pos:'right'})
-				);
-			},
-			animate: (yLines) => {
-				// Equilize
-				let newY = this.state.yAxis.positions;
-				let oldY = this.oldState.yAxis.positions;
-
-				let extra = newY.length - oldY.length;
-				let lastLine = yLines[yLines.length - 1];
-				let parentNode = lastLine.parentNode;
-
-				[oldY, newY] = equilizeNoOfElements(oldY, newY);
-				// console.log(newY.slice(), oldY.slice());
-				if(extra > 0) {
-					for(var i = 0; i<extra; i++) {
-						let line = lastLine.cloneNode(true);
-						parentNode.appendChild(line);
-						yLines.push(line);
-					}
-				}
-
-				yLines.map((line, i) => {
-					// console.log(line, newY[i], oldY[i]);
-					this.elementsToAnimate.push(this.renderer.translateHoriLine(
-						line, newY[i], oldY[i]
-					));
-				});
-			}
-		})];
+	refreshYAxis() {
+		let s = this.state;
+		this.yAxis.refresh({
+			positions: s.yAxis.positions,
+			labels: s.yAxis.labels,
+		});
 	}
 
 	getXAxisComponents() {
 		return new ChartComponent({
 			layerClass: 'x axis',
-			setData: () => {},
-			make: () => {
+			setData: () => {
+				let s = this.state;
+				let data = {
+					positions: s.xAxisPositions,
+					labels: s.xAxisLabels,
+				};
+				let constants = {
+					mode: this.xAxisMode,
+					height: this.height
+				};
+				return [data, constants];
+			},
+			makeElements: () => {
 				let s = this.state;
 				// positions
 				// TODO: xAxis Label spacing
 				return s.xAxisPositions.map((position, i) =>
-					this.renderer.xLine(position, s.xAxisLabels[i]
+					xLine(position, s.xAxisLabels[i], this.constants.height
 						// , {pos:'top'}
 					)
 				);
@@ -2168,7 +2180,7 @@ class AxisChart extends BaseChart {
 			layerClass: 'dataset-units dataset-' + index,
 			setData: () => {},
 			preMake: () => { },
-			make: () => {
+			makeElements: () => {
 				let d = this.state.datasets[index];
 
 				return d.positions.map((y, j) => {
@@ -2230,7 +2242,7 @@ class AxisChart extends BaseChart {
 		return new ChartComponent({
 			layerClass: 'path dataset-path',
 			setData: () => {},
-			make: () => {
+			makeElements: () => {
 				let d = this.state.datasets[index];
 				let color = this.colors[index];
 
@@ -2280,7 +2292,7 @@ class AxisChart extends BaseChart {
 			return new ChartComponent({
 				layerClass: 'y-markers',
 				setData: () => {},
-				make: () => {
+				makeElements: () => {
 					let s = this.state;
 					return s.yMarkers.map(marker =>
 						this.renderer.yMarker(marker.value, marker.name,
@@ -2301,7 +2313,7 @@ class AxisChart extends BaseChart {
 			return new ChartComponent({
 				layerClass: 'y-regions',
 				setData: () => {},
-				make: () => {
+				makeElements: () => {
 					let s = this.state;
 					return s.yRegions.map(region =>
 						this.renderer.yRegion(region.start, region.end, region.name)
@@ -2310,10 +2322,6 @@ class AxisChart extends BaseChart {
 				animate: () => {}
 			});
 		});
-	}
-
-	getXRegions() {
-		return [];
 	}
 
 	refreshRenderer() {
@@ -2334,8 +2342,6 @@ class AxisChart extends BaseChart {
 		} else {
 			this.renderer.refreshState(state);
 		}
-
-		this.refreshComponents();
 
 		let meta = {
 			totalHeight: this.height,
@@ -2778,40 +2784,42 @@ class PercentageChart extends BaseChart {
 		});
 	}
 
-	bindTooltip() {
-		this.slices.map((slice, i) => {
-			slice.addEventListener('mouseenter', () => {
-				let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
+	calc() {}
 
-				let x = p_off.left - g_off.left + slice.offsetWidth/2;
-				let y = p_off.top - g_off.top - 6;
-				let title = (this.formatted_labels && this.formatted_labels.length>0
-					? this.formatted_labels[i] : this.labels[i]) + ': ';
-				let percent = (this.slice_totals[i]*100/this.grand_total).toFixed(1);
+	// bindTooltip() {
+	// 	this.slices.map((slice, i) => {
+	// 		slice.addEventListener('mouseenter', () => {
+	// 			let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
 
-				this.tip.set_values(x, y, title, percent + "%");
-				this.tip.show_tip();
-			});
-		});
-	}
+	// 			let x = p_off.left - g_off.left + slice.offsetWidth/2;
+	// 			let y = p_off.top - g_off.top - 6;
+	// 			let title = (this.formatted_labels && this.formatted_labels.length>0
+	// 				? this.formatted_labels[i] : this.labels[i]) + ': ';
+	// 			let percent = (this.slice_totals[i]*100/this.grand_total).toFixed(1);
 
-	renderLegend() {
-		let x_values = this.formatted_labels && this.formatted_labels.length > 0
-			? this.formatted_labels : this.labels;
-		this.legend_totals.map((d, i) => {
-			if(d) {
-				let stats = $$1.create('div', {
-					className: 'stats',
-					inside: this.statsWrapper
-				});
-				stats.innerHTML = `<span class="indicator">
-					<i style="background: ${this.colors[i]}"></i>
-					<span class="text-muted">${x_values[i]}:</span>
-					${d}
-				</span>`;
-			}
-		});
-	}
+	// 			this.tip.set_values(x, y, title, percent + "%");
+	// 			this.tip.show_tip();
+	// 		});
+	// 	});
+	// }
+
+	// renderLegend() {
+	// 	let x_values = this.formatted_labels && this.formatted_labels.length > 0
+	// 		? this.formatted_labels : this.labels;
+	// 	this.legend_totals.map((d, i) => {
+	// 		if(d) {
+	// 			let stats = $.create('div', {
+	// 				className: 'stats',
+	// 				inside: this.statsWrapper
+	// 			});
+	// 			stats.innerHTML = `<span class="indicator">
+	// 				<i style="background: ${this.colors[i]}"></i>
+	// 				<span class="text-muted">${x_values[i]}:</span>
+	// 				${d}
+	// 			</span>`;
+	// 		}
+	// 	});
+	// }
 }
 
 const ANGLE_RATIO = Math.PI / 180;

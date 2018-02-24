@@ -7,6 +7,25 @@ export const REPLACE_ALL_NEW_DUR = 250;
 
 export const STD_EASING = 'easein';
 
+export function translate(unit, oldCoord, newCoord, duration) {
+	return [
+		unit,
+		{transform: newCoord.join(', ')},
+		duration,
+		STD_EASING,
+		"translate",
+		{transform: oldCoord.join(', ')}
+	];
+}
+
+export function translateVertLine(xLine, newX, oldX) {
+	return translate(xLine, [oldX, 0], [newX, 0], MARKER_LINE_ANIM_DUR);
+}
+
+export function translateHoriLine(yLine, newY, oldY) {
+	return translate(yLine, [0, oldY], [0, newY], MARKER_LINE_ANIM_DUR);
+}
+
 export var Animator = (function() {
 	var Animator = function(totalHeight, totalWidth, zeroLine, avgUnitWidth) {
 		// constants
@@ -54,25 +73,6 @@ export var Animator = (function() {
 			}
 
 			return pathComponents;
-		},
-
-		translate: function(obj, oldCoord, newCoord, duration) {
-			return [
-				{unit: obj, array: [0], index: 0},
-				{transform: newCoord.join(', ')},
-				duration,
-				STD_EASING,
-				"translate",
-				{transform: oldCoord.join(', ')}
-			];
-		},
-
-		translateVertLine: function(xLine, newX, oldX) {
-			return this.translate(xLine, [oldX, 0], [newX, 0], MARKER_LINE_ANIM_DUR);
-		},
-
-		translateHoriLine: function(yLine, newY, oldY) {
-			return this.translate(yLine, [0, oldY], [0, newY], MARKER_LINE_ANIM_DUR);
 		}
 	};
 

@@ -53,6 +53,7 @@ let bar_composite_chart = new Chart ({
 	isNavigable: 1,
 	isSeries: 1,
 	valuesOverPoints: 1,
+	yAxisMode: 'tick'
 	// regionFill: 1
 });
 

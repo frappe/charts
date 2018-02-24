@@ -89,38 +89,40 @@ export default class PercentageChart extends BaseChart {
 		});
 	}
 
-	bindTooltip() {
-		this.slices.map((slice, i) => {
-			slice.addEventListener('mouseenter', () => {
-				let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
+	calc() {}
 
-				let x = p_off.left - g_off.left + slice.offsetWidth/2;
-				let y = p_off.top - g_off.top - 6;
-				let title = (this.formatted_labels && this.formatted_labels.length>0
-					? this.formatted_labels[i] : this.labels[i]) + ': ';
-				let percent = (this.slice_totals[i]*100/this.grand_total).toFixed(1);
+	// bindTooltip() {
+	// 	this.slices.map((slice, i) => {
+	// 		slice.addEventListener('mouseenter', () => {
+	// 			let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
 
-				this.tip.set_values(x, y, title, percent + "%");
-				this.tip.show_tip();
-			});
-		});
-	}
+	// 			let x = p_off.left - g_off.left + slice.offsetWidth/2;
+	// 			let y = p_off.top - g_off.top - 6;
+	// 			let title = (this.formatted_labels && this.formatted_labels.length>0
+	// 				? this.formatted_labels[i] : this.labels[i]) + ': ';
+	// 			let percent = (this.slice_totals[i]*100/this.grand_total).toFixed(1);
 
-	renderLegend() {
-		let x_values = this.formatted_labels && this.formatted_labels.length > 0
-			? this.formatted_labels : this.labels;
-		this.legend_totals.map((d, i) => {
-			if(d) {
-				let stats = $.create('div', {
-					className: 'stats',
-					inside: this.statsWrapper
-				});
-				stats.innerHTML = `<span class="indicator">
-					<i style="background: ${this.colors[i]}"></i>
-					<span class="text-muted">${x_values[i]}:</span>
-					${d}
-				</span>`;
-			}
-		});
-	}
+	// 			this.tip.set_values(x, y, title, percent + "%");
+	// 			this.tip.show_tip();
+	// 		});
+	// 	});
+	// }
+
+	// renderLegend() {
+	// 	let x_values = this.formatted_labels && this.formatted_labels.length > 0
+	// 		? this.formatted_labels : this.labels;
+	// 	this.legend_totals.map((d, i) => {
+	// 		if(d) {
+	// 			let stats = $.create('div', {
+	// 				className: 'stats',
+	// 				inside: this.statsWrapper
+	// 			});
+	// 			stats.innerHTML = `<span class="indicator">
+	// 				<i style="background: ${this.colors[i]}"></i>
+	// 				<span class="text-muted">${x_values[i]}:</span>
+	// 				${d}
+	// 			</span>`;
+	// 		}
+	// 	});
+	// }
 }

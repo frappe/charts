@@ -1,5 +1,5 @@
 import AxisChart from './AxisChart';
-import { ChartComponent } from '../objects/ChartComponent';
+// import { ChartComponent } from '../objects/ChartComponents';
 import { makeSVGGroup, makePath, makeGradient } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 

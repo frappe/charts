@@ -21,7 +21,7 @@ function normalize(x) {
 	return [sig * man, exp];
 }
 
-function getRangeIntervals(max, min=0) {
+function getChartRangeIntervals(max, min=0) {
 	let upperBound = Math.ceil(max);
 	let lowerBound = Math.floor(min);
 	let range = upperBound - lowerBound;
@@ -59,19 +59,19 @@ function getRangeIntervals(max, min=0) {
 	return intervals;
 }
 
-function getIntervals(maxValue, minValue=0) {
+function getChartIntervals(maxValue, minValue=0) {
 	let [normalMaxValue, exponent] = normalize(maxValue);
 	let normalMinValue = minValue ? minValue/Math.pow(10, exponent): 0;
 
 	// Allow only 7 significant digits
 	normalMaxValue = normalMaxValue.toFixed(6);
 
-	let intervals = getRangeIntervals(normalMaxValue, normalMinValue);
+	let intervals = getChartRangeIntervals(normalMaxValue, normalMinValue);
 	intervals = intervals.map(value => value * Math.pow(10, exponent));
 	return intervals;
 }
 
-export function calcIntervals(values, withMinimum=false) {
+export function calcChartIntervals(values, withMinimum=false) {
 	//*** Where the magic happens ***
 
 	// Calculates best-fit y intervals from given values
@@ -84,7 +84,7 @@ export function calcIntervals(values, withMinimum=false) {
 	let exponent = 0, intervals = []; // eslint-disable-line no-unused-vars
 
 	function getPositiveFirstIntervals(maxValue, absMinValue) {
-		let intervals = getIntervals(maxValue);
+		let intervals = getChartIntervals(maxValue);
 
 		let intervalSize = intervals[1] - intervals[0];
 
@@ -102,9 +102,9 @@ export function calcIntervals(values, withMinimum=false) {
 	if(maxValue >= 0 && minValue >= 0) {
 		exponent = normalize(maxValue)[1];
 		if(!withMinimum) {
-			intervals = getIntervals(maxValue);
+			intervals = getChartIntervals(maxValue);
 		} else {
-			intervals = getIntervals(maxValue, minValue);
+			intervals = getChartIntervals(maxValue, minValue);
 		}
 	}
 
@@ -142,9 +142,9 @@ export function calcIntervals(values, withMinimum=false) {
 
 		exponent = normalize(pseudoMaxValue)[1];
 		if(!withMinimum) {
-			intervals = getIntervals(pseudoMaxValue);
+			intervals = getChartIntervals(pseudoMaxValue);
 		} else {
-			intervals = getIntervals(pseudoMaxValue, pseudoMinValue);
+			intervals = getChartIntervals(pseudoMaxValue, pseudoMinValue);
 		}
 
 		intervals = intervals.reverse().map(d => d * (-1));
@@ -172,6 +172,18 @@ export function getZeroIndex(yPts) {
 		zeroIndex = (-1) * max / interval + (yPts.length - 1);
 	}
 	return zeroIndex;
+}
+
+export function getRealIntervals(max, noOfIntervals, min = 0, asc = 1) {
+	let range = max - min;
+	let part = range * 1.0 / noOfIntervals;
+	let intervals = [];
+
+	for(var i = 0; i <= noOfIntervals; i++) {
+		intervals.push(min + part * i);
+	}
+
+	return asc ? intervals : intervals.reverse();
 }
 
 export function getIntervalSize(orderedArray) {
