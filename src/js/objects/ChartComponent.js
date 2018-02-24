@@ -4,6 +4,10 @@ export class ChartComponent {
 	constructor({
 		layerClass = '',
 		layerTransform = '',
+		initData,
+
+		// called on update
+		setData,
 		preMake,
 		make,
 		postMake,
@@ -11,6 +15,9 @@ export class ChartComponent {
 	}) {
 		this.layerClass = layerClass;
 		this.layerTransform = layerTransform;
+
+		this.initData = initData;
+		this.setData = setData;
 
 		this.preMake = preMake;
 		this.make = make;
@@ -22,9 +29,15 @@ export class ChartComponent {
 		this.store = [];
 	}
 
-	refresh(args) {}
+	refresh(state, args) {
+		this.meta = Object.assign((this.meta || {}), args);
+		this.state = state;
+	}
+
 
 	render() {
+		this.data = this.setData(); // The only without this function?
+
 		this.preMake && this.preMake();
 		this.store = this.make();
 
@@ -33,7 +46,7 @@ export class ChartComponent {
 			this.layer.appendChild(element);
 		});
 
-		this.postMake && this.postMake(this.store, this.layer);
+		this.postMake && this.postMake();
 	}
 
 	setupParent(parent) {

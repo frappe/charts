@@ -257,8 +257,6 @@ export default class AxisChart extends BaseChart {
 		// }
 
 		this.components = [
-			// temp
-			// this.yAxesAux,
 			...this.getYAxesComponents(),
 			this.getXAxisComponents(),
 			...this.getYRegions(),
@@ -266,13 +264,26 @@ export default class AxisChart extends BaseChart {
 			...this.getYMarkerLines(),
 			// ...this.getXMarkerLines(),
 			...this.getChartComponents(),
+			...this.getChartLabels(),
 		];
 	}
 
 	getYAxesComponents() {
 		return [new ChartComponent({
 			layerClass: 'y axis',
+			setData: () => {
+				// let s = this.state;
+
+				// data = {};
+
+
+				// return data;
+			},
+			initializeData: function() {
+				this.axesPositions = this.state
+			},
 			make: () => {
+				// positions, labels, renderer
 				let s = this.state;
 				return s.yAxis.positions.map((position, i) =>
 					this.renderer.yLine(position, s.yAxis.labels[i], {pos:'right'})
@@ -310,8 +321,10 @@ export default class AxisChart extends BaseChart {
 	getXAxisComponents() {
 		return new ChartComponent({
 			layerClass: 'x axis',
+			setData: () => {},
 			make: () => {
 				let s = this.state;
+				// positions
 				// TODO: xAxis Label spacing
 				return s.xAxisPositions.map((position, i) =>
 					this.renderer.xLine(position, s.xAxisLabels[i]
@@ -361,9 +374,15 @@ export default class AxisChart extends BaseChart {
 		return dataUnitsComponents;
 	}
 
+	getChartLabels() {
+		// To layer all labels above everything else
+		return [];
+	}
+
 	getDataUnitComponent(index, unitRenderer) {
 		return new ChartComponent({
 			layerClass: 'dataset-units dataset-' + index,
+			setData: () => {},
 			preMake: () => { },
 			make: () => {
 				let d = this.state.datasets[index];
@@ -380,15 +399,15 @@ export default class AxisChart extends BaseChart {
 					);
 				});
 			},
-			postMake: (store, layer) => {
+			postMake: function() {
 				let translate_layer = () => {
-					layer.setAttribute('transform', `translate(${unitRenderer.consts.width * index}, 0)`);
+					this.layer.setAttribute('transform', `translate(${unitRenderer.consts.width * index}, 0)`);
 				}
 
 				// let d = this.state.datasets[index];
 
-				if(this.type === 'bar' && (!this.barOptions
-					|| !this.barOptions.stacked)) {
+				if(this.meta.type === 'bar' && (!this.meta.barOptions
+					|| !this.meta.barOptions.stacked)) {
 
 					translate_layer();
 				}
@@ -426,6 +445,7 @@ export default class AxisChart extends BaseChart {
 	getPathComponent(d, index) {
 		return new ChartComponent({
 			layerClass: 'path dataset-path',
+			setData: () => {},
 			make: () => {
 				let d = this.state.datasets[index];
 				let color = this.colors[index];
@@ -475,6 +495,7 @@ export default class AxisChart extends BaseChart {
 		return this.data.yMarkers.map((d, index) => {
 			return new ChartComponent({
 				layerClass: 'y-markers',
+				setData: () => {},
 				make: () => {
 					let s = this.state;
 					return s.yMarkers.map(marker =>
@@ -495,6 +516,7 @@ export default class AxisChart extends BaseChart {
 		return this.data.yRegions.map((d, index) => {
 			return new ChartComponent({
 				layerClass: 'y-regions',
+				setData: () => {},
 				make: () => {
 					let s = this.state;
 					return s.yRegions.map(region =>
@@ -528,6 +550,8 @@ export default class AxisChart extends BaseChart {
 		} else {
 			this.renderer.refreshState(state);
 		}
+
+		this.refreshComponents();
 
 		let meta = {
 			totalHeight: this.height,
@@ -607,7 +631,7 @@ export default class AxisChart extends BaseChart {
 		return data_point;
 	}
 
-	updateCurrentDataPoint(index) {
+	setCurrentDataPoint(index) {
 		index = parseInt(index);
 		if(index < 0) index = 0;
 		if(index >= this.xAxisLabels.length) index = this.xAxisLabels.length - 1;
@@ -619,6 +643,7 @@ export default class AxisChart extends BaseChart {
 	// API
 
 	addDataPoint(label, datasetValues, index=this.state.datasetLength) {
+		super.addDataPoint(label, datasetValues, index);
 		// console.log(label, datasetValues, this.data.labels);
 		this.data.labels.splice(index, 0, label);
 		this.data.datasets.map((d, i) => {
@@ -629,6 +654,7 @@ export default class AxisChart extends BaseChart {
 	}
 
 	removeDataPoint(index = this.state.datasetLength-1) {
+		super.removeDataPoint(index);
 		this.data.labels.splice(index, 1);
 		this.data.datasets.map(d => {
 			d.values.splice(index, 1);
@@ -636,12 +662,12 @@ export default class AxisChart extends BaseChart {
 		this.update(this.data);
 	}
 
-	updateData() {
-		// animate if same no. of datasets,
-		// else return new chart
+	// updateData() {
+	// 	// animate if same no. of datasets,
+	// 	// else return new chart
 
-		//
-	}
+	// 	//
+	// }
 }
 
 

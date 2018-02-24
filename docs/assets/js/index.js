@@ -69,6 +69,37 @@ let line_composite_chart = new Chart ({
 	valuesOverPoints: 1,
 });
 
+
+// Assuming this data structure for all, what would the most used APIs?
+
+// chart.updateDataset([], index)
+
+// chart.updateDatasets([[], [], []])
+
+// chart.addDataset([], index)
+
+// chart.removeDatasets(index)
+
+// chart.addDataPoint({'asd': [20, 10, 30]})
+
+// chart.removeDataPoint(index)
+
+// chart.updatePoint('asd': [20, 10, 30]}, index)
+
+// chart.update(data)
+
+
+
+// let bar_update = [];
+
+// setInterval(() => {
+// 	line_composite_data.datasets = [more_line_data[5]];
+// 	line_composite_chart.update(line_composite_data);
+
+// 	bar_composite_data.datasets = [more_line_data[5]];
+// 	bar_composite_chart.update(bar_composite_data);
+// }, 2000);
+
 bar_composite_chart.parent.addEventListener('data-select', (e) => {
 	line_composite_chart.updateData([more_line_data[e.index]]);
 });
@@ -96,7 +127,7 @@ let type_data = {
 	yRegions: [
 		{
 			name: "Region Y 1",
-			start: 10,
+			start: -10,
 			end: 50
 		},
 	],
@@ -398,7 +429,7 @@ let aggr_chart = new Chart({
 	colors: ['light-green', 'blue'],
 	valuesOverPoints: 1,
 	barOptions: {
-		stacked: 1
+		// stacked: 1
 	}
 });
 

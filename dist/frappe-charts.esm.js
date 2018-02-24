@@ -1136,9 +1136,6 @@ class BaseChart {
 	}
 
 	update(data) {
-		// difference from draw(): yes you do rerender everything here as well,
-		// but not things like the chart itself or layers, mosty only at component level
-		// HERE IS WHERE THE ACTUAL STATE CHANGES, and old one matters, not in draw
 		this.refresh(data);
 		this.reRender();
 	}
@@ -1174,7 +1171,7 @@ class BaseChart {
 		);
 		this.svgDefs = makeSVGDefs(this.svg);
 
-		// I wish !!!
+		// I WISH !!!
 		// this.svg = makeSVGGroup(
 		// 	svgContainer,
 		// 	'flipped-coord-system',
@@ -1196,7 +1193,9 @@ class BaseChart {
 	// Will update values(state)
 	// Will recalc specific parts depending on the update
 
-	refreshRenderer() {}
+	refreshRenderer() {
+		this.renderer = {};
+	}
 
 	reRender(animate=true) {
 		if(!animate) {
@@ -1218,6 +1217,8 @@ class BaseChart {
 	makeComponentLayers() { this.components.forEach(c => c.makeLayer()); }
 	renderComponents() { this.components.forEach(c => c.render()); }
 	loadAnimatedComponents() { this.components.forEach(c => c.loadAnimatedComponents()); }
+
+	refreshComponents() { this.components.forEach(c => c.refresh(this.state, this.rawChartArgs)); }
 
 	renderLegend() {}
 
@@ -1259,8 +1260,37 @@ class BaseChart {
 	onDownArrow() {}
 	onEnterKey() {}
 
+	// updateData() {
+	// 	update();
+	// }
+
 	getDataPoint() {}
-	updateCurrentDataPoint() {}
+	setCurrentDataPoint() {}
+
+
+	// Update the data here, then do relevant updates
+	// and drawing in child classes by overriding
+	// The Child chart will only know what a particular update means
+	// and what components are affected,
+	// BaseChart shouldn't be doing the animating
+
+	updateDataset(dataset, index) {}
+
+	updateDatasets(datasets) {
+		//
+	}
+
+	addDataset(dataset, index) {}
+
+	removeDataset(index = 0) {}
+
+	addDataPoint(dataPoint, index = 0) {}
+
+	removeDataPoint(index = 0) {}
+
+	updateDataPoint(dataPoint, index = 0) {}
+
+
 
 	getDifferentChart(type) {
 		return getDifferentChart(type, this.type, this.rawChartArgs);
@@ -1273,6 +1303,10 @@ class ChartComponent {
 	constructor({
 		layerClass = '',
 		layerTransform = '',
+		initData,
+
+		// called on update
+		setData,
 		preMake,
 		make,
 		postMake,
@@ -1280,6 +1314,9 @@ class ChartComponent {
 	}) {
 		this.layerClass = layerClass;
 		this.layerTransform = layerTransform;
+
+		this.initData = initData;
+		this.setData = setData;
 
 		this.preMake = preMake;
 		this.make = make;
@@ -1291,9 +1328,15 @@ class ChartComponent {
 		this.store = [];
 	}
 
-	refresh(args) {}
+	refresh(state, args) {
+		this.meta = Object.assign((this.meta || {}), args);
+		this.state = state;
+	}
+
 
 	render() {
+		this.data = this.setData(); // The only without this function?
+
 		this.preMake && this.preMake();
 		this.store = this.make();
 
@@ -1302,7 +1345,7 @@ class ChartComponent {
 			this.layer.appendChild(element);
 		});
 
-		this.postMake && this.postMake(this.store, this.layer);
+		this.postMake && this.postMake();
 	}
 
 	setupParent(parent) {
@@ -1496,7 +1539,7 @@ function getPaths(yList, xList, color, heatline=false, regionFill=false) {
 // 		// Just make one out of the first element
 // 		let index = this.xAxisLabels.length - 1;
 // 		let unit = this.y[0].svg_units[index];
-// 		this.updateCurrentDataPoint(index);
+// 		this.setCurrentDataPoint(index);
 
 // 		if(this.overlay) {
 // 			this.overlay.parentNode.removeChild(this.overlay);
@@ -1518,7 +1561,7 @@ function getPaths(yList, xList, color, heatline=false, regionFill=false) {
 // 		units_array.map(unit => {
 // 			unit.addEventListener('click', () => {
 // 				let index = unit.getAttribute('data-point-index');
-// 				this.updateCurrentDataPoint(index);
+// 				this.setCurrentDataPoint(index);
 // 			});
 // 		});
 // 	}
@@ -1538,11 +1581,11 @@ function getPaths(yList, xList, color, heatline=false, regionFill=false) {
 // 	}
 
 // 	onLeftArrow() {
-// 		this.updateCurrentDataPoint(this.currentIndex - 1);
+// 		this.setCurrentDataPoint(this.currentIndex - 1);
 // 	}
 
 // 	onRightArrow() {
-// 		this.updateCurrentDataPoint(this.currentIndex + 1);
+// 		this.setCurrentDataPoint(this.currentIndex + 1);
 // 	}
 // }
 
@@ -1998,8 +2041,6 @@ class AxisChart extends BaseChart {
 		// }
 
 		this.components = [
-			// temp
-			// this.yAxesAux,
 			...this.getYAxesComponents(),
 			this.getXAxisComponents(),
 			...this.getYRegions(),
@@ -2007,13 +2048,26 @@ class AxisChart extends BaseChart {
 			...this.getYMarkerLines(),
 			// ...this.getXMarkerLines(),
 			...this.getChartComponents(),
+			...this.getChartLabels(),
 		];
 	}
 
 	getYAxesComponents() {
 		return [new ChartComponent({
 			layerClass: 'y axis',
+			setData: () => {
+				// let s = this.state;
+
+				// data = {};
+
+
+				// return data;
+			},
+			initializeData: function() {
+				this.axesPositions = this.state;
+			},
 			make: () => {
+				// positions, labels, renderer
 				let s = this.state;
 				return s.yAxis.positions.map((position, i) =>
 					this.renderer.yLine(position, s.yAxis.labels[i], {pos:'right'})
@@ -2051,8 +2105,10 @@ class AxisChart extends BaseChart {
 	getXAxisComponents() {
 		return new ChartComponent({
 			layerClass: 'x axis',
+			setData: () => {},
 			make: () => {
 				let s = this.state;
+				// positions
 				// TODO: xAxis Label spacing
 				return s.xAxisPositions.map((position, i) =>
 					this.renderer.xLine(position, s.xAxisLabels[i]
@@ -2102,9 +2158,15 @@ class AxisChart extends BaseChart {
 		return dataUnitsComponents;
 	}
 
+	getChartLabels() {
+		// To layer all labels above everything else
+		return [];
+	}
+
 	getDataUnitComponent(index, unitRenderer) {
 		return new ChartComponent({
 			layerClass: 'dataset-units dataset-' + index,
+			setData: () => {},
 			preMake: () => { },
 			make: () => {
 				let d = this.state.datasets[index];
@@ -2121,15 +2183,15 @@ class AxisChart extends BaseChart {
 					);
 				});
 			},
-			postMake: (store, layer) => {
+			postMake: function() {
 				let translate_layer = () => {
-					layer.setAttribute('transform', `translate(${unitRenderer.consts.width * index}, 0)`);
+					this.layer.setAttribute('transform', `translate(${unitRenderer.consts.width * index}, 0)`);
 				};
 
 				// let d = this.state.datasets[index];
 
-				if(this.type === 'bar' && (!this.barOptions
-					|| !this.barOptions.stacked)) {
+				if(this.meta.type === 'bar' && (!this.meta.barOptions
+					|| !this.meta.barOptions.stacked)) {
 
 					translate_layer();
 				}
@@ -2167,6 +2229,7 @@ class AxisChart extends BaseChart {
 	getPathComponent(d, index) {
 		return new ChartComponent({
 			layerClass: 'path dataset-path',
+			setData: () => {},
 			make: () => {
 				let d = this.state.datasets[index];
 				let color = this.colors[index];
@@ -2216,6 +2279,7 @@ class AxisChart extends BaseChart {
 		return this.data.yMarkers.map((d, index) => {
 			return new ChartComponent({
 				layerClass: 'y-markers',
+				setData: () => {},
 				make: () => {
 					let s = this.state;
 					return s.yMarkers.map(marker =>
@@ -2236,6 +2300,7 @@ class AxisChart extends BaseChart {
 		return this.data.yRegions.map((d, index) => {
 			return new ChartComponent({
 				layerClass: 'y-regions',
+				setData: () => {},
 				make: () => {
 					let s = this.state;
 					return s.yRegions.map(region =>
@@ -2269,6 +2334,8 @@ class AxisChart extends BaseChart {
 		} else {
 			this.renderer.refreshState(state);
 		}
+
+		this.refreshComponents();
 
 		let meta = {
 			totalHeight: this.height,
@@ -2348,7 +2415,7 @@ class AxisChart extends BaseChart {
 		return data_point;
 	}
 
-	updateCurrentDataPoint(index) {
+	setCurrentDataPoint(index) {
 		index = parseInt(index);
 		if(index < 0) index = 0;
 		if(index >= this.xAxisLabels.length) index = this.xAxisLabels.length - 1;
@@ -2360,6 +2427,7 @@ class AxisChart extends BaseChart {
 	// API
 
 	addDataPoint(label, datasetValues, index=this.state.datasetLength) {
+		super.addDataPoint(label, datasetValues, index);
 		// console.log(label, datasetValues, this.data.labels);
 		this.data.labels.splice(index, 0, label);
 		this.data.datasets.map((d, i) => {
@@ -2370,6 +2438,7 @@ class AxisChart extends BaseChart {
 	}
 
 	removeDataPoint(index = this.state.datasetLength-1) {
+		super.removeDataPoint(index);
 		this.data.labels.splice(index, 1);
 		this.data.datasets.map(d => {
 			d.values.splice(index, 1);
@@ -2377,12 +2446,12 @@ class AxisChart extends BaseChart {
 		this.update(this.data);
 	}
 
-	updateData() {
-		// animate if same no. of datasets,
-		// else return new chart
+	// updateData() {
+	// 	// animate if same no. of datasets,
+	// 	// else return new chart
 
-		//
-	}
+	// 	//
+	// }
 }
 
 

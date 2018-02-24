@@ -198,9 +198,6 @@ export default class BaseChart {
 	}
 
 	update(data) {
-		// difference from draw(): yes you do rerender everything here as well,
-		// but not things like the chart itself or layers, mosty only at component level
-		// HERE IS WHERE THE ACTUAL STATE CHANGES, and old one matters, not in draw
 		this.refresh(data);
 		this.reRender();
 	}
@@ -236,7 +233,7 @@ export default class BaseChart {
 		);
 		this.svgDefs = makeSVGDefs(this.svg);
 
-		// I wish !!!
+		// I WISH !!!
 		// this.svg = makeSVGGroup(
 		// 	svgContainer,
 		// 	'flipped-coord-system',
@@ -258,7 +255,9 @@ export default class BaseChart {
 	// Will update values(state)
 	// Will recalc specific parts depending on the update
 
-	refreshRenderer() {}
+	refreshRenderer() {
+		this.renderer = {};
+	}
 
 	reRender(animate=true) {
 		if(!animate) {
@@ -280,6 +279,8 @@ export default class BaseChart {
 	makeComponentLayers() { this.components.forEach(c => c.makeLayer()); }
 	renderComponents() { this.components.forEach(c => c.render()); }
 	loadAnimatedComponents() { this.components.forEach(c => c.loadAnimatedComponents()); }
+
+	refreshComponents() { this.components.forEach(c => c.refresh(this.state, this.rawChartArgs)); }
 
 	renderLegend() {}
 
@@ -321,8 +322,37 @@ export default class BaseChart {
 	onDownArrow() {}
 	onEnterKey() {}
 
+	// updateData() {
+	// 	update();
+	// }
+
 	getDataPoint() {}
-	updateCurrentDataPoint() {}
+	setCurrentDataPoint() {}
+
+
+	// Update the data here, then do relevant updates
+	// and drawing in child classes by overriding
+	// The Child chart will only know what a particular update means
+	// and what components are affected,
+	// BaseChart shouldn't be doing the animating
+
+	updateDataset(dataset, index) {}
+
+	updateDatasets(datasets) {
+		//
+	}
+
+	addDataset(dataset, index) {}
+
+	removeDataset(index = 0) {}
+
+	addDataPoint(dataPoint, index = 0) {}
+
+	removeDataPoint(index = 0) {}
+
+	updateDataPoint(dataPoint, index = 0) {}
+
+
 
 	getDifferentChart(type) {
 		return getDifferentChart(type, this.type, this.rawChartArgs);

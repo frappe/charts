@@ -199,7 +199,7 @@ export function getPaths(yList, xList, color, heatline=false, regionFill=false) 
 // 		// Just make one out of the first element
 // 		let index = this.xAxisLabels.length - 1;
 // 		let unit = this.y[0].svg_units[index];
-// 		this.updateCurrentDataPoint(index);
+// 		this.setCurrentDataPoint(index);
 
 // 		if(this.overlay) {
 // 			this.overlay.parentNode.removeChild(this.overlay);
@@ -221,7 +221,7 @@ export function getPaths(yList, xList, color, heatline=false, regionFill=false) 
 // 		units_array.map(unit => {
 // 			unit.addEventListener('click', () => {
 // 				let index = unit.getAttribute('data-point-index');
-// 				this.updateCurrentDataPoint(index);
+// 				this.setCurrentDataPoint(index);
 // 			});
 // 		});
 // 	}
@@ -241,11 +241,11 @@ export function getPaths(yList, xList, color, heatline=false, regionFill=false) 
 // 	}
 
 // 	onLeftArrow() {
-// 		this.updateCurrentDataPoint(this.currentIndex - 1);
+// 		this.setCurrentDataPoint(this.currentIndex - 1);
 // 	}
 
 // 	onRightArrow() {
-// 		this.updateCurrentDataPoint(this.currentIndex + 1);
+// 		this.setCurrentDataPoint(this.currentIndex + 1);
 // 	}
 // }
 
