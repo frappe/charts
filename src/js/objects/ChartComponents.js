@@ -1,7 +1,7 @@
 import { makeSVGGroup } from '../utils/draw';
-import { yLine } from '../utils/draw';
+import { xLine, yLine } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
-import { Animator, translateHoriLine } from '../utils/animate';
+import { Animator, translateHoriLine, translateVertLine } from '../utils/animate';
 
 class ChartComponent {
 	constructor({
@@ -15,6 +15,7 @@ class ChartComponent {
 		preMake,
 		makeElements,
 		postMake,
+		getData,
 		animateElements
 	}) {
 		this.parent = parent;
@@ -25,6 +26,7 @@ class ChartComponent {
 		this.preMake = preMake;
 		this.makeElements = makeElements;
 		this.postMake = postMake;
+		this.getData = getData;
 
 		this.animateElements = animateElements;
 
@@ -69,12 +71,9 @@ class ChartComponent {
 	}
 }
 
-export function getYAxisComponent(parent, constants, initData) {
-	return new ChartComponent({
-		parent: parent,
+let componentConfigs = {
+	yAxis: {
 		layerClass: 'y axis',
-		constants: constants,
-		data: initData,
 		makeElements: function(data) {
 			return data.positions.map((position, i) =>
 				yLine(position, data.labels[i], this.constants.width,
@@ -85,11 +84,8 @@ export function getYAxisComponent(parent, constants, initData) {
 		animateElements: function(newData) {
 			let newPos =  newData.positions;
 			let newLabels =  newData.labels;
-
 			let oldPos = this.oldData.positions;
 			let oldLabels = this.oldData.labels;
-
-			let extra = newPos.length - oldPos.length;
 
 			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
 			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
@@ -105,5 +101,47 @@ export function getYAxisComponent(parent, constants, initData) {
 				);
 			});
 		}
+	},
+
+	xAxis: {
+		layerClass: 'x axis',
+		makeElements: function(data) {
+			return data.positions.map((position, i) =>
+				xLine(position, data.labels[i], this.constants.height,
+					{mode: this.constants.mode, pos: this.constants.pos})
+			);
+		},
+
+		animateElements: function(newData) {
+			let newPos =  newData.positions;
+			let newLabels =  newData.labels;
+			let oldPos = this.oldData.positions;
+			let oldLabels = this.oldData.labels;
+
+			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
+			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+
+			this.render({
+				positions: oldPos,
+				labels: newLabels
+			});
+
+			return this.store.map((line, i) => {
+				return translateVertLine(
+					line, newPos[i], oldPos[i]
+				);
+			});
+		}
+	}
+}
+
+export function getComponent(name, parent, constants, initData, getData) {
+	let config = componentConfigs[name];
+	Object.assign(config, {
+		parent: parent,
+		constants: constants,
+		data: initData,
+		getData: getData
 	})
+	return new ChartComponent(config);
 }

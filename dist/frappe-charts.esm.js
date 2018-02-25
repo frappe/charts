@@ -301,7 +301,9 @@ function translate(unit, oldCoord, newCoord, duration) {
 	];
 }
 
-
+function translateVertLine(xLine, newX, oldX) {
+	return translate(xLine, [oldX, 0], [newX, 0], MARKER_LINE_ANIM_DUR);
+}
 
 function translateHoriLine(yLine, newY, oldY) {
 	return translate(yLine, [0, oldY], [0, newY], MARKER_LINE_ANIM_DUR);
@@ -551,6 +553,40 @@ function yLine(y, label, width, options={}) {
 	});
 }
 
+function xLine$1(x, label, height, options={}) {
+	if(!options.pos) options.pos = 'bottom';
+	if(!options.offset) options.offset = 0;
+	if(!options.mode) options.mode = 'span';
+	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
+	if(!options.className) options.className = '';
+
+	// Draw X axis line in span/tick mode with optional label
+	//                        	y2(span)
+	// 						|
+	// 						|
+	//				x line	|
+	//						|
+	// 					   	|
+	// ---------------------+-- y2(tick)
+	//						|
+	//							y1
+
+	let y1 = height + AXIS_TICK_LENGTH;
+	let y2 = options.mode === 'span' ? -1 * AXIS_TICK_LENGTH : height;
+
+	if(options.mode === 'tick' && options.pos === 'top') {
+		// top axis ticks
+		y1 = -1 * AXIS_TICK_LENGTH;
+		y2 = 0;
+	}
+
+	return makeVertLine(x, label, y1, y2, {
+		stroke: options.stroke,
+		className: options.className,
+		lineType: options.lineType
+	});
+}
+
 class AxisChartRenderer {
 	constructor(state) {
 		this.refreshState(state);
@@ -568,43 +604,6 @@ class AxisChartRenderer {
 	setZeroline(zeroLine) {
 		this.zeroLine = zeroLine;
 	}
-
-	xLine(x, label, options={}) {
-		if(!options.pos) options.pos = 'bottom';
-		if(!options.offset) options.offset = 0;
-		if(!options.mode) options.mode = 'span';
-		if(!options.stroke) options.stroke = BASE_LINE_COLOR;
-		if(!options.className) options.className = '';
-
-		// Draw X axis line in span/tick mode with optional label
-		//                        	y2(span)
-		// 						|
-		// 						|
-		//				x line	|
-		//						|
-		// 					   	|
-		// ---------------------+-- y2(tick)
-		//						|
-		//							y1
-
-		let y1 = this.totalHeight + AXIS_TICK_LENGTH;
-		let y2 = options.mode === 'span' ? -1 * AXIS_TICK_LENGTH : this.totalHeight;
-
-		if(options.mode === 'tick' && options.pos === 'top') {
-			// top axis ticks
-			y1 = -1 * AXIS_TICK_LENGTH;
-			y2 = 0;
-		}
-
-		return makeVertLine(x, label, y1, y2, {
-			stroke: options.stroke,
-			className: options.className,
-			lineType: options.lineType
-		});
-	}
-
-
-
 
 	xMarker() {}
 	yMarker(y, label, options={}) {
@@ -1074,8 +1073,9 @@ class BaseChart {
 
 		this.calcWidth();
 		this.makeChartArea();
-		this.setupComponents();
+		this.initComponents();
 
+		this.setupComponents();
 		this.draw(true);
 	}
 
@@ -1160,7 +1160,6 @@ class BaseChart {
 	render(animate=true) {
 		this.refreshComponents();
 		this.elementsToAnimate = [].concat.apply([], this.components.map(c => c.update(animate)));
-		console.log(this.elementsToAnimate);
 		if(this.elementsToAnimate) {
 			runSMILAnimation(this.chartWrapper, this.svg, this.elementsToAnimate);
 		}
@@ -1282,6 +1281,7 @@ class ChartComponent$1 {
 		preMake,
 		makeElements,
 		postMake,
+		getData,
 		animateElements
 	}) {
 		this.parent = parent;
@@ -1292,6 +1292,7 @@ class ChartComponent$1 {
 		this.preMake = preMake;
 		this.makeElements = makeElements;
 		this.postMake = postMake;
+		this.getData = getData;
 
 		this.animateElements = animateElements;
 
@@ -1336,12 +1337,9 @@ class ChartComponent$1 {
 	}
 }
 
-function getYAxisComponent(parent, constants, initData) {
-	return new ChartComponent$1({
-		parent: parent,
+let componentConfigs = {
+	yAxis: {
 		layerClass: 'y axis',
-		constants: constants,
-		data: initData,
 		makeElements: function(data) {
 			return data.positions.map((position, i) =>
 				yLine(position, data.labels[i], this.constants.width,
@@ -1352,7 +1350,6 @@ function getYAxisComponent(parent, constants, initData) {
 		animateElements: function(newData) {
 			let newPos =  newData.positions;
 			let newLabels =  newData.labels;
-
 			let oldPos = this.oldData.positions;
 			let oldLabels = this.oldData.labels;
 
@@ -1370,7 +1367,49 @@ function getYAxisComponent(parent, constants, initData) {
 				);
 			});
 		}
-	})
+	},
+
+	xAxis: {
+		layerClass: 'x axis',
+		makeElements: function(data) {
+			return data.positions.map((position, i) =>
+				xLine$1(position, data.labels[i], this.constants.height,
+					{mode: this.constants.mode, pos: this.constants.pos})
+			);
+		},
+
+		animateElements: function(newData) {
+			let newPos =  newData.positions;
+			let newLabels =  newData.labels;
+			let oldPos = this.oldData.positions;
+			let oldLabels = this.oldData.labels;
+
+			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
+			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+
+			this.render({
+				positions: oldPos,
+				labels: newLabels
+			});
+
+			return this.store.map((line, i) => {
+				return translateVertLine(
+					line, newPos[i], oldPos[i]
+				);
+			});
+		}
+	}
+};
+
+function getComponent(name, parent, constants, initData, getData) {
+	let config = componentConfigs[name];
+	Object.assign(config, {
+		parent: parent,
+		constants: constants,
+		data: initData,
+		getData: getData
+	});
+	return new ChartComponent$1(config);
 }
 
 const MIN_BAR_PERCENT_HEIGHT$1 = 0.01;
@@ -2060,47 +2099,75 @@ class AxisChart extends BaseChart {
 
 	setupValues() {}
 
-	setupComponents() {
+	initComponents() {
 
 		// TODO: rebind new units
 		// if(this.isNavigable) {
 		// 	this.bind_units(units_array);
 		// }
 
-		this.yAxis = getYAxisComponent(
-			this.drawArea,
-			{
-				mode: this.yAxisMode,
-				width: this.width,
-				// pos: 'right'
-			},
-			{
-				positions: getRealIntervals(this.height, 4, 0, 0),
-				labels: getRealIntervals(this.height, 4, 0, 0).map(d => d + ""),
-			}
-		);
-		this.components = [
-			this.yAxis
-			// this.getXAxisComponents(),
-			// ...this.getYRegions(),
-			// ...this.getXRegions(),
-			// ...this.getYMarkerLines(),
-			// // ...this.getXMarkerLines(),
-			// ...this.getChartComponents(),
-			// ...this.getChartLabels(),
+
+		this.componentConfigs = [
+			[
+				'yAxis',
+				this.drawArea,
+				{
+					mode: this.yAxisMode,
+					width: this.width,
+					// pos: 'right'
+				},
+				{
+					positions: getRealIntervals(this.height, 4, 0, 0),
+					labels: getRealIntervals(this.height, 4, 0, 0).map(d => d + ""),
+				},
+				function() {
+					let s = this.state;
+					return {
+						positions: s.yAxis.positions,
+						labels: s.yAxis.labels,
+					}
+				}.bind(this)
+			],
+
+			[
+				'xAxis',
+				this.drawArea,
+				{
+					mode: this.xAxisMode,
+					height: this.height,
+					// pos: 'right'
+				},
+				{
+					positions: getRealIntervals(this.width, 4, 0, 1),
+					labels: getRealIntervals(this.width, 4, 0, 1).map(d => d + ""),
+				},
+				function() {
+					let s = this.state;
+					return {
+						positions: s.xAxisPositions,
+						labels: s.xAxisLabels,
+					}
+				}.bind(this)
+			]
 		];
+
+		// this.components = [
+		// 	yAxis
+		// 	// this.getXAxisComponents(),
+		// 	// ...this.getYRegions(),
+		// 	// ...this.getXRegions(),
+		// 	// ...this.getYMarkerLines(),
+		// 	// // ...this.getXMarkerLines(),
+		// 	// ...this.getChartComponents(),
+		// 	// ...this.getChartLabels(),
+		// ];
+	}
+	setupComponents() {
+		this.components = this.componentConfigs.map(args => getComponent(...args));
 	}
 
 	refreshComponents() {
-		this.refreshYAxis();
-	}
-
-	refreshYAxis() {
-		let s = this.state;
-		this.yAxis.refresh({
-			positions: s.yAxis.positions,
-			labels: s.yAxis.labels,
-		});
+		this.components.forEach(comp => comp.refresh(comp.getData()));
 	}
 
 	getXAxisComponents() {
@@ -2786,40 +2853,40 @@ class PercentageChart extends BaseChart {
 
 	calc() {}
 
-	// bindTooltip() {
-	// 	this.slices.map((slice, i) => {
-	// 		slice.addEventListener('mouseenter', () => {
-	// 			let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
+	bindTooltip() {
+		this.slices.map((slice, i) => {
+			slice.addEventListener('mouseenter', () => {
+				let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
 
-	// 			let x = p_off.left - g_off.left + slice.offsetWidth/2;
-	// 			let y = p_off.top - g_off.top - 6;
-	// 			let title = (this.formatted_labels && this.formatted_labels.length>0
-	// 				? this.formatted_labels[i] : this.labels[i]) + ': ';
-	// 			let percent = (this.slice_totals[i]*100/this.grand_total).toFixed(1);
+				let x = p_off.left - g_off.left + slice.offsetWidth/2;
+				let y = p_off.top - g_off.top - 6;
+				let title = (this.formatted_labels && this.formatted_labels.length>0
+					? this.formatted_labels[i] : this.labels[i]) + ': ';
+				let percent = (this.slice_totals[i]*100/this.grand_total).toFixed(1);
 
-	// 			this.tip.set_values(x, y, title, percent + "%");
-	// 			this.tip.show_tip();
-	// 		});
-	// 	});
-	// }
+				this.tip.set_values(x, y, title, percent + "%");
+				this.tip.show_tip();
+			});
+		});
+	}
 
-	// renderLegend() {
-	// 	let x_values = this.formatted_labels && this.formatted_labels.length > 0
-	// 		? this.formatted_labels : this.labels;
-	// 	this.legend_totals.map((d, i) => {
-	// 		if(d) {
-	// 			let stats = $.create('div', {
-	// 				className: 'stats',
-	// 				inside: this.statsWrapper
-	// 			});
-	// 			stats.innerHTML = `<span class="indicator">
-	// 				<i style="background: ${this.colors[i]}"></i>
-	// 				<span class="text-muted">${x_values[i]}:</span>
-	// 				${d}
-	// 			</span>`;
-	// 		}
-	// 	});
-	// }
+	renderLegend() {
+		let x_values = this.formatted_labels && this.formatted_labels.length > 0
+			? this.formatted_labels : this.labels;
+		this.legend_totals.map((d, i) => {
+			if(d) {
+				let stats = $$1.create('div', {
+					className: 'stats',
+					inside: this.statsWrapper
+				});
+				stats.innerHTML = `<span class="indicator">
+					<i style="background: ${this.colors[i]}"></i>
+					<span class="text-muted">${x_values[i]}:</span>
+					${d}
+				</span>`;
+			}
+		});
+	}
 }
 
 const ANGLE_RATIO = Math.PI / 180;

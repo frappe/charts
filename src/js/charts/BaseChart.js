@@ -135,8 +135,9 @@ export default class BaseChart {
 
 		this.calcWidth();
 		this.makeChartArea();
-		this.setupComponents();
+		this.initComponents();
 
+		this.setupComponents();
 		this.draw(true);
 	}
 
@@ -221,7 +222,6 @@ export default class BaseChart {
 	render(animate=true) {
 		this.refreshComponents();
 		this.elementsToAnimate = [].concat.apply([], this.components.map(c => c.update(animate)));
-		console.log(this.elementsToAnimate);
 		if(this.elementsToAnimate) {
 			runSMILAnimation(this.chartWrapper, this.svg, this.elementsToAnimate);
 		}

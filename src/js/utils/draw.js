@@ -266,6 +266,40 @@ export function yLine(y, label, width, options={}) {
 	});
 }
 
+export function xLine(x, label, height, options={}) {
+	if(!options.pos) options.pos = 'bottom';
+	if(!options.offset) options.offset = 0;
+	if(!options.mode) options.mode = 'span';
+	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
+	if(!options.className) options.className = '';
+
+	// Draw X axis line in span/tick mode with optional label
+	//                        	y2(span)
+	// 						|
+	// 						|
+	//				x line	|
+	//						|
+	// 					   	|
+	// ---------------------+-- y2(tick)
+	//						|
+	//							y1
+
+	let y1 = height + AXIS_TICK_LENGTH;
+	let y2 = options.mode === 'span' ? -1 * AXIS_TICK_LENGTH : height;
+
+	if(options.mode === 'tick' && options.pos === 'top') {
+		// top axis ticks
+		y1 = -1 * AXIS_TICK_LENGTH;
+		y2 = 0;
+	}
+
+	return makeVertLine(x, label, y1, y2, {
+		stroke: options.stroke,
+		className: options.className,
+		lineType: options.lineType
+	});
+}
+
 export class AxisChartRenderer {
 	constructor(state) {
 		this.refreshState(state);
@@ -283,43 +317,6 @@ export class AxisChartRenderer {
 	setZeroline(zeroLine) {
 		this.zeroLine = zeroLine;
 	}
-
-	xLine(x, label, options={}) {
-		if(!options.pos) options.pos = 'bottom';
-		if(!options.offset) options.offset = 0;
-		if(!options.mode) options.mode = 'span';
-		if(!options.stroke) options.stroke = BASE_LINE_COLOR;
-		if(!options.className) options.className = '';
-
-		// Draw X axis line in span/tick mode with optional label
-		//                        	y2(span)
-		// 						|
-		// 						|
-		//				x line	|
-		//						|
-		// 					   	|
-		// ---------------------+-- y2(tick)
-		//						|
-		//							y1
-
-		let y1 = this.totalHeight + AXIS_TICK_LENGTH;
-		let y2 = options.mode === 'span' ? -1 * AXIS_TICK_LENGTH : this.totalHeight;
-
-		if(options.mode === 'tick' && options.pos === 'top') {
-			// top axis ticks
-			y1 = -1 * AXIS_TICK_LENGTH;
-			y2 = 0;
-		}
-
-		return makeVertLine(x, label, y1, y2, {
-			stroke: options.stroke,
-			className: options.className,
-			lineType: options.lineType
-		});
-	}
-
-
-
 
 	xMarker() {}
 	yMarker(y, label, options={}) {

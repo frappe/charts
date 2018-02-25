@@ -1,6 +1,6 @@
 import BaseChart from './BaseChart';
 import { Y_AXIS_MARGIN } from '../utils/margins';
-import { getYAxisComponent } from '../objects/ChartComponents';
+import { getComponent } from '../objects/ChartComponents';
 import { BarChartController, LineChartController, getPaths } from '../objects/AxisChartControllers';
 import { AxisChartRenderer } from '../utils/draw';
 import { getOffset, fire } from '../utils/dom';
@@ -252,47 +252,75 @@ export default class AxisChart extends BaseChart {
 
 	setupValues() {}
 
-	setupComponents() {
+	initComponents() {
 
 		// TODO: rebind new units
 		// if(this.isNavigable) {
 		// 	this.bind_units(units_array);
 		// }
 
-		this.yAxis = getYAxisComponent(
-			this.drawArea,
-			{
-				mode: this.yAxisMode,
-				width: this.width,
-				// pos: 'right'
-			},
-			{
-				positions: getRealIntervals(this.height, 4, 0, 0),
-				labels: getRealIntervals(this.height, 4, 0, 0).map(d => d + ""),
-			}
-		)
-		this.components = [
-			this.yAxis
-			// this.getXAxisComponents(),
-			// ...this.getYRegions(),
-			// ...this.getXRegions(),
-			// ...this.getYMarkerLines(),
-			// // ...this.getXMarkerLines(),
-			// ...this.getChartComponents(),
-			// ...this.getChartLabels(),
+
+		this.componentConfigs = [
+			[
+				'yAxis',
+				this.drawArea,
+				{
+					mode: this.yAxisMode,
+					width: this.width,
+					// pos: 'right'
+				},
+				{
+					positions: getRealIntervals(this.height, 4, 0, 0),
+					labels: getRealIntervals(this.height, 4, 0, 0).map(d => d + ""),
+				},
+				function() {
+					let s = this.state;
+					return {
+						positions: s.yAxis.positions,
+						labels: s.yAxis.labels,
+					}
+				}.bind(this)
+			],
+
+			[
+				'xAxis',
+				this.drawArea,
+				{
+					mode: this.xAxisMode,
+					height: this.height,
+					// pos: 'right'
+				},
+				{
+					positions: getRealIntervals(this.width, 4, 0, 1),
+					labels: getRealIntervals(this.width, 4, 0, 1).map(d => d + ""),
+				},
+				function() {
+					let s = this.state;
+					return {
+						positions: s.xAxisPositions,
+						labels: s.xAxisLabels,
+					}
+				}.bind(this)
+			]
 		];
+
+		// this.components = [
+		// 	yAxis
+		// 	// this.getXAxisComponents(),
+		// 	// ...this.getYRegions(),
+		// 	// ...this.getXRegions(),
+		// 	// ...this.getYMarkerLines(),
+		// 	// // ...this.getXMarkerLines(),
+		// 	// ...this.getChartComponents(),
+		// 	// ...this.getChartLabels(),
+		// ];
+	}
+	setupComponents() {
+		this.components = this.componentConfigs.map(args => getComponent(...args));
 	}
 
 	refreshComponents() {
-		this.refreshYAxis();
-	}
-
-	refreshYAxis() {
-		let s = this.state;
-		this.yAxis.refresh({
-			positions: s.yAxis.positions,
-			labels: s.yAxis.labels,
-		});
+		this.components.forEach(comp => comp.refresh(comp.getData()));
 	}
 
 	getXAxisComponents() {
