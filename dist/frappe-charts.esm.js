@@ -553,7 +553,7 @@ function yLine(y, label, width, options={}) {
 	});
 }
 
-function xLine$1(x, label, height, options={}) {
+function xLine(x, label, height, options={}) {
 	if(!options.pos) options.pos = 'bottom';
 	if(!options.offset) options.offset = 0;
 	if(!options.mode) options.mode = 'span';
@@ -587,6 +587,29 @@ function xLine$1(x, label, height, options={}) {
 	});
 }
 
+function yMarker(y, label, width, options={}) {
+	// console.log(y - FONT_SIZE - 2, );
+	let labelSvg = createSVG('text', {
+		className: 'chart-label',
+		x: width - getStringWidth(label, 5) - LABEL_MARGIN,
+		y: 0,
+		dy: (FONT_SIZE / -2) + 'px',
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'start',
+		innerHTML: label+""
+	});
+
+	let line = makeHoriLine(y, '', 0, width, {
+		stroke: options.stroke || BASE_LINE_COLOR,
+		className: options.className || '',
+		lineType: options.lineType
+	});
+
+	line.appendChild(labelSvg);
+
+	return line;
+}
+
 class AxisChartRenderer {
 	constructor(state) {
 		this.refreshState(state);
@@ -606,27 +629,7 @@ class AxisChartRenderer {
 	}
 
 	xMarker() {}
-	yMarker(y, label, options={}) {
-		let labelSvg = createSVG('text', {
-			className: 'chart-label',
-			x: this.totalWidth - getStringWidth(label, 5) - LABEL_MARGIN,
-			y: y - FONT_SIZE - 2,
-			dy: (FONT_SIZE / 2) + 'px',
-			'font-size': FONT_SIZE + 'px',
-			'text-anchor': 'start',
-			innerHTML: label+""
-		});
 
-		let line = makeHoriLine(y, '', 0, this.totalWidth, {
-			stroke: options.stroke || BASE_LINE_COLOR,
-			className: options.className || '',
-			lineType: options.lineType
-		});
-
-		line.appendChild(labelSvg);
-
-		return line;
-	}
 
 	xRegion() {
 		return createSVG('rect', {
@@ -1373,7 +1376,7 @@ let componentConfigs = {
 		layerClass: 'x axis',
 		makeElements: function(data) {
 			return data.positions.map((position, i) =>
-				xLine$1(position, data.labels[i], this.constants.height,
+				xLine(position, data.labels[i], this.constants.height,
 					{mode: this.constants.mode, pos: this.constants.pos})
 			);
 		},
@@ -1398,6 +1401,47 @@ let componentConfigs = {
 				);
 			});
 		}
+	},
+
+	yMarkers: {
+		layerClass: 'y-markers',
+		makeElements: function(data) {
+			return data.map(marker =>
+				yMarker(marker.position, marker.label, this.constants.width,
+					{pos:'right', mode: 'span', lineType: 'dashed'})
+			);
+		},
+		animateElements: function(newData) {
+			let newPos =  newData.map(d => d.position);
+			let newLabels =  newData.map(d => d.label);
+
+			let oldPos = this.oldData.map(d => d.position);
+			let oldLabels = this.oldData.map(d => d.label);
+
+			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
+			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+
+			this.render(oldPos.map((pos, i) => {
+				return {
+					position: oldPos[i],
+					label: newLabels[i]
+				}
+			}));
+
+			return this.store.map((line, i) => {
+				return translateHoriLine(
+					line, newPos[i], oldPos[i]
+				);
+			});
+		}
+	},
+
+	yRegion: {
+		//
+	},
+
+	dataUnits: {
+		//
 	}
 };
 
@@ -2055,7 +2099,8 @@ class AxisChart extends BaseChart {
 		let s = this.state;
 		if(s.yMarkers) {
 			s.yMarkers = s.yMarkers.map(d => {
-				d.value = floatTwo(s.yAxis.zeroLine - d.value * s.yAxis.scaleMultiplier);
+				d.position = floatTwo(s.yAxis.zeroLine - d.value * s.yAxis.scaleMultiplier);
+				d.label += ': ' + d.value;
 				return d;
 			});
 		}
@@ -2148,6 +2193,25 @@ class AxisChart extends BaseChart {
 						labels: s.xAxisLabels,
 					}
 				}.bind(this)
+			],
+
+			[
+				'yMarkers',
+				this.drawArea,
+				{
+					// mode: this.yAxisMode,
+					width: this.width,
+					pos: 'right'
+				},
+				[
+					{
+						position: this.height,
+						label: ''
+					}
+				],
+				function() {
+					return this.state.yMarkers || [];
+				}.bind(this)
 			]
 		];
 
@@ -2163,62 +2227,14 @@ class AxisChart extends BaseChart {
 		// ];
 	}
 	setupComponents() {
-		this.components = this.componentConfigs.map(args => getComponent(...args));
+		let optionals = ['yMarkers', 'yRegions'];
+		this.components = this.componentConfigs
+			.filter(args => !optionals.includes(args[0]) || this.data[args[0]])
+			.map(args => getComponent(...args));
 	}
 
 	refreshComponents() {
 		this.components.forEach(comp => comp.refresh(comp.getData()));
-	}
-
-	getXAxisComponents() {
-		return new ChartComponent({
-			layerClass: 'x axis',
-			setData: () => {
-				let s = this.state;
-				let data = {
-					positions: s.xAxisPositions,
-					labels: s.xAxisLabels,
-				};
-				let constants = {
-					mode: this.xAxisMode,
-					height: this.height
-				};
-				return [data, constants];
-			},
-			makeElements: () => {
-				let s = this.state;
-				// positions
-				// TODO: xAxis Label spacing
-				return s.xAxisPositions.map((position, i) =>
-					xLine(position, s.xAxisLabels[i], this.constants.height
-						// , {pos:'top'}
-					)
-				);
-			},
-			animate: (xLines) => {
-				// Equilize
-				let newX = this.state.xAxisPositions;
-				let oldX = this.oldState.xAxisPositions;
-
-				this.oldState.xExtra = newX.length - oldX.length;
-				let lastLine = xLines[xLines.length - 1];
-				let parentNode = lastLine.parentNode;
-
-				[oldX, newX] = equilizeNoOfElements(oldX, newX);
-				if(this.oldState.xExtra > 0) {
-					for(var i = 0; i<this.oldState.xExtra; i++) {
-						let line = lastLine.cloneNode(true);
-						parentNode.appendChild(line);
-						xLines.push(line);
-					}
-				}
-				xLines.map((line, i) => {
-					this.elementsToAnimate.push(this.renderer.translateVertLine(
-						line, newX[i], oldX[i]
-					));
-				});
-			}
-		});
 	}
 
 	getChartComponents() {
@@ -2348,26 +2364,6 @@ class AxisChart extends BaseChart {
 				this.elementsToAnimate = this.elementsToAnimate
 					.concat(this.renderer.animatepath(paths, newPointsList.join("L")));
 			}
-		});
-	}
-
-	getYMarkerLines() {
-		if(!this.data.yMarkers) {
-			return [];
-		}
-		return this.data.yMarkers.map((d, index) => {
-			return new ChartComponent({
-				layerClass: 'y-markers',
-				setData: () => {},
-				makeElements: () => {
-					let s = this.state;
-					return s.yMarkers.map(marker =>
-						this.renderer.yMarker(marker.value, marker.name,
-							{pos:'right', mode: 'span', lineType: marker.type})
-					);
-				},
-				animate: () => {}
-			});
 		});
 	}
 

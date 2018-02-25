@@ -7,6 +7,17 @@ let bar_composite_data = {
 	labels: ["2007", "2008", "2009", "2010", "2011", "2012",
 		"2013", "2014", "2015", "2016", "2017"],
 
+	yMarkers: [
+		{
+			label: "Marker 1",
+			value: 420,
+		},
+		{
+			label: "Marker 2",
+			value: 250,
+		}
+	],
+
 	datasets: [{
 		"name": "Events",
 		"values": report_count_list,
@@ -114,12 +125,12 @@ let type_data = {
 
 	yMarkers: [
 		{
-			name: "Marker 1",
+			label: "Marker 1",
 			value: 42,
 			type: 'dashed'
 		},
 		{
-			name: "Marker 2",
+			label: "Marker 2",
 			value: 25,
 			type: 'dashed'
 		}
@@ -127,7 +138,7 @@ let type_data = {
 
 	yRegions: [
 		{
-			name: "Region Y 1",
+			label: "Region Y 1",
 			start: -10,
 			end: 50
 		},
@@ -136,7 +147,7 @@ let type_data = {
 	// will depend on series code for calculating X values
 	// xRegions: [
 	// 	{
-	// 		name: "Region X 2",
+	// 		label: "Region X 2",
 	// 		start: ,
 	// 		end: ,
 	// 	}

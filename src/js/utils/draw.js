@@ -300,6 +300,29 @@ export function xLine(x, label, height, options={}) {
 	});
 }
 
+export function yMarker(y, label, width, options={}) {
+	// console.log(y - FONT_SIZE - 2, );
+	let labelSvg = createSVG('text', {
+		className: 'chart-label',
+		x: width - getStringWidth(label, 5) - LABEL_MARGIN,
+		y: 0,
+		dy: (FONT_SIZE / -2) + 'px',
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'start',
+		innerHTML: label+""
+	});
+
+	let line = makeHoriLine(y, '', 0, width, {
+		stroke: options.stroke || BASE_LINE_COLOR,
+		className: options.className || '',
+		lineType: options.lineType
+	});
+
+	line.appendChild(labelSvg);
+
+	return line;
+}
+
 export class AxisChartRenderer {
 	constructor(state) {
 		this.refreshState(state);
@@ -319,27 +342,7 @@ export class AxisChartRenderer {
 	}
 
 	xMarker() {}
-	yMarker(y, label, options={}) {
-		let labelSvg = createSVG('text', {
-			className: 'chart-label',
-			x: this.totalWidth - getStringWidth(label, 5) - LABEL_MARGIN,
-			y: y - FONT_SIZE - 2,
-			dy: (FONT_SIZE / 2) + 'px',
-			'font-size': FONT_SIZE + 'px',
-			'text-anchor': 'start',
-			innerHTML: label+""
-		});
 
-		let line = makeHoriLine(y, '', 0, this.totalWidth, {
-			stroke: options.stroke || BASE_LINE_COLOR,
-			className: options.className || '',
-			lineType: options.lineType
-		});
-
-		line.appendChild(labelSvg);
-
-		return line;
-	}
 
 	xRegion() {
 		return createSVG('rect', {

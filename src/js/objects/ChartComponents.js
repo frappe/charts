@@ -1,5 +1,5 @@
 import { makeSVGGroup } from '../utils/draw';
-import { xLine, yLine } from '../utils/draw';
+import { xLine, yLine, yMarker } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import { Animator, translateHoriLine, translateVertLine } from '../utils/animate';
 
@@ -132,6 +132,47 @@ let componentConfigs = {
 				);
 			});
 		}
+	},
+
+	yMarkers: {
+		layerClass: 'y-markers',
+		makeElements: function(data) {
+			return data.map(marker =>
+				yMarker(marker.position, marker.label, this.constants.width,
+					{pos:'right', mode: 'span', lineType: 'dashed'})
+			);
+		},
+		animateElements: function(newData) {
+			let newPos =  newData.map(d => d.position);
+			let newLabels =  newData.map(d => d.label);
+
+			let oldPos = this.oldData.map(d => d.position);
+			let oldLabels = this.oldData.map(d => d.label);
+
+			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
+			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+
+			this.render(oldPos.map((pos, i) => {
+				return {
+					position: oldPos[i],
+					label: newLabels[i]
+				}
+			}));
+
+			return this.store.map((line, i) => {
+				return translateHoriLine(
+					line, newPos[i], oldPos[i]
+				);
+			});
+		}
+	},
+
+	yRegion: {
+		//
+	},
+
+	dataUnits: {
+		//
 	}
 }
 

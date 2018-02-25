@@ -208,7 +208,8 @@ export default class AxisChart extends BaseChart {
 		let s = this.state;
 		if(s.yMarkers) {
 			s.yMarkers = s.yMarkers.map(d => {
-				d.value = floatTwo(s.yAxis.zeroLine - d.value * s.yAxis.scaleMultiplier);
+				d.position = floatTwo(s.yAxis.zeroLine - d.value * s.yAxis.scaleMultiplier);
+				d.label += ': ' + d.value;
 				return d;
 			});
 		}
@@ -301,6 +302,25 @@ export default class AxisChart extends BaseChart {
 						labels: s.xAxisLabels,
 					}
 				}.bind(this)
+			],
+
+			[
+				'yMarkers',
+				this.drawArea,
+				{
+					// mode: this.yAxisMode,
+					width: this.width,
+					pos: 'right'
+				},
+				[
+					{
+						position: this.height,
+						label: ''
+					}
+				],
+				function() {
+					return this.state.yMarkers || [];
+				}.bind(this)
 			]
 		];
 
@@ -316,62 +336,14 @@ export default class AxisChart extends BaseChart {
 		// ];
 	}
 	setupComponents() {
-		this.components = this.componentConfigs.map(args => getComponent(...args));
+		let optionals = ['yMarkers', 'yRegions'];
+		this.components = this.componentConfigs
+			.filter(args => !optionals.includes(args[0]) || this.data[args[0]])
+			.map(args => getComponent(...args));
 	}
 
 	refreshComponents() {
 		this.components.forEach(comp => comp.refresh(comp.getData()));
-	}
-
-	getXAxisComponents() {
-		return new ChartComponent({
-			layerClass: 'x axis',
-			setData: () => {
-				let s = this.state;
-				let data = {
-					positions: s.xAxisPositions,
-					labels: s.xAxisLabels,
-				};
-				let constants = {
-					mode: this.xAxisMode,
-					height: this.height
-				}
-				return [data, constants];
-			},
-			makeElements: () => {
-				let s = this.state;
-				// positions
-				// TODO: xAxis Label spacing
-				return s.xAxisPositions.map((position, i) =>
-					xLine(position, s.xAxisLabels[i], this.constants.height
-						// , {pos:'top'}
-					)
-				);
-			},
-			animate: (xLines) => {
-				// Equilize
-				let newX = this.state.xAxisPositions;
-				let oldX = this.oldState.xAxisPositions;
-
-				this.oldState.xExtra = newX.length - oldX.length;
-				let lastLine = xLines[xLines.length - 1];
-				let parentNode = lastLine.parentNode;
-
-				[oldX, newX] = equilizeNoOfElements(oldX, newX);
-				if(this.oldState.xExtra > 0) {
-					for(var i = 0; i<this.oldState.xExtra; i++) {
-						let line = lastLine.cloneNode(true);
-						parentNode.appendChild(line);
-						xLines.push(line);
-					}
-				}
-				xLines.map((line, i) => {
-					this.elementsToAnimate.push(this.renderer.translateVertLine(
-						line, newX[i], oldX[i]
-					));
-				});
-			}
-		});
 	}
 
 	getChartComponents() {
@@ -501,26 +473,6 @@ export default class AxisChart extends BaseChart {
 				this.elementsToAnimate = this.elementsToAnimate
 					.concat(this.renderer.animatepath(paths, newPointsList.join("L")));
 			}
-		});
-	}
-
-	getYMarkerLines() {
-		if(!this.data.yMarkers) {
-			return [];
-		}
-		return this.data.yMarkers.map((d, index) => {
-			return new ChartComponent({
-				layerClass: 'y-markers',
-				setData: () => {},
-				makeElements: () => {
-					let s = this.state;
-					return s.yMarkers.map(marker =>
-						this.renderer.yMarker(marker.value, marker.name,
-							{pos:'right', mode: 'span', lineType: marker.type})
-					);
-				},
-				animate: () => {}
-			});
 		});
 	}
 
