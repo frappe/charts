@@ -63,8 +63,8 @@ export default class AxisChart extends BaseChart {
 		this.y_axis_values = calcIntervals(values, this.type === 'line');
 
 		if(this.y_axis_values[this.y_axis_values.length-1] < 0 && this.y_axis_values[0] > 0){
-            this.y_axis_values = this.y_axis_values.reverse();
-        }
+			this.y_axis_values = this.y_axis_values.reverse();
+                }
 
 		if(!this.y_old_axis_values) {
 			this.y_old_axis_values = this.y_axis_values.slice();
