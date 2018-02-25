@@ -18,6 +18,14 @@ let bar_composite_data = {
 		}
 	],
 
+	yRegions: [
+		{
+			label: "Region Y 1",
+			start: 100,
+			end: 300
+		},
+	],
+
 	datasets: [{
 		"name": "Events",
 		"values": report_count_list,

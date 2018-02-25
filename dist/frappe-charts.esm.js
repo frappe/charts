@@ -309,6 +309,21 @@ function translateHoriLine(yLine, newY, oldY) {
 	return translate(yLine, [0, oldY], [0, newY], MARKER_LINE_ANIM_DUR);
 }
 
+function animateRegion(rectGroup, newY1, newY2, oldY2) {
+	let newHeight = newY1 - newY2;
+	let rect = rectGroup.childNodes[0];
+	let width = rect.getAttribute("width");
+	let rectAnim = [
+		rect,
+		{ height: newHeight, 'stroke-dasharray': `${width}, ${newHeight}` },
+		MARKER_LINE_ANIM_DUR,
+		STD_EASING
+	];
+
+	let groupAnim = translate(rectGroup, [0, oldY2], [0, newY2], MARKER_LINE_ANIM_DUR);
+	return [rectAnim, groupAnim];
+}
+
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 const FONT_SIZE = 10;
@@ -610,6 +625,44 @@ function yMarker(y, label, width, options={}) {
 	return line;
 }
 
+function yRegion(y1, y2, width, label) {
+	// return a group
+	let height = y1 - y2;
+
+	let rect = createSVG('rect', {
+		className: `bar mini`, // remove class
+		styles: {
+			fill: `rgba(228, 234, 239, 0.49)`,
+			stroke: BASE_LINE_COLOR,
+			'stroke-dasharray': `${width}, ${height}`
+		},
+		// 'data-point-index': index,
+		x: 0,
+		y: 0,
+		width: width,
+		height: height
+	});
+
+	let labelSvg = createSVG('text', {
+		className: 'chart-label',
+		x: width - getStringWidth(label, 4.5) - LABEL_MARGIN,
+		y: 0,
+		dy: (FONT_SIZE / -2) + 'px',
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'start',
+		innerHTML: label+""
+	});
+
+	let region = createSVG('g', {
+		transform: `translate(0, ${y2})`
+	});
+
+	region.appendChild(rect);
+	region.appendChild(labelSvg);
+
+	return region;
+}
+
 class AxisChartRenderer {
 	constructor(state) {
 		this.refreshState(state);
@@ -641,60 +694,6 @@ class AxisChartRenderer {
 			width: this.totalWidth,
 			height: y1 - y2
 		});
-
-		return region;
-	}
-
-	yRegion(y1, y2, label) {
-		// return a group
-
-		let rect = createSVG('rect', {
-			className: `bar mini`, // remove class
-			style: `fill: rgba(228, 234, 239, 0.49)`,
-			// 'data-point-index': index,
-			x: 0,
-			y: y2,
-			width: this.totalWidth,
-			height: y1 - y2
-		});
-
-		let upperBorder = createSVG('line', {
-			className: 'line-horizontal',
-			x1: 0,
-			x2: this.totalWidth,
-			y1: y2,
-			y2: y2,
-			styles: {
-				stroke: BASE_LINE_COLOR
-			}
-		});
-		let lowerBorder = createSVG('line', {
-			className: 'line-horizontal',
-			x1: 0,
-			x2: this.totalWidth,
-			y1: y1,
-			y2: y1,
-			styles: {
-				stroke: BASE_LINE_COLOR
-			}
-		});
-
-		let labelSvg = createSVG('text', {
-			className: 'chart-label',
-			x: this.totalWidth - getStringWidth(label, 4.5) - LABEL_MARGIN,
-			y: y2 - FONT_SIZE - 2,
-			dy: (FONT_SIZE / 2) + 'px',
-			'font-size': FONT_SIZE + 'px',
-			'text-anchor': 'start',
-			innerHTML: label+""
-		});
-
-		let region = createSVG('g', {});
-
-		region.appendChild(rect);
-		region.appendChild(upperBorder);
-		region.appendChild(lowerBorder);
-		region.appendChild(labelSvg);
 
 		return region;
 	}
@@ -1166,6 +1165,11 @@ class BaseChart {
 		if(this.elementsToAnimate) {
 			runSMILAnimation(this.chartWrapper, this.svg, this.elementsToAnimate);
 		}
+
+		// TODO: rebind new units
+		// if(this.isNavigable) {
+		// 	this.bind_units(units_array);
+		// }
 	}
 
 	refreshComponents() {}
@@ -1412,14 +1416,13 @@ let componentConfigs = {
 			);
 		},
 		animateElements: function(newData) {
+			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+
 			let newPos =  newData.map(d => d.position);
 			let newLabels =  newData.map(d => d.label);
 
 			let oldPos = this.oldData.map(d => d.position);
 			let oldLabels = this.oldData.map(d => d.label);
-
-			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
-			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
 
 			this.render(oldPos.map((pos, i) => {
 				return {
@@ -1436,8 +1439,43 @@ let componentConfigs = {
 		}
 	},
 
-	yRegion: {
-		//
+	yRegions: {
+		layerClass: 'y-regions',
+		makeElements: function(data) {
+			return data.map(region =>
+				yRegion(region.start, region.end, this.constants.width,
+					region.label)
+			);
+		},
+		animateElements: function(newData) {
+			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+
+			let newPos =  newData.map(d => d.end);
+			let newLabels =  newData.map(d => d.label);
+			let newStarts =  newData.map(d => d.start);
+
+			let oldPos = this.oldData.map(d => d.end);
+			let oldLabels = this.oldData.map(d => d.label);
+			let oldStarts = this.oldData.map(d => d.start);
+
+			this.render(oldPos.map((pos, i) => {
+				return {
+					start: oldStarts[i],
+					end: oldPos[i],
+					label: newLabels[i]
+				}
+			}));
+
+			let animateElements = [];
+
+			this.store.map((rectGroup, i) => {
+				animateElements = animateElements.concat(animateRegion(
+					rectGroup, newStarts[i], newPos[i], oldPos[i]
+				));
+			});
+
+			return animateElements;
+		}
 	},
 
 	dataUnits: {
@@ -2106,6 +2144,9 @@ class AxisChart extends BaseChart {
 		}
 		if(s.yRegions) {
 			s.yRegions = s.yRegions.map(d => {
+				if(d.end < d.start) {
+					[d.start, d.end] = [d.end, start];
+				}
 				d.start = floatTwo(s.yAxis.zeroLine - d.start * s.yAxis.scaleMultiplier);
 				d.end = floatTwo(s.yAxis.zeroLine - d.end * s.yAxis.scaleMultiplier);
 				return d;
@@ -2145,13 +2186,6 @@ class AxisChart extends BaseChart {
 	setupValues() {}
 
 	initComponents() {
-
-		// TODO: rebind new units
-		// if(this.isNavigable) {
-		// 	this.bind_units(units_array);
-		// }
-
-
 		this.componentConfigs = [
 			[
 				'yAxis',
@@ -2196,6 +2230,26 @@ class AxisChart extends BaseChart {
 			],
 
 			[
+				'yRegions',
+				this.drawArea,
+				{
+					// mode: this.yAxisMode,
+					width: this.width,
+					pos: 'right'
+				},
+				[
+					{
+						start: this.height,
+						end: this.height,
+						label: ''
+					}
+				],
+				function() {
+					return this.state.yRegions || [];
+				}.bind(this)
+			],
+
+			[
 				'yMarkers',
 				this.drawArea,
 				{
@@ -2212,19 +2266,8 @@ class AxisChart extends BaseChart {
 				function() {
 					return this.state.yMarkers || [];
 				}.bind(this)
-			]
+			],
 		];
-
-		// this.components = [
-		// 	yAxis
-		// 	// this.getXAxisComponents(),
-		// 	// ...this.getYRegions(),
-		// 	// ...this.getXRegions(),
-		// 	// ...this.getYMarkerLines(),
-		// 	// // ...this.getXMarkerLines(),
-		// 	// ...this.getChartComponents(),
-		// 	// ...this.getChartLabels(),
-		// ];
 	}
 	setupComponents() {
 		let optionals = ['yMarkers', 'yRegions'];
@@ -2251,11 +2294,6 @@ class AxisChart extends BaseChart {
 			));
 		});
 		return dataUnitsComponents;
-	}
-
-	getChartLabels() {
-		// To layer all labels above everything else
-		return [];
 	}
 
 	getDataUnitComponent(index, unitRenderer) {
@@ -2364,26 +2402,6 @@ class AxisChart extends BaseChart {
 				this.elementsToAnimate = this.elementsToAnimate
 					.concat(this.renderer.animatepath(paths, newPointsList.join("L")));
 			}
-		});
-	}
-
-	getYRegions() {
-		if(!this.data.yRegions) {
-			return [];
-		}
-		// return [];
-		return this.data.yRegions.map((d, index) => {
-			return new ChartComponent({
-				layerClass: 'y-regions',
-				setData: () => {},
-				makeElements: () => {
-					let s = this.state;
-					return s.yRegions.map(region =>
-						this.renderer.yRegion(region.start, region.end, region.name)
-					);
-				},
-				animate: () => {}
-			});
 		});
 	}
 

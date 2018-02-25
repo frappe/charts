@@ -215,6 +215,9 @@ export default class AxisChart extends BaseChart {
 		}
 		if(s.yRegions) {
 			s.yRegions = s.yRegions.map(d => {
+				if(d.end < d.start) {
+					[d.start, d.end] = [d.end, start];
+				}
 				d.start = floatTwo(s.yAxis.zeroLine - d.start * s.yAxis.scaleMultiplier);
 				d.end = floatTwo(s.yAxis.zeroLine - d.end * s.yAxis.scaleMultiplier);
 				return d;
@@ -254,13 +257,6 @@ export default class AxisChart extends BaseChart {
 	setupValues() {}
 
 	initComponents() {
-
-		// TODO: rebind new units
-		// if(this.isNavigable) {
-		// 	this.bind_units(units_array);
-		// }
-
-
 		this.componentConfigs = [
 			[
 				'yAxis',
@@ -305,6 +301,26 @@ export default class AxisChart extends BaseChart {
 			],
 
 			[
+				'yRegions',
+				this.drawArea,
+				{
+					// mode: this.yAxisMode,
+					width: this.width,
+					pos: 'right'
+				},
+				[
+					{
+						start: this.height,
+						end: this.height,
+						label: ''
+					}
+				],
+				function() {
+					return this.state.yRegions || [];
+				}.bind(this)
+			],
+
+			[
 				'yMarkers',
 				this.drawArea,
 				{
@@ -321,19 +337,8 @@ export default class AxisChart extends BaseChart {
 				function() {
 					return this.state.yMarkers || [];
 				}.bind(this)
-			]
+			],
 		];
-
-		// this.components = [
-		// 	yAxis
-		// 	// this.getXAxisComponents(),
-		// 	// ...this.getYRegions(),
-		// 	// ...this.getXRegions(),
-		// 	// ...this.getYMarkerLines(),
-		// 	// // ...this.getXMarkerLines(),
-		// 	// ...this.getChartComponents(),
-		// 	// ...this.getChartLabels(),
-		// ];
 	}
 	setupComponents() {
 		let optionals = ['yMarkers', 'yRegions'];
@@ -360,11 +365,6 @@ export default class AxisChart extends BaseChart {
 			));
 		});
 		return dataUnitsComponents;
-	}
-
-	getChartLabels() {
-		// To layer all labels above everything else
-		return [];
 	}
 
 	getDataUnitComponent(index, unitRenderer) {
@@ -473,26 +473,6 @@ export default class AxisChart extends BaseChart {
 				this.elementsToAnimate = this.elementsToAnimate
 					.concat(this.renderer.animatepath(paths, newPointsList.join("L")));
 			}
-		});
-	}
-
-	getYRegions() {
-		if(!this.data.yRegions) {
-			return [];
-		}
-		// return [];
-		return this.data.yRegions.map((d, index) => {
-			return new ChartComponent({
-				layerClass: 'y-regions',
-				setData: () => {},
-				makeElements: () => {
-					let s = this.state;
-					return s.yRegions.map(region =>
-						this.renderer.yRegion(region.start, region.end, region.name)
-					);
-				},
-				animate: () => {}
-			});
 		});
 	}
 

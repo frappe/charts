@@ -323,6 +323,44 @@ export function yMarker(y, label, width, options={}) {
 	return line;
 }
 
+export function yRegion(y1, y2, width, label) {
+	// return a group
+	let height = y1 - y2;
+
+	let rect = createSVG('rect', {
+		className: `bar mini`, // remove class
+		styles: {
+			fill: `rgba(228, 234, 239, 0.49)`,
+			stroke: BASE_LINE_COLOR,
+			'stroke-dasharray': `${width}, ${height}`
+		},
+		// 'data-point-index': index,
+		x: 0,
+		y: 0,
+		width: width,
+		height: height
+	});
+
+	let labelSvg = createSVG('text', {
+		className: 'chart-label',
+		x: width - getStringWidth(label, 4.5) - LABEL_MARGIN,
+		y: 0,
+		dy: (FONT_SIZE / -2) + 'px',
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'start',
+		innerHTML: label+""
+	});
+
+	let region = createSVG('g', {
+		transform: `translate(0, ${y2})`
+	});
+
+	region.appendChild(rect);
+	region.appendChild(labelSvg);
+
+	return region;
+}
+
 export class AxisChartRenderer {
 	constructor(state) {
 		this.refreshState(state);
@@ -354,60 +392,6 @@ export class AxisChartRenderer {
 			width: this.totalWidth,
 			height: y1 - y2
 		});
-
-		return region;
-	}
-
-	yRegion(y1, y2, label) {
-		// return a group
-
-		let rect = createSVG('rect', {
-			className: `bar mini`, // remove class
-			style: `fill: rgba(228, 234, 239, 0.49)`,
-			// 'data-point-index': index,
-			x: 0,
-			y: y2,
-			width: this.totalWidth,
-			height: y1 - y2
-		});
-
-		let upperBorder = createSVG('line', {
-			className: 'line-horizontal',
-			x1: 0,
-			x2: this.totalWidth,
-			y1: y2,
-			y2: y2,
-			styles: {
-				stroke: BASE_LINE_COLOR
-			}
-		});
-		let lowerBorder = createSVG('line', {
-			className: 'line-horizontal',
-			x1: 0,
-			x2: this.totalWidth,
-			y1: y1,
-			y2: y1,
-			styles: {
-				stroke: BASE_LINE_COLOR
-			}
-		});
-
-		let labelSvg = createSVG('text', {
-			className: 'chart-label',
-			x: this.totalWidth - getStringWidth(label, 4.5) - LABEL_MARGIN,
-			y: y2 - FONT_SIZE - 2,
-			dy: (FONT_SIZE / 2) + 'px',
-			'font-size': FONT_SIZE + 'px',
-			'text-anchor': 'start',
-			innerHTML: label+""
-		});
-
-		let region = createSVG('g', {});
-
-		region.appendChild(rect);
-		region.appendChild(upperBorder);
-		region.appendChild(lowerBorder);
-		region.appendChild(labelSvg);
 
 		return region;
 	}

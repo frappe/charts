@@ -225,6 +225,11 @@ export default class BaseChart {
 		if(this.elementsToAnimate) {
 			runSMILAnimation(this.chartWrapper, this.svg, this.elementsToAnimate);
 		}
+
+		// TODO: rebind new units
+		// if(this.isNavigable) {
+		// 	this.bind_units(units_array);
+		// }
 	}
 
 	refreshComponents() {}

@@ -26,6 +26,21 @@ export function translateHoriLine(yLine, newY, oldY) {
 	return translate(yLine, [0, oldY], [0, newY], MARKER_LINE_ANIM_DUR);
 }
 
+export function animateRegion(rectGroup, newY1, newY2, oldY2) {
+	let newHeight = newY1 - newY2;
+	let rect = rectGroup.childNodes[0];
+	let width = rect.getAttribute("width");
+	let rectAnim = [
+		rect,
+		{ height: newHeight, 'stroke-dasharray': `${width}, ${newHeight}` },
+		MARKER_LINE_ANIM_DUR,
+		STD_EASING
+	]
+
+	let groupAnim = translate(rectGroup, [0, oldY2], [0, newY2], MARKER_LINE_ANIM_DUR);
+	return [rectAnim, groupAnim];
+}
+
 export var Animator = (function() {
 	var Animator = function(totalHeight, totalWidth, zeroLine, avgUnitWidth) {
 		// constants

@@ -1,7 +1,7 @@
 import { makeSVGGroup } from '../utils/draw';
-import { xLine, yLine, yMarker } from '../utils/draw';
+import { xLine, yLine, yMarker, yRegion } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
-import { Animator, translateHoriLine, translateVertLine } from '../utils/animate';
+import { Animator, translateHoriLine, translateVertLine, animateRegion } from '../utils/animate';
 
 class ChartComponent {
 	constructor({
@@ -143,14 +143,13 @@ let componentConfigs = {
 			);
 		},
 		animateElements: function(newData) {
+			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+
 			let newPos =  newData.map(d => d.position);
 			let newLabels =  newData.map(d => d.label);
 
 			let oldPos = this.oldData.map(d => d.position);
 			let oldLabels = this.oldData.map(d => d.label);
-
-			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
-			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
 
 			this.render(oldPos.map((pos, i) => {
 				return {
@@ -167,8 +166,43 @@ let componentConfigs = {
 		}
 	},
 
-	yRegion: {
-		//
+	yRegions: {
+		layerClass: 'y-regions',
+		makeElements: function(data) {
+			return data.map(region =>
+				yRegion(region.start, region.end, this.constants.width,
+					region.label)
+			);
+		},
+		animateElements: function(newData) {
+			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+
+			let newPos =  newData.map(d => d.end);
+			let newLabels =  newData.map(d => d.label);
+			let newStarts =  newData.map(d => d.start);
+
+			let oldPos = this.oldData.map(d => d.end);
+			let oldLabels = this.oldData.map(d => d.label);
+			let oldStarts = this.oldData.map(d => d.start);
+
+			this.render(oldPos.map((pos, i) => {
+				return {
+					start: oldStarts[i],
+					end: oldPos[i],
+					label: newLabels[i]
+				}
+			}));
+
+			let animateElements = [];
+
+			this.store.map((rectGroup, i) => {
+				animateElements = animateElements.concat(animateRegion(
+					rectGroup, newStarts[i], newPos[i], oldPos[i]
+				));
+			});
+
+			return animateElements;
+		}
 	},
 
 	dataUnits: {
