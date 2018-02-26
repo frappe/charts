@@ -107,17 +107,9 @@ export default class BaseChart {
 		let valid = this.checkData(data);
 		if(!valid) return false;
 
-		if(!this.config.animate) {
-			this.data = data;
-		} else {
-			[this.data, this.firstUpdateData] =
-				this.getFirstUpdateData(data);
-		}
+		this.data = data;
 		return true;
 	}
-
-	checkData() {}
-	getFirstUpdateData() {}
 
 	setup() {
 		if(this.validate()) {
@@ -205,7 +197,6 @@ export default class BaseChart {
 	update(data=this.data) {
 		this.prepareData(data);
 		this.calc(); // builds state
-		this.refreshRenderer();
 		this.render();
 	}
 
@@ -215,13 +206,10 @@ export default class BaseChart {
 
 	calc() {} // builds state
 
-	refreshRenderer() {
-		this.renderer = {};
-	}
-
 	render(animate=true) {
-		this.refreshComponents();
-		this.elementsToAnimate = [].concat.apply([], this.components.map(c => c.update(animate)));
+		// Can decouple to this.refreshComponents() first to save animation timeout
+		this.elementsToAnimate = [].concat.apply([],
+			this.components.map(c => c.update(animate)));
 		if(this.elementsToAnimate) {
 			runSMILAnimation(this.chartWrapper, this.svg, this.elementsToAnimate);
 		}
@@ -231,8 +219,6 @@ export default class BaseChart {
 		// 	this.bind_units(units_array);
 		// }
 	}
-
-	refreshComponents() {}
 
 	makeChartArea() {
 		this.svg = makeSVGContainer(

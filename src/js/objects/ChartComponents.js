@@ -12,18 +12,15 @@ class ChartComponent {
 		data,
 
 		// called on update
-		preMake,
 		makeElements,
 		postMake,
 		getData,
 		animateElements
 	}) {
 		this.parent = parent;
-		this.layerClass = layerClass;
 		this.layerTransform = layerTransform;
 		this.constants = constants;
 
-		this.preMake = preMake;
 		this.makeElements = makeElements;
 		this.postMake = postMake;
 		this.getData = getData;
@@ -31,7 +28,11 @@ class ChartComponent {
 		this.animateElements = animateElements;
 
 		this.store = [];
-		this.layer = makeSVGGroup(this.parent, this.layerClass, this.layerTransform);
+
+		layerClass = typeof(layerClass) === 'function'
+			? layerClass() : layerClass;
+
+		this.layer = makeSVGGroup(this.parent, layerClass, this.layerTransform);
 
 		this.data = data;
 
@@ -39,7 +40,7 @@ class ChartComponent {
 	}
 
 	refresh(data) {
-		this.data = data;
+		this.data = data || this.getData();
 	}
 
 	make() {
@@ -59,6 +60,7 @@ class ChartComponent {
 	}
 
 	update(animate = true) {
+		this.refresh();
 		let animateElements = []
 		if(animate) {
 			animateElements = this.animateElements(this.data);
@@ -74,14 +76,14 @@ class ChartComponent {
 let componentConfigs = {
 	yAxis: {
 		layerClass: 'y axis',
-		makeElements: function(data) {
+		makeElements(data) {
 			return data.positions.map((position, i) =>
 				yLine(position, data.labels[i], this.constants.width,
 					{mode: this.constants.mode, pos: this.constants.pos})
 			);
 		},
 
-		animateElements: function(newData) {
+		animateElements(newData) {
 			let newPos =  newData.positions;
 			let newLabels =  newData.labels;
 			let oldPos = this.oldData.positions;
@@ -105,14 +107,14 @@ let componentConfigs = {
 
 	xAxis: {
 		layerClass: 'x axis',
-		makeElements: function(data) {
+		makeElements(data) {
 			return data.positions.map((position, i) =>
 				xLine(position, data.labels[i], this.constants.height,
 					{mode: this.constants.mode, pos: this.constants.pos})
 			);
 		},
 
-		animateElements: function(newData) {
+		animateElements(newData) {
 			let newPos =  newData.positions;
 			let newLabels =  newData.labels;
 			let oldPos = this.oldData.positions;
@@ -136,13 +138,13 @@ let componentConfigs = {
 
 	yMarkers: {
 		layerClass: 'y-markers',
-		makeElements: function(data) {
+		makeElements(data) {
 			return data.map(marker =>
 				yMarker(marker.position, marker.label, this.constants.width,
 					{pos:'right', mode: 'span', lineType: 'dashed'})
 			);
 		},
-		animateElements: function(newData) {
+		animateElements(newData) {
 			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
 
 			let newPos =  newData.map(d => d.position);
@@ -168,13 +170,13 @@ let componentConfigs = {
 
 	yRegions: {
 		layerClass: 'y-regions',
-		makeElements: function(data) {
+		makeElements(data) {
 			return data.map(region =>
 				yRegion(region.start, region.end, this.constants.width,
 					region.label)
 			);
 		},
-		animateElements: function(newData) {
+		animateElements(newData) {
 			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
 
 			let newPos =  newData.map(d => d.end);
@@ -205,8 +207,87 @@ let componentConfigs = {
 		}
 	},
 
-	dataUnits: {
-		//
+	barGraph: {
+		// opt:[
+		// 	'barGraph',
+		// 	this.drawArea,
+		// 	{
+		// 		controller: barController,
+		// 		index: index,
+		// 		color: this.colors[index],
+		// 		valuesOverPoints: this.valuesOverPoints,
+		// 		stacked: this.barOptions && this.barOptions.stacked,
+		// 		spaceRatio: 0.5,
+		// 		minHeight: this.height * MIN_BAR_PERCENT_HEIGHT
+		// 	},
+		// 	{
+		// 		barsWidth: this.state.unitWidth * (1 - spaceRatio),
+		// 		barWidth: barsWidth/(stacked ? 1 : this.state.noOfDatasets),
+
+		// 	},
+		// 	function() {
+		// 		let s = this.state;
+		// 		return {
+		// 			barsWidth: this.state.unitWidth * (1 - spaceRatio),
+		// 			barWidth: barsWidth/(stacked ? 1 : this.state.noOfDatasets),
+		// 			positions: s.xAxisPositions,
+		// 			labels: s.xAxisLabels,
+		// 		}
+		// 	}.bind(this)
+		// ],
+		layerClass() { return 'y-regions' + this.constants.index; },
+		makeElements(data) {
+			let c = this.constants;
+			return data.yPositions.map((y, j) =>
+				barController.draw(
+					data.xPositions[j],
+					y,
+					color,
+					(c.valuesOverPoints ? (c.stacked ? data.cumulativeYs[j] : data.values[j]) : ''),
+					j,
+					y - (data.cumulativePositions ? data.cumulativePositions[j] : y)
+				)
+			);
+		},
+		postMake() {
+			if((!this.constants.stacked)) {
+				this.layer.setAttribute('transform',
+					`translate(${unitRenderer.consts.width * index}, 0)`);
+			}
+		},
+		animateElements(newData) {
+			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+
+			let newPos =  newData.map(d => d.end);
+			let newLabels =  newData.map(d => d.label);
+			let newStarts =  newData.map(d => d.start);
+
+			let oldPos = this.oldData.map(d => d.end);
+			let oldLabels = this.oldData.map(d => d.label);
+			let oldStarts = this.oldData.map(d => d.start);
+
+			this.render(oldPos.map((pos, i) => {
+				return {
+					start: oldStarts[i],
+					end: oldPos[i],
+					label: newLabels[i]
+				}
+			}));
+
+			let animateElements = [];
+
+			this.store.map((rectGroup, i) => {
+				animateElements = animateElements.concat(animateRegion(
+					rectGroup, newStarts[i], newPos[i], oldPos[i]
+				));
+			});
+
+			return animateElements;
+		}
+	},
+
+	lineGraph: {
+
 	}
 }
 

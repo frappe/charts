@@ -61,3 +61,26 @@ export function fillArray(array, count, element, start=false) {
 export function getStringWidth(string, charWidth) {
 	return (string+"").length * charWidth;
 }
+
+function observe(obj, componentNames) {
+	let components = this.components.get(name);
+
+	fn = function() {
+		components.map();
+	}
+	bindChange(obj, fn)
+}
+
+// observe(s.yAxis, ['yAxis', 'barGraph'])
+
+export function bindChange(obj, fn) {
+	var proxied = new Proxy(obj, {
+		set: function(target, prop, value) {
+			fn();
+			return Reflect.set(target, prop, value);
+		}
+	});
+
+	// proxied.bar = 2;
+	// ==> {type: 'set', target: <obj>, prop: 'bar', value: 2}
+}

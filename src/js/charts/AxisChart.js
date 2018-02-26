@@ -9,6 +9,7 @@ import { Animator, translateHoriLine } from '../utils/animate';
 import { runSMILAnimation } from '../utils/animation';
 import { getRealIntervals, calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex } from '../utils/intervals';
 import { floatTwo, fillArray } from '../utils/helpers';
+import { MIN_BAR_PERCENT_HEIGHT } from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
 	constructor(args) {
@@ -24,10 +25,8 @@ export default class AxisChart extends BaseChart {
 		this.xAxisMode = args.xAxisMode || 'span';
 		this.yAxisMode = args.yAxisMode || 'span';
 
-		this.setupUnitRenderer();
-
 		this.zeroLine = this.height;
-		this.preSetup();
+		this.setPrimitiveData();
 		this.setup();
 	}
 
@@ -38,15 +37,14 @@ export default class AxisChart extends BaseChart {
 		this.config.yAxisMode = args.yAxisMode;
 	}
 
-	preSetup() {}
+	setPrimitiveData() {
+		// Define data and stuff
+		this.setObservers();
+	}
 
-	setupUnitRenderer() {
-		// TODO: this is empty
-		let options = this.rawChartArgs.options;
-		this.unitRenderers = {
-			bar: new BarChartController(options),
-			line: new LineChartController(options)
-		};
+	setObservers() {
+		// go through each component and check the keys in this.state it depends on
+		// set an observe() on each of those keys for that component
 	}
 
 	setHorizontalMargin() {
@@ -56,10 +54,6 @@ export default class AxisChart extends BaseChart {
 
 	checkData(data) {
 		return true;
-	}
-
-	getFirstUpdateData(data) {
-		//
 	}
 
 	setupConstants() {
@@ -76,18 +70,19 @@ export default class AxisChart extends BaseChart {
 			}
 		});
 
-		this.prepareYAxis();
+		// Prepare Y Axis
+		this.state.yAxis = {
+			labels: [],
+			positions: []
+		};
 	}
 
 	prepareData(data) {
 		let s = this.state;
-
 		s.xAxisLabels = data.labels || [];
-
 		s.datasetLength = s.xAxisLabels.length;
 
 		let zeroArray = new Array(s.datasetLength).fill(0);
-
 		s.datasets = data.datasets; // whole dataset info too
 		if(!data.datasets) {
 			// default
@@ -120,13 +115,6 @@ export default class AxisChart extends BaseChart {
 		s.yRegions = data.yRegions;
 	}
 
-	prepareYAxis() {
-		this.state.yAxis = {
-			labels: [],
-			positions: []
-		};
-	}
-
 	calc() {
 		let s = this.state;
 
@@ -139,8 +127,6 @@ export default class AxisChart extends BaseChart {
 		this.calcYMaximums();
 		this.calcYRegions();
 
-		// should be state
-		this.configUnits();
 	}
 
 	setYAxis() {
@@ -225,8 +211,6 @@ export default class AxisChart extends BaseChart {
 		}
 	}
 
-	configUnits() {}
-
 	// Default, as per bar, and mixed. Only line will be a special case
 	setUnitWidthAndXOffset() {
 		this.state.unitWidth = this.width/(this.state.datasetLength);
@@ -249,12 +233,6 @@ export default class AxisChart extends BaseChart {
 
 		return [].concat(...this.state.datasets.map(d => d[key]));
 	}
-
-	calcIntermedState() {
-		//
-	}
-
-	setupValues() {}
 
 	initComponents() {
 		this.componentConfigs = [
@@ -337,7 +315,7 @@ export default class AxisChart extends BaseChart {
 				function() {
 					return this.state.yMarkers || [];
 				}.bind(this)
-			],
+			]
 		];
 	}
 	setupComponents() {
@@ -345,10 +323,6 @@ export default class AxisChart extends BaseChart {
 		this.components = this.componentConfigs
 			.filter(args => !optionals.includes(args[0]) || this.data[args[0]])
 			.map(args => getComponent(...args));
-	}
-
-	refreshComponents() {
-		this.components.forEach(comp => comp.refresh(comp.getData()));
 	}
 
 	getChartComponents() {
@@ -370,9 +344,8 @@ export default class AxisChart extends BaseChart {
 	getDataUnitComponent(index, unitRenderer) {
 		return new ChartComponent({
 			layerClass: 'dataset-units dataset-' + index,
-			setData: () => {},
-			preMake: () => { },
 			makeElements: () => {
+				// yPositions, xPostions, color, valuesOverPoints,
 				let d = this.state.datasets[index];
 
 				return d.positions.map((y, j) => {
@@ -473,41 +446,6 @@ export default class AxisChart extends BaseChart {
 				this.elementsToAnimate = this.elementsToAnimate
 					.concat(this.renderer.animatepath(paths, newPointsList.join("L")));
 			}
-		});
-	}
-
-	refreshRenderer() {
-		// These args are basically the current state of the chart,
-		// with constant and alive params mixed
-		let state = {
-			totalHeight: this.height,
-			totalWidth: this.width,
-
-			xAxisMode: this.config.xAxisMode,
-			yAxisMode: this.config.yAxisMode,
-
-			zeroLine: this.state.zeroLine,
-			unitWidth: this.state.unitWidth,
-		};
-		if(!this.renderer) {
-			this.renderer = new AxisChartRenderer(state);
-		} else {
-			this.renderer.refreshState(state);
-		}
-
-		let meta = {
-			totalHeight: this.height,
-			totalWidth: this.width,
-			zeroLine: this.state.zeroLine,
-			unitWidth: this.state.unitWidth,
-			noOfDatasets: this.state.noOfDatasets,
-		};
-
-		meta = Object.assign(meta, this.rawChartArgs.options);
-
-		Object.keys(this.unitRenderers).map(key => {
-			meta.options = this[key + 'Options'];
-			this.unitRenderers[key].refreshMeta(meta);
 		});
 	}
 

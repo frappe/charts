@@ -1,0 +1,1 @@
+export const MIN_BAR_PERCENT_HEIGHT = 0.01;

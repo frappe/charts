@@ -232,25 +232,6 @@ function getStringWidth(string, charWidth) {
 	return (string+"").length * charWidth;
 }
 
-function getBarHeightAndYAttr(yTop, zeroLine) {
-	let height, y;
-	if (yTop <= zeroLine) {
-		height = zeroLine - yTop;
-		y = yTop;
-
-		// In case of invisible bars
-		if(height === 0) {
-			height = totalHeight * MIN_BAR_PERCENT_HEIGHT;
-			y -= height;
-		}
-	} else {
-		height = yTop - zeroLine;
-		y = zeroLine;
-	}
-
-	return [height, y];
-}
-
 function equilizeNoOfElements(array1, array2,
 	extra_count=array2.length - array1.length) {
 
@@ -284,7 +265,7 @@ function equilizeNoOfElements(array1, array2,
 // 	}
 
 const UNIT_ANIM_DUR = 350;
-const PATH_ANIM_DUR = 350;
+
 const MARKER_LINE_ANIM_DUR = UNIT_ANIM_DUR;
 const REPLACE_ALL_NEW_DUR = 250;
 
@@ -408,13 +389,7 @@ function makeSVGGroup(parent, className, transform='') {
 	});
 }
 
-function wrapInSVGGroup(elements, className='') {
-	let g = createSVG('g', {
-		className: className
-	});
-	elements.forEach(e => g.appendChild(e));
-	return g;
-}
+
 
 function makePath(pathStr, className='', stroke='none', fill='none') {
 	return createSVG('path', {
@@ -661,79 +636,6 @@ function yRegion(y1, y2, width, label) {
 	region.appendChild(labelSvg);
 
 	return region;
-}
-
-class AxisChartRenderer {
-	constructor(state) {
-		this.refreshState(state);
-	}
-
-	refreshState(state) {
-		this.totalHeight = state.totalHeight;
-		this.totalWidth = state.totalWidth;
-		this.zeroLine = state.zeroLine;
-		this.unitWidth = state.unitWidth;
-		this.xAxisMode = state.xAxisMode;
-		this.yAxisMode = state.yAxisMode;
-	}
-
-	setZeroline(zeroLine) {
-		this.zeroLine = zeroLine;
-	}
-
-	xMarker() {}
-
-
-	xRegion() {
-		return createSVG('rect', {
-			className: `bar mini`, // remove class
-			style: `fill: rgba(228, 234, 239, 0.49)`,
-			// 'data-point-index': index,
-			x: 0,
-			y: y2,
-			width: this.totalWidth,
-			height: y1 - y2
-		});
-
-		return region;
-	}
-
-	animatebar(bar, x, yTop, index, noOfDatasets) {
-		let start = x - this.avgUnitWidth/4;
-		let width = (this.avgUnitWidth/2)/noOfDatasets;
-		let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
-
-		x = start + (width * index);
-
-		return [bar, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING];
-		// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
-	}
-
-	animatedot(dot, x, yTop) {
-		return [dot, {cx: x, cy: yTop}, UNIT_ANIM_DUR, STD_EASING];
-		// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
-	}
-
-	animatepath(paths, pathStr) {
-		let pathComponents = [];
-		const animPath = [paths[0], {d:"M"+pathStr}, PATH_ANIM_DUR, STD_EASING];
-		pathComponents.push(animPath);
-
-		if(paths[1]) {
-			let regStartPt = `0,${this.zeroLine}L`;
-			let regEndPt = `L${this.totalWidth}, ${this.zeroLine}`;
-
-			const animRegion = [
-				paths[1],
-				{d:"M" + regStartPt + pathStr + regEndPt},
-				PATH_ANIM_DUR,
-				STD_EASING
-			];
-			pathComponents.push(animRegion);
-		}
-
-		return pathComponents;
-	}
 }
 
 const PRESET_COLOR_MAP = {
@@ -1047,17 +949,9 @@ class BaseChart {
 		let valid = this.checkData(data);
 		if(!valid) return false;
 
-		if(!this.config.animate) {
-			this.data = data;
-		} else {
-			[this.data, this.firstUpdateData] =
-				this.getFirstUpdateData(data);
-		}
+		this.data = data;
 		return true;
 	}
-
-	checkData() {}
-	getFirstUpdateData() {}
 
 	setup() {
 		if(this.validate()) {
@@ -1145,7 +1039,6 @@ class BaseChart {
 	update(data=this.data) {
 		this.prepareData(data);
 		this.calc(); // builds state
-		this.refreshRenderer();
 		this.render();
 	}
 
@@ -1155,13 +1048,10 @@ class BaseChart {
 
 	calc() {} // builds state
 
-	refreshRenderer() {
-		this.renderer = {};
-	}
-
 	render(animate=true) {
-		this.refreshComponents();
-		this.elementsToAnimate = [].concat.apply([], this.components.map(c => c.update(animate)));
+		// Can decouple to this.refreshComponents() first to save animation timeout
+		this.elementsToAnimate = [].concat.apply([],
+			this.components.map(c => c.update(animate)));
 		if(this.elementsToAnimate) {
 			runSMILAnimation(this.chartWrapper, this.svg, this.elementsToAnimate);
 		}
@@ -1171,8 +1061,6 @@ class BaseChart {
 		// 	this.bind_units(units_array);
 		// }
 	}
-
-	refreshComponents() {}
 
 	makeChartArea() {
 		this.svg = makeSVGContainer(
@@ -1285,18 +1173,15 @@ class ChartComponent$1 {
 		data,
 
 		// called on update
-		preMake,
 		makeElements,
 		postMake,
 		getData,
 		animateElements
 	}) {
 		this.parent = parent;
-		this.layerClass = layerClass;
 		this.layerTransform = layerTransform;
 		this.constants = constants;
 
-		this.preMake = preMake;
 		this.makeElements = makeElements;
 		this.postMake = postMake;
 		this.getData = getData;
@@ -1304,7 +1189,11 @@ class ChartComponent$1 {
 		this.animateElements = animateElements;
 
 		this.store = [];
-		this.layer = makeSVGGroup(this.parent, this.layerClass, this.layerTransform);
+
+		layerClass = typeof(layerClass) === 'function'
+			? layerClass() : layerClass;
+
+		this.layer = makeSVGGroup(this.parent, layerClass, this.layerTransform);
 
 		this.data = data;
 
@@ -1312,7 +1201,7 @@ class ChartComponent$1 {
 	}
 
 	refresh(data) {
-		this.data = data;
+		this.data = data || this.getData();
 	}
 
 	make() {
@@ -1332,6 +1221,7 @@ class ChartComponent$1 {
 	}
 
 	update(animate = true) {
+		this.refresh();
 		let animateElements = [];
 		if(animate) {
 			animateElements = this.animateElements(this.data);
@@ -1347,14 +1237,14 @@ class ChartComponent$1 {
 let componentConfigs = {
 	yAxis: {
 		layerClass: 'y axis',
-		makeElements: function(data) {
+		makeElements(data) {
 			return data.positions.map((position, i) =>
 				yLine(position, data.labels[i], this.constants.width,
 					{mode: this.constants.mode, pos: this.constants.pos})
 			);
 		},
 
-		animateElements: function(newData) {
+		animateElements(newData) {
 			let newPos =  newData.positions;
 			let newLabels =  newData.labels;
 			let oldPos = this.oldData.positions;
@@ -1378,14 +1268,14 @@ let componentConfigs = {
 
 	xAxis: {
 		layerClass: 'x axis',
-		makeElements: function(data) {
+		makeElements(data) {
 			return data.positions.map((position, i) =>
 				xLine(position, data.labels[i], this.constants.height,
 					{mode: this.constants.mode, pos: this.constants.pos})
 			);
 		},
 
-		animateElements: function(newData) {
+		animateElements(newData) {
 			let newPos =  newData.positions;
 			let newLabels =  newData.labels;
 			let oldPos = this.oldData.positions;
@@ -1409,13 +1299,13 @@ let componentConfigs = {
 
 	yMarkers: {
 		layerClass: 'y-markers',
-		makeElements: function(data) {
+		makeElements(data) {
 			return data.map(marker =>
 				yMarker(marker.position, marker.label, this.constants.width,
 					{pos:'right', mode: 'span', lineType: 'dashed'})
 			);
 		},
-		animateElements: function(newData) {
+		animateElements(newData) {
 			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
 
 			let newPos =  newData.map(d => d.position);
@@ -1441,13 +1331,13 @@ let componentConfigs = {
 
 	yRegions: {
 		layerClass: 'y-regions',
-		makeElements: function(data) {
+		makeElements(data) {
 			return data.map(region =>
 				yRegion(region.start, region.end, this.constants.width,
 					region.label)
 			);
 		},
-		animateElements: function(newData) {
+		animateElements(newData) {
 			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
 
 			let newPos =  newData.map(d => d.end);
@@ -1478,8 +1368,87 @@ let componentConfigs = {
 		}
 	},
 
-	dataUnits: {
-		//
+	barGraph: {
+		// opt:[
+		// 	'barGraph',
+		// 	this.drawArea,
+		// 	{
+		// 		controller: barController,
+		// 		index: index,
+		// 		color: this.colors[index],
+		// 		valuesOverPoints: this.valuesOverPoints,
+		// 		stacked: this.barOptions && this.barOptions.stacked,
+		// 		spaceRatio: 0.5,
+		// 		minHeight: this.height * MIN_BAR_PERCENT_HEIGHT
+		// 	},
+		// 	{
+		// 		barsWidth: this.state.unitWidth * (1 - spaceRatio),
+		// 		barWidth: barsWidth/(stacked ? 1 : this.state.noOfDatasets),
+
+		// 	},
+		// 	function() {
+		// 		let s = this.state;
+		// 		return {
+		// 			barsWidth: this.state.unitWidth * (1 - spaceRatio),
+		// 			barWidth: barsWidth/(stacked ? 1 : this.state.noOfDatasets),
+		// 			positions: s.xAxisPositions,
+		// 			labels: s.xAxisLabels,
+		// 		}
+		// 	}.bind(this)
+		// ],
+		layerClass() { return 'y-regions' + this.constants.index; },
+		makeElements(data) {
+			let c = this.constants;
+			return data.yPositions.map((y, j) =>
+				barController.draw(
+					data.xPositions[j],
+					y,
+					color,
+					(c.valuesOverPoints ? (c.stacked ? data.cumulativeYs[j] : data.values[j]) : ''),
+					j,
+					y - (data.cumulativePositions ? data.cumulativePositions[j] : y)
+				)
+			);
+		},
+		postMake() {
+			if((!this.constants.stacked)) {
+				this.layer.setAttribute('transform',
+					`translate(${unitRenderer.consts.width * index}, 0)`);
+			}
+		},
+		animateElements(newData) {
+			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+
+			let newPos =  newData.map(d => d.end);
+			let newLabels =  newData.map(d => d.label);
+			let newStarts =  newData.map(d => d.start);
+
+			let oldPos = this.oldData.map(d => d.end);
+			let oldLabels = this.oldData.map(d => d.label);
+			let oldStarts = this.oldData.map(d => d.start);
+
+			this.render(oldPos.map((pos, i) => {
+				return {
+					start: oldStarts[i],
+					end: oldPos[i],
+					label: newLabels[i]
+				}
+			}));
+
+			let animateElements = [];
+
+			this.store.map((rectGroup, i) => {
+				animateElements = animateElements.concat(animateRegion(
+					rectGroup, newStarts[i], newPos[i], oldPos[i]
+				));
+			});
+
+			return animateElements;
+		}
+	},
+
+	lineGraph: {
+
 	}
 };
 
@@ -1492,139 +1461,6 @@ function getComponent(name, parent, constants, initData, getData) {
 		getData: getData
 	});
 	return new ChartComponent$1(config);
-}
-
-const MIN_BAR_PERCENT_HEIGHT$1 = 0.01;
-
-class AxisChartController {
-	constructor(meta) {
-		// TODO: make configurable passing args
-		this.meta = meta || {};
-		this.setupArgs();
-	}
-
-	setupArgs() {
-		this.consts = {};
-	}
-
-	setup() {}
-
-	refreshMeta(meta) {
-		this.meta = Object.assign((this.meta || {}), meta);
-	}
-
-	draw() {}
-	animate() {}
-}
-
-
-
-class BarChartController extends AxisChartController {
-	constructor(meta) {
-		super(meta);
-	}
-
-	setupArgs() {
-		this.consts = {
-			spaceRatio: 0.5,
-			minHeight: this.meta.totalHeight * MIN_BAR_PERCENT_HEIGHT$1
-		};
-	}
-
-	refreshMeta(meta) {
-		if(meta) {
-			super.refreshMeta(meta);
-		}
-		let m = this.meta;
-		this.consts.barsWidth = m.unitWidth - m.unitWidth * this.consts.spaceRatio;
-
-		this.consts.width = this.consts.barsWidth / (m.options && m.options.stacked
-			? m.options.stacked : m.noOfDatasets);
-	}
-
-	draw(x, yTop, color, label='', index=0, offset=0) {
-		let [height, y] = getBarHeightAndYAttr(yTop, this.meta.zeroLine);
-
-		let rect = createSVG('rect', {
-			className: `bar mini`,
-			style: `fill: ${color}`,
-			'data-point-index': index,
-			x: x - this.consts.barsWidth/2,
-			y: y - offset,
-			width: this.consts.width,
-			height: height || this.consts.minHeight
-		});
-
-		if(!label && !label.length) {
-			return rect;
-		} else {
-			let text = createSVG('text', {
-				className: 'data-point-value',
-				x: x,
-				y: y - offset,
-				dy: (FONT_SIZE / 2 * -1) + 'px',
-				'font-size': FONT_SIZE + 'px',
-				'text-anchor': 'middle',
-				innerHTML: label
-			});
-
-			return wrapInSVGGroup([rect, text]);
-		}
-	}
-
-	animate(bar, x, yTop, index, noOfDatasets) {
-		let start = x - this.meta.unitWidth/4;
-		let width = (this.meta.unitWidth/2)/noOfDatasets;
-		let [height, y] = getBarHeightAndYAttr(yTop, this.meta.zeroLine, this.meta.totalHeight);
-
-		x = start + (width * index);
-
-		return [bar, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING];
-		// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
-	}
-}
-
-class LineChartController extends AxisChartController {
-	constructor(meta) {
-		super(meta);
-	}
-
-	setupArgs() {
-		this.consts = {
-			radius: this.meta.dotSize || 4
-		};
-	}
-
-	draw(x, y, color, label='', index=0) {
-		let dot = createSVG('circle', {
-			style: `fill: ${color}`,
-			'data-point-index': index,
-			cx: x,
-			cy: y,
-			r: this.consts.radius
-		});
-
-		if(!label && !label.length) {
-			return dot;
-		} else {
-			let text = createSVG('text', {
-				className: 'data-point-value',
-				x: x,
-				y: y,
-				dy: (FONT_SIZE / 2 * -1 - this.consts.radius) + 'px',
-				'font-size': FONT_SIZE + 'px',
-				'text-anchor': 'middle',
-				innerHTML: label
-			});
-
-			return wrapInSVGGroup([dot, text]);
-		}
-	}
-
-	animate(dot, x, yTop) {
-		return [dot, {cx: x, cy: yTop}, UNIT_ANIM_DUR, STD_EASING];
-		// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
-	}
 }
 
 function getPaths(yList, xList, color, heatline=false, regionFill=false) {
@@ -1953,10 +1789,8 @@ class AxisChart extends BaseChart {
 		this.xAxisMode = args.xAxisMode || 'span';
 		this.yAxisMode = args.yAxisMode || 'span';
 
-		this.setupUnitRenderer();
-
 		this.zeroLine = this.height;
-		this.preSetup();
+		this.setPrimitiveData();
 		this.setup();
 	}
 
@@ -1967,15 +1801,14 @@ class AxisChart extends BaseChart {
 		this.config.yAxisMode = args.yAxisMode;
 	}
 
-	preSetup() {}
+	setPrimitiveData() {
+		// Define data and stuff
+		this.setObservers();
+	}
 
-	setupUnitRenderer() {
-		// TODO: this is empty
-		let options = this.rawChartArgs.options;
-		this.unitRenderers = {
-			bar: new BarChartController(options),
-			line: new LineChartController(options)
-		};
+	setObservers() {
+		// go through each component and check the keys in this.state it depends on
+		// set an observe() on each of those keys for that component
 	}
 
 	setHorizontalMargin() {
@@ -1985,10 +1818,6 @@ class AxisChart extends BaseChart {
 
 	checkData(data) {
 		return true;
-	}
-
-	getFirstUpdateData(data) {
-		//
 	}
 
 	setupConstants() {
@@ -2005,18 +1834,19 @@ class AxisChart extends BaseChart {
 			}
 		});
 
-		this.prepareYAxis();
+		// Prepare Y Axis
+		this.state.yAxis = {
+			labels: [],
+			positions: []
+		};
 	}
 
 	prepareData(data) {
 		let s = this.state;
-
 		s.xAxisLabels = data.labels || [];
-
 		s.datasetLength = s.xAxisLabels.length;
 
 		let zeroArray = new Array(s.datasetLength).fill(0);
-
 		s.datasets = data.datasets; // whole dataset info too
 		if(!data.datasets) {
 			// default
@@ -2049,13 +1879,6 @@ class AxisChart extends BaseChart {
 		s.yRegions = data.yRegions;
 	}
 
-	prepareYAxis() {
-		this.state.yAxis = {
-			labels: [],
-			positions: []
-		};
-	}
-
 	calc() {
 		let s = this.state;
 
@@ -2068,8 +1891,6 @@ class AxisChart extends BaseChart {
 		this.calcYMaximums();
 		this.calcYRegions();
 
-		// should be state
-		this.configUnits();
 	}
 
 	setYAxis() {
@@ -2154,8 +1975,6 @@ class AxisChart extends BaseChart {
 		}
 	}
 
-	configUnits() {}
-
 	// Default, as per bar, and mixed. Only line will be a special case
 	setUnitWidthAndXOffset() {
 		this.state.unitWidth = this.width/(this.state.datasetLength);
@@ -2178,12 +1997,6 @@ class AxisChart extends BaseChart {
 
 		return [].concat(...this.state.datasets.map(d => d[key]));
 	}
-
-	calcIntermedState() {
-		//
-	}
-
-	setupValues() {}
 
 	initComponents() {
 		this.componentConfigs = [
@@ -2266,7 +2079,7 @@ class AxisChart extends BaseChart {
 				function() {
 					return this.state.yMarkers || [];
 				}.bind(this)
-			],
+			]
 		];
 	}
 	setupComponents() {
@@ -2274,10 +2087,6 @@ class AxisChart extends BaseChart {
 		this.components = this.componentConfigs
 			.filter(args => !optionals.includes(args[0]) || this.data[args[0]])
 			.map(args => getComponent(...args));
-	}
-
-	refreshComponents() {
-		this.components.forEach(comp => comp.refresh(comp.getData()));
 	}
 
 	getChartComponents() {
@@ -2299,9 +2108,8 @@ class AxisChart extends BaseChart {
 	getDataUnitComponent(index, unitRenderer) {
 		return new ChartComponent({
 			layerClass: 'dataset-units dataset-' + index,
-			setData: () => {},
-			preMake: () => { },
 			makeElements: () => {
+				// yPositions, xPostions, color, valuesOverPoints,
 				let d = this.state.datasets[index];
 
 				return d.positions.map((y, j) => {
@@ -2402,41 +2210,6 @@ class AxisChart extends BaseChart {
 				this.elementsToAnimate = this.elementsToAnimate
 					.concat(this.renderer.animatepath(paths, newPointsList.join("L")));
 			}
-		});
-	}
-
-	refreshRenderer() {
-		// These args are basically the current state of the chart,
-		// with constant and alive params mixed
-		let state = {
-			totalHeight: this.height,
-			totalWidth: this.width,
-
-			xAxisMode: this.config.xAxisMode,
-			yAxisMode: this.config.yAxisMode,
-
-			zeroLine: this.state.zeroLine,
-			unitWidth: this.state.unitWidth,
-		};
-		if(!this.renderer) {
-			this.renderer = new AxisChartRenderer(state);
-		} else {
-			this.renderer.refreshState(state);
-		}
-
-		let meta = {
-			totalHeight: this.height,
-			totalWidth: this.width,
-			zeroLine: this.state.zeroLine,
-			unitWidth: this.state.unitWidth,
-			noOfDatasets: this.state.noOfDatasets,
-		};
-
-		meta = Object.assign(meta, this.rawChartArgs.options);
-
-		Object.keys(this.unitRenderers).map(key => {
-			meta.options = this[key + 'Options'];
-			this.unitRenderers[key].refreshMeta(meta);
 		});
 	}
 
