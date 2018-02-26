@@ -1,5 +1,6 @@
 import BaseChart from './BaseChart';
-import { Y_AXIS_MARGIN } from '../utils/margins';
+import { dataPrep } from './axis-chart-utils';
+import { Y_AXIS_MARGIN } from '../utils/constants';
 import { getComponent } from '../objects/ChartComponents';
 import { BarChartController, LineChartController, getPaths } from '../objects/AxisChartControllers';
 import { AxisChartRenderer } from '../utils/draw';
@@ -9,7 +10,7 @@ import { Animator, translateHoriLine } from '../utils/animate';
 import { runSMILAnimation } from '../utils/animation';
 import { getRealIntervals, calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex } from '../utils/intervals';
 import { floatTwo, fillArray } from '../utils/helpers';
-import { MIN_BAR_PERCENT_HEIGHT } from '../utils/constants';
+import { MIN_BAR_PERCENT_HEIGHT, DEFAULT_AXIS_CHART_TYPE } from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
 	constructor(args) {
@@ -26,7 +27,7 @@ export default class AxisChart extends BaseChart {
 		this.yAxisMode = args.yAxisMode || 'span';
 
 		this.zeroLine = this.height;
-		this.setPrimitiveData();
+		this.setTrivialState();
 		this.setup();
 	}
 
@@ -37,8 +38,20 @@ export default class AxisChart extends BaseChart {
 		this.config.yAxisMode = args.yAxisMode;
 	}
 
-	setPrimitiveData() {
+	setTrivialState() {
 		// Define data and stuff
+		let xLabels = this.data.labels;
+		this.state = {
+			xAxis: {
+				positions: [],
+				labels: xLabels,
+			},
+			yAxis: {
+				positions: [],
+				labels: [],
+			},
+			datasetLength: xLabels.length
+		}
 		this.setObservers();
 	}
 
@@ -47,78 +60,19 @@ export default class AxisChart extends BaseChart {
 		// set an observe() on each of those keys for that component
 	}
 
-	setHorizontalMargin() {
+	setMargins() {
+		super.setMargins();
 		this.translateXLeft = Y_AXIS_MARGIN;
 		this.translateXRight = Y_AXIS_MARGIN;
 	}
 
-	checkData(data) {
-		return true;
-	}
-
-	setupConstants() {
-		this.state = {
-			xAxisLabels: [],
-			xAxisPositions: [],
-			xAxisMode: this.config.xAxisMode,
-			yAxisMode: this.config.yAxisMode
-		}
-
-		this.data.datasets.map(d => {
-			if(!d.chartType ) {
-				d.chartType = this.type;
-			}
-		});
-
-		// Prepare Y Axis
-		this.state.yAxis = {
-			labels: [],
-			positions: []
-		};
-	}
-
-	prepareData(data) {
-		let s = this.state;
-		s.xAxisLabels = data.labels || [];
-		s.datasetLength = s.xAxisLabels.length;
-
-		let zeroArray = new Array(s.datasetLength).fill(0);
-		s.datasets = data.datasets; // whole dataset info too
-		if(!data.datasets) {
-			// default
-			s.datasets = [{
-				values: zeroArray	// Proof that state version will be seen instead of this.data
-			}];
-		}
-
-		s.datasets.map((d, i)=> {
-			let vals = d.values;
-			if(!vals) {
-				vals = zeroArray;
-			} else {
-				// Check for non values
-				vals = vals.map(val => (!isNaN(val) ? val : 0));
-
-				// Trim or extend
-				if(vals.length > s.datasetLength) {
-					vals = vals.slice(0, s.datasetLength);
-				} else {
-					vals = fillArray(vals, s.datasetLength - vals.length, 0);
-				}
-			}
-
-			d.index = i;
-		});
-
-		s.noOfDatasets = s.datasets.length;
-		s.yMarkers = data.yMarkers;
-		s.yRegions = data.yRegions;
+	prepareData(data=this.data) {
+		return dataPrep(data, this.type);
 	}
 
 	calc() {
 		let s = this.state;
 
-		s.xAxisLabels = this.data.labels;
 		this.calcXPositions();
 
 		s.datasetsLabels = this.data.datasets.map(d => d.name);
@@ -137,11 +91,11 @@ export default class AxisChart extends BaseChart {
 	calcXPositions() {
 		let s = this.state;
 		this.setUnitWidthAndXOffset();
-		s.xAxisPositions = s.xAxisLabels.map((d, i) =>
+		s.xAxisPositions = s.xAxis.labels.map((d, i) =>
 			floatTwo(s.xOffset + i * s.unitWidth)
 		);
 
-		s.xUnitPositions = new Array(s.noOfDatasets).fill(s.xAxisPositions);
+		s.xUnitPositions = new Array(this.data.datasets.length).fill(s.xAxisPositions);
 	}
 
 	calcYAxisParameters(yAxis, dataValues, withMinimum = 'false') {
@@ -157,13 +111,13 @@ export default class AxisChart extends BaseChart {
 
 	calcYUnits() {
 		let s = this.state;
-		s.datasets.map(d => {
+		this.data.datasets.map(d => {
 			d.positions = d.values.map(val =>
 				floatTwo(s.yAxis.zeroLine - val * s.yAxis.scaleMultiplier));
 		});
 
 		if(this.barOptions && this.barOptions.stacked) {
-			s.datasets.map((d, i) => {
+			this.data.datasets.map((d, i) => {
 				d.cumulativePositions = d.cumulativeYs.map(val =>
 					floatTwo(s.yAxis.zeroLine - val * s.yAxis.scaleMultiplier));
 			});
@@ -173,11 +127,11 @@ export default class AxisChart extends BaseChart {
 	calcYMaximums() {
 		let s = this.state;
 		if(this.barOptions && this.barOptions.stacked) {
-			s.yExtremes = s.datasets[s.datasets.length - 1].cumulativePositions;
+			s.yExtremes = this.data.datasets[this.data.datasets.length - 1].cumulativePositions;
 			return;
 		}
 		s.yExtremes = new Array(s.datasetLength).fill(9999);
-		s.datasets.map((d, i) => {
+		this.data.datasets.map((d, i) => {
 			d.positions.map((pos, j) => {
 				if(pos < s.yExtremes[j]) {
 					s.yExtremes[j] = pos;
@@ -192,15 +146,15 @@ export default class AxisChart extends BaseChart {
 
 	calcYRegions() {
 		let s = this.state;
-		if(s.yMarkers) {
-			s.yMarkers = s.yMarkers.map(d => {
+		if(this.data.yMarkers) {
+			this.data.yMarkers = this.data.yMarkers.map(d => {
 				d.position = floatTwo(s.yAxis.zeroLine - d.value * s.yAxis.scaleMultiplier);
 				d.label += ': ' + d.value;
 				return d;
 			});
 		}
-		if(s.yRegions) {
-			s.yRegions = s.yRegions.map(d => {
+		if(this.data.yRegions) {
+			this.data.yRegions = this.data.yRegions.map(d => {
 				if(d.end < d.start) {
 					[d.start, d.end] = [d.end, start];
 				}
@@ -225,13 +179,13 @@ export default class AxisChart extends BaseChart {
 		if(this.barOptions && this.barOptions.stacked) {
 			key = 'cumulativeYs';
 			let cumulative = new Array(this.state.datasetLength).fill(0);
-			this.state.datasets.map((d, i) => {
-				let values = this.state.datasets[i].values;
+			this.data.datasets.map((d, i) => {
+				let values = this.data.datasets[i].values;
 				d[key] = cumulative = cumulative.map((c, i) => c + values[i]);
 			});
 		}
 
-		return [].concat(...this.state.datasets.map(d => d[key]));
+		return [].concat(...this.data.datasets.map(d => d[key]));
 	}
 
 	initComponents() {
@@ -273,7 +227,7 @@ export default class AxisChart extends BaseChart {
 					let s = this.state;
 					return {
 						positions: s.xAxisPositions,
-						labels: s.xAxisLabels,
+						labels: s.xAxis.labels,
 					}
 				}.bind(this)
 			],
@@ -294,7 +248,7 @@ export default class AxisChart extends BaseChart {
 					}
 				],
 				function() {
-					return this.state.yRegions || [];
+					return this.data.yRegions || [];
 				}.bind(this)
 			],
 
@@ -313,7 +267,7 @@ export default class AxisChart extends BaseChart {
 					}
 				],
 				function() {
-					return this.state.yMarkers || [];
+					return this.data.yMarkers || [];
 				}.bind(this)
 			]
 		];
@@ -346,7 +300,7 @@ export default class AxisChart extends BaseChart {
 			layerClass: 'dataset-units dataset-' + index,
 			makeElements: () => {
 				// yPositions, xPostions, color, valuesOverPoints,
-				let d = this.state.datasets[index];
+				let d = this.data.datasets[index];
 
 				return d.positions.map((y, j) => {
 					return unitRenderer.draw(
@@ -365,7 +319,7 @@ export default class AxisChart extends BaseChart {
 					this.layer.setAttribute('transform', `translate(${unitRenderer.consts.width * index}, 0)`);
 				}
 
-				// let d = this.state.datasets[index];
+				// let d = this.data.datasets[index];
 
 				if(this.meta.type === 'bar' && (!this.meta.barOptions
 					|| !this.meta.barOptions.stacked)) {
@@ -376,7 +330,7 @@ export default class AxisChart extends BaseChart {
 			animate: (svgUnits) => {
 				// have been updated in axis render;
 				let newX = this.state.xAxisPositions;
-				let newY = this.state.datasets[index].positions;
+				let newY = this.data.datasets[index].positions;
 
 				let lastUnit = svgUnits[svgUnits.length - 1];
 				let parentNode = lastUnit.parentNode;
@@ -396,7 +350,7 @@ export default class AxisChart extends BaseChart {
 						newX[i],
 						newY[i],
 						index,
-						this.state.noOfDatasets
+						this.data.datasets.length
 					));
 				});
 			}
@@ -408,7 +362,7 @@ export default class AxisChart extends BaseChart {
 			layerClass: 'path dataset-path',
 			setData: () => {},
 			makeElements: () => {
-				let d = this.state.datasets[index];
+				let d = this.data.datasets[index];
 				let color = this.colors[index];
 
 				return getPaths(
@@ -421,7 +375,7 @@ export default class AxisChart extends BaseChart {
 			},
 			animate: (paths) => {
 				let newX = this.state.xAxisPositions;
-				let newY = this.state.datasets[index].positions;
+				let newY = this.data.datasets[index].positions;
 
 				let oldX = this.oldState.xAxisPositions;
 				let oldY = this.oldState.datasets[index].positions;
@@ -468,7 +422,7 @@ export default class AxisChart extends BaseChart {
 		let s = this.state;
 		if(!s.yExtremes) return;
 
-		let titles = s.xAxisLabels;
+		let titles = s.xAxis.labels;
 		if(this.formatTooltipX && this.formatTooltipX(titles[0])) {
 			titles = titles.map(d=>this.formatTooltipX(d));
 		}
@@ -482,7 +436,7 @@ export default class AxisChart extends BaseChart {
 				let x = xVal + this.translateXLeft;
 				let y = s.yExtremes[i] + this.translateY;
 
-				let values = s.datasets.map((set, j) => {
+				let values = this.data.datasets.map((set, j) => {
 					return {
 						title: set.title,
 						value: formatY ? this.formatTooltipY(set.values[i]) : set.values[i],
@@ -507,14 +461,14 @@ export default class AxisChart extends BaseChart {
 			let data_key = key.slice(0, key.length-1);
 			data_point[data_key] = y[key][index];
 		});
-		data_point.label = this.xAxisLabels[index];
+		data_point.label = this.xAxis.labels[index];
 		return data_point;
 	}
 
 	setCurrentDataPoint(index) {
 		index = parseInt(index);
 		if(index < 0) index = 0;
-		if(index >= this.xAxisLabels.length) index = this.xAxisLabels.length - 1;
+		if(index >= this.xAxis.labels.length) index = this.xAxis.labels.length - 1;
 		if(index === this.current_index) return;
 		this.current_index = index;
 		$.fire(this.parent, "data-select", this.getDataPoint());

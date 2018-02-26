@@ -34,27 +34,29 @@ export default class BaseChart {
 			this.currentIndex = 0;
 		}
 
+		this.data = this.prepareData(data);;
+		this.colors = [];
+		this.config = {};
+		this.state = {};
+		this.options = {};
+
 		this.configure(arguments[0]);
 	}
 
 	configure(args) {
-		// Make a this.config, that has stuff like showTooltip,
-		// showLegend, which then all functions will check
-
 		this.setColors();
-
-		// constants
 		this.config = {
 			showTooltip: 1, // calculate
 			showLegend: 1,
 			isNavigable: 0,
-			// animate: 1
-			animate: 0
+			animate: 1
 		};
 
-		this.state = {
-			colors: this.colors
-		};
+		this.setMargins();
+
+		// Bind window events
+		window.addEventListener('resize', () => this.draw());
+		window.addEventListener('orientationchange', () => this.draw());
 	}
 
 	setColors() {
@@ -81,10 +83,7 @@ export default class BaseChart {
 		this.height = height - 40; // change
 		this.translateY = 20;
 
-		this.setHorizontalMargin();
-	}
-
-	setHorizontalMargin() {
+		// Horizontal margins
 		this.translateXLeft = 60;
 		this.translateXRight = 40;
 	}
@@ -96,18 +95,6 @@ export default class BaseChart {
 			console.error("No parent element to render on was provided.");
 			return false;
 		}
-		if(!this.parseData()) {
-			return false;
-		}
-		return true;
-	}
-
-	parseData() {
-		let data = this.rawChartArgs.data;
-		let valid = this.checkData(data);
-		if(!valid) return false;
-
-		this.data = data;
 		return true;
 	}
 
@@ -118,29 +105,15 @@ export default class BaseChart {
 	}
 
 	_setup() {
-		this.bindWindowEvents();
-		this.setupConstants();
-
-		this.setMargins();
 		this.makeContainer();
 		this.makeTooltip(); // without binding
 
-		this.calcWidth();
-		this.makeChartArea();
-		this.initComponents();
-
-		this.setupComponents();
 		this.draw(true);
 	}
 
-	bindWindowEvents() {
-		window.addEventListener('resize orientationchange', () => this.draw());
-	}
-
-	setupConstants() {}
+	initComponents() {}
 
 	setupComponents() {
-		// Components config
 		this.components = [];
 	}
 
@@ -172,13 +145,22 @@ export default class BaseChart {
 	bindTooltip() {}
 
 	draw(init=false) {
+		this.calcWidth();
+		this.makeChartArea();
+
+		this.initComponents(); // Only depend on the drawArea made in makeChartArea
+
+		this.setupComponents();
+
 		this.components.forEach(c => c.make()); // or c.build()
 		this.renderLegend();
 
 		this.setupNavigation(init);
 
 		// TODO: remove timeout and decrease post animate time in chart component
-		setTimeout(() => {this.update();}, 1000);
+		if(init) {
+			setTimeout(() => {this.update();}, 1000);
+		}
 	}
 
 	calcWidth() {
@@ -195,14 +177,12 @@ export default class BaseChart {
 	}
 
 	update(data=this.data) {
-		this.prepareData(data);
+		this.data = this.prepareData(data);
 		this.calc(); // builds state
 		this.render();
 	}
 
 	prepareData() {}
-
-	renderConstants() {}
 
 	calc() {} // builds state
 
@@ -221,6 +201,9 @@ export default class BaseChart {
 	}
 
 	makeChartArea() {
+		if(this.svg) {
+			this.chartWrapper.removeChild(this.svg);
+		}
 		this.svg = makeSVGContainer(
 			this.chartWrapper,
 			'chart',
@@ -283,37 +266,25 @@ export default class BaseChart {
 	onDownArrow() {}
 	onEnterKey() {}
 
-	// updateData() {
-	// 	update();
-	// }
-
-	getDataPoint() {}
-	setCurrentDataPoint() {}
-
-
+	// ????????????
 	// Update the data here, then do relevant updates
 	// and drawing in child classes by overriding
 	// The Child chart will only know what a particular update means
 	// and what components are affected,
 	// BaseChart shouldn't be doing the animating
 
+	getDataPoint(index = 0) {}
+	setCurrentDataPoint(point) {}
+
 	updateDataset(dataset, index) {}
-
-	updateDatasets(datasets) {
-		//
-	}
-
 	addDataset(dataset, index) {}
-
 	removeDataset(index = 0) {}
 
-	addDataPoint(dataPoint, index = 0) {}
-
-	removeDataPoint(index = 0) {}
+	updateDatasets(datasets) {}
 
 	updateDataPoint(dataPoint, index = 0) {}
-
-
+	addDataPoint(dataPoint, index = 0) {}
+	removeDataPoint(index = 0) {}
 
 	getDifferentChart(type) {
 		return getDifferentChart(type, this.type, this.rawChartArgs);

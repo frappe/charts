@@ -2,8 +2,6 @@ import { getBarHeightAndYAttr } from '../utils/draw-utils';
 import { createSVG, makePath, makeGradient, wrapInSVGGroup, FONT_SIZE } from '../utils/draw';
 import { STD_EASING, UNIT_ANIM_DUR, MARKER_LINE_ANIM_DUR, PATH_ANIM_DUR } from '../utils/animate';
 
-const MIN_BAR_PERCENT_HEIGHT = 0.01;
-
 class AxisChartController {
 	constructor(meta) {
 		// TODO: make configurable passing args

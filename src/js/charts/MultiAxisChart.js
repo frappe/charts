@@ -1,5 +1,5 @@
 import AxisChart from './AxisChart';
-import { Y_AXIS_MARGIN } from '../utils/margins';
+import { Y_AXIS_MARGIN } from '../utils/constants';
 // import { ChartComponent } from '../objects/ChartComponents';
 import { floatTwo } from '../utils/helpers';
 
@@ -14,7 +14,8 @@ export default class MultiAxisChart extends AxisChart {
 		this.type = 'multiaxis';
 	}
 
-	setHorizontalMargin() {
+	setMargins() {
+		super.setMargins();
 		let noOfLeftAxes = this.data.datasets.filter(d => d.axisPosition === 'left').length;
 		this.translateXLeft = (noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
 		this.translateXRight = (this.data.datasets.length - noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
@@ -72,6 +73,7 @@ export default class MultiAxisChart extends AxisChart {
 		});
 	}
 
+	// TODO: function doesn't exist, handle with components
 	renderConstants() {
 		this.state.datasets.map(d => {
 			let guidePos = d.yAxis.position === 'left'

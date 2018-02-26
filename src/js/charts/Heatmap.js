@@ -54,7 +54,8 @@ export default class Heatmap extends BaseChart {
 		return valid;
 	}
 
-	setupConstants() {
+	configure() {
+		super.configure();
 		this.today = new Date();
 
 		if(!this.start) {

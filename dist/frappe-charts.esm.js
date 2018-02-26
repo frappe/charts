@@ -878,27 +878,29 @@ class BaseChart {
 			this.currentIndex = 0;
 		}
 
+		this.data = this.prepareData(data);
+		this.colors = [];
+		this.config = {};
+		this.state = {};
+		this.options = {};
+
 		this.configure(arguments[0]);
 	}
 
 	configure(args) {
-		// Make a this.config, that has stuff like showTooltip,
-		// showLegend, which then all functions will check
-
 		this.setColors();
-
-		// constants
 		this.config = {
 			showTooltip: 1, // calculate
 			showLegend: 1,
 			isNavigable: 0,
-			// animate: 1
-			animate: 0
+			animate: 1
 		};
 
-		this.state = {
-			colors: this.colors
-		};
+		this.setMargins();
+
+		// Bind window events
+		window.addEventListener('resize', () => this.draw());
+		window.addEventListener('orientationchange', () => this.draw());
 	}
 
 	setColors() {
@@ -925,10 +927,7 @@ class BaseChart {
 		this.height = height - 40; // change
 		this.translateY = 20;
 
-		this.setHorizontalMargin();
-	}
-
-	setHorizontalMargin() {
+		// Horizontal margins
 		this.translateXLeft = 60;
 		this.translateXRight = 40;
 	}
@@ -938,18 +937,6 @@ class BaseChart {
 			console.error("No parent element to render on was provided.");
 			return false;
 		}
-		if(!this.parseData()) {
-			return false;
-		}
-		return true;
-	}
-
-	parseData() {
-		let data = this.rawChartArgs.data;
-		let valid = this.checkData(data);
-		if(!valid) return false;
-
-		this.data = data;
 		return true;
 	}
 
@@ -960,29 +947,15 @@ class BaseChart {
 	}
 
 	_setup() {
-		this.bindWindowEvents();
-		this.setupConstants();
-
-		this.setMargins();
 		this.makeContainer();
 		this.makeTooltip(); // without binding
 
-		this.calcWidth();
-		this.makeChartArea();
-		this.initComponents();
-
-		this.setupComponents();
 		this.draw(true);
 	}
 
-	bindWindowEvents() {
-		window.addEventListener('resize orientationchange', () => this.draw());
-	}
-
-	setupConstants() {}
+	initComponents() {}
 
 	setupComponents() {
-		// Components config
 		this.components = [];
 	}
 
@@ -1014,13 +987,22 @@ class BaseChart {
 	bindTooltip() {}
 
 	draw(init=false) {
+		this.calcWidth();
+		this.makeChartArea();
+
+		this.initComponents(); // Only depend on the drawArea made in makeChartArea
+
+		this.setupComponents();
+
 		this.components.forEach(c => c.make()); // or c.build()
 		this.renderLegend();
 
 		this.setupNavigation(init);
 
 		// TODO: remove timeout and decrease post animate time in chart component
-		setTimeout(() => {this.update();}, 1000);
+		if(init) {
+			setTimeout(() => {this.update();}, 1000);
+		}
 	}
 
 	calcWidth() {
@@ -1037,14 +1019,12 @@ class BaseChart {
 	}
 
 	update(data=this.data) {
-		this.prepareData(data);
+		this.data = this.prepareData(data);
 		this.calc(); // builds state
 		this.render();
 	}
 
 	prepareData() {}
-
-	renderConstants() {}
 
 	calc() {} // builds state
 
@@ -1063,6 +1043,9 @@ class BaseChart {
 	}
 
 	makeChartArea() {
+		if(this.svg) {
+			this.chartWrapper.removeChild(this.svg);
+		}
 		this.svg = makeSVGContainer(
 			this.chartWrapper,
 			'chart',
@@ -1125,37 +1108,25 @@ class BaseChart {
 	onDownArrow() {}
 	onEnterKey() {}
 
-	// updateData() {
-	// 	update();
-	// }
-
-	getDataPoint() {}
-	setCurrentDataPoint() {}
-
-
+	// ????????????
 	// Update the data here, then do relevant updates
 	// and drawing in child classes by overriding
 	// The Child chart will only know what a particular update means
 	// and what components are affected,
 	// BaseChart shouldn't be doing the animating
 
+	getDataPoint(index = 0) {}
+	setCurrentDataPoint(point) {}
+
 	updateDataset(dataset, index) {}
-
-	updateDatasets(datasets) {
-		//
-	}
-
 	addDataset(dataset, index) {}
-
 	removeDataset(index = 0) {}
 
-	addDataPoint(dataPoint, index = 0) {}
-
-	removeDataPoint(index = 0) {}
+	updateDatasets(datasets) {}
 
 	updateDataPoint(dataPoint, index = 0) {}
-
-
+	addDataPoint(dataPoint, index = 0) {}
+	removeDataPoint(index = 0) {}
 
 	getDifferentChart(type) {
 		return getDifferentChart(type, this.type, this.rawChartArgs);
@@ -1163,6 +1134,56 @@ class BaseChart {
 }
 
 const Y_AXIS_MARGIN = 60;
+
+
+const DEFAULT_AXIS_CHART_TYPE = 'line';
+
+function dataPrep(data, type) {
+	data.labels = data.labels || [];
+
+	let datasetLength = data.labels.length;
+
+	// Datasets
+	let datasets = data.datasets;
+	let zeroArray = new Array(datasetLength).fill(0);
+	if(!datasets) {
+		// default
+		datasets = [{
+			values: zeroArray
+		}];
+	}
+
+	datasets.map((d, i)=> {
+		// Set values
+		if(!d.values) {
+			d.values = zeroArray;
+		} else {
+			// Check for non values
+			let vals = d.values;
+			vals = vals.map(val => (!isNaN(val) ? val : 0));
+
+			// Trim or extend
+			if(vals.length > datasetLength) {
+				vals = vals.slice(0, datasetLength);
+			} else {
+				vals = fillArray(vals, datasetLength - vals.length, 0);
+			}
+		}
+
+		// Set index
+		d.index = i;
+
+		// Set type
+		if(!d.chartType ) {
+			d.chartType = type || DEFAULT_AXIS_CHART_TYPE;
+		}
+	});
+
+	// Markers
+	// Regions
+
+	return data;
+}
 
 class ChartComponent$1 {
 	constructor({
@@ -1790,7 +1811,7 @@ class AxisChart extends BaseChart {
 		this.yAxisMode = args.yAxisMode || 'span';
 
 		this.zeroLine = this.height;
-		this.setPrimitiveData();
+		this.setTrivialState();
 		this.setup();
 	}
 
@@ -1801,8 +1822,20 @@ class AxisChart extends BaseChart {
 		this.config.yAxisMode = args.yAxisMode;
 	}
 
-	setPrimitiveData() {
+	setTrivialState() {
 		// Define data and stuff
+		let xLabels = this.data.labels;
+		this.state = {
+			xAxis: {
+				positions: [],
+				labels: xLabels,
+			},
+			yAxis: {
+				positions: [],
+				labels: [],
+			},
+			datasetLength: xLabels.length
+		};
 		this.setObservers();
 	}
 
@@ -1811,78 +1844,19 @@ class AxisChart extends BaseChart {
 		// set an observe() on each of those keys for that component
 	}
 
-	setHorizontalMargin() {
+	setMargins() {
+		super.setMargins();
 		this.translateXLeft = Y_AXIS_MARGIN;
 		this.translateXRight = Y_AXIS_MARGIN;
 	}
 
-	checkData(data) {
-		return true;
-	}
-
-	setupConstants() {
-		this.state = {
-			xAxisLabels: [],
-			xAxisPositions: [],
-			xAxisMode: this.config.xAxisMode,
-			yAxisMode: this.config.yAxisMode
-		};
-
-		this.data.datasets.map(d => {
-			if(!d.chartType ) {
-				d.chartType = this.type;
-			}
-		});
-
-		// Prepare Y Axis
-		this.state.yAxis = {
-			labels: [],
-			positions: []
-		};
-	}
-
-	prepareData(data) {
-		let s = this.state;
-		s.xAxisLabels = data.labels || [];
-		s.datasetLength = s.xAxisLabels.length;
-
-		let zeroArray = new Array(s.datasetLength).fill(0);
-		s.datasets = data.datasets; // whole dataset info too
-		if(!data.datasets) {
-			// default
-			s.datasets = [{
-				values: zeroArray	// Proof that state version will be seen instead of this.data
-			}];
-		}
-
-		s.datasets.map((d, i)=> {
-			let vals = d.values;
-			if(!vals) {
-				vals = zeroArray;
-			} else {
-				// Check for non values
-				vals = vals.map(val => (!isNaN(val) ? val : 0));
-
-				// Trim or extend
-				if(vals.length > s.datasetLength) {
-					vals = vals.slice(0, s.datasetLength);
-				} else {
-					vals = fillArray(vals, s.datasetLength - vals.length, 0);
-				}
-			}
-
-			d.index = i;
-		});
-
-		s.noOfDatasets = s.datasets.length;
-		s.yMarkers = data.yMarkers;
-		s.yRegions = data.yRegions;
+	prepareData(data=this.data) {
+		return dataPrep(data, this.type);
 	}
 
 	calc() {
 		let s = this.state;
 
-		s.xAxisLabels = this.data.labels;
 		this.calcXPositions();
 
 		s.datasetsLabels = this.data.datasets.map(d => d.name);
@@ -1901,11 +1875,11 @@ class AxisChart extends BaseChart {
 	calcXPositions() {
 		let s = this.state;
 		this.setUnitWidthAndXOffset();
-		s.xAxisPositions = s.xAxisLabels.map((d, i) =>
+		s.xAxisPositions = s.xAxis.labels.map((d, i) =>
 			floatTwo(s.xOffset + i * s.unitWidth)
 		);
 
-		s.xUnitPositions = new Array(s.noOfDatasets).fill(s.xAxisPositions);
+		s.xUnitPositions = new Array(this.data.datasets.length).fill(s.xAxisPositions);
 	}
 
 	calcYAxisParameters(yAxis, dataValues, withMinimum = 'false') {
@@ -1921,13 +1895,13 @@ class AxisChart extends BaseChart {
 
 	calcYUnits() {
 		let s = this.state;
-		s.datasets.map(d => {
+		this.data.datasets.map(d => {
 			d.positions = d.values.map(val =>
 				floatTwo(s.yAxis.zeroLine - val * s.yAxis.scaleMultiplier));
 		});
 
 		if(this.barOptions && this.barOptions.stacked) {
-			s.datasets.map((d, i) => {
+			this.data.datasets.map((d, i) => {
 				d.cumulativePositions = d.cumulativeYs.map(val =>
 					floatTwo(s.yAxis.zeroLine - val * s.yAxis.scaleMultiplier));
 			});
@@ -1937,11 +1911,11 @@ class AxisChart extends BaseChart {
 	calcYMaximums() {
 		let s = this.state;
 		if(this.barOptions && this.barOptions.stacked) {
-			s.yExtremes = s.datasets[s.datasets.length - 1].cumulativePositions;
+			s.yExtremes = this.data.datasets[this.data.datasets.length - 1].cumulativePositions;
 			return;
 		}
 		s.yExtremes = new Array(s.datasetLength).fill(9999);
-		s.datasets.map((d, i) => {
+		this.data.datasets.map((d, i) => {
 			d.positions.map((pos, j) => {
 				if(pos < s.yExtremes[j]) {
 					s.yExtremes[j] = pos;
@@ -1956,15 +1930,15 @@ class AxisChart extends BaseChart {
 
 	calcYRegions() {
 		let s = this.state;
-		if(s.yMarkers) {
-			s.yMarkers = s.yMarkers.map(d => {
+		if(this.data.yMarkers) {
+			this.data.yMarkers = this.data.yMarkers.map(d => {
 				d.position = floatTwo(s.yAxis.zeroLine - d.value * s.yAxis.scaleMultiplier);
 				d.label += ': ' + d.value;
 				return d;
 			});
 		}
-		if(s.yRegions) {
-			s.yRegions = s.yRegions.map(d => {
+		if(this.data.yRegions) {
+			this.data.yRegions = this.data.yRegions.map(d => {
 				if(d.end < d.start) {
 					[d.start, d.end] = [d.end, start];
 				}
@@ -1989,13 +1963,13 @@ class AxisChart extends BaseChart {
 		if(this.barOptions && this.barOptions.stacked) {
 			key = 'cumulativeYs';
 			let cumulative = new Array(this.state.datasetLength).fill(0);
-			this.state.datasets.map((d, i) => {
-				let values = this.state.datasets[i].values;
+			this.data.datasets.map((d, i) => {
+				let values = this.data.datasets[i].values;
 				d[key] = cumulative = cumulative.map((c, i) => c + values[i]);
 			});
 		}
 
-		return [].concat(...this.state.datasets.map(d => d[key]));
+		return [].concat(...this.data.datasets.map(d => d[key]));
 	}
 
 	initComponents() {
@@ -2037,7 +2011,7 @@ class AxisChart extends BaseChart {
 					let s = this.state;
 					return {
 						positions: s.xAxisPositions,
-						labels: s.xAxisLabels,
+						labels: s.xAxis.labels,
 					}
 				}.bind(this)
 			],
@@ -2058,7 +2032,7 @@ class AxisChart extends BaseChart {
 					}
 				],
 				function() {
-					return this.state.yRegions || [];
+					return this.data.yRegions || [];
 				}.bind(this)
 			],
 
@@ -2077,7 +2051,7 @@ class AxisChart extends BaseChart {
 					}
 				],
 				function() {
-					return this.state.yMarkers || [];
+					return this.data.yMarkers || [];
 				}.bind(this)
 			]
 		];
@@ -2110,7 +2084,7 @@ class AxisChart extends BaseChart {
 			layerClass: 'dataset-units dataset-' + index,
 			makeElements: () => {
 				// yPositions, xPostions, color, valuesOverPoints,
-				let d = this.state.datasets[index];
+				let d = this.data.datasets[index];
 
 				return d.positions.map((y, j) => {
 					return unitRenderer.draw(
@@ -2129,7 +2103,7 @@ class AxisChart extends BaseChart {
 					this.layer.setAttribute('transform', `translate(${unitRenderer.consts.width * index}, 0)`);
 				};
 
-				// let d = this.state.datasets[index];
+				// let d = this.data.datasets[index];
 
 				if(this.meta.type === 'bar' && (!this.meta.barOptions
 					|| !this.meta.barOptions.stacked)) {
@@ -2140,7 +2114,7 @@ class AxisChart extends BaseChart {
 			animate: (svgUnits) => {
 				// have been updated in axis render;
 				let newX = this.state.xAxisPositions;
-				let newY = this.state.datasets[index].positions;
+				let newY = this.data.datasets[index].positions;
 
 				let lastUnit = svgUnits[svgUnits.length - 1];
 				let parentNode = lastUnit.parentNode;
@@ -2160,7 +2134,7 @@ class AxisChart extends BaseChart {
 						newX[i],
 						newY[i],
 						index,
-						this.state.noOfDatasets
+						this.data.datasets.length
 					));
 				});
 			}
@@ -2172,7 +2146,7 @@ class AxisChart extends BaseChart {
 			layerClass: 'path dataset-path',
 			setData: () => {},
 			makeElements: () => {
-				let d = this.state.datasets[index];
+				let d = this.data.datasets[index];
 				let color = this.colors[index];
 
 				return getPaths(
@@ -2185,7 +2159,7 @@ class AxisChart extends BaseChart {
 			},
 			animate: (paths) => {
 				let newX = this.state.xAxisPositions;
-				let newY = this.state.datasets[index].positions;
+				let newY = this.data.datasets[index].positions;
 
 				let oldX = this.oldState.xAxisPositions;
 				let oldY = this.oldState.datasets[index].positions;
@@ -2232,7 +2206,7 @@ class AxisChart extends BaseChart {
 		let s = this.state;
 		if(!s.yExtremes) return;
 
-		let titles = s.xAxisLabels;
+		let titles = s.xAxis.labels;
 		if(this.formatTooltipX && this.formatTooltipX(titles[0])) {
 			titles = titles.map(d=>this.formatTooltipX(d));
 		}
@@ -2246,7 +2220,7 @@ class AxisChart extends BaseChart {
 				let x = xVal + this.translateXLeft;
 				let y = s.yExtremes[i] + this.translateY;
 
-				let values = s.datasets.map((set, j) => {
+				let values = this.data.datasets.map((set, j) => {
 					return {
 						title: set.title,
 						value: formatY ? this.formatTooltipY(set.values[i]) : set.values[i],
@@ -2271,14 +2245,14 @@ class AxisChart extends BaseChart {
 			let data_key = key.slice(0, key.length-1);
 			data_point[data_key] = y[key][index];
 		});
-		data_point.label = this.xAxisLabels[index];
+		data_point.label = this.xAxis.labels[index];
 		return data_point;
 	}
 
 	setCurrentDataPoint(index) {
 		index = parseInt(index);
 		if(index < 0) index = 0;
-		if(index >= this.xAxisLabels.length) index = this.xAxisLabels.length - 1;
+		if(index >= this.xAxis.labels.length) index = this.xAxis.labels.length - 1;
 		if(index === this.current_index) return;
 		this.current_index = index;
 		$.fire(this.parent, "data-select", this.getDataPoint());
@@ -2394,7 +2368,8 @@ class MultiAxisChart extends AxisChart {
 		this.type = 'multiaxis';
 	}
 
-	setHorizontalMargin() {
+	setMargins() {
+		super.setMargins();
 		let noOfLeftAxes = this.data.datasets.filter(d => d.axisPosition === 'left').length;
 		this.translateXLeft = (noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
 		this.translateXRight = (this.data.datasets.length - noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
@@ -2452,6 +2427,7 @@ class MultiAxisChart extends AxisChart {
 		});
 	}
 
+	// TODO: function doesn't exist, handle with components
 	renderConstants() {
 		this.state.datasets.map(d => {
 			let guidePos = d.yAxis.position === 'left'
@@ -2949,7 +2925,8 @@ class Heatmap extends BaseChart {
 		return valid;
 	}
 
-	setupConstants() {
+	configure() {
+		super.configure();
 		this.today = new Date();
 
 		if(!this.start) {

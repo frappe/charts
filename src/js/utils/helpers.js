@@ -62,6 +62,8 @@ export function getStringWidth(string, charWidth) {
 	return (string+"").length * charWidth;
 }
 
+
+
 function observe(obj, componentNames) {
 	let components = this.components.get(name);
 
