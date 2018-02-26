@@ -232,10 +232,6 @@ function getStringWidth(string, charWidth) {
 	return (string+"").length * charWidth;
 }
 
-
-
-// observe(s.yAxis, ['yAxis', 'barGraph'])
-
 function equilizeNoOfElements(array1, array2,
 	extra_count=array2.length - array1.length) {
 
@@ -309,22 +305,6 @@ function animateRegion(rectGroup, newY1, newY2, oldY2) {
 	let groupAnim = translate(rectGroup, [0, oldY2], [0, newY2], MARKER_LINE_ANIM_DUR);
 	return [rectAnim, groupAnim];
 }
-
-/*
-
-<filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
-	<feGaussianBlur stdDeviation="0.5 0.5" result="glow"></feGaussianBlur>
-	<feMerge>
-		<feMergeNode in="glow"></feMergeNode>
-		<feMergeNode in="glow"></feMergeNode>
-		<feMergeNode in="glow"></feMergeNode>
-	</feMerge>
-</filter>
-
-    filter: url(#glow);
-    fill: #fff;
-
-*/
 
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
@@ -976,7 +956,7 @@ class BaseChart {
 	initComponents() {}
 
 	setupComponents() {
-		this.components = [];
+		this.components = new Map();
 	}
 
 	makeContainer() {
@@ -1051,10 +1031,12 @@ class BaseChart {
 
 	render(animate=true) {
 		// Can decouple to this.refreshComponents() first to save animation timeout
-		this.elementsToAnimate = [].concat.apply([],
-			this.components.map(c => c.update(animate)));
-		if(this.elementsToAnimate) {
-			runSMILAnimation(this.chartWrapper, this.svg, this.elementsToAnimate);
+		let elementsToAnimate = [];
+		this.components.forEach(c => {
+			elementsToAnimate = elementsToAnimate.concat(c.update(animate));
+		});
+		if(elementsToAnimate.length > 0) {
+			runSMILAnimation(this.chartWrapper, this.svg, elementsToAnimate);
 		}
 
 		// TODO: rebind new units
@@ -1870,17 +1852,10 @@ class AxisChart extends BaseChart {
 					label: ''
 				}
 			]
-
 		};
 
 		this.calcWidth();
-		this.calcXPositions();
-		this.setObservers();
-	}
-
-	setObservers() {
-		// go through each component and check the keys in this.state it depends on
-		// set an observe() on each of those keys for that component
+		this.calcXPositions(this.state);
 	}
 
 	setMargins() {
@@ -1894,43 +1869,44 @@ class AxisChart extends BaseChart {
 	}
 
 	calc() {
+
 		this.calcXPositions();
 
-		this.setYAxis();
-		this.calcYUnits();
-		this.calcYMaximums();
-		this.calcYRegions();
-
+		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
 	}
 
-	setYAxis() {
-		this.calcYAxisParameters(this.state.yAxis, this.getAllYValues(), this.type === 'line');
-		this.state.zeroLine = this.state.yAxis.zeroLine;
-	}
-
-	calcXPositions() {
-		let s = this.state;
-		s.xAxis.labels = this.data.labels;
-		s.datasetLength = this.data.labels.length;
+	calcXPositions(s=this.state) {
+		let labels = this.data.labels;
+		s.datasetLength = labels.length;
 
 		s.unitWidth = this.width/(s.datasetLength);
 		// Default, as per bar, and mixed. Only line will be a special case
 		s.xOffset = s.unitWidth/2;
 
-		s.xAxis.positions = s.xAxis.labels.map((d, i) =>
-			floatTwo(s.xOffset + i * s.unitWidth)
-		);
+		s.xAxis = {
+			labels: labels,
+			positions: labels.map((d, i) =>
+				floatTwo(s.xOffset + i * s.unitWidth)
+			)
+		};
 	}
 
-	calcYAxisParameters(yAxis, dataValues, withMinimum = 'false') {
-		yAxis.labels = calcChartIntervals(dataValues, withMinimum);
-		const yPts = yAxis.labels;
+	calcYAxisParameters(dataValues, withMinimum = 'false') {
+		const yPts = calcChartIntervals(dataValues, withMinimum);
+		const scaleMultiplier = this.height / getValueRange(yPts);
+		const intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
+		const zeroLine = this.height - (getZeroIndex(yPts) * intervalHeight);
 
-		yAxis.scaleMultiplier = this.height / getValueRange(yPts);
-		const intervalHeight = getIntervalSize(yPts) * yAxis.scaleMultiplier;
-		yAxis.zeroLine = this.height - (getZeroIndex(yPts) * intervalHeight);
+		this.state.yAxis = {
+			labels: yPts,
+			positions: yPts.map(d => zeroLine - d * scaleMultiplier),
+			scaleMultiplier: scaleMultiplier,
+			zeroLine: zeroLine,
+		};
 
-		yAxis.positions = yPts.map(d => yAxis.zeroLine - d * yAxis.scaleMultiplier);
+		this.calcYUnits();
+		this.calcYMaximums();
+		this.calcYRegions();
 	}
 
 	calcYUnits() {
@@ -1991,7 +1967,6 @@ class AxisChart extends BaseChart {
 
 	getAllYValues() {
 		// TODO: yMarkers, regions, sums, every Y value ever
-
 		let key = 'values';
 
 		if(this.barOptions && this.barOptions.stacked) {
@@ -2045,12 +2020,16 @@ class AxisChart extends BaseChart {
 	}
 	setupComponents() {
 		let optionals = ['yMarkers', 'yRegions'];
-		this.components = this.componentConfigs
+		this.components = new Map(this.componentConfigs
 			.filter(args => !optionals.includes(args[0]) || this.data[args[0]])
 			.map(args => {
-				args.push(function() { return this.state[args[0]]; }.bind(this));
-				return getComponent(...args);
-			});
+				args.push(
+					function() {
+						return this.state[args[0]];
+					}.bind(this)
+				);
+				return [args[0], getComponent(...args)];
+			}));
 	}
 
 	getChartComponents() {
@@ -2281,7 +2260,6 @@ class AxisChart extends BaseChart {
 
 // keep a binding at the end of chart
 
-// import { ChartComponent } from '../objects/ChartComponents';
 class LineChart extends AxisChart {
 	constructor(args) {
 		super(args);
@@ -2348,7 +2326,6 @@ class ScatterChart extends LineChart {
 	make_path() {}
 }
 
-// import { ChartComponent } from '../objects/ChartComponents';
 class MultiAxisChart extends AxisChart {
 	constructor(args) {
 		super(args);
@@ -3125,19 +3102,6 @@ class Heatmap extends BaseChart {
 		this.bindTooltip();
 	}
 }
-
-// if ("development" !== 'production') {
-// 	// Enable LiveReload
-// 	document.write(
-// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
-// 		':35729/livereload.js?snipver=1"></' + 'script>'
-// 	);
-// }
-
-// If type is bar
-
-
-
 
 const chartTypes = {
 	mixed: AxisChart,

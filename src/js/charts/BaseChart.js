@@ -114,7 +114,7 @@ export default class BaseChart {
 	initComponents() {}
 
 	setupComponents() {
-		this.components = [];
+		this.components = new Map();
 	}
 
 	makeContainer() {
@@ -189,10 +189,12 @@ export default class BaseChart {
 
 	render(animate=true) {
 		// Can decouple to this.refreshComponents() first to save animation timeout
-		this.elementsToAnimate = [].concat.apply([],
-			this.components.map(c => c.update(animate)));
-		if(this.elementsToAnimate) {
-			runSMILAnimation(this.chartWrapper, this.svg, this.elementsToAnimate);
+		let elementsToAnimate = [];
+		this.components.forEach(c => {
+			elementsToAnimate = elementsToAnimate.concat(c.update(animate));
+		});
+		if(elementsToAnimate.length > 0) {
+			runSMILAnimation(this.chartWrapper, this.svg, elementsToAnimate);
 		}
 
 		// TODO: rebind new units

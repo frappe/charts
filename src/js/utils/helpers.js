@@ -62,27 +62,15 @@ export function getStringWidth(string, charWidth) {
 	return (string+"").length * charWidth;
 }
 
-
-
-function observe(obj, componentNames) {
-	let components = this.components.get(name);
-
-	fn = function() {
-		components.map();
-	}
-	bindChange(obj, fn)
-}
-
-// observe(s.yAxis, ['yAxis', 'barGraph'])
-
-export function bindChange(obj, fn) {
-	var proxied = new Proxy(obj, {
+export function bindChange(obj, getFn, setFn) {
+	return new Proxy(obj, {
 		set: function(target, prop, value) {
-			fn();
+			setFn();
 			return Reflect.set(target, prop, value);
+		},
+		get: function(target, prop, value) {
+			getFn();
+			return Reflect.get(target, prop);
 		}
 	});
-
-	// proxied.bar = 2;
-	// ==> {type: 'set', target: <obj>, prop: 'bar', value: 2}
 }

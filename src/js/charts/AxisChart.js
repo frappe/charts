@@ -9,7 +9,7 @@ import { equilizeNoOfElements } from '../utils/draw-utils';
 import { Animator, translateHoriLine } from '../utils/animate';
 import { runSMILAnimation } from '../utils/animation';
 import { getRealIntervals, calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex } from '../utils/intervals';
-import { floatTwo, fillArray } from '../utils/helpers';
+import { floatTwo, fillArray, bindChange } from '../utils/helpers';
 import { MIN_BAR_PERCENT_HEIGHT, DEFAULT_AXIS_CHART_TYPE } from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
@@ -66,17 +66,10 @@ export default class AxisChart extends BaseChart {
 					label: ''
 				}
 			]
-
 		}
 
 		this.calcWidth();
-		this.calcXPositions();
-		this.setObservers();
-	}
-
-	setObservers() {
-		// go through each component and check the keys in this.state it depends on
-		// set an observe() on each of those keys for that component
+		this.calcXPositions(this.state);
 	}
 
 	setMargins() {
@@ -90,45 +83,44 @@ export default class AxisChart extends BaseChart {
 	}
 
 	calc() {
-		let s = this.state;
 
 		this.calcXPositions();
 
-		this.setYAxis();
-		this.calcYUnits();
-		this.calcYMaximums();
-		this.calcYRegions();
-
+		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
 	}
 
-	setYAxis() {
-		this.calcYAxisParameters(this.state.yAxis, this.getAllYValues(), this.type === 'line');
-		this.state.zeroLine = this.state.yAxis.zeroLine;
-	}
-
-	calcXPositions() {
-		let s = this.state;
-		s.xAxis.labels = this.data.labels;
-		s.datasetLength = this.data.labels.length;
+	calcXPositions(s=this.state) {
+		let labels = this.data.labels;
+		s.datasetLength = labels.length;
 
 		s.unitWidth = this.width/(s.datasetLength);
 		// Default, as per bar, and mixed. Only line will be a special case
 		s.xOffset = s.unitWidth/2;
 
-		s.xAxis.positions = s.xAxis.labels.map((d, i) =>
-			floatTwo(s.xOffset + i * s.unitWidth)
-		);
+		s.xAxis = {
+			labels: labels,
+			positions: labels.map((d, i) =>
+				floatTwo(s.xOffset + i * s.unitWidth)
+			)
+		};
 	}
 
-	calcYAxisParameters(yAxis, dataValues, withMinimum = 'false') {
-		yAxis.labels = calcChartIntervals(dataValues, withMinimum);
-		const yPts = yAxis.labels;
+	calcYAxisParameters(dataValues, withMinimum = 'false') {
+		const yPts = calcChartIntervals(dataValues, withMinimum);
+		const scaleMultiplier = this.height / getValueRange(yPts);
+		const intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
+		const zeroLine = this.height - (getZeroIndex(yPts) * intervalHeight);
 
-		yAxis.scaleMultiplier = this.height / getValueRange(yPts);
-		const intervalHeight = getIntervalSize(yPts) * yAxis.scaleMultiplier;
-		yAxis.zeroLine = this.height - (getZeroIndex(yPts) * intervalHeight);
+		this.state.yAxis = {
+			labels: yPts,
+			positions: yPts.map(d => zeroLine - d * scaleMultiplier),
+			scaleMultiplier: scaleMultiplier,
+			zeroLine: zeroLine,
+		}
 
-		yAxis.positions = yPts.map(d => yAxis.zeroLine - d * yAxis.scaleMultiplier);
+		this.calcYUnits();
+		this.calcYMaximums();
+		this.calcYRegions();
 	}
 
 	calcYUnits() {
@@ -189,7 +181,6 @@ export default class AxisChart extends BaseChart {
 
 	getAllYValues() {
 		// TODO: yMarkers, regions, sums, every Y value ever
-
 		let key = 'values';
 
 		if(this.barOptions && this.barOptions.stacked) {
@@ -243,12 +234,16 @@ export default class AxisChart extends BaseChart {
 	}
 	setupComponents() {
 		let optionals = ['yMarkers', 'yRegions'];
-		this.components = this.componentConfigs
+		this.components = new Map(this.componentConfigs
 			.filter(args => !optionals.includes(args[0]) || this.data[args[0]])
 			.map(args => {
-				args.push(function() { return this.state[args[0]]; }.bind(this));
-				return getComponent(...args);
-			});
+				args.push(
+					function() {
+						return this.state[args[0]];
+					}.bind(this)
+				);
+				return [args[0], getComponent(...args)];
+			}));
 	}
 
 	getChartComponents() {
