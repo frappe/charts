@@ -301,7 +301,6 @@ export function xLine(x, label, height, options={}) {
 }
 
 export function yMarker(y, label, width, options={}) {
-	// console.log(y - FONT_SIZE - 2, );
 	let labelSvg = createSVG('text', {
 		className: 'chart-label',
 		x: width - getStringWidth(label, 5) - LABEL_MARGIN,

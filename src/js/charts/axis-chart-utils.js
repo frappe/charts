@@ -33,6 +33,9 @@ export function dataPrep(data, type) {
 			}
 		}
 
+		// Set labels
+		//
+
 		// Set index
 		d.index = i;
 
@@ -43,7 +46,9 @@ export function dataPrep(data, type) {
 	});
 
 	// Markers
+
 	// Regions
+	// Set start and end
 
 	return data;
 }

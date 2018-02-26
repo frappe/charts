@@ -34,24 +34,43 @@ export default class AxisChart extends BaseChart {
 	configure(args) {
 		super.configure();
 
+		// TODO: set in options and use
+
 		this.config.xAxisMode = args.xAxisMode;
 		this.config.yAxisMode = args.yAxisMode;
 	}
 
 	setTrivialState() {
 		// Define data and stuff
-		let xLabels = this.data.labels;
+		let yTempPos = getRealIntervals(this.height, 4, 0, 0);
+
 		this.state = {
 			xAxis: {
 				positions: [],
-				labels: xLabels,
-			},
-			yAxis: {
-				positions: [],
 				labels: [],
 			},
-			datasetLength: xLabels.length
+			yAxis: {
+				positions: yTempPos,
+				labels: yTempPos.map(d => ""),
+			},
+			yRegions: [
+				{
+					start: this.height,
+					end: this.height,
+					label: ''
+				}
+			],
+			yMarkers: [
+				{
+					position: this.height,
+					label: ''
+				}
+			]
+
 		}
+
+		this.calcWidth();
+		this.calcXPositions();
 		this.setObservers();
 	}
 
@@ -75,7 +94,6 @@ export default class AxisChart extends BaseChart {
 
 		this.calcXPositions();
 
-		s.datasetsLabels = this.data.datasets.map(d => d.name);
 		this.setYAxis();
 		this.calcYUnits();
 		this.calcYMaximums();
@@ -90,12 +108,16 @@ export default class AxisChart extends BaseChart {
 
 	calcXPositions() {
 		let s = this.state;
-		this.setUnitWidthAndXOffset();
-		s.xAxisPositions = s.xAxis.labels.map((d, i) =>
+		s.xAxis.labels = this.data.labels;
+		s.datasetLength = this.data.labels.length;
+
+		s.unitWidth = this.width/(s.datasetLength);
+		// Default, as per bar, and mixed. Only line will be a special case
+		s.xOffset = s.unitWidth/2;
+
+		s.xAxis.positions = s.xAxis.labels.map((d, i) =>
 			floatTwo(s.xOffset + i * s.unitWidth)
 		);
-
-		s.xUnitPositions = new Array(this.data.datasets.length).fill(s.xAxisPositions);
 	}
 
 	calcYAxisParameters(yAxis, dataValues, withMinimum = 'false') {
@@ -147,14 +169,14 @@ export default class AxisChart extends BaseChart {
 	calcYRegions() {
 		let s = this.state;
 		if(this.data.yMarkers) {
-			this.data.yMarkers = this.data.yMarkers.map(d => {
+			this.state.yMarkers = this.data.yMarkers.map(d => {
 				d.position = floatTwo(s.yAxis.zeroLine - d.value * s.yAxis.scaleMultiplier);
 				d.label += ': ' + d.value;
 				return d;
 			});
 		}
 		if(this.data.yRegions) {
-			this.data.yRegions = this.data.yRegions.map(d => {
+			this.state.yRegions = this.data.yRegions.map(d => {
 				if(d.end < d.start) {
 					[d.start, d.end] = [d.end, start];
 				}
@@ -163,12 +185,6 @@ export default class AxisChart extends BaseChart {
 				return d;
 			});
 		}
-	}
-
-	// Default, as per bar, and mixed. Only line will be a special case
-	setUnitWidthAndXOffset() {
-		this.state.unitWidth = this.width/(this.state.datasetLength);
-		this.state.xOffset = this.state.unitWidth/2;
 	}
 
 	getAllYValues() {
@@ -192,83 +208,36 @@ export default class AxisChart extends BaseChart {
 		this.componentConfigs = [
 			[
 				'yAxis',
-				this.drawArea,
 				{
 					mode: this.yAxisMode,
 					width: this.width,
 					// pos: 'right'
-				},
-				{
-					positions: getRealIntervals(this.height, 4, 0, 0),
-					labels: getRealIntervals(this.height, 4, 0, 0).map(d => d + ""),
-				},
-				function() {
-					let s = this.state;
-					return {
-						positions: s.yAxis.positions,
-						labels: s.yAxis.labels,
-					}
-				}.bind(this)
+				}
 			],
 
 			[
 				'xAxis',
-				this.drawArea,
 				{
 					mode: this.xAxisMode,
 					height: this.height,
 					// pos: 'right'
-				},
-				{
-					positions: getRealIntervals(this.width, 4, 0, 1),
-					labels: getRealIntervals(this.width, 4, 0, 1).map(d => d + ""),
-				},
-				function() {
-					let s = this.state;
-					return {
-						positions: s.xAxisPositions,
-						labels: s.xAxis.labels,
-					}
-				}.bind(this)
+				}
 			],
 
 			[
 				'yRegions',
-				this.drawArea,
 				{
-					// mode: this.yAxisMode,
 					width: this.width,
 					pos: 'right'
-				},
-				[
-					{
-						start: this.height,
-						end: this.height,
-						label: ''
-					}
-				],
-				function() {
-					return this.data.yRegions || [];
-				}.bind(this)
+				}
 			],
 
 			[
 				'yMarkers',
-				this.drawArea,
 				{
-					// mode: this.yAxisMode,
 					width: this.width,
 					pos: 'right'
-				},
-				[
-					{
-						position: this.height,
-						label: ''
-					}
-				],
-				function() {
-					return this.data.yMarkers || [];
-				}.bind(this)
+				}
 			]
 		];
 	}
@@ -276,7 +245,10 @@ export default class AxisChart extends BaseChart {
 		let optionals = ['yMarkers', 'yRegions'];
 		this.components = this.componentConfigs
 			.filter(args => !optionals.includes(args[0]) || this.data[args[0]])
-			.map(args => getComponent(...args));
+			.map(args => {
+				args.push(function() { return this.state[args[0]]; }.bind(this));
+				return getComponent(...args);
+			});
 	}
 
 	getChartComponents() {
@@ -304,7 +276,7 @@ export default class AxisChart extends BaseChart {
 
 				return d.positions.map((y, j) => {
 					return unitRenderer.draw(
-						this.state.xAxisPositions[j],
+						this.state.xAxis.positions[j],
 						y,
 						this.colors[index],
 						(this.valuesOverPoints ? (this.barOptions &&
@@ -329,7 +301,7 @@ export default class AxisChart extends BaseChart {
 			},
 			animate: (svgUnits) => {
 				// have been updated in axis render;
-				let newX = this.state.xAxisPositions;
+				let newX = this.state.xAxis.positions;
 				let newY = this.data.datasets[index].positions;
 
 				let lastUnit = svgUnits[svgUnits.length - 1];
@@ -367,17 +339,17 @@ export default class AxisChart extends BaseChart {
 
 				return getPaths(
 					d.positions,
-					this.state.xAxisPositions,
+					this.state.xAxis.positions,
 					color,
 					this.config.heatline,
 					this.config.regionFill
 				);
 			},
 			animate: (paths) => {
-				let newX = this.state.xAxisPositions;
+				let newX = this.state.xAxis.positions;
 				let newY = this.data.datasets[index].positions;
 
-				let oldX = this.oldState.xAxisPositions;
+				let oldX = this.oldState.xAxis.positions;
 				let oldY = this.oldState.datasets[index].positions;
 
 
@@ -430,8 +402,8 @@ export default class AxisChart extends BaseChart {
 		let formatY = this.formatTooltipY && this.formatTooltipY(this.y[0].values[0]);
 
 		for(var i=s.datasetLength - 1; i >= 0 ; i--) {
-			let xVal = s.xAxisPositions[i];
-			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxisPositions[i-1];
+			let xVal = s.xAxis.positions[i];
+			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxis.positions[i-1];
 			if(relX > xVal - s.unitWidth/2) {
 				let x = xVal + this.translateXLeft;
 				let y = s.yExtremes[i] + this.translateY;

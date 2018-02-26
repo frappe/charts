@@ -7,17 +7,13 @@ class ChartComponent {
 	constructor({
 		layerClass = '',
 		layerTransform = '',
-		parent,
 		constants,
-		data,
 
-		// called on update
+		getData,
 		makeElements,
 		postMake,
-		getData,
 		animateElements
 	}) {
-		this.parent = parent;
 		this.layerTransform = layerTransform;
 		this.constants = constants;
 
@@ -29,18 +25,18 @@ class ChartComponent {
 
 		this.store = [];
 
-		layerClass = typeof(layerClass) === 'function'
+		this.layerClass = typeof(layerClass) === 'function'
 			? layerClass() : layerClass;
 
-		this.layer = makeSVGGroup(this.parent, layerClass, this.layerTransform);
-
-		this.data = data;
-
-		this.make();
+		this.refresh();
 	}
 
 	refresh(data) {
 		this.data = data || this.getData();
+	}
+
+	setup(parent) {
+		this.layer = makeSVGGroup(parent, this.layerClass, this.layerTransform);
 	}
 
 	make() {
@@ -291,12 +287,10 @@ let componentConfigs = {
 	}
 }
 
-export function getComponent(name, parent, constants, initData, getData) {
+export function getComponent(name, constants, getData) {
 	let config = componentConfigs[name];
 	Object.assign(config, {
-		parent: parent,
 		constants: constants,
-		data: initData,
 		getData: getData
 	})
 	return new ChartComponent(config);

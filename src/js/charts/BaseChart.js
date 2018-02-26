@@ -152,6 +152,7 @@ export default class BaseChart {
 
 		this.setupComponents();
 
+		this.components.forEach(c => c.setup(this.drawArea)); // or c.build()
 		this.components.forEach(c => c.make()); // or c.build()
 		this.renderLegend();
 
