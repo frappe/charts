@@ -177,7 +177,7 @@ let type_data = {
 		{
 			name: "Yet Another",
 			values: [15, 20, -3, -15, 58, 12, -17, 37],
-			chartType: 'line'
+			chartType: 'bar'
 		}
 
 		// temp : Stacked

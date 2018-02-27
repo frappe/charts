@@ -1,5 +1,5 @@
 import { floatTwo, fillArray } from '../utils/helpers';
-import { DEFAULT_AXIS_CHART_TYPE } from '../utils/constants';
+import { DEFAULT_AXIS_CHART_TYPE, AXIS_DATASET_CHART_TYPES } from '../utils/constants';
 
 export function dataPrep(data, type) {
 	data.labels = data.labels || [];
@@ -36,19 +36,56 @@ export function dataPrep(data, type) {
 		// Set labels
 		//
 
-		// Set index
-		d.index = i;
-
 		// Set type
 		if(!d.chartType ) {
-			d.chartType = type || DEFAULT_AXIS_CHART_TYPE;
+			if(!AXIS_DATASET_CHART_TYPES.includes(type)) type === DEFAULT_AXIS_CHART_TYPE;
+			d.chartType = type;
 		}
+
 	});
 
 	// Markers
 
 	// Regions
-	// Set start and end
+	// data.yRegions = data.yRegions || [];
+	if(data.yRegions) {
+		data.yRegions.map(d => {
+			if(d.end < d.start) {
+				[d.start, d.end] = [d.end, start];
+			}
+		});
+	}
 
 	return data;
+}
+
+export function zeroDataPrep(realData) {
+	let datasetLength = realData.labels.length;
+	let zeroArray = new Array(datasetLength).fill(0);
+
+	let zeroData = {
+		labels: realData.labels,
+		datasets: realData.datasets.map(d => {
+			return {
+				name: '',
+				values: zeroArray,
+				chartType: d.chartType
+			}
+		}),
+		yRegions: [
+			{
+				start: 0,
+				end: 0,
+				label: ''
+			}
+		],
+		yMarkers: [
+			{
+				value: 0,
+				label: ''
+			}
+		]
+	};
+
+	return zeroData;
 }

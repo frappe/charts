@@ -1,5 +1,5 @@
 import { makeSVGGroup } from '../utils/draw';
-import { xLine, yLine, yMarker, yRegion } from '../utils/draw';
+import { xLine, yLine, yMarker, yRegion, datasetBar } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import { Animator, translateHoriLine, translateVertLine, animateRegion } from '../utils/animate';
 
@@ -25,8 +25,9 @@ class ChartComponent {
 
 		this.store = [];
 
-		this.layerClass = typeof(layerClass) === 'function'
-			? layerClass() : layerClass;
+		this.layerClass = layerClass;
+		this.layerClass = typeof(this.layerClass) === 'function'
+			? this.layerClass() : this.layerClass;
 
 		this.refresh();
 	}
@@ -204,81 +205,61 @@ let componentConfigs = {
 	},
 
 	barGraph: {
-		// opt:[
-		// 	'barGraph',
-		// 	this.drawArea,
-		// 	{
-		// 		controller: barController,
-		// 		index: index,
-		// 		color: this.colors[index],
-		// 		valuesOverPoints: this.valuesOverPoints,
-		// 		stacked: this.barOptions && this.barOptions.stacked,
-		// 		spaceRatio: 0.5,
-		// 		minHeight: this.height * MIN_BAR_PERCENT_HEIGHT
-		// 	},
-		// 	{
-		// 		barsWidth: this.state.unitWidth * (1 - spaceRatio),
-		// 		barWidth: barsWidth/(stacked ? 1 : this.state.noOfDatasets),
-
-		// 	},
-		// 	function() {
-		// 		let s = this.state;
-		// 		return {
-		// 			barsWidth: this.state.unitWidth * (1 - spaceRatio),
-		// 			barWidth: barsWidth/(stacked ? 1 : this.state.noOfDatasets),
-		// 			positions: s.xAxisPositions,
-		// 			labels: s.xAxisLabels,
-		// 		}
-		// 	}.bind(this)
-		// ],
-		layerClass() { return 'y-regions' + this.constants.index; },
+		layerClass: function() { return 'dataset-units dataset-' + this.constants.index; },
 		makeElements(data) {
 			let c = this.constants;
-			return data.yPositions.map((y, j) =>
-				barController.draw(
+			return data.yPositions.map((y, j) => {
+				// console.log(data.cumulativeYPos, data.cumulativeYPos[j]);
+				return datasetBar(
 					data.xPositions[j],
 					y,
-					color,
+					c.barWidth,
+					c.color,
 					(c.valuesOverPoints ? (c.stacked ? data.cumulativeYs[j] : data.values[j]) : ''),
 					j,
-					y - (data.cumulativePositions ? data.cumulativePositions[j] : y)
+					y - (c.stacked ? data.cumulativeYPos[j] : y),
+					{
+						zeroLine: c.zeroLine,
+						barsWidth: c.barsWidth,
+						minHeight: c.minHeight
+					}
 				)
-			);
+			});
 		},
 		postMake() {
 			if((!this.constants.stacked)) {
 				this.layer.setAttribute('transform',
-					`translate(${unitRenderer.consts.width * index}, 0)`);
+					`translate(${this.constants.width * this.constants.index}, 0)`);
 			}
 		},
 		animateElements(newData) {
-			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+			// [this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
 
-			let newPos =  newData.map(d => d.end);
-			let newLabels =  newData.map(d => d.label);
-			let newStarts =  newData.map(d => d.start);
+			// let newPos =  newData.map(d => d.end);
+			// let newLabels =  newData.map(d => d.label);
+			// let newStarts =  newData.map(d => d.start);
 
-			let oldPos = this.oldData.map(d => d.end);
-			let oldLabels = this.oldData.map(d => d.label);
-			let oldStarts = this.oldData.map(d => d.start);
+			// let oldPos = this.oldData.map(d => d.end);
+			// let oldLabels = this.oldData.map(d => d.label);
+			// let oldStarts = this.oldData.map(d => d.start);
 
-			this.render(oldPos.map((pos, i) => {
-				return {
-					start: oldStarts[i],
-					end: oldPos[i],
-					label: newLabels[i]
-				}
-			}));
+			// this.render(oldPos.map((pos, i) => {
+			// 	return {
+			// 		start: oldStarts[i],
+			// 		end: oldPos[i],
+			// 		label: newLabels[i]
+			// 	}
+			// }));
 
-			let animateElements = [];
+			// let animateElements = [];
 
-			this.store.map((rectGroup, i) => {
-				animateElements = animateElements.concat(animateRegion(
-					rectGroup, newStarts[i], newPos[i], oldPos[i]
-				));
-			});
+			// this.store.map((rectGroup, i) => {
+			// 	animateElements = animateElements.concat(animateRegion(
+			// 		rectGroup, newStarts[i], newPos[i], oldPos[i]
+			// 	));
+			// });
 
-			return animateElements;
+			// return animateElements;
 		}
 	},
 

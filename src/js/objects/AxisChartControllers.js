@@ -67,36 +67,6 @@ export class BarChartController extends AxisChartController {
 			? m.options.stacked : m.noOfDatasets);
 	}
 
-	draw(x, yTop, color, label='', index=0, offset=0) {
-		let [height, y] = getBarHeightAndYAttr(yTop, this.meta.zeroLine);
-
-		let rect = createSVG('rect', {
-			className: `bar mini`,
-			style: `fill: ${color}`,
-			'data-point-index': index,
-			x: x - this.consts.barsWidth/2,
-			y: y - offset,
-			width: this.consts.width,
-			height: height || this.consts.minHeight
-		});
-
-		if(!label && !label.length) {
-			return rect;
-		} else {
-			let text = createSVG('text', {
-				className: 'data-point-value',
-				x: x,
-				y: y - offset,
-				dy: (FONT_SIZE / 2 * -1) + 'px',
-				'font-size': FONT_SIZE + 'px',
-				'text-anchor': 'middle',
-				innerHTML: label
-			});
-
-			return wrapInSVGGroup([rect, text]);
-		}
-	}
-
 	animate(bar, x, yTop, index, noOfDatasets) {
 		let start = x - this.meta.unitWidth/4;
 		let width = (this.meta.unitWidth/2)/noOfDatasets;

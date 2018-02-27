@@ -1,16 +1,15 @@
 import BaseChart from './BaseChart';
-import { dataPrep } from './axis-chart-utils';
+import { dataPrep, zeroDataPrep } from './axis-chart-utils';
 import { Y_AXIS_MARGIN } from '../utils/constants';
 import { getComponent } from '../objects/ChartComponents';
-import { BarChartController, LineChartController, getPaths } from '../objects/AxisChartControllers';
 import { AxisChartRenderer } from '../utils/draw';
 import { getOffset, fire } from '../utils/dom';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import { Animator, translateHoriLine } from '../utils/animate';
 import { runSMILAnimation } from '../utils/animation';
-import { getRealIntervals, calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex } from '../utils/intervals';
+import { getRealIntervals, calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale } from '../utils/intervals';
 import { floatTwo, fillArray, bindChange } from '../utils/helpers';
-import { MIN_BAR_PERCENT_HEIGHT, DEFAULT_AXIS_CHART_TYPE } from '../utils/constants';
+import { MIN_BAR_PERCENT_HEIGHT, DEFAULT_AXIS_CHART_TYPE, BAR_CHART_SPACE_RATIO } from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
 	constructor(args) {
@@ -19,57 +18,25 @@ export default class AxisChart extends BaseChart {
 		this.valuesOverPoints = args.valuesOverPoints;
 		this.formatTooltipY = args.formatTooltipY;
 		this.formatTooltipX = args.formatTooltipX;
-		this.barOptions = args.barOptions;
-		this.lineOptions = args.lineOptions;
+		this.barOptions = args.barOptions || {};
+		this.lineOptions = args.lineOptions || {};
 		this.type = args.type || 'line';
 
 		this.xAxisMode = args.xAxisMode || 'span';
 		this.yAxisMode = args.yAxisMode || 'span';
 
 		this.zeroLine = this.height;
-		this.setTrivialState();
+		// this.setTrivialState();
 		this.setup();
 	}
 
-	configure(args) {
+	configure(args) {3
 		super.configure();
 
 		// TODO: set in options and use
 
 		this.config.xAxisMode = args.xAxisMode;
 		this.config.yAxisMode = args.yAxisMode;
-	}
-
-	setTrivialState() {
-		// Define data and stuff
-		let yTempPos = getRealIntervals(this.height, 4, 0, 0);
-
-		this.state = {
-			xAxis: {
-				positions: [],
-				labels: [],
-			},
-			yAxis: {
-				positions: yTempPos,
-				labels: yTempPos.map(d => ""),
-			},
-			yRegions: [
-				{
-					start: this.height,
-					end: this.height,
-					label: ''
-				}
-			],
-			yMarkers: [
-				{
-					position: this.height,
-					label: ''
-				}
-			]
-		}
-
-		this.calcWidth();
-		this.calcXPositions(this.state);
 	}
 
 	setMargins() {
@@ -82,10 +49,12 @@ export default class AxisChart extends BaseChart {
 		return dataPrep(data, this.type);
 	}
 
+	prepareFirstData(data=this.data) {
+		return zeroDataPrep(data);
+	}
+
 	calc() {
-
 		this.calcXPositions();
-
 		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
 	}
 
@@ -119,61 +88,60 @@ export default class AxisChart extends BaseChart {
 		}
 
 		this.calcYUnits();
-		this.calcYMaximums();
+		this.calcYExtremes();
 		this.calcYRegions();
 	}
 
 	calcYUnits() {
 		let s = this.state;
-		this.data.datasets.map(d => {
-			d.positions = d.values.map(val =>
-				floatTwo(s.yAxis.zeroLine - val * s.yAxis.scaleMultiplier));
-		});
+		let scaleAll = values => values.map(val => scale(val, s.yAxis));
 
-		if(this.barOptions && this.barOptions.stacked) {
-			this.data.datasets.map((d, i) => {
-				d.cumulativePositions = d.cumulativeYs.map(val =>
-					floatTwo(s.yAxis.zeroLine - val * s.yAxis.scaleMultiplier));
-			});
-		}
+		s.datasets = this.data.datasets.map((d, i) => {
+			let values = d.values;
+			let cumulativeYs = d.cumulativeYs || [];
+			return {
+				name: d.name,
+				index: i,
+				chartType: d.chartType,
+
+				values: values,
+				yPositions: scaleAll(values),
+
+				cumulativeYs: cumulativeYs,
+				cumulativeYPos: scaleAll(cumulativeYs),
+			};
+		});
 	}
 
-	calcYMaximums() {
+	calcYExtremes() {
 		let s = this.state;
 		if(this.barOptions && this.barOptions.stacked) {
-			s.yExtremes = this.data.datasets[this.data.datasets.length - 1].cumulativePositions;
+			s.yExtremes = s.datasets[s.datasets.length - 1].cumulativeYPos;
 			return;
 		}
 		s.yExtremes = new Array(s.datasetLength).fill(9999);
-		this.data.datasets.map((d, i) => {
-			d.positions.map((pos, j) => {
+		s.datasets.map((d, i) => {
+			d.yPositions.map((pos, j) => {
 				if(pos < s.yExtremes[j]) {
 					s.yExtremes[j] = pos;
 				}
 			});
 		});
-
-		// Tooltip refresh should not be needed?
-		// this.chartWrapper.removeChild(this.tip.container);
-		// this.make_tooltip();
 	}
 
 	calcYRegions() {
 		let s = this.state;
 		if(this.data.yMarkers) {
 			this.state.yMarkers = this.data.yMarkers.map(d => {
-				d.position = floatTwo(s.yAxis.zeroLine - d.value * s.yAxis.scaleMultiplier);
+				d.position = scale(d.value, s.yAxis);
 				d.label += ': ' + d.value;
 				return d;
 			});
 		}
 		if(this.data.yRegions) {
 			this.state.yRegions = this.data.yRegions.map(d => {
-				if(d.end < d.start) {
-					[d.start, d.end] = [d.end, start];
-				}
-				d.start = floatTwo(s.yAxis.zeroLine - d.start * s.yAxis.scaleMultiplier);
-				d.end = floatTwo(s.yAxis.zeroLine - d.end * s.yAxis.scaleMultiplier);
+				d.start = scale(d.start, s.yAxis);
+				d.end = scale(d.end, s.yAxis);
 				return d;
 			});
 		}
@@ -196,6 +164,9 @@ export default class AxisChart extends BaseChart {
 	}
 
 	initComponents() {
+		let s = this.state;
+		// console.log('this.state', Object.assign({}, this.state));
+		// console.log('this.state', this.state);
 		this.componentConfigs = [
 			[
 				'yAxis',
@@ -222,7 +193,57 @@ export default class AxisChart extends BaseChart {
 					pos: 'right'
 				}
 			],
+		];
 
+		this.componentConfigs.map(args => {
+			args.push(
+				function() {
+					return this.state[args[0]];
+				}.bind(this)
+			);
+		});
+
+		let barDatasets = this.state.datasets.filter(d => d.chartType === 'bar');
+		let lineDatasets = this.state.datasets.filter(d => d.chartType === 'line');
+
+		// console.log('barDatasets', barDatasets, this.state.datasets);
+
+		// Bars
+		let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
+		let barsWidth = s.unitWidth * (1 - spaceRatio);
+		let barWidth = barsWidth/(this.barOptions.stacked ? 1 : barDatasets.length);
+
+		let barsConfigs = barDatasets.map(d => {
+			let index = d.index;
+			return [
+				'barGraph',
+				{
+					index: index,
+					color: this.colors[index],
+
+					// same for all datasets
+					valuesOverPoints: this.valuesOverPoints,
+					minHeight: this.height * MIN_BAR_PERCENT_HEIGHT,
+					barsWidth: barsWidth,
+					barWidth: barWidth,
+					zeroLine: s.yAxis.zeroLine
+				},
+				function() {
+					let s = this.state;
+					let d = s.datasets[index];
+					return {
+						xPositions: s.xAxis.positions,
+						yPositions: d.yPositions,
+						cumulativeYPos: d.cumulativeYPos,
+
+						values: d.values,
+						cumulativeYs: d.cumulativeYs
+					};
+				}.bind(this)
+			];
+		});
+
+		let markerConfigs = [
 			[
 				'yMarkers',
 				{
@@ -231,17 +252,23 @@ export default class AxisChart extends BaseChart {
 				}
 			]
 		];
+
+		markerConfigs.map(args => {
+			args.push(
+				function() {
+					return this.state[args[0]];
+				}.bind(this)
+			);
+		});
+
+		this.componentConfigs = this.componentConfigs.concat(barsConfigs, markerConfigs);
 	}
+
 	setupComponents() {
 		let optionals = ['yMarkers', 'yRegions'];
 		this.components = new Map(this.componentConfigs
-			.filter(args => !optionals.includes(args[0]) || this.data[args[0]])
+			.filter(args => !optionals.includes(args[0]) || this.state[args[0]] || args[0] === 'barGraph')
 			.map(args => {
-				args.push(
-					function() {
-						return this.state[args[0]];
-					}.bind(this)
-				);
 				return [args[0], getComponent(...args)];
 			}));
 	}

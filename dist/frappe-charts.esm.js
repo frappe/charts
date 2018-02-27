@@ -232,6 +232,19 @@ function getStringWidth(string, charWidth) {
 	return (string+"").length * charWidth;
 }
 
+function getBarHeightAndYAttr(yTop, zeroLine) {
+	let height, y;
+	if (yTop < zeroLine) {
+		height = zeroLine - yTop;
+		y = yTop;
+	} else {
+		height = yTop - zeroLine;
+		y = zeroLine;
+	}
+
+	return [height, y];
+}
+
 function equilizeNoOfElements(array1, array2,
 	extra_count=array2.length - array1.length) {
 
@@ -347,26 +360,6 @@ function createSVG(tag, o) {
 	return element;
 }
 
-function renderVerticalGradient(svgDefElem, gradientId) {
-	return createSVG('linearGradient', {
-		inside: svgDefElem,
-		id: gradientId,
-		x1: 0,
-		x2: 0,
-		y1: 0,
-		y2: 1
-	});
-}
-
-function setGradientStop(gradElem, offset, color, opacity) {
-	return createSVG('stop', {
-		'inside': gradElem,
-		'style': `stop-color: ${color}`,
-		'offset': offset,
-		'stop-opacity': opacity
-	});
-}
-
 function makeSVGContainer(parent, className, width, height) {
 	return createSVG('svg', {
 		className: className,
@@ -390,7 +383,13 @@ function makeSVGGroup(parent, className, transform='') {
 	});
 }
 
-
+function wrapInSVGGroup(elements, className='') {
+	let g = createSVG('g', {
+		className: className
+	});
+	elements.forEach(e => g.appendChild(e));
+	return g;
+}
 
 function makePath(pathStr, className='', stroke='none', fill='none') {
 	return createSVG('path', {
@@ -403,20 +402,7 @@ function makePath(pathStr, className='', stroke='none', fill='none') {
 	});
 }
 
-function makeGradient(svgDefElem, color, lighter = false) {
-	let gradientId ='path-fill-gradient' + '-' + color;
-	let gradientDef = renderVerticalGradient(svgDefElem, gradientId);
-	let opacities = [1, 0.6, 0.2];
-	if(lighter) {
-		opacities = [0.4, 0.2, 0];
-	}
 
-	setGradientStop(gradientDef, "0%", color, opacities[0]);
-	setGradientStop(gradientDef, "50%", color, opacities[1]);
-	setGradientStop(gradientDef, "100%", color, opacities[2]);
-
-	return gradientId;
-}
 
 function makeHeatSquare(className, x, y, size, fill='none', data={}) {
 	let args = {
@@ -636,6 +622,37 @@ function yRegion(y1, y2, width, label) {
 	region.appendChild(labelSvg);
 
 	return region;
+}
+
+function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={}) {
+	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
+	// console.log(yTop, meta.zeroLine, y, offset);
+
+	let rect = createSVG('rect', {
+		className: `bar mini`,
+		style: `fill: ${color}`,
+		'data-point-index': index,
+		x: x - meta.barsWidth/2,
+		y: y - offset,
+		width: width,
+		height: height || meta.minHeight
+	});
+
+	if(!label && !label.length) {
+		return rect;
+	} else {
+		let text = createSVG('text', {
+			className: 'data-point-value',
+			x: x,
+			y: y - offset,
+			dy: (FONT_SIZE / 2 * -1) + 'px',
+			'font-size': FONT_SIZE + 'px',
+			'text-anchor': 'middle',
+			innerHTML: label
+		});
+
+		return wrapInSVGGroup([rect, text]);
+	}
 }
 
 const PRESET_COLOR_MAP = {
@@ -872,13 +889,15 @@ class BaseChart {
 		this.title = title;
 		this.subtitle = subtitle;
 		this.argHeight = height;
+		this.type = type;
 
 		this.isNavigable = isNavigable;
 		if(this.isNavigable) {
 			this.currentIndex = 0;
 		}
 
-		this.data = this.prepareData(data);
+		this.realData = this.prepareData(data);
+		this.data = this.prepareFirstData(this.realData);
 		this.colors = [];
 		this.config = {};
 		this.state = {};
@@ -990,6 +1009,7 @@ class BaseChart {
 		this.calcWidth();
 		this.makeChartArea();
 
+		this.calc();
 		this.initComponents(); // Only depend on the drawArea made in makeChartArea
 
 		this.setupComponents();
@@ -1002,6 +1022,7 @@ class BaseChart {
 
 		// TODO: remove timeout and decrease post animate time in chart component
 		if(init) {
+			this.data = this.realData;
 			setTimeout(() => {this.update();}, 1000);
 		}
 	}
@@ -1029,10 +1050,10 @@ class BaseChart {
 
 	calc() {} // builds state
 
-	render(animate=true) {
+	render(components=this.components, animate=true) {
 		// Can decouple to this.refreshComponents() first to save animation timeout
 		let elementsToAnimate = [];
-		this.components.forEach(c => {
+		components.forEach(c => {
 			elementsToAnimate = elementsToAnimate.concat(c.update(animate));
 		});
 		if(elementsToAnimate.length > 0) {
@@ -1138,8 +1159,10 @@ class BaseChart {
 
 const Y_AXIS_MARGIN = 60;
 
-
+const MIN_BAR_PERCENT_HEIGHT = 0.01;
 const DEFAULT_AXIS_CHART_TYPE = 'line';
+const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
+const BAR_CHART_SPACE_RATIO = 0.5;
 
 function dataPrep(data, type) {
 	data.labels = data.labels || [];
@@ -1176,21 +1199,58 @@ function dataPrep(data, type) {
 		// Set labels
 		//
 
-		// Set index
-		d.index = i;
-
 		// Set type
 		if(!d.chartType ) {
-			d.chartType = type || DEFAULT_AXIS_CHART_TYPE;
+			if(!AXIS_DATASET_CHART_TYPES.includes(type)) type === DEFAULT_AXIS_CHART_TYPE;
+			d.chartType = type;
 		}
+
 	});
 
 	// Markers
 
 	// Regions
-	// Set start and end
+	// data.yRegions = data.yRegions || [];
+	if(data.yRegions) {
+		data.yRegions.map(d => {
+			if(d.end < d.start) {
+				[d.start, d.end] = [d.end, start];
+			}
+		});
+	}
 
 	return data;
+}
+
+function zeroDataPrep(realData) {
+	let datasetLength = realData.labels.length;
+	let zeroArray = new Array(datasetLength).fill(0);
+
+	let zeroData = {
+		labels: realData.labels,
+		datasets: realData.datasets.map(d => {
+			return {
+				name: '',
+				values: zeroArray,
+				chartType: d.chartType
+			}
+		}),
+		yRegions: [
+			{
+				start: 0,
+				end: 0,
+				label: ''
+			}
+		],
+		yMarkers: [
+			{
+				value: 0,
+				label: ''
+			}
+		]
+	};
+
+	return zeroData;
 }
 
 class ChartComponent$1 {
@@ -1215,8 +1275,9 @@ class ChartComponent$1 {
 
 		this.store = [];
 
-		this.layerClass = typeof(layerClass) === 'function'
-			? layerClass() : layerClass;
+		this.layerClass = layerClass;
+		this.layerClass = typeof(this.layerClass) === 'function'
+			? this.layerClass() : this.layerClass;
 
 		this.refresh();
 	}
@@ -1394,81 +1455,61 @@ let componentConfigs = {
 	},
 
 	barGraph: {
-		// opt:[
-		// 	'barGraph',
-		// 	this.drawArea,
-		// 	{
-		// 		controller: barController,
-		// 		index: index,
-		// 		color: this.colors[index],
-		// 		valuesOverPoints: this.valuesOverPoints,
-		// 		stacked: this.barOptions && this.barOptions.stacked,
-		// 		spaceRatio: 0.5,
-		// 		minHeight: this.height * MIN_BAR_PERCENT_HEIGHT
-		// 	},
-		// 	{
-		// 		barsWidth: this.state.unitWidth * (1 - spaceRatio),
-		// 		barWidth: barsWidth/(stacked ? 1 : this.state.noOfDatasets),
-
-		// 	},
-		// 	function() {
-		// 		let s = this.state;
-		// 		return {
-		// 			barsWidth: this.state.unitWidth * (1 - spaceRatio),
-		// 			barWidth: barsWidth/(stacked ? 1 : this.state.noOfDatasets),
-		// 			positions: s.xAxisPositions,
-		// 			labels: s.xAxisLabels,
-		// 		}
-		// 	}.bind(this)
-		// ],
-		layerClass() { return 'y-regions' + this.constants.index; },
+		layerClass: function() { return 'dataset-units dataset-' + this.constants.index; },
 		makeElements(data) {
 			let c = this.constants;
-			return data.yPositions.map((y, j) =>
-				barController.draw(
+			return data.yPositions.map((y, j) => {
+				// console.log(data.cumulativeYPos, data.cumulativeYPos[j]);
+				return datasetBar(
 					data.xPositions[j],
 					y,
-					color,
+					c.barWidth,
+					c.color,
 					(c.valuesOverPoints ? (c.stacked ? data.cumulativeYs[j] : data.values[j]) : ''),
 					j,
-					y - (data.cumulativePositions ? data.cumulativePositions[j] : y)
+					y - (c.stacked ? data.cumulativeYPos[j] : y),
+					{
+						zeroLine: c.zeroLine,
+						barsWidth: c.barsWidth,
+						minHeight: c.minHeight
+					}
 				)
-			);
+			});
 		},
 		postMake() {
 			if((!this.constants.stacked)) {
 				this.layer.setAttribute('transform',
-					`translate(${unitRenderer.consts.width * index}, 0)`);
+					`translate(${this.constants.width * this.constants.index}, 0)`);
 			}
 		},
 		animateElements(newData) {
-			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+			// [this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
 
-			let newPos =  newData.map(d => d.end);
-			let newLabels =  newData.map(d => d.label);
-			let newStarts =  newData.map(d => d.start);
+			// let newPos =  newData.map(d => d.end);
+			// let newLabels =  newData.map(d => d.label);
+			// let newStarts =  newData.map(d => d.start);
 
-			let oldPos = this.oldData.map(d => d.end);
-			let oldLabels = this.oldData.map(d => d.label);
-			let oldStarts = this.oldData.map(d => d.start);
+			// let oldPos = this.oldData.map(d => d.end);
+			// let oldLabels = this.oldData.map(d => d.label);
+			// let oldStarts = this.oldData.map(d => d.start);
 
-			this.render(oldPos.map((pos, i) => {
-				return {
-					start: oldStarts[i],
-					end: oldPos[i],
-					label: newLabels[i]
-				}
-			}));
+			// this.render(oldPos.map((pos, i) => {
+			// 	return {
+			// 		start: oldStarts[i],
+			// 		end: oldPos[i],
+			// 		label: newLabels[i]
+			// 	}
+			// }));
 
-			let animateElements = [];
+			// let animateElements = [];
 
-			this.store.map((rectGroup, i) => {
-				animateElements = animateElements.concat(animateRegion(
-					rectGroup, newStarts[i], newPos[i], oldPos[i]
-				));
-			});
+			// this.store.map((rectGroup, i) => {
+			// 	animateElements = animateElements.concat(animateRegion(
+			// 		rectGroup, newStarts[i], newPos[i], oldPos[i]
+			// 	));
+			// });
 
-			return animateElements;
+			// return animateElements;
 		}
 	},
 
@@ -1485,101 +1526,6 @@ function getComponent(name, constants, getData) {
 	});
 	return new ChartComponent$1(config);
 }
-
-function getPaths(yList, xList, color, heatline=false, regionFill=false) {
-	let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
-	let pointsStr = pointsList.join("L");
-	let path = makePath("M"+pointsStr, 'line-graph-path', color);
-
-	// HeatLine
-	if(heatline) {
-		let gradient_id = makeGradient(this.svgDefs, color);
-		path.style.stroke = `url(#${gradient_id})`;
-	}
-
-	let components = [path];
-
-	// Region
-	if(regionFill) {
-		let gradient_id_region = makeGradient(this.svgDefs, color, true);
-
-		let zeroLine = this.state.yAxis.zeroLine;
-		// TODO: use zeroLine OR minimum
-		let pathStr = "M" + `0,${zeroLine}L` + pointsStr + `L${this.width},${zeroLine}`;
-		components.push(makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`));
-	}
-
-	return components;
-}
-
-// class BarChart extends AxisChart {
-// 	constructor(args) {
-// 		super(args);
-// 		this.type = 'bar';
-// 		this.setup();
-// 	}
-
-// 	configure(args) {
-// 		super.configure(args);
-// 		this.config.xAxisMode = args.xAxisMode || 'tick';
-// 		this.config.yAxisMode = args.yAxisMode || 'span';
-// 	}
-
-// 	// =================================
-
-// 	makeOverlay() {
-// 		// Just make one out of the first element
-// 		let index = this.xAxisLabels.length - 1;
-// 		let unit = this.y[0].svg_units[index];
-// 		this.setCurrentDataPoint(index);
-
-// 		if(this.overlay) {
-// 			this.overlay.parentNode.removeChild(this.overlay);
-// 		}
-// 		this.overlay = unit.cloneNode();
-// 		this.overlay.style.fill = '#000000';
-// 		this.overlay.style.opacity = '0.4';
-// 		this.drawArea.appendChild(this.overlay);
-// 	}
-
-// 	bindOverlay() {
-// 		// on event, update overlay
-// 		this.parent.addEventListener('data-select', (e) => {
-// 			this.update_overlay(e.svg_unit);
-// 		});
-// 	}
-
-// 	bind_units(units_array) {
-// 		units_array.map(unit => {
-// 			unit.addEventListener('click', () => {
-// 				let index = unit.getAttribute('data-point-index');
-// 				this.setCurrentDataPoint(index);
-// 			});
-// 		});
-// 	}
-
-// 	update_overlay(unit) {
-// 		let attributes = [];
-// 		Object.keys(unit.attributes).map(index => {
-// 			attributes.push(unit.attributes[index]);
-// 		});
-
-// 		attributes.filter(attr => attr.specified).map(attr => {
-// 			this.overlay.setAttribute(attr.name, attr.nodeValue);
-// 		});
-
-// 		this.overlay.style.fill = '#000000';
-// 		this.overlay.style.opacity = '0.4';
-// 	}
-
-// 	onLeftArrow() {
-// 		this.setCurrentDataPoint(this.currentIndex - 1);
-// 	}
-
-// 	onRightArrow() {
-// 		this.setCurrentDataPoint(this.currentIndex + 1);
-// 	}
-// }
 
 function normalize(x) {
 	// Calculates mantissa and exponent of a number
@@ -1757,17 +1703,7 @@ function getZeroIndex(yPts) {
 	return zeroIndex;
 }
 
-function getRealIntervals(max, noOfIntervals, min = 0, asc = 1) {
-	let range = max - min;
-	let part = range * 1.0 / noOfIntervals;
-	let intervals = [];
 
-	for(var i = 0; i <= noOfIntervals; i++) {
-		intervals.push(min + part * i);
-	}
-
-	return asc ? intervals : intervals.reverse();
-}
 
 function getIntervalSize(orderedArray) {
 	return orderedArray[1] - orderedArray[0];
@@ -1775,6 +1711,10 @@ function getIntervalSize(orderedArray) {
 
 function getValueRange(orderedArray) {
 	return orderedArray[orderedArray.length-1] - orderedArray[0];
+}
+
+function scale(val, yAxis) {
+	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier)
 }
 
 function calcDistribution(values, distributionSize) {
@@ -1805,57 +1745,25 @@ class AxisChart extends BaseChart {
 		this.valuesOverPoints = args.valuesOverPoints;
 		this.formatTooltipY = args.formatTooltipY;
 		this.formatTooltipX = args.formatTooltipX;
-		this.barOptions = args.barOptions;
-		this.lineOptions = args.lineOptions;
+		this.barOptions = args.barOptions || {};
+		this.lineOptions = args.lineOptions || {};
 		this.type = args.type || 'line';
 
 		this.xAxisMode = args.xAxisMode || 'span';
 		this.yAxisMode = args.yAxisMode || 'span';
 
 		this.zeroLine = this.height;
-		this.setTrivialState();
+		// this.setTrivialState();
 		this.setup();
 	}
 
-	configure(args) {
+	configure(args) {3;
 		super.configure();
 
 		// TODO: set in options and use
 
 		this.config.xAxisMode = args.xAxisMode;
 		this.config.yAxisMode = args.yAxisMode;
-	}
-
-	setTrivialState() {
-		// Define data and stuff
-		let yTempPos = getRealIntervals(this.height, 4, 0, 0);
-
-		this.state = {
-			xAxis: {
-				positions: [],
-				labels: [],
-			},
-			yAxis: {
-				positions: yTempPos,
-				labels: yTempPos.map(d => ""),
-			},
-			yRegions: [
-				{
-					start: this.height,
-					end: this.height,
-					label: ''
-				}
-			],
-			yMarkers: [
-				{
-					position: this.height,
-					label: ''
-				}
-			]
-		};
-
-		this.calcWidth();
-		this.calcXPositions(this.state);
 	}
 
 	setMargins() {
@@ -1868,10 +1776,12 @@ class AxisChart extends BaseChart {
 		return dataPrep(data, this.type);
 	}
 
+	prepareFirstData(data=this.data) {
+		return zeroDataPrep(data);
+	}
+
 	calc() {
-
 		this.calcXPositions();
-
 		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
 	}
 
@@ -1905,61 +1815,60 @@ class AxisChart extends BaseChart {
 		};
 
 		this.calcYUnits();
-		this.calcYMaximums();
+		this.calcYExtremes();
 		this.calcYRegions();
 	}
 
 	calcYUnits() {
 		let s = this.state;
-		this.data.datasets.map(d => {
-			d.positions = d.values.map(val =>
-				floatTwo(s.yAxis.zeroLine - val * s.yAxis.scaleMultiplier));
-		});
+		let scaleAll = values => values.map(val => scale(val, s.yAxis));
 
-		if(this.barOptions && this.barOptions.stacked) {
-			this.data.datasets.map((d, i) => {
-				d.cumulativePositions = d.cumulativeYs.map(val =>
-					floatTwo(s.yAxis.zeroLine - val * s.yAxis.scaleMultiplier));
-			});
-		}
+		s.datasets = this.data.datasets.map((d, i) => {
+			let values = d.values;
+			let cumulativeYs = d.cumulativeYs || [];
+			return {
+				name: d.name,
+				index: i,
+				chartType: d.chartType,
+
+				values: values,
+				yPositions: scaleAll(values),
+
+				cumulativeYs: cumulativeYs,
+				cumulativeYPos: scaleAll(cumulativeYs),
+			};
+		});
 	}
 
-	calcYMaximums() {
+	calcYExtremes() {
 		let s = this.state;
 		if(this.barOptions && this.barOptions.stacked) {
-			s.yExtremes = this.data.datasets[this.data.datasets.length - 1].cumulativePositions;
+			s.yExtremes = s.datasets[s.datasets.length - 1].cumulativeYPos;
 			return;
 		}
 		s.yExtremes = new Array(s.datasetLength).fill(9999);
-		this.data.datasets.map((d, i) => {
-			d.positions.map((pos, j) => {
+		s.datasets.map((d, i) => {
+			d.yPositions.map((pos, j) => {
 				if(pos < s.yExtremes[j]) {
 					s.yExtremes[j] = pos;
 				}
 			});
 		});
-
-		// Tooltip refresh should not be needed?
-		// this.chartWrapper.removeChild(this.tip.container);
-		// this.make_tooltip();
 	}
 
 	calcYRegions() {
 		let s = this.state;
 		if(this.data.yMarkers) {
 			this.state.yMarkers = this.data.yMarkers.map(d => {
-				d.position = floatTwo(s.yAxis.zeroLine - d.value * s.yAxis.scaleMultiplier);
+				d.position = scale(d.value, s.yAxis);
 				d.label += ': ' + d.value;
 				return d;
 			});
 		}
 		if(this.data.yRegions) {
 			this.state.yRegions = this.data.yRegions.map(d => {
-				if(d.end < d.start) {
-					[d.start, d.end] = [d.end, start];
-				}
-				d.start = floatTwo(s.yAxis.zeroLine - d.start * s.yAxis.scaleMultiplier);
-				d.end = floatTwo(s.yAxis.zeroLine - d.end * s.yAxis.scaleMultiplier);
+				d.start = scale(d.start, s.yAxis);
+				d.end = scale(d.end, s.yAxis);
 				return d;
 			});
 		}
@@ -1982,6 +1891,9 @@ class AxisChart extends BaseChart {
 	}
 
 	initComponents() {
+		let s = this.state;
+		// console.log('this.state', Object.assign({}, this.state));
+		// console.log('this.state', this.state);
 		this.componentConfigs = [
 			[
 				'yAxis',
@@ -2008,7 +1920,57 @@ class AxisChart extends BaseChart {
 					pos: 'right'
 				}
 			],
+		];
 
+		this.componentConfigs.map(args => {
+			args.push(
+				function() {
+					return this.state[args[0]];
+				}.bind(this)
+			);
+		});
+
+		let barDatasets = this.state.datasets.filter(d => d.chartType === 'bar');
+		let lineDatasets = this.state.datasets.filter(d => d.chartType === 'line');
+
+		// console.log('barDatasets', barDatasets, this.state.datasets);
+
+		// Bars
+		let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
+		let barsWidth = s.unitWidth * (1 - spaceRatio);
+		let barWidth = barsWidth/(this.barOptions.stacked ? 1 : barDatasets.length);
+
+		let barsConfigs = barDatasets.map(d => {
+			let index = d.index;
+			return [
+				'barGraph',
+				{
+					index: index,
+					color: this.colors[index],
+
+					// same for all datasets
+					valuesOverPoints: this.valuesOverPoints,
+					minHeight: this.height * MIN_BAR_PERCENT_HEIGHT,
+					barsWidth: barsWidth,
+					barWidth: barWidth,
+					zeroLine: s.yAxis.zeroLine
+				},
+				function() {
+					let s = this.state;
+					let d = s.datasets[index];
+					return {
+						xPositions: s.xAxis.positions,
+						yPositions: d.yPositions,
+						cumulativeYPos: d.cumulativeYPos,
+
+						values: d.values,
+						cumulativeYs: d.cumulativeYs
+					};
+				}.bind(this)
+			];
+		});
+
+		let markerConfigs = [
 			[
 				'yMarkers',
 				{
@@ -2017,17 +1979,23 @@ class AxisChart extends BaseChart {
 				}
 			]
 		];
+
+		markerConfigs.map(args => {
+			args.push(
+				function() {
+					return this.state[args[0]];
+				}.bind(this)
+			);
+		});
+
+		this.componentConfigs = this.componentConfigs.concat(barsConfigs, markerConfigs);
 	}
+
 	setupComponents() {
 		let optionals = ['yMarkers', 'yRegions'];
 		this.components = new Map(this.componentConfigs
-			.filter(args => !optionals.includes(args[0]) || this.data[args[0]])
+			.filter(args => !optionals.includes(args[0]) || this.state[args[0]] || args[0] === 'barGraph')
 			.map(args => {
-				args.push(
-					function() {
-						return this.state[args[0]];
-					}.bind(this)
-				);
 				return [args[0], getComponent(...args)];
 			}));
 	}

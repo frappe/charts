@@ -360,6 +360,37 @@ export function yRegion(y1, y2, width, label) {
 	return region;
 }
 
+export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={}) {
+	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
+	// console.log(yTop, meta.zeroLine, y, offset);
+
+	let rect = createSVG('rect', {
+		className: `bar mini`,
+		style: `fill: ${color}`,
+		'data-point-index': index,
+		x: x - meta.barsWidth/2,
+		y: y - offset,
+		width: width,
+		height: height || meta.minHeight
+	});
+
+	if(!label && !label.length) {
+		return rect;
+	} else {
+		let text = createSVG('text', {
+			className: 'data-point-value',
+			x: x,
+			y: y - offset,
+			dy: (FONT_SIZE / 2 * -1) + 'px',
+			'font-size': FONT_SIZE + 'px',
+			'text-anchor': 'middle',
+			innerHTML: label
+		});
+
+		return wrapInSVGGroup([rect, text]);
+	}
+}
+
 export class AxisChartRenderer {
 	constructor(state) {
 		this.refreshState(state);

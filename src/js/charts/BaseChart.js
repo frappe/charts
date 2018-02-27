@@ -28,13 +28,15 @@ export default class BaseChart {
 		this.title = title;
 		this.subtitle = subtitle;
 		this.argHeight = height;
+		this.type = type;
 
 		this.isNavigable = isNavigable;
 		if(this.isNavigable) {
 			this.currentIndex = 0;
 		}
 
-		this.data = this.prepareData(data);;
+		this.realData = this.prepareData(data);
+		this.data = this.prepareFirstData(this.realData);
 		this.colors = [];
 		this.config = {};
 		this.state = {};
@@ -148,6 +150,7 @@ export default class BaseChart {
 		this.calcWidth();
 		this.makeChartArea();
 
+		this.calc();
 		this.initComponents(); // Only depend on the drawArea made in makeChartArea
 
 		this.setupComponents();
@@ -160,6 +163,7 @@ export default class BaseChart {
 
 		// TODO: remove timeout and decrease post animate time in chart component
 		if(init) {
+			this.data = this.realData;
 			setTimeout(() => {this.update();}, 1000);
 		}
 	}
@@ -187,10 +191,10 @@ export default class BaseChart {
 
 	calc() {} // builds state
 
-	render(animate=true) {
+	render(components=this.components, animate=true) {
 		// Can decouple to this.refreshComponents() first to save animation timeout
 		let elementsToAnimate = [];
-		this.components.forEach(c => {
+		components.forEach(c => {
 			elementsToAnimate = elementsToAnimate.concat(c.update(animate));
 		});
 		if(elementsToAnimate.length > 0) {

@@ -1,3 +1,5 @@
+import { floatTwo } from './helpers';
+
 function normalize(x) {
 	// Calculates mantissa and exponent of a number
 	// Returns normalized number and exponent
@@ -192,6 +194,10 @@ export function getIntervalSize(orderedArray) {
 
 export function getValueRange(orderedArray) {
 	return orderedArray[orderedArray.length-1] - orderedArray[0];
+}
+
+export function scale(val, yAxis) {
+	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier)
 }
 
 export function calcDistribution(values, distributionSize) {
