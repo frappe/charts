@@ -234,7 +234,7 @@ function getStringWidth(string, charWidth) {
 
 function getBarHeightAndYAttr(yTop, zeroLine) {
 	let height, y;
-	if (yTop < zeroLine) {
+	if (yTop <= zeroLine) {
 		height = zeroLine - yTop;
 		y = yTop;
 	} else {
@@ -286,13 +286,14 @@ const REPLACE_ALL_NEW_DUR = 250;
 const STD_EASING = 'easein';
 
 function translate(unit, oldCoord, newCoord, duration) {
+	let old = typeof oldCoord === 'string' ? oldCoord : oldCoord.join(', ');
 	return [
 		unit,
 		{transform: newCoord.join(', ')},
 		duration,
 		STD_EASING,
 		"translate",
-		{transform: oldCoord.join(', ')}
+		{transform: old}
 	];
 }
 
@@ -318,6 +319,42 @@ function animateRegion(rectGroup, newY1, newY2, oldY2) {
 	let groupAnim = translate(rectGroup, [0, oldY2], [0, newY2], MARKER_LINE_ANIM_DUR);
 	return [rectAnim, groupAnim];
 }
+
+function animateBar(bar, x, yTop, width, index=0, meta={}) {
+	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
+	if(bar.nodeName !== 'rect') {
+		let rect = bar.childNodes[0];
+		let rectAnim = [
+			rect,
+			{width: width, height: height},
+			UNIT_ANIM_DUR,
+			STD_EASING
+		];
+
+		let old = bar.getAttribute("transform").split("(")[1].slice(0, -1);
+		let groupAnim = translate(bar, old, [x, y], MARKER_LINE_ANIM_DUR);
+		return [rectAnim, groupAnim];
+	} else {
+		return [[bar, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING]];
+	}
+	// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
+}
+
+/*
+
+<filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
+	<feGaussianBlur stdDeviation="0.5 0.5" result="glow"></feGaussianBlur>
+	<feMerge>
+		<feMergeNode in="glow"></feMergeNode>
+		<feMergeNode in="glow"></feMergeNode>
+		<feMergeNode in="glow"></feMergeNode>
+	</feMerge>
+</filter>
+
+    filter: url(#glow);
+    fill: #fff;
+
+*/
 
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
@@ -383,13 +420,7 @@ function makeSVGGroup(parent, className, transform='') {
 	});
 }
 
-function wrapInSVGGroup(elements, className='') {
-	let g = createSVG('g', {
-		className: className
-	});
-	elements.forEach(e => g.appendChild(e));
-	return g;
-}
+
 
 function makePath(pathStr, className='', stroke='none', fill='none') {
 	return createSVG('path', {
@@ -627,31 +658,40 @@ function yRegion(y1, y2, width, label) {
 function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={}) {
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
 	// console.log(yTop, meta.zeroLine, y, offset);
+	y -= offset;
 
 	let rect = createSVG('rect', {
 		className: `bar mini`,
 		style: `fill: ${color}`,
 		'data-point-index': index,
-		x: x - meta.barsWidth/2,
-		y: y - offset,
+		x: x,
+		y: y,
 		width: width,
-		height: height || meta.minHeight
+		height: height || meta.minHeight // TODO: correct y for positive min height
 	});
 
 	if(!label && !label.length) {
 		return rect;
 	} else {
+		rect.setAttribute('y', 0);
+		rect.setAttribute('x', 0);
 		let text = createSVG('text', {
 			className: 'data-point-value',
-			x: x,
-			y: y - offset,
+			x: width/2,
+			y: 0,
 			dy: (FONT_SIZE / 2 * -1) + 'px',
 			'font-size': FONT_SIZE + 'px',
 			'text-anchor': 'middle',
 			innerHTML: label
 		});
 
-		return wrapInSVGGroup([rect, text]);
+		let group = createSVG('g', {
+			transform: `translate(${x}, ${y})`
+		});
+		group.appendChild(rect);
+		group.appendChild(text);
+
+		return group;
 	}
 }
 
@@ -1227,11 +1267,11 @@ function zeroDataPrep(realData) {
 	let zeroArray = new Array(datasetLength).fill(0);
 
 	let zeroData = {
-		labels: realData.labels,
+		labels: realData.labels.slice(0, -1),
 		datasets: realData.datasets.map(d => {
 			return {
 				name: '',
-				values: zeroArray,
+				values: zeroArray.slice(0, -1),
 				chartType: d.chartType
 			}
 		}),
@@ -1261,14 +1301,12 @@ class ChartComponent$1 {
 
 		getData,
 		makeElements,
-		postMake,
 		animateElements
 	}) {
 		this.layerTransform = layerTransform;
 		this.constants = constants;
 
 		this.makeElements = makeElements;
-		this.postMake = postMake;
 		this.getData = getData;
 
 		this.animateElements = animateElements;
@@ -1291,9 +1329,7 @@ class ChartComponent$1 {
 	}
 
 	make() {
-		this.preMake && this.preMake();
 		this.render(this.data);
-		this.postMake && this.postMake();
 		this.oldData = this.data;
 	}
 
@@ -1331,8 +1367,8 @@ let componentConfigs = {
 		},
 
 		animateElements(newData) {
-			let newPos =  newData.positions;
-			let newLabels =  newData.labels;
+			let newPos = newData.positions;
+			let newLabels = newData.labels;
 			let oldPos = this.oldData.positions;
 			let oldLabels = this.oldData.labels;
 
@@ -1362,8 +1398,8 @@ let componentConfigs = {
 		},
 
 		animateElements(newData) {
-			let newPos =  newData.positions;
-			let newLabels =  newData.labels;
+			let newPos = newData.positions;
+			let newLabels = newData.labels;
 			let oldPos = this.oldData.positions;
 			let oldLabels = this.oldData.labels;
 
@@ -1394,8 +1430,8 @@ let componentConfigs = {
 		animateElements(newData) {
 			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
 
-			let newPos =  newData.map(d => d.position);
-			let newLabels =  newData.map(d => d.label);
+			let newPos = newData.map(d => d.position);
+			let newLabels = newData.map(d => d.label);
 
 			let oldPos = this.oldData.map(d => d.position);
 			let oldLabels = this.oldData.map(d => d.label);
@@ -1426,9 +1462,9 @@ let componentConfigs = {
 		animateElements(newData) {
 			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
 
-			let newPos =  newData.map(d => d.end);
-			let newLabels =  newData.map(d => d.label);
-			let newStarts =  newData.map(d => d.start);
+			let newPos = newData.map(d => d.end);
+			let newLabels = newData.map(d => d.label);
+			let newStarts = newData.map(d => d.start);
 
 			let oldPos = this.oldData.map(d => d.end);
 			let oldLabels = this.oldData.map(d => d.label);
@@ -1459,57 +1495,67 @@ let componentConfigs = {
 		makeElements(data) {
 			let c = this.constants;
 			return data.yPositions.map((y, j) => {
-				// console.log(data.cumulativeYPos, data.cumulativeYPos[j]);
 				return datasetBar(
 					data.xPositions[j],
 					y,
-					c.barWidth,
+					data.barWidth,
 					c.color,
 					(c.valuesOverPoints ? (c.stacked ? data.cumulativeYs[j] : data.values[j]) : ''),
 					j,
 					y - (c.stacked ? data.cumulativeYPos[j] : y),
 					{
-						zeroLine: c.zeroLine,
-						barsWidth: c.barsWidth,
+						zeroLine: data.zeroLine,
+						barsWidth: data.barsWidth,
 						minHeight: c.minHeight
 					}
 				)
 			});
 		},
-		postMake() {
-			if((!this.constants.stacked)) {
-				this.layer.setAttribute('transform',
-					`translate(${this.constants.width * this.constants.index}, 0)`);
-			}
-		},
 		animateElements(newData) {
-			// [this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+			let c = this.constants;
 
-			// let newPos =  newData.map(d => d.end);
-			// let newLabels =  newData.map(d => d.label);
-			// let newStarts =  newData.map(d => d.start);
+			let newXPos = newData.xPositions;
+			let newYPos = newData.yPositions;
+			let newCYPos = newData.cumulativeYPos;
+			let newValues = newData.values;
+			let newCYs = newData.cumulativeYs;
 
-			// let oldPos = this.oldData.map(d => d.end);
-			// let oldLabels = this.oldData.map(d => d.label);
-			// let oldStarts = this.oldData.map(d => d.start);
 
-			// this.render(oldPos.map((pos, i) => {
-			// 	return {
-			// 		start: oldStarts[i],
-			// 		end: oldPos[i],
-			// 		label: newLabels[i]
-			// 	}
-			// }));
+			let oldXPos = this.oldData.xPositions;
+			let oldYPos = this.oldData.yPositions;
+			let oldCYPos = this.oldData.cumulativeYPos;
+			let oldValues = this.oldData.values;
+			let oldCYs = this.oldData.cumulativeYs;
 
-			// let animateElements = [];
+			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
+			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
+			[oldCYPos, newCYPos] = equilizeNoOfElements(oldCYPos, newCYPos);
+			[oldValues, newValues] = equilizeNoOfElements(oldValues, newValues);
+			[oldCYs, newCYs] = equilizeNoOfElements(oldCYs, newCYs);
 
-			// this.store.map((rectGroup, i) => {
-			// 	animateElements = animateElements.concat(animateRegion(
-			// 		rectGroup, newStarts[i], newPos[i], oldPos[i]
-			// 	));
-			// });
+			this.render({
+				xPositions: oldXPos,
+				yPositions: oldYPos,
+				cumulativeYPos: oldCYPos,
 
-			// return animateElements;
+				values: newValues,
+				cumulativeYs: newCYs,
+
+				zeroLine: this.oldData.zeroLine,
+				barsWidth: this.oldData.barsWidth,
+				barWidth: this.oldData.barWidth,
+			});
+
+			let animateElements = [];
+
+			this.store.map((bar, i) => {
+				animateElements = animateElements.concat(animateBar(
+					bar, newXPos[i], newYPos[i], newData.barWidth, c.index,
+						{zeroLine: newData.zeroLine}
+				));
+			});
+
+			return animateElements;
 		}
 	},
 
@@ -1519,7 +1565,8 @@ let componentConfigs = {
 };
 
 function getComponent(name, constants, getData) {
-	let config = componentConfigs[name];
+	let keys = Object.keys(componentConfigs).filter(k => name.includes(k));
+	let config = componentConfigs[keys[0]];
 	Object.assign(config, {
 		constants: constants,
 		getData: getData
@@ -1891,9 +1938,6 @@ class AxisChart extends BaseChart {
 	}
 
 	initComponents() {
-		let s = this.state;
-		// console.log('this.state', Object.assign({}, this.state));
-		// console.log('this.state', this.state);
 		this.componentConfigs = [
 			[
 				'yAxis',
@@ -1936,14 +1980,11 @@ class AxisChart extends BaseChart {
 		// console.log('barDatasets', barDatasets, this.state.datasets);
 
 		// Bars
-		let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
-		let barsWidth = s.unitWidth * (1 - spaceRatio);
-		let barWidth = barsWidth/(this.barOptions.stacked ? 1 : barDatasets.length);
 
 		let barsConfigs = barDatasets.map(d => {
 			let index = d.index;
 			return [
-				'barGraph',
+				'barGraph' + '-' + d.index,
 				{
 					index: index,
 					color: this.colors[index],
@@ -1951,20 +1992,28 @@ class AxisChart extends BaseChart {
 					// same for all datasets
 					valuesOverPoints: this.valuesOverPoints,
 					minHeight: this.height * MIN_BAR_PERCENT_HEIGHT,
-					barsWidth: barsWidth,
-					barWidth: barWidth,
-					zeroLine: s.yAxis.zeroLine
 				},
 				function() {
 					let s = this.state;
 					let d = s.datasets[index];
+
+					let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
+					let barsWidth = s.unitWidth * (1 - spaceRatio);
+					let barWidth = barsWidth/(this.barOptions.stacked ? 1 : barDatasets.length);
+
+					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2 + barWidth * index);
+
 					return {
-						xPositions: s.xAxis.positions,
+						xPositions: xPositions,
 						yPositions: d.yPositions,
 						cumulativeYPos: d.cumulativeYPos,
 
 						values: d.values,
-						cumulativeYs: d.cumulativeYs
+						cumulativeYs: d.cumulativeYs,
+
+						zeroLine: s.yAxis.zeroLine,
+						barsWidth: barsWidth,
+						barWidth: barWidth,
 					};
 				}.bind(this)
 			];

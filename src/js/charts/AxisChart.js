@@ -209,14 +209,11 @@ export default class AxisChart extends BaseChart {
 		// console.log('barDatasets', barDatasets, this.state.datasets);
 
 		// Bars
-		let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
-		let barsWidth = s.unitWidth * (1 - spaceRatio);
-		let barWidth = barsWidth/(this.barOptions.stacked ? 1 : barDatasets.length);
 
 		let barsConfigs = barDatasets.map(d => {
 			let index = d.index;
 			return [
-				'barGraph',
+				'barGraph' + '-' + d.index,
 				{
 					index: index,
 					color: this.colors[index],
@@ -224,20 +221,28 @@ export default class AxisChart extends BaseChart {
 					// same for all datasets
 					valuesOverPoints: this.valuesOverPoints,
 					minHeight: this.height * MIN_BAR_PERCENT_HEIGHT,
-					barsWidth: barsWidth,
-					barWidth: barWidth,
-					zeroLine: s.yAxis.zeroLine
 				},
 				function() {
 					let s = this.state;
 					let d = s.datasets[index];
+
+					let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
+					let barsWidth = s.unitWidth * (1 - spaceRatio);
+					let barWidth = barsWidth/(this.barOptions.stacked ? 1 : barDatasets.length);
+
+					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2 + barWidth * index);
+
 					return {
-						xPositions: s.xAxis.positions,
+						xPositions: xPositions,
 						yPositions: d.yPositions,
 						cumulativeYPos: d.cumulativeYPos,
 
 						values: d.values,
-						cumulativeYs: d.cumulativeYs
+						cumulativeYs: d.cumulativeYs,
+
+						zeroLine: s.yAxis.zeroLine,
+						barsWidth: barsWidth,
+						barWidth: barWidth,
 					};
 				}.bind(this)
 			];

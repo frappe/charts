@@ -363,31 +363,40 @@ export function yRegion(y1, y2, width, label) {
 export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={}) {
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
 	// console.log(yTop, meta.zeroLine, y, offset);
+	y -= offset;
 
 	let rect = createSVG('rect', {
 		className: `bar mini`,
 		style: `fill: ${color}`,
 		'data-point-index': index,
-		x: x - meta.barsWidth/2,
-		y: y - offset,
+		x: x,
+		y: y,
 		width: width,
-		height: height || meta.minHeight
+		height: height || meta.minHeight // TODO: correct y for positive min height
 	});
 
 	if(!label && !label.length) {
 		return rect;
 	} else {
+		rect.setAttribute('y', 0);
+		rect.setAttribute('x', 0);
 		let text = createSVG('text', {
 			className: 'data-point-value',
-			x: x,
-			y: y - offset,
+			x: width/2,
+			y: 0,
 			dy: (FONT_SIZE / 2 * -1) + 'px',
 			'font-size': FONT_SIZE + 'px',
 			'text-anchor': 'middle',
 			innerHTML: label
 		});
 
-		return wrapInSVGGroup([rect, text]);
+		let group = createSVG('g', {
+			transform: `translate(${x}, ${y})`
+		});
+		group.appendChild(rect);
+		group.appendChild(text);
+
+		return group;
 	}
 }
 

@@ -2,7 +2,7 @@ import { fillArray } from './helpers';
 
 export function getBarHeightAndYAttr(yTop, zeroLine) {
 	let height, y;
-	if (yTop < zeroLine) {
+	if (yTop <= zeroLine) {
 		height = zeroLine - yTop;
 		y = yTop;
 	} else {

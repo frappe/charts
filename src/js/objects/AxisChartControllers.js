@@ -44,41 +44,6 @@ export class AxisController extends AxisChartController {
 	}
 }
 
-export class BarChartController extends AxisChartController {
-	constructor(meta) {
-		super(meta);
-	}
-
-	setupArgs() {
-		this.consts = {
-			spaceRatio: 0.5,
-			minHeight: this.meta.totalHeight * MIN_BAR_PERCENT_HEIGHT
-		};
-	}
-
-	refreshMeta(meta) {
-		if(meta) {
-			super.refreshMeta(meta);
-		}
-		let m = this.meta;
-		this.consts.barsWidth = m.unitWidth - m.unitWidth * this.consts.spaceRatio;
-
-		this.consts.width = this.consts.barsWidth / (m.options && m.options.stacked
-			? m.options.stacked : m.noOfDatasets);
-	}
-
-	animate(bar, x, yTop, index, noOfDatasets) {
-		let start = x - this.meta.unitWidth/4;
-		let width = (this.meta.unitWidth/2)/noOfDatasets;
-		let [height, y] = getBarHeightAndYAttr(yTop, this.meta.zeroLine, this.meta.totalHeight);
-
-		x = start + (width * index);
-
-		return [bar, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING];
-		// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
-	}
-}
-
 export class LineChartController extends AxisChartController {
 	constructor(meta) {
 		super(meta);

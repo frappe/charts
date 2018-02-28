@@ -8,13 +8,14 @@ export const REPLACE_ALL_NEW_DUR = 250;
 export const STD_EASING = 'easein';
 
 export function translate(unit, oldCoord, newCoord, duration) {
+	let old = typeof oldCoord === 'string' ? oldCoord : oldCoord.join(', ');
 	return [
 		unit,
 		{transform: newCoord.join(', ')},
 		duration,
 		STD_EASING,
 		"translate",
-		{transform: oldCoord.join(', ')}
+		{transform: old}
 	];
 }
 
@@ -39,6 +40,26 @@ export function animateRegion(rectGroup, newY1, newY2, oldY2) {
 
 	let groupAnim = translate(rectGroup, [0, oldY2], [0, newY2], MARKER_LINE_ANIM_DUR);
 	return [rectAnim, groupAnim];
+}
+
+export function animateBar(bar, x, yTop, width, index=0, meta={}) {
+	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
+	if(bar.nodeName !== 'rect') {
+		let rect = bar.childNodes[0];
+		let rectAnim = [
+			rect,
+			{width: width, height: height},
+			UNIT_ANIM_DUR,
+			STD_EASING
+		]
+
+		let old = bar.getAttribute("transform").split("(")[1].slice(0, -1);
+		let groupAnim = translate(bar, old, [x, y], MARKER_LINE_ANIM_DUR);
+		return [rectAnim, groupAnim];
+	} else {
+		return [[bar, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING]];
+	}
+	// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
 }
 
 export var Animator = (function() {

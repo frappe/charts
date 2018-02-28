@@ -1,7 +1,7 @@
 import { makeSVGGroup } from '../utils/draw';
 import { xLine, yLine, yMarker, yRegion, datasetBar } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
-import { Animator, translateHoriLine, translateVertLine, animateRegion } from '../utils/animate';
+import { Animator, translateHoriLine, translateVertLine, animateRegion, animateBar } from '../utils/animate';
 
 class ChartComponent {
 	constructor({
@@ -11,14 +11,12 @@ class ChartComponent {
 
 		getData,
 		makeElements,
-		postMake,
 		animateElements
 	}) {
 		this.layerTransform = layerTransform;
 		this.constants = constants;
 
 		this.makeElements = makeElements;
-		this.postMake = postMake;
 		this.getData = getData;
 
 		this.animateElements = animateElements;
@@ -41,9 +39,7 @@ class ChartComponent {
 	}
 
 	make() {
-		this.preMake && this.preMake();
 		this.render(this.data);
-		this.postMake && this.postMake();
 		this.oldData = this.data;
 	}
 
@@ -81,8 +77,8 @@ let componentConfigs = {
 		},
 
 		animateElements(newData) {
-			let newPos =  newData.positions;
-			let newLabels =  newData.labels;
+			let newPos = newData.positions;
+			let newLabels = newData.labels;
 			let oldPos = this.oldData.positions;
 			let oldLabels = this.oldData.labels;
 
@@ -112,8 +108,8 @@ let componentConfigs = {
 		},
 
 		animateElements(newData) {
-			let newPos =  newData.positions;
-			let newLabels =  newData.labels;
+			let newPos = newData.positions;
+			let newLabels = newData.labels;
 			let oldPos = this.oldData.positions;
 			let oldLabels = this.oldData.labels;
 
@@ -144,8 +140,8 @@ let componentConfigs = {
 		animateElements(newData) {
 			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
 
-			let newPos =  newData.map(d => d.position);
-			let newLabels =  newData.map(d => d.label);
+			let newPos = newData.map(d => d.position);
+			let newLabels = newData.map(d => d.label);
 
 			let oldPos = this.oldData.map(d => d.position);
 			let oldLabels = this.oldData.map(d => d.label);
@@ -176,9 +172,9 @@ let componentConfigs = {
 		animateElements(newData) {
 			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
 
-			let newPos =  newData.map(d => d.end);
-			let newLabels =  newData.map(d => d.label);
-			let newStarts =  newData.map(d => d.start);
+			let newPos = newData.map(d => d.end);
+			let newLabels = newData.map(d => d.label);
+			let newStarts = newData.map(d => d.start);
 
 			let oldPos = this.oldData.map(d => d.end);
 			let oldLabels = this.oldData.map(d => d.label);
@@ -209,57 +205,67 @@ let componentConfigs = {
 		makeElements(data) {
 			let c = this.constants;
 			return data.yPositions.map((y, j) => {
-				// console.log(data.cumulativeYPos, data.cumulativeYPos[j]);
 				return datasetBar(
 					data.xPositions[j],
 					y,
-					c.barWidth,
+					data.barWidth,
 					c.color,
 					(c.valuesOverPoints ? (c.stacked ? data.cumulativeYs[j] : data.values[j]) : ''),
 					j,
 					y - (c.stacked ? data.cumulativeYPos[j] : y),
 					{
-						zeroLine: c.zeroLine,
-						barsWidth: c.barsWidth,
+						zeroLine: data.zeroLine,
+						barsWidth: data.barsWidth,
 						minHeight: c.minHeight
 					}
 				)
 			});
 		},
-		postMake() {
-			if((!this.constants.stacked)) {
-				this.layer.setAttribute('transform',
-					`translate(${this.constants.width * this.constants.index}, 0)`);
-			}
-		},
 		animateElements(newData) {
-			// [this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+			let c = this.constants;
 
-			// let newPos =  newData.map(d => d.end);
-			// let newLabels =  newData.map(d => d.label);
-			// let newStarts =  newData.map(d => d.start);
+			let newXPos = newData.xPositions;
+			let newYPos = newData.yPositions;
+			let newCYPos = newData.cumulativeYPos;
+			let newValues = newData.values;
+			let newCYs = newData.cumulativeYs;
 
-			// let oldPos = this.oldData.map(d => d.end);
-			// let oldLabels = this.oldData.map(d => d.label);
-			// let oldStarts = this.oldData.map(d => d.start);
 
-			// this.render(oldPos.map((pos, i) => {
-			// 	return {
-			// 		start: oldStarts[i],
-			// 		end: oldPos[i],
-			// 		label: newLabels[i]
-			// 	}
-			// }));
+			let oldXPos = this.oldData.xPositions;
+			let oldYPos = this.oldData.yPositions;
+			let oldCYPos = this.oldData.cumulativeYPos;
+			let oldValues = this.oldData.values;
+			let oldCYs = this.oldData.cumulativeYs;
 
-			// let animateElements = [];
+			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
+			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
+			[oldCYPos, newCYPos] = equilizeNoOfElements(oldCYPos, newCYPos);
+			[oldValues, newValues] = equilizeNoOfElements(oldValues, newValues);
+			[oldCYs, newCYs] = equilizeNoOfElements(oldCYs, newCYs);
 
-			// this.store.map((rectGroup, i) => {
-			// 	animateElements = animateElements.concat(animateRegion(
-			// 		rectGroup, newStarts[i], newPos[i], oldPos[i]
-			// 	));
-			// });
+			this.render({
+				xPositions: oldXPos,
+				yPositions: oldYPos,
+				cumulativeYPos: oldCYPos,
 
-			// return animateElements;
+				values: newValues,
+				cumulativeYs: newCYs,
+
+				zeroLine: this.oldData.zeroLine,
+				barsWidth: this.oldData.barsWidth,
+				barWidth: this.oldData.barWidth,
+			});
+
+			let animateElements = [];
+
+			this.store.map((bar, i) => {
+				animateElements = animateElements.concat(animateBar(
+					bar, newXPos[i], newYPos[i], newData.barWidth, c.index,
+						{zeroLine: newData.zeroLine}
+				));
+			});
+
+			return animateElements;
 		}
 	},
 
@@ -269,7 +275,8 @@ let componentConfigs = {
 }
 
 export function getComponent(name, constants, getData) {
-	let config = componentConfigs[name];
+	let keys = Object.keys(componentConfigs).filter(k => name.includes(k));
+	let config = componentConfigs[keys[0]];
 	Object.assign(config, {
 		constants: constants,
 		getData: getData

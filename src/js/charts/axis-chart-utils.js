@@ -64,11 +64,11 @@ export function zeroDataPrep(realData) {
 	let zeroArray = new Array(datasetLength).fill(0);
 
 	let zeroData = {
-		labels: realData.labels,
+		labels: realData.labels.slice(0, -1),
 		datasets: realData.datasets.map(d => {
 			return {
 				name: '',
-				values: zeroArray,
+				values: zeroArray.slice(0, -1),
 				chartType: d.chartType
 			}
 		}),
