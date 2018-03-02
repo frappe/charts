@@ -167,13 +167,14 @@
               <div id="chart-trends" class="border"></div>
               <div class="btn-group chart-plot-buttons mt-1 mx-auto" role="group">
                 <button type="button" class="btn btn-sm btn-secondary" data-type="line">Line</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-type="dots">Dots</button>
                 <button type="button" class="btn btn-sm btn-secondary active" data-type="heatline">HeatLine</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-type="region">Region</button>
               </div>
               <pre><code class="hljs javascript margin-vertical-px">  ...
     type: 'line',   // Line Chart specific properties:
 
-    showDots: 0,   // Show data points on the line; default 1
+    hideDots: 1,   // Hide data points on the line; default 0
     heatline: 1,    // Show a value-wise line gradient; default 0
     regionFill: 1, // Fill the area under the graph; default 0
   ...</code></pre>

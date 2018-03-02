@@ -80,7 +80,7 @@ let line_composite_chart = new Chart ({
 	parent: c2,
 	data: line_composite_data,
 	type: 'line',
-	options: {
+	lineOptions: {
 		dotSize: 10
 	},
 	height: 180,
@@ -208,7 +208,7 @@ let type_chart = new Chart({
 	yAxisMode: 'span',
 	valuesOverPoints: 1,
 	barOptions: {
-		// stacked: 1
+		stacked: 1
 	}
     // formatTooltipX: d => (d + '').toUpperCase(),
     // formatTooltipY: d => d + ' pts'
@@ -261,7 +261,7 @@ let plot_chart_args = {
 	colors: ['blue'],
 	isSeries: 1,
 	lineOptions: {
-		showDots: 0,
+		hideDots: 1,
 		heatline: 1,
 	},
 	xAxisMode: 'tick',
@@ -286,7 +286,7 @@ Array.prototype.slice.call(
 			config = [0, 1, 0];
 		}
 
-		plot_chart_args.showDots = config[0];
+		plot_chart_args.hideDots = config[0];
 		plot_chart_args.heatline = config[1];
 		plot_chart_args.regionFill = config[2];
 
@@ -339,7 +339,9 @@ let update_chart = new Chart({
 	height: 250,
 	colors: ['red'],
 	isSeries: 1,
-	regionFill: 1
+	lineOptions: {
+		regionFill: 1
+	},
 });
 
 let chart_update_buttons = document.querySelector('.chart-update-buttons');

@@ -1,7 +1,7 @@
 import { makeSVGGroup } from '../utils/draw';
-import { xLine, yLine, yMarker, yRegion, datasetBar } from '../utils/draw';
+import { xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, getPaths } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
-import { Animator, translateHoriLine, translateVertLine, animateRegion, animateBar } from '../utils/animate';
+import { translateHoriLine, translateVertLine, animateRegion, animateBar, animateDot, animatePath } from '../utils/animate';
 
 class ChartComponent {
 	constructor({
@@ -230,7 +230,6 @@ let componentConfigs = {
 			let newValues = newData.values;
 			let newCYs = newData.cumulativeYs;
 
-
 			let oldXPos = this.oldData.xPositions;
 			let oldYPos = this.oldData.yPositions;
 			let oldCYPos = this.oldData.cumulativeYPos;
@@ -270,7 +269,79 @@ let componentConfigs = {
 	},
 
 	lineGraph: {
+		layerClass: function() { return 'dataset-units dataset-' + this.constants.index; },
+		makeElements(data) {
+			let c = this.constants;
+			this.paths = getPaths(
+				data.xPositions,
+				data.yPositions,
+				c.color,
+				{
+					heatline: c.heatline,
+					regionFill: c.regionFill
+				},
+				{
+					svgDefs: c.svgDefs,
+					zeroLine: data.zeroLine
+				}
+			)
 
+			this.dots = []
+
+			if(!c.hideDots) {
+				this.dots = data.yPositions.map((y, j) => {
+					return datasetDot(
+						data.xPositions[j],
+						y,
+						data.radius,
+						c.color,
+						(c.valuesOverPoints ? data.values[j] : ''),
+						j
+					)
+				});
+			}
+
+			return Object.values(this.paths).concat(this.dots);
+		},
+		animateElements(newData) {
+			let c = this.constants;
+
+			let newXPos = newData.xPositions;
+			let newYPos = newData.yPositions;
+			let newValues = newData.values;
+
+
+			let oldXPos = this.oldData.xPositions;
+			let oldYPos = this.oldData.yPositions;
+			let oldValues = this.oldData.values;
+
+			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
+			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
+			[oldValues, newValues] = equilizeNoOfElements(oldValues, newValues);
+
+			this.render({
+				xPositions: oldXPos,
+				yPositions: oldYPos,
+				values: newValues,
+
+				zeroLine: this.oldData.zeroLine,
+				radius: this.oldData.radius,
+			});
+
+			let animateElements = [];
+
+			animateElements = animateElements.concat(animatePath(
+				this.paths, newXPos, newYPos, newData.zeroLine));
+
+			if(this.dots.length) {
+				this.dots.map((dot, i) => {
+					animateElements = animateElements.concat(animateDot(
+						dot, newXPos[i], newYPos[i]));
+				});
+			}
+
+			return animateElements;
+		}
 	}
 }
 

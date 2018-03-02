@@ -148,17 +148,16 @@ export default class BaseChart {
 
 	draw(init=false) {
 		this.calcWidth();
-		this.makeChartArea();
-
 		this.calc();
-		this.initComponents(); // Only depend on the drawArea made in makeChartArea
+		this.makeChartArea();
+		this.initComponents();
 
 		this.setupComponents();
 
 		this.components.forEach(c => c.setup(this.drawArea)); // or c.build()
 		this.components.forEach(c => c.make()); // or c.build()
-		this.renderLegend();
 
+		this.renderLegend();
 		this.setupNavigation(init);
 
 		// TODO: remove timeout and decrease post animate time in chart component

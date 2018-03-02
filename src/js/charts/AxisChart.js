@@ -2,14 +2,10 @@ import BaseChart from './BaseChart';
 import { dataPrep, zeroDataPrep } from './axis-chart-utils';
 import { Y_AXIS_MARGIN } from '../utils/constants';
 import { getComponent } from '../objects/ChartComponents';
-import { AxisChartRenderer } from '../utils/draw';
 import { getOffset, fire } from '../utils/dom';
-import { equilizeNoOfElements } from '../utils/draw-utils';
-import { Animator, translateHoriLine } from '../utils/animate';
-import { runSMILAnimation } from '../utils/animation';
-import { getRealIntervals, calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale } from '../utils/intervals';
-import { floatTwo, fillArray, bindChange } from '../utils/helpers';
-import { MIN_BAR_PERCENT_HEIGHT, DEFAULT_AXIS_CHART_TYPE, BAR_CHART_SPACE_RATIO } from '../utils/constants';
+import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale } from '../utils/intervals';
+import { floatTwo } from '../utils/helpers';
+import { MIN_BAR_PERCENT_HEIGHT, DEFAULT_AXIS_CHART_TYPE, BAR_CHART_SPACE_RATIO, LINE_CHART_DOT_SIZE } from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
 	constructor(args) {
@@ -65,6 +61,10 @@ export default class AxisChart extends BaseChart {
 		s.unitWidth = this.width/(s.datasetLength);
 		// Default, as per bar, and mixed. Only line will be a special case
 		s.xOffset = s.unitWidth/2;
+
+		// // For a pure Line Chart
+		// s.unitWidth = this.width/(s.datasetLength - 1);
+		// s.xOffset = 0;
 
 		s.xAxis = {
 			labels: labels,
@@ -208,8 +208,6 @@ export default class AxisChart extends BaseChart {
 
 		// console.log('barDatasets', barDatasets, this.state.datasets);
 
-		// Bars
-
 		let barsConfigs = barDatasets.map(d => {
 			let index = d.index;
 			return [
@@ -248,6 +246,38 @@ export default class AxisChart extends BaseChart {
 			];
 		});
 
+		let lineConfigs = lineDatasets.map(d => {
+			let index = d.index;
+			return [
+				'lineGraph' + '-' + d.index,
+				{
+					index: index,
+					color: this.colors[index],
+					svgDefs: this.svgDefs,
+					heatline: this.lineOptions.heatline,
+					regionFill: this.lineOptions.regionFill,
+					hideDots: this.lineOptions.hideDots,
+
+					// same for all datasets
+					valuesOverPoints: this.valuesOverPoints,
+				},
+				function() {
+					let s = this.state;
+					let d = s.datasets[index];
+
+					return {
+						xPositions: s.xAxis.positions,
+						yPositions: d.yPositions,
+
+						values: d.values,
+
+						zeroLine: s.yAxis.zeroLine,
+						radius: this.lineOptions.dotSize || LINE_CHART_DOT_SIZE,
+					};
+				}.bind(this)
+			];
+		});
+
 		let markerConfigs = [
 			[
 				'yMarkers',
@@ -266,7 +296,7 @@ export default class AxisChart extends BaseChart {
 			);
 		});
 
-		this.componentConfigs = this.componentConfigs.concat(barsConfigs, markerConfigs);
+		this.componentConfigs = this.componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
 	}
 
 	setupComponents() {
@@ -276,130 +306,6 @@ export default class AxisChart extends BaseChart {
 			.map(args => {
 				return [args[0], getComponent(...args)];
 			}));
-	}
-
-	getChartComponents() {
-		let dataUnitsComponents = []
-		// this.state is not defined at this stage
-		this.data.datasets.forEach((d, index) => {
-			if(d.chartType === 'line') {
-				dataUnitsComponents.push(this.getPathComponent(d, index));
-			}
-
-			let renderer = this.unitRenderers[d.chartType];
-			dataUnitsComponents.push(this.getDataUnitComponent(
-				index, renderer
-			));
-		});
-		return dataUnitsComponents;
-	}
-
-	getDataUnitComponent(index, unitRenderer) {
-		return new ChartComponent({
-			layerClass: 'dataset-units dataset-' + index,
-			makeElements: () => {
-				// yPositions, xPostions, color, valuesOverPoints,
-				let d = this.data.datasets[index];
-
-				return d.positions.map((y, j) => {
-					return unitRenderer.draw(
-						this.state.xAxis.positions[j],
-						y,
-						this.colors[index],
-						(this.valuesOverPoints ? (this.barOptions &&
-							this.barOptions.stacked ? d.cumulativeYs[j] : d.values[j]) : ''),
-						j,
-						y - (d.cumulativePositions ? d.cumulativePositions[j] : y)
-					);
-				});
-			},
-			postMake: function() {
-				let translate_layer = () => {
-					this.layer.setAttribute('transform', `translate(${unitRenderer.consts.width * index}, 0)`);
-				}
-
-				// let d = this.data.datasets[index];
-
-				if(this.meta.type === 'bar' && (!this.meta.barOptions
-					|| !this.meta.barOptions.stacked)) {
-
-					translate_layer();
-				}
-			},
-			animate: (svgUnits) => {
-				// have been updated in axis render;
-				let newX = this.state.xAxis.positions;
-				let newY = this.data.datasets[index].positions;
-
-				let lastUnit = svgUnits[svgUnits.length - 1];
-				let parentNode = lastUnit.parentNode;
-
-				if(this.oldState.xExtra > 0) {
-					for(var i = 0; i<this.oldState.xExtra; i++) {
-						let unit = lastUnit.cloneNode(true);
-						parentNode.appendChild(unit);
-						svgUnits.push(unit);
-					}
-				}
-
-				svgUnits.map((unit, i) => {
-					if(newX[i] === undefined || newY[i] === undefined) return;
-					this.elementsToAnimate.push(unitRenderer.animate(
-						unit, // unit, with info to replace where it came from in the data
-						newX[i],
-						newY[i],
-						index,
-						this.data.datasets.length
-					));
-				});
-			}
-		});
-	}
-
-	getPathComponent(d, index) {
-		return new ChartComponent({
-			layerClass: 'path dataset-path',
-			setData: () => {},
-			makeElements: () => {
-				let d = this.data.datasets[index];
-				let color = this.colors[index];
-
-				return getPaths(
-					d.positions,
-					this.state.xAxis.positions,
-					color,
-					this.config.heatline,
-					this.config.regionFill
-				);
-			},
-			animate: (paths) => {
-				let newX = this.state.xAxis.positions;
-				let newY = this.data.datasets[index].positions;
-
-				let oldX = this.oldState.xAxis.positions;
-				let oldY = this.oldState.datasets[index].positions;
-
-
-				let parentNode = paths[0].parentNode;
-
-				[oldX, newX] = equilizeNoOfElements(oldX, newX);
-				[oldY, newY] = equilizeNoOfElements(oldY, newY);
-
-				if(this.oldState.xExtra > 0) {
-					paths = getPaths(
-						oldY, oldX, this.colors[index],
-						this.config.heatline,
-						this.config.regionFill
-					);
-					parentNode.textContent = '';
-					paths.map(path => parentNode.appendChild(path));
-				}
-
-				const newPointsList = newY.map((y, i) => (newX[i] + ',' + y));
-				this.elementsToAnimate = this.elementsToAnimate
-					.concat(this.renderer.animatepath(paths, newPointsList.join("L")));
-			}
-		});
 	}
 
 	bindTooltip() {

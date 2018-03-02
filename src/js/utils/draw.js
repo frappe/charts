@@ -124,7 +124,7 @@ export function makePath(pathStr, className='', stroke='none', fill='none') {
 }
 
 export function makeGradient(svgDefElem, color, lighter = false) {
-	let gradientId ='path-fill-gradient' + '-' + color;
+	let gradientId ='path-fill-gradient' + '-' + color + '-' +(lighter ? 'lighter' : 'default');
 	let gradientDef = renderVerticalGradient(svgDefElem, gradientId);
 	let opacities = [1, 0.6, 0.2];
 	if(lighter) {
@@ -400,75 +400,64 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 	}
 }
 
-export class AxisChartRenderer {
-	constructor(state) {
-		this.refreshState(state);
-	}
+export function datasetDot(x, y, radius, color, label='', index=0, meta={}) {
+	let dot = createSVG('circle', {
+		style: `fill: ${color}`,
+		'data-point-index': index,
+		cx: x,
+		cy: y,
+		r: radius
+	});
 
-	refreshState(state) {
-		this.totalHeight = state.totalHeight;
-		this.totalWidth = state.totalWidth;
-		this.zeroLine = state.zeroLine;
-		this.unitWidth = state.unitWidth;
-		this.xAxisMode = state.xAxisMode;
-		this.yAxisMode = state.yAxisMode;
-	}
+	if(!label && !label.length) {
+		return dot;
+	} else {
+		dot.setAttribute('cy', 0);
+		dot.setAttribute('cx', 0);
 
-	setZeroline(zeroLine) {
-		this.zeroLine = zeroLine;
-	}
-
-	xMarker() {}
-
-
-	xRegion() {
-		return createSVG('rect', {
-			className: `bar mini`, // remove class
-			style: `fill: rgba(228, 234, 239, 0.49)`,
-			// 'data-point-index': index,
+		let text = createSVG('text', {
+			className: 'data-point-value',
 			x: 0,
-			y: y2,
-			width: this.totalWidth,
-			height: y1 - y2
+			y: 0,
+			dy: (FONT_SIZE / 2 * -1 - radius) + 'px',
+			'font-size': FONT_SIZE + 'px',
+			'text-anchor': 'middle',
+			innerHTML: label
 		});
 
-		return region;
+		let group = createSVG('g', {
+			transform: `translate(${x}, ${y})`
+		});
+		group.appendChild(dot);
+		group.appendChild(text);
+
+		return group;
+	}
+}
+
+export function getPaths(xList, yList, color, options={}, meta={}) {
+	let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
+	let pointsStr = pointsList.join("L");
+	let path = makePath("M"+pointsStr, 'line-graph-path', color);
+
+	// HeatLine
+	if(options.heatline) {
+		let gradient_id = makeGradient(meta.svgDefs, color);
+		path.style.stroke = `url(#${gradient_id})`;
 	}
 
-	animatebar(bar, x, yTop, index, noOfDatasets) {
-		let start = x - this.avgUnitWidth/4;
-		let width = (this.avgUnitWidth/2)/noOfDatasets;
-		let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
-
-		x = start + (width * index);
-
-		return [bar, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING];
-		// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
+	let paths = {
+		path: path
 	}
 
-	animatedot(dot, x, yTop) {
-		return [dot, {cx: x, cy: yTop}, UNIT_ANIM_DUR, STD_EASING];
-		// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
+	// Region
+	if(options.regionFill) {
+		let gradient_id_region = makeGradient(meta.svgDefs, color, true);
+
+		// TODO: use zeroLine OR minimum
+		let pathStr = "M" + `${xList[0]},${meta.zeroLine}L` + pointsStr + `L${xList.slice(-1)[0]},${meta.zeroLine}`;
+		paths.region = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`);
 	}
 
-	animatepath(paths, pathStr) {
-		let pathComponents = [];
-		const animPath = [paths[0], {d:"M"+pathStr}, PATH_ANIM_DUR, STD_EASING];
-		pathComponents.push(animPath);
-
-		if(paths[1]) {
-			let regStartPt = `0,${this.zeroLine}L`;
-			let regEndPt = `L${this.totalWidth}, ${this.zeroLine}`;
-
-			const animRegion = [
-				paths[1],
-				{d:"M" + regStartPt + pathStr + regEndPt},
-				PATH_ANIM_DUR,
-				STD_EASING
-			];
-			pathComponents.push(animRegion);
-		}
-
-		return pathComponents;
-	}
+	return paths;
 }

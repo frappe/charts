@@ -55,63 +55,9 @@ export class LineChartController extends AxisChartController {
 		};
 	}
 
-	draw(x, y, color, label='', index=0) {
-		let dot = createSVG('circle', {
-			style: `fill: ${color}`,
-			'data-point-index': index,
-			cx: x,
-			cy: y,
-			r: this.consts.radius
-		});
-
-		if(!label && !label.length) {
-			return dot;
-		} else {
-			let text = createSVG('text', {
-				className: 'data-point-value',
-				x: x,
-				y: y,
-				dy: (FONT_SIZE / 2 * -1 - this.consts.radius) + 'px',
-				'font-size': FONT_SIZE + 'px',
-				'text-anchor': 'middle',
-				innerHTML: label
-			});
-
-			return wrapInSVGGroup([dot, text]);
-		}
-	}
-
-	animate(dot, x, yTop) {
-		return [dot, {cx: x, cy: yTop}, UNIT_ANIM_DUR, STD_EASING];
-		// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
-	}
 }
 
-export function getPaths(yList, xList, color, heatline=false, regionFill=false) {
-	let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
-	let pointsStr = pointsList.join("L");
-	let path = makePath("M"+pointsStr, 'line-graph-path', color);
 
-	// HeatLine
-	if(heatline) {
-		let gradient_id = makeGradient(this.svgDefs, color);
-		path.style.stroke = `url(#${gradient_id})`;
-	}
-
-	let components = [path];
-
-	// Region
-	if(regionFill) {
-		let gradient_id_region = makeGradient(this.svgDefs, color, true);
-
-		let zeroLine = this.state.yAxis.zeroLine;
-		// TODO: use zeroLine OR minimum
-		let pathStr = "M" + `0,${zeroLine}L` + pointsStr + `L${this.width},${zeroLine}`;
-		components.push(makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`));
-	}
-
-	return components;
-}
 
 // class BarChart extends AxisChart {
 // 	constructor(args) {

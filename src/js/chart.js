@@ -1,6 +1,5 @@
 import '../scss/charts.scss';
 
-import ScatterChart from './charts/ScatterChart';
 import MultiAxisChart from './charts/MultiAxisChart';
 import PercentageChart from './charts/PercentageChart';
 import PieChart from './charts/PieChart';
@@ -23,7 +22,6 @@ import AxisChart from './charts/AxisChart';
 const chartTypes = {
 	mixed: AxisChart,
 	multiaxis: MultiAxisChart,
-	scatter: ScatterChart,
 	percentage: PercentageChart,
 	heatmap: Heatmap,
 	pie: PieChart

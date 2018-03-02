@@ -53,8 +53,8 @@ export function animateBar(bar, x, yTop, width, index=0, meta={}) {
 			STD_EASING
 		]
 
-		let old = bar.getAttribute("transform").split("(")[1].slice(0, -1);
-		let groupAnim = translate(bar, old, [x, y], MARKER_LINE_ANIM_DUR);
+		let oldCoordStr = bar.getAttribute("transform").split("(")[1].slice(0, -1);
+		let groupAnim = translate(bar, oldCoordStr, [x, y], MARKER_LINE_ANIM_DUR);
 		return [rectAnim, groupAnim];
 	} else {
 		return [[bar, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING]];
@@ -62,57 +62,39 @@ export function animateBar(bar, x, yTop, width, index=0, meta={}) {
 	// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
 }
 
-export var Animator = (function() {
-	var Animator = function(totalHeight, totalWidth, zeroLine, avgUnitWidth) {
-		// constants
-		this.totalHeight = totalHeight;
-		this.totalWidth = totalWidth;
+export function animateDot(dot, x, y) {
+	if(dot.nodeName !== 'circle') {
+		let oldCoordStr = dot.getAttribute("transform").split("(")[1].slice(0, -1);
+		let groupAnim = translate(dot, oldCoordStr, [x, y], MARKER_LINE_ANIM_DUR);
+		return [groupAnim];
+	} else {
+		return [[dot, {cx: x, cy: y}, UNIT_ANIM_DUR, STD_EASING]];
+	}
+	// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
+}
 
-		// changeables
-		this.avgUnitWidth = avgUnitWidth;
-		this.zeroLine = zeroLine;
-	};
+export function animatePath(paths, newXList, newYList, zeroLine) {
+	let pathComponents = [];
 
-	Animator.prototype = {
-		bar: function(barObj, x, yTop, index, noOfDatasets) {
-			let start = x - this.avgUnitWidth/4;
-			let width = (this.avgUnitWidth/2)/noOfDatasets;
-			let [height, y] = getBarHeightAndYAttr(yTop, this.zeroLine, this.totalHeight);
+	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y));
+	let pathStr = pointsStr.join("L");
 
-			x = start + (width * index);
+	const animPath = [paths.path, {d:"M"+pathStr}, PATH_ANIM_DUR, STD_EASING];
+	pathComponents.push(animPath);
 
-			return [barObj, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING];
-			// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
-		},
+	if(paths.region) {
+		let regStartPt = `${newXList[0]},${zeroLine}L`;
+		let regEndPt = `L${newXList.slice(-1)[0]}, ${zeroLine}`;
 
-		dot: function(dotObj, x, yTop) {
-			return [dotObj, {cx: x, cy: yTop}, UNIT_ANIM_DUR, STD_EASING];
-			// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
-		},
+		const animRegion = [
+			paths.region,
+			{d:"M" + regStartPt + pathStr + regEndPt},
+			PATH_ANIM_DUR,
+			STD_EASING
+		];
+		pathComponents.push(animRegion);
+	}
 
-		path: function(d, pathStr) {
-			let pathComponents = [];
-			const animPath = [{unit: d.path, object: d, key: 'path'}, {d:"M"+pathStr}, PATH_ANIM_DUR, STD_EASING];
-			pathComponents.push(animPath);
-
-			if(d.regionPath) {
-				let regStartPt = `0,${this.zeroLine}L`;
-				let regEndPt = `L${this.totalWidth}, ${this.zeroLine}`;
-
-				const animRegion = [
-					{unit: d.regionPath, object: d, key: 'regionPath'},
-					{d:"M" + regStartPt + pathStr + regEndPt},
-					PATH_ANIM_DUR,
-					STD_EASING
-				];
-				pathComponents.push(animRegion);
-			}
-
-			return pathComponents;
-		}
-	};
-
-	return Animator;
-})();
-
+	return pathComponents;
+}
 
