@@ -5,6 +5,7 @@ import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale } from '../utils/intervals';
 import { floatTwo } from '../utils/helpers';
+import { makeOverlay, updateOverlay } from '../utils/draw';
 import { MIN_BAR_PERCENT_HEIGHT, DEFAULT_AXIS_CHART_TYPE, BAR_CHART_SPACE_RATIO, LINE_CHART_DOT_SIZE } from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
@@ -28,9 +29,6 @@ export default class AxisChart extends BaseChart {
 
 	configure(args) {3
 		super.configure();
-
-		// TODO: set in options and use
-
 		this.config.xAxisMode = args.xAxisMode;
 		this.config.yAxisMode = args.yAxisMode;
 	}
@@ -87,12 +85,13 @@ export default class AxisChart extends BaseChart {
 			zeroLine: zeroLine,
 		}
 
-		this.calcYUnits();
+		// Dependent if above changes
+		this.calcDatasetPoints();
 		this.calcYExtremes();
 		this.calcYRegions();
 	}
 
-	calcYUnits() {
+	calcDatasetPoints() {
 		let s = this.state;
 		let scaleAll = values => values.map(val => scale(val, s.yAxis));
 
@@ -115,7 +114,7 @@ export default class AxisChart extends BaseChart {
 
 	calcYExtremes() {
 		let s = this.state;
-		if(this.barOptions && this.barOptions.stacked) {
+		if(this.barOptions.stacked) {
 			s.yExtremes = s.datasets[s.datasets.length - 1].cumulativeYPos;
 			return;
 		}
@@ -151,7 +150,7 @@ export default class AxisChart extends BaseChart {
 		// TODO: yMarkers, regions, sums, every Y value ever
 		let key = 'values';
 
-		if(this.barOptions && this.barOptions.stacked) {
+		if(this.barOptions.stacked) {
 			key = 'cumulativeYs';
 			let cumulative = new Array(this.state.datasetLength).fill(0);
 			this.data.datasets.map((d, i) => {
@@ -163,11 +162,9 @@ export default class AxisChart extends BaseChart {
 		return [].concat(...this.data.datasets.map(d => d[key]));
 	}
 
-	initComponents() {
+	setupComponents() {
 		let s = this.state;
-		// console.log('this.state', Object.assign({}, this.state));
-		// console.log('this.state', this.state);
-		this.componentConfigs = [
+		let componentConfigs = [
 			[
 				'yAxis',
 				{
@@ -195,7 +192,7 @@ export default class AxisChart extends BaseChart {
 			],
 		];
 
-		this.componentConfigs.map(args => {
+		componentConfigs.map(args => {
 			args.push(
 				function() {
 					return this.state[args[0]];
@@ -215,6 +212,7 @@ export default class AxisChart extends BaseChart {
 				{
 					index: index,
 					color: this.colors[index],
+					stacked: this.barOptions.stacked,
 
 					// same for all datasets
 					valuesOverPoints: this.valuesOverPoints,
@@ -228,7 +226,10 @@ export default class AxisChart extends BaseChart {
 					let barsWidth = s.unitWidth * (1 - spaceRatio);
 					let barWidth = barsWidth/(this.barOptions.stacked ? 1 : barDatasets.length);
 
-					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2 + barWidth * index);
+					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2);
+					if(!this.barOptions.stacked) {
+						xPositions = xPositions.map(p => p + barWidth * index);
+					}
 
 					return {
 						xPositions: xPositions,
@@ -296,15 +297,19 @@ export default class AxisChart extends BaseChart {
 			);
 		});
 
-		this.componentConfigs = this.componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
-	}
+		componentConfigs = componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
 
-	setupComponents() {
 		let optionals = ['yMarkers', 'yRegions'];
-		this.components = new Map(this.componentConfigs
-			.filter(args => !optionals.includes(args[0]) || this.state[args[0]] || args[0] === 'barGraph')
+		this.dataUnitComponents = [];
+
+		this.components = new Map(componentConfigs
+			.filter(args => !optionals.includes(args[0]) || this.state[args[0]])
 			.map(args => {
-				return [args[0], getComponent(...args)];
+				let component = getComponent(...args);
+				if(args[0].includes('lineGraph') || args[0].includes('barGraph')) {
+					this.dataUnitComponents.push(component);
+				}
+				return [args[0], component];
 			}));
 	}
 
@@ -356,27 +361,91 @@ export default class AxisChart extends BaseChart {
 		}
 	}
 
-	getDataPoint(index=this.current_index) {
+	makeOverlays() {
+		// Just make one out of the first element
+		// let index = this.xAxisLabels.length - 1;
+		// let unit = this.y[0].svg_units[index];
+		// this.setCurrentDataPoint(index);
+
+		// if(this.overlay) {
+		// 	this.overlay.parentNode.removeChild(this.overlay);
+		// }
+
+		// this.overlay = unit.cloneNode();
+		// this.overlay.style.fill = '#000000';
+		// this.overlay.style.opacity = '0.4';
+		// this.drawArea.appendChild(this.overlay);
+		this.overlayGuides = this.dataUnitComponents.map(c => {
+			return {
+				type: c.unitType,
+				overlay: undefined,
+				units: c.store,
+			}
+		});
+
+		this.state.currentIndex = 0;
+
+		// Render overlays
+		this.overlayGuides.map(d => {
+			let currentUnit = d.units[this.state.currentIndex];
+			d.overlay = makeOverlay[d.type](currentUnit);
+			this.drawArea.appendChild(d.overlay);
+		})
+	}
+
+	bindOverlay() {
+		// on event, update overlay
+		this.parent.addEventListener('data-select', (e) => {
+			this.updateOverlay(e.svg_unit);
+		});
+	}
+
+	bindUnits(units_array) {
+		// units_array.map(unit => {
+		// 	unit.addEventListener('click', () => {
+		// 		let index = unit.getAttribute('data-point-index');
+		// 		this.setCurrentDataPoint(index);
+		// 	});
+		// });
+	}
+
+	updateOverlay() {
+		this.overlayGuides.map(d => {
+			let currentUnit = d.units[this.state.currentIndex];
+			updateOverlay[d.type](currentUnit, d.overlay);
+		})
+	}
+
+	onLeftArrow() {
+		this.setCurrentDataPoint(this.state.currentIndex - 1);
+	}
+
+	onRightArrow() {
+		this.setCurrentDataPoint(this.state.currentIndex + 1);
+	}
+
+	getDataPoint(index=this.state.currentIndex) {
 		// check for length
 		let data_point = {
 			index: index
 		};
-		let y = this.y[0];
-		['svg_units', 'yUnitPositions', 'values'].map(key => {
-			let data_key = key.slice(0, key.length-1);
-			data_point[data_key] = y[key][index];
-		});
-		data_point.label = this.xAxis.labels[index];
+		// let y = this.y[0];
+		// ['svg_units', 'yUnitPositions', 'values'].map(key => {
+		// 	let data_key = key.slice(0, key.length-1);
+		// 	data_point[data_key] = y[key][index];
+		// });
+		// data_point.label = this.xAxis.labels[index];
 		return data_point;
 	}
 
 	setCurrentDataPoint(index) {
+		let s = this.state;
 		index = parseInt(index);
 		if(index < 0) index = 0;
-		if(index >= this.xAxis.labels.length) index = this.xAxis.labels.length - 1;
-		if(index === this.current_index) return;
-		this.current_index = index;
-		$.fire(this.parent, "data-select", this.getDataPoint());
+		if(index >= s.xAxis.labels.length) index = s.xAxis.labels.length - 1;
+		if(index === s.currentIndex) return;
+		s.currentIndex = index;
+		fire(this.parent, "data-select", this.getDataPoint());
 	}
 
 	// API
@@ -401,12 +470,21 @@ export default class AxisChart extends BaseChart {
 		this.update(this.data);
 	}
 
-	// updateData() {
-	// 	// animate if same no. of datasets,
-	// 	// else return new chart
+	// getDataPoint(index = 0) {}
+	// setCurrentDataPoint(point) {}
 
-	// 	//
-	// }
+	updateDataset(datasetValues, index=0) {
+		this.data.datasets[index].values = datasetValues;
+		this.update(this.data);
+	}
+	// addDataset(dataset, index) {}
+	// removeDataset(index = 0) {}
+
+	// updateDatasets(datasets) {}
+
+	// updateDataPoint(dataPoint, index = 0) {}
+	// addDataPoint(dataPoint, index = 0) {}
+	// removeDataPoint(index = 0) {}
 }
 
 

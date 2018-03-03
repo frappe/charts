@@ -7,3 +7,5 @@ export const BAR_CHART_SPACE_RATIO = 0.5;
 export const MIN_BAR_PERCENT_HEIGHT = 0.01;
 
 export const LINE_CHART_DOT_SIZE = 4;
+
+export const DOT_OVERLAY_SIZE_INCR = 4;

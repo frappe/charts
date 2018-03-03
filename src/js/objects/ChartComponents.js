@@ -58,10 +58,6 @@ class ChartComponent {
 		if(animate) {
 			animateElements = this.animateElements(this.data);
 		}
-		// TODO: Can we remove this?
-		setTimeout(() => {
-			this.make();
-		}, 1400);
 		return animateElements;
 	}
 }
@@ -201,9 +197,10 @@ let componentConfigs = {
 	},
 
 	barGraph: {
-		layerClass: function() { return 'dataset-units dataset-' + this.constants.index; },
+		layerClass: function() { return 'dataset-units dataset-bars dataset-' + this.constants.index; },
 		makeElements(data) {
 			let c = this.constants;
+			this.unitType = 'bar';
 			return data.yPositions.map((y, j) => {
 				return datasetBar(
 					data.xPositions[j],
@@ -269,9 +266,11 @@ let componentConfigs = {
 	},
 
 	lineGraph: {
-		layerClass: function() { return 'dataset-units dataset-' + this.constants.index; },
+		layerClass: function() { return 'dataset-units dataset-line dataset-' + this.constants.index; },
 		makeElements(data) {
 			let c = this.constants;
+			this.unitType = 'dot';
+
 			this.paths = getPaths(
 				data.xPositions,
 				data.yPositions,
@@ -302,6 +301,7 @@ let componentConfigs = {
 			}
 
 			return Object.values(this.paths).concat(this.dots);
+			// return this.dots;
 		},
 		animateElements(newData) {
 			let c = this.constants;

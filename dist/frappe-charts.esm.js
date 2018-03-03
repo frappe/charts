@@ -1,20 +1,20 @@
-function $$1(expr, con) {
+function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
 
 
-$$1.create = (tag, o) => {
+$.create = (tag, o) => {
 	var element = document.createElement(tag);
 
 	for (var i in o) {
 		var val = o[i];
 
 		if (i === "inside") {
-			$$1(val).appendChild(element);
+			$(val).appendChild(element);
 		}
 		else if (i === "around") {
-			var ref = $$1(val);
+			var ref = $(val);
 			ref.parentNode.insertBefore(element, ref);
 			element.appendChild(ref);
 
@@ -66,6 +66,22 @@ function getElementContentWidth(element) {
 	return element.clientWidth - padding;
 }
 
+
+
+
+
+function fire(target, type, properties) {
+	var evt = document.createEvent("HTMLEvents");
+
+	evt.initEvent(type, true, true );
+
+	for (var j in properties) {
+		evt[j] = properties[j];
+	}
+
+	return target.dispatchEvent(evt);
+}
+
 class SvgTip {
 	constructor({
 		parent = null,
@@ -98,7 +114,7 @@ class SvgTip {
 	}
 
 	make_tooltip() {
-		this.container = $$1.create('div', {
+		this.container = $.create('div', {
 			inside: this.parent,
 			className: 'graph-svg-tip comparison',
 			innerHTML: `<span class="title"></span>
@@ -128,7 +144,7 @@ class SvgTip {
 		this.list_values.map((set, i) => {
 			const color = this.colors[i] || 'black';
 
-			let li = $$1.create('li', {
+			let li = $.create('li', {
 				styles: {
 					'border-top': `3px solid ${color}`
 				},
@@ -376,11 +392,39 @@ function animatePath(paths, newXList, newYList, zeroLine) {
 	return pathComponents;
 }
 
+const Y_AXIS_MARGIN = 60;
+
+const DEFAULT_AXIS_CHART_TYPE = 'line';
+const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
+
+const BAR_CHART_SPACE_RATIO = 0.5;
+const MIN_BAR_PERCENT_HEIGHT = 0.01;
+
+const LINE_CHART_DOT_SIZE = 4;
+
+const DOT_OVERLAY_SIZE_INCR = 4;
+
+/*
+
+<filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
+	<feGaussianBlur stdDeviation="0.5 0.5" result="glow"></feGaussianBlur>
+	<feMerge>
+		<feMergeNode in="glow"></feMergeNode>
+		<feMergeNode in="glow"></feMergeNode>
+		<feMergeNode in="glow"></feMergeNode>
+	</feMerge>
+</filter>
+
+    filter: url(#glow);
+    fill: #fff;
+
+*/
+
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
-function $$2(expr, con) {
+function $$1(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
@@ -391,10 +435,10 @@ function createSVG(tag, o) {
 		var val = o[i];
 
 		if (i === "inside") {
-			$$2(val).appendChild(element);
+			$$1(val).appendChild(element);
 		}
 		else if (i === "around") {
-			var ref = $$2(val);
+			var ref = $$1(val);
 			ref.parentNode.insertBefore(element, ref);
 			element.appendChild(ref);
 
@@ -710,7 +754,6 @@ function yRegion(y1, y2, width, label) {
 
 function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={}) {
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
-	// console.log(yTop, meta.zeroLine, y, offset);
 	y -= offset;
 
 	let rect = createSVG('rect', {
@@ -809,6 +852,80 @@ function getPaths(xList, yList, color, options={}, meta={}) {
 
 	return paths;
 }
+
+let makeOverlay = {
+	'bar': (unit) => {
+		let transformValue;
+		if(unit.nodeName !== 'rect') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let overlay = unit.cloneNode();
+		overlay.style.fill = '#000000';
+		overlay.style.opacity = '0.4';
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+		return overlay;
+	},
+
+	'dot': (unit) => {
+		let transformValue;
+		if(unit.nodeName !== 'circle') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let overlay = unit.cloneNode();
+		let radius = unit.getAttribute('r');
+		overlay.setAttribute('r', radius + DOT_OVERLAY_SIZE_INCR);
+		overlay.style.fill = '#000000';
+		overlay.style.opacity = '0.4';
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+		return overlay;
+	}
+};
+
+let updateOverlay = {
+	'bar': (unit, overlay) => {
+		let transformValue;
+		if(unit.nodeName !== 'rect') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let attributes = ['x', 'y', 'width', 'height'];
+		Object.values(unit.attributes)
+		.filter(attr => attributes.includes(attr.name) && attr.specified)
+		.map(attr => {
+			overlay.setAttribute(attr.name, attr.nodeValue);
+		});
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+	},
+
+	'dot': (unit, overlay) => {
+		let transformValue;
+		if(unit.nodeName !== 'circle') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let attributes = ['cx', 'cy'];
+		Object.values(unit.attributes)
+		.filter(attr => attributes.includes(attr.name) && attr.specified)
+		.map(attr => {
+			overlay.setAttribute(attr.name, attr.nodeValue);
+		});
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+	}
+};
 
 const PRESET_COLOR_MAP = {
 	'light-blue': '#7cd6fd',
@@ -1046,30 +1163,28 @@ class BaseChart {
 		this.argHeight = height;
 		this.type = type;
 
-		this.isNavigable = isNavigable;
-		if(this.isNavigable) {
-			this.currentIndex = 0;
-		}
-
 		this.realData = this.prepareData(data);
 		this.data = this.prepareFirstData(this.realData);
 		this.colors = [];
-		this.config = {};
+		this.config = {
+			showTooltip: 1, // calculate
+			showLegend: 1,
+			isNavigable: isNavigable,
+			animate: 1
+		};
 		this.state = {};
 		this.options = {};
+
+		if(this.config.isNavigable) {
+			this.state.currentIndex = 0;
+			this.overlays = [];
+		}
 
 		this.configure(arguments[0]);
 	}
 
 	configure(args) {
 		this.setColors();
-		this.config = {
-			showTooltip: 1, // calculate
-			showLegend: 1,
-			isNavigable: 0,
-			animate: 1
-		};
-
 		this.setMargins();
 
 		// Bind window events
@@ -1127,14 +1242,12 @@ class BaseChart {
 		this.draw(true);
 	}
 
-	initComponents() {}
-
 	setupComponents() {
 		this.components = new Map();
 	}
 
 	makeContainer() {
-		this.container = $$1.create('div', {
+		this.container = $.create('div', {
 			className: 'chart-container',
 			innerHTML: `<h6 class="title">${this.title}</h6>
 				<h6 class="sub-title uppercase">${this.subtitle}</h6>
@@ -1164,21 +1277,19 @@ class BaseChart {
 		this.calcWidth();
 		this.calc();
 		this.makeChartArea();
-		this.initComponents();
-
 		this.setupComponents();
 
 		this.components.forEach(c => c.setup(this.drawArea)); // or c.build()
 		this.components.forEach(c => c.make()); // or c.build()
-
-		this.renderLegend();
-		this.setupNavigation(init);
 
 		// TODO: remove timeout and decrease post animate time in chart component
 		if(init) {
 			this.data = this.realData;
 			setTimeout(() => {this.update();}, 1000);
 		}
+
+		this.renderLegend();
+		this.setupNavigation(init);
 	}
 
 	calcWidth() {
@@ -1205,19 +1316,37 @@ class BaseChart {
 	calc() {} // builds state
 
 	render(components=this.components, animate=true) {
-		// Can decouple to this.refreshComponents() first to save animation timeout
+		if(this.config.isNavigable) {
+			// Remove all existing overlays
+			this.overlays.map(o => o.parentNode.removeChild(o));
+			// ref.parentNode.insertBefore(element, ref);
+		}
 		let elementsToAnimate = [];
+		// Can decouple to this.refreshComponents() first to save animation timeout
 		components.forEach(c => {
 			elementsToAnimate = elementsToAnimate.concat(c.update(animate));
 		});
 		if(elementsToAnimate.length > 0) {
 			runSMILAnimation(this.chartWrapper, this.svg, elementsToAnimate);
+			setTimeout(() => {
+				components.forEach(c => c.make());
+				this.updateNav();
+			}, 400);
+		} else {
+			this.updateNav();
 		}
+	}
 
-		// TODO: rebind new units
-		// if(this.isNavigable) {
-		// 	this.bind_units(units_array);
-		// }
+	updateNav() {
+		if(this.config.isNavigable) {
+			// Make new overlays
+			if(!this.overlayGuides){
+				this.makeOverlays();
+				this.bindUnits();
+			} else {
+				this.updateOverlays();
+			}
+		}
 	}
 
 	makeChartArea() {
@@ -1249,49 +1378,37 @@ class BaseChart {
 	renderLegend() {}
 
 	setupNavigation(init=false) {
-		if(this.isNavigable) return;
-
-		this.makeOverlay();
+		if(!this.config.isNavigable) return;
 
 		if(init) {
 			this.bindOverlay();
 
+			this.keyActions = {
+				'13': this.onEnterKey.bind(this),
+				'37': this.onLeftArrow.bind(this),
+				'38': this.onUpArrow.bind(this),
+				'39': this.onRightArrow.bind(this),
+				'40': this.onDownArrow.bind(this),
+			};
+
 			document.addEventListener('keydown', (e) => {
 				if(isElementInViewport(this.chartWrapper)) {
 					e = e || window.event;
-
-					if (e.keyCode == '37') {
-						this.onLeftArrow();
-					} else if (e.keyCode == '39') {
-						this.onRightArrow();
-					} else if (e.keyCode == '38') {
-						this.onUpArrow();
-					} else if (e.keyCode == '40') {
-						this.onDownArrow();
-					} else if (e.keyCode == '13') {
-						this.onEnterKey();
-					}
+					this.keyActions[e.keyCode]();
 				}
 			});
 		}
 	}
 
-	makeOverlay() {}
+	makeOverlays() {}
 	bindOverlay() {}
-	bind_units() {}
+	bindUnits() {}
 
 	onLeftArrow() {}
 	onRightArrow() {}
 	onUpArrow() {}
 	onDownArrow() {}
 	onEnterKey() {}
-
-	// ????????????
-	// Update the data here, then do relevant updates
-	// and drawing in child classes by overriding
-	// The Child chart will only know what a particular update means
-	// and what components are affected,
-	// BaseChart shouldn't be doing the animating
 
 	getDataPoint(index = 0) {}
 	setCurrentDataPoint(point) {}
@@ -1310,16 +1427,6 @@ class BaseChart {
 		return getDifferentChart(type, this.type, this.rawChartArgs);
 	}
 }
-
-const Y_AXIS_MARGIN = 60;
-
-const DEFAULT_AXIS_CHART_TYPE = 'line';
-const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
-
-const BAR_CHART_SPACE_RATIO = 0.5;
-const MIN_BAR_PERCENT_HEIGHT = 0.01;
-
-const LINE_CHART_DOT_SIZE = 4;
 
 function dataPrep(data, type) {
 	data.labels = data.labels || [];
@@ -1465,10 +1572,6 @@ class ChartComponent$1 {
 		if(animate) {
 			animateElements = this.animateElements(this.data);
 		}
-		// TODO: Can we remove this?
-		setTimeout(() => {
-			this.make();
-		}, 1400);
 		return animateElements;
 	}
 }
@@ -1608,9 +1711,10 @@ let componentConfigs = {
 	},
 
 	barGraph: {
-		layerClass: function() { return 'dataset-units dataset-' + this.constants.index; },
+		layerClass: function() { return 'dataset-units dataset-bars dataset-' + this.constants.index; },
 		makeElements(data) {
 			let c = this.constants;
+			this.unitType = 'bar';
 			return data.yPositions.map((y, j) => {
 				return datasetBar(
 					data.xPositions[j],
@@ -1676,9 +1780,11 @@ let componentConfigs = {
 	},
 
 	lineGraph: {
-		layerClass: function() { return 'dataset-units dataset-' + this.constants.index; },
+		layerClass: function() { return 'dataset-units dataset-line dataset-' + this.constants.index; },
 		makeElements(data) {
 			let c = this.constants;
+			this.unitType = 'dot';
+
 			this.paths = getPaths(
 				data.xPositions,
 				data.yPositions,
@@ -1709,6 +1815,7 @@ let componentConfigs = {
 			}
 
 			return Object.values(this.paths).concat(this.dots);
+			// return this.dots;
 		},
 		animateElements(newData) {
 			let newXPos = newData.xPositions;
@@ -1992,9 +2099,6 @@ class AxisChart extends BaseChart {
 
 	configure(args) {3;
 		super.configure();
-
-		// TODO: set in options and use
-
 		this.config.xAxisMode = args.xAxisMode;
 		this.config.yAxisMode = args.yAxisMode;
 	}
@@ -2051,12 +2155,13 @@ class AxisChart extends BaseChart {
 			zeroLine: zeroLine,
 		};
 
-		this.calcYUnits();
+		// Dependent if above changes
+		this.calcDatasetPoints();
 		this.calcYExtremes();
 		this.calcYRegions();
 	}
 
-	calcYUnits() {
+	calcDatasetPoints() {
 		let s = this.state;
 		let scaleAll = values => values.map(val => scale(val, s.yAxis));
 
@@ -2079,7 +2184,7 @@ class AxisChart extends BaseChart {
 
 	calcYExtremes() {
 		let s = this.state;
-		if(this.barOptions && this.barOptions.stacked) {
+		if(this.barOptions.stacked) {
 			s.yExtremes = s.datasets[s.datasets.length - 1].cumulativeYPos;
 			return;
 		}
@@ -2115,7 +2220,7 @@ class AxisChart extends BaseChart {
 		// TODO: yMarkers, regions, sums, every Y value ever
 		let key = 'values';
 
-		if(this.barOptions && this.barOptions.stacked) {
+		if(this.barOptions.stacked) {
 			key = 'cumulativeYs';
 			let cumulative = new Array(this.state.datasetLength).fill(0);
 			this.data.datasets.map((d, i) => {
@@ -2127,8 +2232,8 @@ class AxisChart extends BaseChart {
 		return [].concat(...this.data.datasets.map(d => d[key]));
 	}
 
-	initComponents() {
-		this.componentConfigs = [
+	setupComponents() {
+		let componentConfigs = [
 			[
 				'yAxis',
 				{
@@ -2156,7 +2261,7 @@ class AxisChart extends BaseChart {
 			],
 		];
 
-		this.componentConfigs.map(args => {
+		componentConfigs.map(args => {
 			args.push(
 				function() {
 					return this.state[args[0]];
@@ -2176,6 +2281,7 @@ class AxisChart extends BaseChart {
 				{
 					index: index,
 					color: this.colors[index],
+					stacked: this.barOptions.stacked,
 
 					// same for all datasets
 					valuesOverPoints: this.valuesOverPoints,
@@ -2189,7 +2295,10 @@ class AxisChart extends BaseChart {
 					let barsWidth = s.unitWidth * (1 - spaceRatio);
 					let barWidth = barsWidth/(this.barOptions.stacked ? 1 : barDatasets.length);
 
-					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2 + barWidth * index);
+					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2);
+					if(!this.barOptions.stacked) {
+						xPositions = xPositions.map(p => p + barWidth * index);
+					}
 
 					return {
 						xPositions: xPositions,
@@ -2257,15 +2366,19 @@ class AxisChart extends BaseChart {
 			);
 		});
 
-		this.componentConfigs = this.componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
-	}
+		componentConfigs = componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
 
-	setupComponents() {
 		let optionals = ['yMarkers', 'yRegions'];
-		this.components = new Map(this.componentConfigs
-			.filter(args => !optionals.includes(args[0]) || this.state[args[0]] || args[0] === 'barGraph')
+		this.dataUnitComponents = [];
+
+		this.components = new Map(componentConfigs
+			.filter(args => !optionals.includes(args[0]) || this.state[args[0]])
 			.map(args => {
-				return [args[0], getComponent(...args)];
+				let component = getComponent(...args);
+				if(args[0].includes('lineGraph') || args[0].includes('barGraph')) {
+					this.dataUnitComponents.push(component);
+				}
+				return [args[0], component];
 			}));
 	}
 
@@ -2317,27 +2430,91 @@ class AxisChart extends BaseChart {
 		}
 	}
 
-	getDataPoint(index=this.current_index) {
+	makeOverlays() {
+		// Just make one out of the first element
+		// let index = this.xAxisLabels.length - 1;
+		// let unit = this.y[0].svg_units[index];
+		// this.setCurrentDataPoint(index);
+
+		// if(this.overlay) {
+		// 	this.overlay.parentNode.removeChild(this.overlay);
+		// }
+
+		// this.overlay = unit.cloneNode();
+		// this.overlay.style.fill = '#000000';
+		// this.overlay.style.opacity = '0.4';
+		// this.drawArea.appendChild(this.overlay);
+		this.overlayGuides = this.dataUnitComponents.map(c => {
+			return {
+				type: c.unitType,
+				overlay: undefined,
+				units: c.store,
+			}
+		});
+
+		this.state.currentIndex = 0;
+
+		// Render overlays
+		this.overlayGuides.map(d => {
+			let currentUnit = d.units[this.state.currentIndex];
+			d.overlay = makeOverlay[d.type](currentUnit);
+			this.drawArea.appendChild(d.overlay);
+		});
+	}
+
+	bindOverlay() {
+		// on event, update overlay
+		this.parent.addEventListener('data-select', (e) => {
+			this.updateOverlay(e.svg_unit);
+		});
+	}
+
+	bindUnits(units_array) {
+		// units_array.map(unit => {
+		// 	unit.addEventListener('click', () => {
+		// 		let index = unit.getAttribute('data-point-index');
+		// 		this.setCurrentDataPoint(index);
+		// 	});
+		// });
+	}
+
+	updateOverlay() {
+		this.overlayGuides.map(d => {
+			let currentUnit = d.units[this.state.currentIndex];
+			updateOverlay[d.type](currentUnit, d.overlay);
+		});
+	}
+
+	onLeftArrow() {
+		this.setCurrentDataPoint(this.state.currentIndex - 1);
+	}
+
+	onRightArrow() {
+		this.setCurrentDataPoint(this.state.currentIndex + 1);
+	}
+
+	getDataPoint(index=this.state.currentIndex) {
 		// check for length
 		let data_point = {
 			index: index
 		};
-		let y = this.y[0];
-		['svg_units', 'yUnitPositions', 'values'].map(key => {
-			let data_key = key.slice(0, key.length-1);
-			data_point[data_key] = y[key][index];
-		});
-		data_point.label = this.xAxis.labels[index];
+		// let y = this.y[0];
+		// ['svg_units', 'yUnitPositions', 'values'].map(key => {
+		// 	let data_key = key.slice(0, key.length-1);
+		// 	data_point[data_key] = y[key][index];
+		// });
+		// data_point.label = this.xAxis.labels[index];
 		return data_point;
 	}
 
 	setCurrentDataPoint(index) {
+		let s = this.state;
 		index = parseInt(index);
 		if(index < 0) index = 0;
-		if(index >= this.xAxis.labels.length) index = this.xAxis.labels.length - 1;
-		if(index === this.current_index) return;
-		this.current_index = index;
-		$.fire(this.parent, "data-select", this.getDataPoint());
+		if(index >= s.xAxis.labels.length) index = s.xAxis.labels.length - 1;
+		if(index === s.currentIndex) return;
+		s.currentIndex = index;
+		fire(this.parent, "data-select", this.getDataPoint());
 	}
 
 	// API
@@ -2362,12 +2539,21 @@ class AxisChart extends BaseChart {
 		this.update(this.data);
 	}
 
-	// updateData() {
-	// 	// animate if same no. of datasets,
-	// 	// else return new chart
+	// getDataPoint(index = 0) {}
+	// setCurrentDataPoint(point) {}
 
-	// 	//
-	// }
+	updateDataset(datasetValues, index=0) {
+		this.data.datasets[index].values = datasetValues;
+		this.update(this.data);
+	}
+	// addDataset(dataset, index) {}
+	// removeDataset(index = 0) {}
+
+	// updateDatasets(datasets) {}
+
+	// updateDataPoint(dataPoint, index = 0) {}
+	// addDataPoint(dataPoint, index = 0) {}
+	// removeDataPoint(index = 0) {}
 }
 
 
@@ -2561,19 +2747,19 @@ class PercentageChart extends BaseChart {
 		this.statsWrapper.style.marginBottom = '30px';
 		this.statsWrapper.style.paddingTop = '0px';
 
-		this.chartDiv = $$1.create('div', {
+		this.chartDiv = $.create('div', {
 			className: 'div',
 			inside: this.chartWrapper
 		});
 
-		this.chart = $$1.create('div', {
+		this.chart = $.create('div', {
 			className: 'progress-chart',
 			inside: this.chartDiv
 		});
 	}
 
 	setupLayers() {
-		this.percentageBar = $$1.create('div', {
+		this.percentageBar = $.create('div', {
 			className: 'progress',
 			inside: this.chart
 		});
@@ -2618,7 +2804,7 @@ class PercentageChart extends BaseChart {
 		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
 		this.slices = [];
 		this.slice_totals.map((total, i) => {
-			let slice = $$1.create('div', {
+			let slice = $.create('div', {
 				className: `progress-bar`,
 				inside: this.percentageBar,
 				styles: {
@@ -2654,7 +2840,7 @@ class PercentageChart extends BaseChart {
 			? this.formatted_labels : this.labels;
 		this.legend_totals.map((d, i) => {
 			if(d) {
-				let stats = $$1.create('div', {
+				let stats = $.create('div', {
 					className: 'stats',
 					inside: this.statsWrapper
 				});
@@ -2842,7 +3028,7 @@ class PieChart extends BaseChart {
 			const color = this.colors[i];
 
 			if(d) {
-				let stats = $$1.create('div', {
+				let stats = $.create('div', {
 					className: 'stats',
 					inside: this.statsWrapper
 				});

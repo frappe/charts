@@ -42,22 +42,22 @@ let line_composite_data = {
 	}]
 };
 
-let more_line_data = {
-	0: {values: [4, 0, 3, 1, 1, 2, 1, 2, 1, 0, 1, 1]},
-	// 0: {values: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
-	1: {values: [2, 3, 3, 2, 1, 4, 0, 1, 2, 7, 11, 4]},
-	2: {values: [7, 7, 2, 4, 0, 1, 5, 3, 1, 2, 0, 1]},
-	3: {values: [0, 2, 6, 2, 2, 1, 2, 3, 6, 3, 7, 10]},
-	4: {values: [9, 10, 8, 10, 6, 5, 8, 8, 24, 15, 10, 13]},
-	5: {values: [9, 13, 16, 9, 4, 5, 7, 10, 14, 22, 23, 24]},
-	6: {values: [20, 22, 28, 19, 28, 19, 14, 19, 51, 37, 29, 38]},
-	7: {values: [29, 20, 22, 16, 16, 19, 24, 26, 57, 31, 46, 27]},
-	8: {values: [36, 24, 38, 27, 15, 22, 24, 38, 32, 57, 139, 26]},
-	9: {values: [37, 36, 32, 33, 12, 34, 52, 45, 58, 57, 64, 35]},
-	10: {values: [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 0, 0]}
-	// 10: {values: [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 40, 40]}
-	// 10: {values: [-36, -46, -45, -32, -27, -31, -30, -36, -39, -49, -40, -40]}
-};
+let more_line_data = [
+	[4, 0, 3, 1, 1, 2, 1, 2, 1, 0, 1, 1],
+	// [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	[2, 3, 3, 2, 1, 4, 0, 1, 2, 7, 11, 4],
+	[7, 7, 2, 4, 0, 1, 5, 3, 1, 2, 0, 1],
+	[0, 2, 6, 2, 2, 1, 2, 3, 6, 3, 7, 10],
+	[9, 10, 8, 10, 6, 5, 8, 8, 24, 15, 10, 13],
+	[9, 13, 16, 9, 4, 5, 7, 10, 14, 22, 23, 24],
+	[20, 22, 28, 19, 28, 19, 14, 19, 51, 37, 29, 38],
+	[29, 20, 22, 16, 16, 19, 24, 26, 57, 31, 46, 27],
+	[36, 24, 38, 27, 15, 22, 24, 38, 32, 57, 139, 26],
+	[37, 36, 32, 33, 12, 34, 52, 45, 58, 57, 64, 35],
+	[36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 0, 0],
+	// [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 40, 40]
+	// [-36, -46, -45, -32, -27, -31, -30, -36, -39, -49, -40, -40]
+];
 
 let c1 = document.querySelector("#chart-composite-1");
 let c2 = document.querySelector("#chart-composite-2");
@@ -89,39 +89,8 @@ let line_composite_chart = new Chart ({
 	valuesOverPoints: 1,
 });
 
-
-// Assuming this data structure for all, what would the most used APIs?
-
-// chart.updateDataset([], index)
-
-// chart.updateDatasets([[], [], []])
-
-// chart.addDataset([], index)
-
-// chart.removeDatasets(index)
-
-// chart.addDataPoint({'asd': [20, 10, 30]})
-
-// chart.removeDataPoint(index)
-
-// chart.updatePoint('asd': [20, 10, 30]}, index)
-
-// chart.update(data)
-
-
-
-// let bar_update = [];
-
-// setInterval(() => {
-// 	line_composite_data.datasets = [more_line_data[5]];
-// 	line_composite_chart.update(line_composite_data);
-
-// 	bar_composite_data.datasets = [more_line_data[5]];
-// 	bar_composite_chart.update(bar_composite_data);
-// }, 2000);
-
 bar_composite_chart.parent.addEventListener('data-select', (e) => {
-	line_composite_chart.updateData([more_line_data[e.index]]);
+	line_composite_chart.updateDataset(more_line_data[e.index]);
 });
 
 
@@ -177,7 +146,7 @@ let type_data = {
 		{
 			name: "Yet Another",
 			values: [15, 20, -3, -15, 58, 12, -17, 37],
-			chartType: 'bar'
+			chartType: 'line'
 		}
 
 		// temp : Stacked

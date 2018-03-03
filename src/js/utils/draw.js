@@ -1,6 +1,7 @@
 import { getBarHeightAndYAttr } from './draw-utils';
 import { getStringWidth } from './helpers';
 import { STD_EASING, UNIT_ANIM_DUR, MARKER_LINE_ANIM_DUR, PATH_ANIM_DUR } from './animate';
+import { DOT_OVERLAY_SIZE_INCR } from './constants';
 
 /*
 
@@ -362,7 +363,6 @@ export function yRegion(y1, y2, width, label) {
 
 export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={}) {
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
-	// console.log(yTop, meta.zeroLine, y, offset);
 	y -= offset;
 
 	let rect = createSVG('rect', {
@@ -461,3 +461,78 @@ export function getPaths(xList, yList, color, options={}, meta={}) {
 
 	return paths;
 }
+
+export let makeOverlay = {
+	'bar': (unit) => {
+		let transformValue;
+		if(unit.nodeName !== 'rect') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let overlay = unit.cloneNode();
+		overlay.style.fill = '#000000';
+		overlay.style.opacity = '0.4';
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+		return overlay;
+	},
+
+	'dot': (unit) => {
+		let transformValue;
+		if(unit.nodeName !== 'circle') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let overlay = unit.cloneNode();
+		let radius = unit.getAttribute('r');
+		overlay.setAttribute('r', radius + DOT_OVERLAY_SIZE_INCR);
+		overlay.style.fill = '#000000';
+		overlay.style.opacity = '0.4';
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+		return overlay;
+	}
+}
+
+export let updateOverlay = {
+	'bar': (unit, overlay) => {
+		let transformValue;
+		if(unit.nodeName !== 'rect') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let attributes = ['x', 'y', 'width', 'height'];
+		Object.values(unit.attributes)
+		.filter(attr => attributes.includes(attr.name) && attr.specified)
+		.map(attr => {
+			overlay.setAttribute(attr.name, attr.nodeValue);
+		});
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+	},
+
+	'dot': (unit, overlay) => {
+		let transformValue;
+		if(unit.nodeName !== 'circle') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let attributes = ['cx', 'cy'];
+		Object.values(unit.attributes)
+		.filter(attr => attributes.includes(attr.name) && attr.specified)
+		.map(attr => {
+			overlay.setAttribute(attr.name, attr.nodeValue);
+		});
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+	}
+}
+

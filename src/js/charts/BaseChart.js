@@ -30,30 +30,28 @@ export default class BaseChart {
 		this.argHeight = height;
 		this.type = type;
 
-		this.isNavigable = isNavigable;
-		if(this.isNavigable) {
-			this.currentIndex = 0;
-		}
-
 		this.realData = this.prepareData(data);
 		this.data = this.prepareFirstData(this.realData);
 		this.colors = [];
-		this.config = {};
+		this.config = {
+			showTooltip: 1, // calculate
+			showLegend: 1,
+			isNavigable: isNavigable,
+			animate: 1
+		};
 		this.state = {};
 		this.options = {};
+
+		if(this.config.isNavigable) {
+			this.state.currentIndex = 0;
+			this.overlays = [];
+		}
 
 		this.configure(arguments[0]);
 	}
 
 	configure(args) {
 		this.setColors();
-		this.config = {
-			showTooltip: 1, // calculate
-			showLegend: 1,
-			isNavigable: 0,
-			animate: 1
-		};
-
 		this.setMargins();
 
 		// Bind window events
@@ -113,8 +111,6 @@ export default class BaseChart {
 		this.draw(true);
 	}
 
-	initComponents() {}
-
 	setupComponents() {
 		this.components = new Map();
 	}
@@ -150,21 +146,19 @@ export default class BaseChart {
 		this.calcWidth();
 		this.calc();
 		this.makeChartArea();
-		this.initComponents();
-
 		this.setupComponents();
 
 		this.components.forEach(c => c.setup(this.drawArea)); // or c.build()
 		this.components.forEach(c => c.make()); // or c.build()
-
-		this.renderLegend();
-		this.setupNavigation(init);
 
 		// TODO: remove timeout and decrease post animate time in chart component
 		if(init) {
 			this.data = this.realData;
 			setTimeout(() => {this.update();}, 1000);
 		}
+
+		this.renderLegend();
+		this.setupNavigation(init);
 	}
 
 	calcWidth() {
@@ -191,19 +185,37 @@ export default class BaseChart {
 	calc() {} // builds state
 
 	render(components=this.components, animate=true) {
-		// Can decouple to this.refreshComponents() first to save animation timeout
+		if(this.config.isNavigable) {
+			// Remove all existing overlays
+			this.overlays.map(o => o.parentNode.removeChild(o));
+			// ref.parentNode.insertBefore(element, ref);
+		}
 		let elementsToAnimate = [];
+		// Can decouple to this.refreshComponents() first to save animation timeout
 		components.forEach(c => {
 			elementsToAnimate = elementsToAnimate.concat(c.update(animate));
 		});
 		if(elementsToAnimate.length > 0) {
 			runSMILAnimation(this.chartWrapper, this.svg, elementsToAnimate);
+			setTimeout(() => {
+				components.forEach(c => c.make());
+				this.updateNav();
+			}, 400);
+		} else {
+			this.updateNav();
 		}
+	}
 
-		// TODO: rebind new units
-		// if(this.isNavigable) {
-		// 	this.bind_units(units_array);
-		// }
+	updateNav() {
+		if(this.config.isNavigable) {
+			// Make new overlays
+			if(!this.overlayGuides){
+				this.makeOverlays();
+				this.bindUnits();
+			} else {
+				this.updateOverlays();
+			}
+		}
 	}
 
 	makeChartArea() {
@@ -235,49 +247,37 @@ export default class BaseChart {
 	renderLegend() {}
 
 	setupNavigation(init=false) {
-		if(this.isNavigable) return;
-
-		this.makeOverlay();
+		if(!this.config.isNavigable) return;
 
 		if(init) {
 			this.bindOverlay();
 
+			this.keyActions = {
+				'13': this.onEnterKey.bind(this),
+				'37': this.onLeftArrow.bind(this),
+				'38': this.onUpArrow.bind(this),
+				'39': this.onRightArrow.bind(this),
+				'40': this.onDownArrow.bind(this),
+			}
+
 			document.addEventListener('keydown', (e) => {
 				if(isElementInViewport(this.chartWrapper)) {
 					e = e || window.event;
-
-					if (e.keyCode == '37') {
-						this.onLeftArrow();
-					} else if (e.keyCode == '39') {
-						this.onRightArrow();
-					} else if (e.keyCode == '38') {
-						this.onUpArrow();
-					} else if (e.keyCode == '40') {
-						this.onDownArrow();
-					} else if (e.keyCode == '13') {
-						this.onEnterKey();
-					}
+					this.keyActions[e.keyCode]();
 				}
 			});
 		}
 	}
 
-	makeOverlay() {}
+	makeOverlays() {}
 	bindOverlay() {}
-	bind_units() {}
+	bindUnits() {}
 
 	onLeftArrow() {}
 	onRightArrow() {}
 	onUpArrow() {}
 	onDownArrow() {}
 	onEnterKey() {}
-
-	// ????????????
-	// Update the data here, then do relevant updates
-	// and drawing in child classes by overriding
-	// The Child chart will only know what a particular update means
-	// and what components are affected,
-	// BaseChart shouldn't be doing the animating
 
 	getDataPoint(index = 0) {}
 	setCurrentDataPoint(point) {}
