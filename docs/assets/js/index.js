@@ -169,7 +169,7 @@ let type_chart = new Chart({
 	parent: "#chart-types",
 	// title: "My Awesome Chart",
 	data: type_data,
-	// type: 'bar',
+	type: 'bar',
 	height: 250,
 	colors: ['purple', 'magenta', 'light-blue'],
 	isSeries: 1,

@@ -51,7 +51,7 @@ export function dataPrep(data, type) {
 	if(data.yRegions) {
 		data.yRegions.map(d => {
 			if(d.end < d.start) {
-				[d.start, d.end] = [d.end, start];
+				[d.start, d.end] = [d.end, d.start];
 			}
 		});
 	}

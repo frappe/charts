@@ -314,7 +314,7 @@ export default class AxisChart extends BaseChart {
 	}
 
 	bindTooltip() {
-		// TODO: could be in tooltip itself, as it is a given functionality for its parent
+		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
 		this.chartWrapper.addEventListener('mousemove', (e) => {
 			let o = getOffset(this.chartWrapper);
 			let relX = e.pageX - o.left - this.translateXLeft;

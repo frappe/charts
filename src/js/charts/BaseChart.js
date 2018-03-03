@@ -106,7 +106,7 @@ export default class BaseChart {
 
 	_setup() {
 		this.makeContainer();
-		this.makeTooltip(); // without binding
+		this.makeTooltip();
 
 		this.draw(true);
 	}
@@ -180,7 +180,13 @@ export default class BaseChart {
 		this.render();
 	}
 
-	prepareData() {}
+	prepareData(data=this.data) {
+		return data;
+	}
+
+	prepareFirstData(data=this.data) {
+		return data;
+	}
 
 	calc() {} // builds state
 

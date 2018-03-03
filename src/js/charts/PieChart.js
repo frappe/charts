@@ -21,7 +21,7 @@ export default class PieChart extends BaseChart {
 		this.mouseLeave = this.mouseLeave.bind(this);
 		this.setup();
 	}
-	setup_values() {
+	calc() {
 		this.centerX = this.width / 2;
 		this.centerY = this.height / 2;
 		this.radius = (this.height > this.width ? this.centerX : this.centerY);
@@ -59,7 +59,7 @@ export default class PieChart extends BaseChart {
 		this.legend_totals = this.slice_totals.slice(0, this.max_legend_points);
 	}
 
-	static getPositionByAngle(angle,radius){
+	static getPositionByAngle(angle,radius) {
 		return {
 			x:Math.sin(angle * ANGLE_RATIO) * radius,
 			y:Math.cos(angle * ANGLE_RATIO) * radius,
@@ -69,7 +69,7 @@ export default class PieChart extends BaseChart {
 		const{centerX,centerY,radius,clockWise} = this;
 		return `M${centerX} ${centerY} L${centerX+startPosition.x} ${centerY+startPosition.y} A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0} ${centerX+endPosition.x} ${centerY+endPosition.y} z`;
 	}
-	renderComponents(init){
+	render(init) {
 		const{radius,clockWise} = this;
 		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
 		const prevSlicesProperties = this.slicesProperties || [];
@@ -166,8 +166,8 @@ export default class PieChart extends BaseChart {
 		this.hoverSlice(this.curActiveSlice,this.curActiveSliceIndex,false);
 	}
 	bindTooltip() {
-		this.drawArea.addEventListener('mousemove',this.mouseMove);
-		this.drawArea.addEventListener('mouseleave',this.mouseLeave);
+		// this.drawArea.addEventListener('mousemove',this.mouseMove);
+		// this.drawArea.addEventListener('mouseleave',this.mouseLeave);
 	}
 
 	renderLegend() {

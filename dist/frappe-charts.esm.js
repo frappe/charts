@@ -404,22 +404,6 @@ const LINE_CHART_DOT_SIZE = 4;
 
 const DOT_OVERLAY_SIZE_INCR = 4;
 
-/*
-
-<filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
-	<feGaussianBlur stdDeviation="0.5 0.5" result="glow"></feGaussianBlur>
-	<feMerge>
-		<feMergeNode in="glow"></feMergeNode>
-		<feMergeNode in="glow"></feMergeNode>
-		<feMergeNode in="glow"></feMergeNode>
-	</feMerge>
-</filter>
-
-    filter: url(#glow);
-    fill: #fff;
-
-*/
-
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 const FONT_SIZE = 10;
@@ -1237,7 +1221,7 @@ class BaseChart {
 
 	_setup() {
 		this.makeContainer();
-		this.makeTooltip(); // without binding
+		this.makeTooltip();
 
 		this.draw(true);
 	}
@@ -1311,7 +1295,13 @@ class BaseChart {
 		this.render();
 	}
 
-	prepareData() {}
+	prepareData(data=this.data) {
+		return data;
+	}
+
+	prepareFirstData(data=this.data) {
+		return data;
+	}
 
 	calc() {} // builds state
 
@@ -1478,7 +1468,7 @@ function dataPrep(data, type) {
 	if(data.yRegions) {
 		data.yRegions.map(d => {
 			if(d.end < d.start) {
-				[d.start, d.end] = [d.end, start];
+				[d.start, d.end] = [d.end, d.start];
 			}
 		});
 	}
@@ -2383,7 +2373,7 @@ class AxisChart extends BaseChart {
 	}
 
 	bindTooltip() {
-		// TODO: could be in tooltip itself, as it is a given functionality for its parent
+		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
 		this.chartWrapper.addEventListener('mousemove', (e) => {
 			let o = getOffset(this.chartWrapper);
 			let relX = e.pageX - o.left - this.translateXLeft;
@@ -2747,26 +2737,40 @@ class PercentageChart extends BaseChart {
 		this.statsWrapper.style.marginBottom = '30px';
 		this.statsWrapper.style.paddingTop = '0px';
 
-		this.chartDiv = $.create('div', {
+		this.svg = $.create('div', {
 			className: 'div',
 			inside: this.chartWrapper
 		});
 
 		this.chart = $.create('div', {
 			className: 'progress-chart',
-			inside: this.chartDiv
+			inside: this.svg
 		});
-	}
 
-	setupLayers() {
 		this.percentageBar = $.create('div', {
 			className: 'progress',
 			inside: this.chart
 		});
 	}
 
-	setup_values() {
-		this.slice_totals = [];
+	render() {
+		this.grand_total = this.sliceTotals.reduce((a, b) => a + b, 0);
+		this.slices = [];
+		this.sliceTotals.map((total, i) => {
+			let slice = $.create('div', {
+				className: `progress-bar`,
+				inside: this.percentageBar,
+				styles: {
+					background: this.colors[i],
+					width: total*100/this.grand_total + "%"
+				}
+			});
+			this.slices.push(slice);
+		});
+	}
+
+	calc() {
+		this.sliceTotals = [];
 		let all_totals = this.data.labels.map((d, i) => {
 			let total = 0;
 			this.data.datasets.map(e => {
@@ -2793,64 +2797,46 @@ class PercentageChart extends BaseChart {
 
 		this.labels = [];
 		totals.map(d => {
-			this.slice_totals.push(d[0]);
+			this.sliceTotals.push(d[0]);
 			this.labels.push(d[1]);
 		});
 
-		this.legend_totals = this.slice_totals.slice(0, this.max_legend_points);
+		this.legend_totals = this.sliceTotals.slice(0, this.max_legend_points);
 	}
-
-	renderComponents() {
-		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
-		this.slices = [];
-		this.slice_totals.map((total, i) => {
-			let slice = $.create('div', {
-				className: `progress-bar`,
-				inside: this.percentageBar,
-				styles: {
-					background: this.colors[i],
-					width: total*100/this.grand_total + "%"
-				}
-			});
-			this.slices.push(slice);
-		});
-	}
-
-	calc() {}
 
 	bindTooltip() {
-		this.slices.map((slice, i) => {
-			slice.addEventListener('mouseenter', () => {
-				let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
+		// this.slices.map((slice, i) => {
+		// 	slice.addEventListener('mouseenter', () => {
+		// 		let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
 
-				let x = p_off.left - g_off.left + slice.offsetWidth/2;
-				let y = p_off.top - g_off.top - 6;
-				let title = (this.formatted_labels && this.formatted_labels.length>0
-					? this.formatted_labels[i] : this.labels[i]) + ': ';
-				let percent = (this.slice_totals[i]*100/this.grand_total).toFixed(1);
+		// 		let x = p_off.left - g_off.left + slice.offsetWidth/2;
+		// 		let y = p_off.top - g_off.top - 6;
+		// 		let title = (this.formatted_labels && this.formatted_labels.length>0
+		// 			? this.formatted_labels[i] : this.labels[i]) + ': ';
+		// 		let percent = (this.sliceTotals[i]*100/this.grand_total).toFixed(1);
 
-				this.tip.set_values(x, y, title, percent + "%");
-				this.tip.show_tip();
-			});
-		});
+		// 		this.tip.set_values(x, y, title, percent + "%");
+		// 		this.tip.show_tip();
+		// 	});
+		// });
 	}
 
 	renderLegend() {
-		let x_values = this.formatted_labels && this.formatted_labels.length > 0
-			? this.formatted_labels : this.labels;
-		this.legend_totals.map((d, i) => {
-			if(d) {
-				let stats = $.create('div', {
-					className: 'stats',
-					inside: this.statsWrapper
-				});
-				stats.innerHTML = `<span class="indicator">
-					<i style="background: ${this.colors[i]}"></i>
-					<span class="text-muted">${x_values[i]}:</span>
-					${d}
-				</span>`;
-			}
-		});
+		// let x_values = this.formatted_labels && this.formatted_labels.length > 0
+		// 	? this.formatted_labels : this.labels;
+		// this.legend_totals.map((d, i) => {
+		// 	if(d) {
+		// 		let stats = $.create('div', {
+		// 			className: 'stats',
+		// 			inside: this.statsWrapper
+		// 		});
+		// 		stats.innerHTML = `<span class="indicator">
+		// 			<i style="background: ${this.colors[i]}"></i>
+		// 			<span class="text-muted">${x_values[i]}:</span>
+		// 			${d}
+		// 		</span>`;
+		// 	}
+		// });
 	}
 }
 
@@ -2872,7 +2858,7 @@ class PieChart extends BaseChart {
 		this.mouseLeave = this.mouseLeave.bind(this);
 		this.setup();
 	}
-	setup_values() {
+	calc() {
 		this.centerX = this.width / 2;
 		this.centerY = this.height / 2;
 		this.radius = (this.height > this.width ? this.centerX : this.centerY);
@@ -2910,7 +2896,7 @@ class PieChart extends BaseChart {
 		this.legend_totals = this.slice_totals.slice(0, this.max_legend_points);
 	}
 
-	static getPositionByAngle(angle,radius){
+	static getPositionByAngle(angle,radius) {
 		return {
 			x:Math.sin(angle * ANGLE_RATIO) * radius,
 			y:Math.cos(angle * ANGLE_RATIO) * radius,
@@ -2920,7 +2906,7 @@ class PieChart extends BaseChart {
 		const{centerX,centerY,radius,clockWise} = this;
 		return `M${centerX} ${centerY} L${centerX+startPosition.x} ${centerY+startPosition.y} A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0} ${centerX+endPosition.x} ${centerY+endPosition.y} z`;
 	}
-	renderComponents(init){
+	render(init) {
 		const{radius,clockWise} = this;
 		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
 		const prevSlicesProperties = this.slicesProperties || [];
@@ -3017,8 +3003,8 @@ class PieChart extends BaseChart {
 		this.hoverSlice(this.curActiveSlice,this.curActiveSliceIndex,false);
 	}
 	bindTooltip() {
-		this.drawArea.addEventListener('mousemove',this.mouseMove);
-		this.drawArea.addEventListener('mouseleave',this.mouseLeave);
+		// this.drawArea.addEventListener('mousemove',this.mouseMove);
+		// this.drawArea.addEventListener('mouseleave',this.mouseLeave);
 	}
 
 	renderLegend() {
@@ -3164,7 +3150,7 @@ class Heatmap extends BaseChart {
 		);
 	}
 
-	setup_values() {
+	setupValues() {
 		this.domain_label_group.textContent = '';
 		this.data_groups.textContent = '';
 
@@ -3331,7 +3317,7 @@ class Heatmap extends BaseChart {
 
 	update(data) {
 		this.data = data;
-		this.setup_values();
+		this.setupValues();
 		this.bindTooltip();
 	}
 }

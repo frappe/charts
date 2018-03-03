@@ -91,7 +91,7 @@ export default class Heatmap extends BaseChart {
 		);
 	}
 
-	setup_values() {
+	setupValues() {
 		this.domain_label_group.textContent = '';
 		this.data_groups.textContent = '';
 
@@ -258,7 +258,7 @@ export default class Heatmap extends BaseChart {
 
 	update(data) {
 		this.data = data;
-		this.setup_values();
+		this.setupValues();
 		this.bindTooltip();
 	}
 }
