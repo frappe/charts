@@ -3,22 +3,6 @@ import { getStringWidth } from './helpers';
 import { STD_EASING, UNIT_ANIM_DUR, MARKER_LINE_ANIM_DUR, PATH_ANIM_DUR } from './animate';
 import { DOT_OVERLAY_SIZE_INCR } from './constants';
 
-/*
-
-<filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
-	<feGaussianBlur stdDeviation="0.5 0.5" result="glow"></feGaussianBlur>
-	<feMerge>
-		<feMergeNode in="glow"></feMergeNode>
-		<feMergeNode in="glow"></feMergeNode>
-		<feMergeNode in="glow"></feMergeNode>
-	</feMerge>
-</filter>
-
-    filter: url(#glow);
-    fill: #fff;
-
-*/
-
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 export const FONT_SIZE = 10;

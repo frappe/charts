@@ -33,8 +33,8 @@ export default class AxisChart extends BaseChart {
 
 	setMargins() {
 		super.setMargins();
-		this.translateXLeft = Y_AXIS_MARGIN;
-		this.translateXRight = Y_AXIS_MARGIN;
+		this.leftMargin = Y_AXIS_MARGIN;
+		this.rightMargin = Y_AXIS_MARGIN;
 	}
 
 	prepareData(data=this.data) {
@@ -315,7 +315,7 @@ export default class AxisChart extends BaseChart {
 		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
 		this.chartWrapper.addEventListener('mousemove', (e) => {
 			let o = getOffset(this.chartWrapper);
-			let relX = e.pageX - o.left - this.translateXLeft;
+			let relX = e.pageX - o.left - this.leftMargin;
 			let relY = e.pageY - o.top - this.translateY;
 
 			if(relY < this.height + this.translateY * 2) {
@@ -341,7 +341,7 @@ export default class AxisChart extends BaseChart {
 			let xVal = s.xAxis.positions[i];
 			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxis.positions[i-1];
 			if(relX > xVal - s.unitWidth/2) {
-				let x = xVal + this.translateXLeft;
+				let x = xVal + this.leftMargin;
 				let y = s.yExtremes[i] + this.translateY;
 
 				let values = this.data.datasets.map((set, j) => {

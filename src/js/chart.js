@@ -1,23 +1,10 @@
 import '../scss/charts.scss';
 
-import MultiAxisChart from './charts/MultiAxisChart';
+// import MultiAxisChart from './charts/MultiAxisChart';
 import PercentageChart from './charts/PercentageChart';
 import PieChart from './charts/PieChart';
 import Heatmap from './charts/Heatmap';
 import AxisChart from './charts/AxisChart';
-
-// if (ENV !== 'production') {
-// 	// Enable LiveReload
-// 	document.write(
-// 		'<script src="http://' + (location.host || 'localhost').split(':')[0] +
-// 		':35729/livereload.js?snipver=1"></' + 'script>'
-// 	);
-// }
-
-// If type is bar
-
-
-
 
 const chartTypes = {
 	// multiaxis: MultiAxisChart,

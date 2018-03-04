@@ -392,7 +392,14 @@ function animatePath(paths, newXList, newYList, zeroLine) {
 	return pathComponents;
 }
 
+const VERT_SPACE_OUTSIDE_BASE_CHART = 40;
+const TRANSLATE_Y_BASE_CHART = 20;
+const LEFT_MARGIN_BASE_CHART = 60;
+const RIGHT_MARGIN_BASE_CHART = 40;
 const Y_AXIS_MARGIN = 60;
+
+const INIT_CHART_UPDATE_TIMEOUT = 400;
+const CHART_POST_ANIMATE_TIMEOUT = 400;
 
 const DEFAULT_AXIS_CHART_TYPE = 'line';
 const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
@@ -401,7 +408,6 @@ const BAR_CHART_SPACE_RATIO = 0.5;
 const MIN_BAR_PERCENT_HEIGHT = 0.01;
 
 const LINE_CHART_DOT_SIZE = 4;
-
 const DOT_OVERLAY_SIZE_INCR = 4;
 
 const AXIS_TICK_LENGTH = 6;
@@ -1194,15 +1200,14 @@ class BaseChart {
 	}
 
 	setMargins() {
-		// TODO: think for all
 		let height = this.argHeight;
 		this.baseHeight = height;
-		this.height = height - 40; // change
-		this.translateY = 20;
+		this.height = height - VERT_SPACE_OUTSIDE_BASE_CHART;
+		this.translateY = TRANSLATE_Y_BASE_CHART;
 
 		// Horizontal margins
-		this.translateXLeft = 60;
-		this.translateXRight = 40;
+		this.leftMargin = LEFT_MARGIN_BASE_CHART;
+		this.rightMargin = RIGHT_MARGIN_BASE_CHART;
 	}
 
 	validate(){
@@ -1269,7 +1274,7 @@ class BaseChart {
 		// TODO: remove timeout and decrease post animate time in chart component
 		if(init) {
 			this.data = this.realData;
-			setTimeout(() => {this.update();}, 400);
+			setTimeout(() => {this.update();}, INIT_CHART_UPDATE_TIMEOUT);
 		}
 
 		this.renderLegend();
@@ -1286,7 +1291,7 @@ class BaseChart {
 		// 	}
 		// });
 		this.baseWidth = getElementContentWidth(this.parent) - outerAnnotationsWidth;
-		this.width = this.baseWidth - (this.translateXLeft + this.translateXRight);
+		this.width = this.baseWidth - (this.leftMargin + this.rightMargin);
 	}
 
 	update(data=this.data) {
@@ -1321,7 +1326,7 @@ class BaseChart {
 			setTimeout(() => {
 				components.forEach(c => c.make());
 				this.updateNav();
-			}, 400);
+			}, CHART_POST_ANIMATE_TIMEOUT);
 		} else {
 			this.updateNav();
 		}
@@ -1361,7 +1366,7 @@ class BaseChart {
 		this.drawArea = makeSVGGroup(
 			this.svg,
 			this.type + '-chart',
-			`translate(${this.translateXLeft}, ${this.translateY})`
+			`translate(${this.leftMargin}, ${this.translateY})`
 		);
 	}
 
@@ -1417,1135 +1422,6 @@ class BaseChart {
 		return getDifferentChart(type, this.type, this.rawChartArgs);
 	}
 }
-
-function dataPrep(data, type) {
-	data.labels = data.labels || [];
-
-	let datasetLength = data.labels.length;
-
-	// Datasets
-	let datasets = data.datasets;
-	let zeroArray = new Array(datasetLength).fill(0);
-	if(!datasets) {
-		// default
-		datasets = [{
-			values: zeroArray
-		}];
-	}
-
-	datasets.map((d, i)=> {
-		// Set values
-		if(!d.values) {
-			d.values = zeroArray;
-		} else {
-			// Check for non values
-			let vals = d.values;
-			vals = vals.map(val => (!isNaN(val) ? val : 0));
-
-			// Trim or extend
-			if(vals.length > datasetLength) {
-				vals = vals.slice(0, datasetLength);
-			} else {
-				vals = fillArray(vals, datasetLength - vals.length, 0);
-			}
-		}
-
-		// Set labels
-		//
-
-		// Set type
-		if(!d.chartType ) {
-			if(!AXIS_DATASET_CHART_TYPES.includes(type)) type === DEFAULT_AXIS_CHART_TYPE;
-			d.chartType = type;
-		}
-
-	});
-
-	// Markers
-
-	// Regions
-	// data.yRegions = data.yRegions || [];
-	if(data.yRegions) {
-		data.yRegions.map(d => {
-			if(d.end < d.start) {
-				[d.start, d.end] = [d.end, d.start];
-			}
-		});
-	}
-
-	return data;
-}
-
-function zeroDataPrep(realData) {
-	let datasetLength = realData.labels.length;
-	let zeroArray = new Array(datasetLength).fill(0);
-
-	let zeroData = {
-		labels: realData.labels.slice(0, -1),
-		datasets: realData.datasets.map(d => {
-			return {
-				name: '',
-				values: zeroArray.slice(0, -1),
-				chartType: d.chartType
-			}
-		}),
-		yRegions: [
-			{
-				start: 0,
-				end: 0,
-				label: ''
-			}
-		],
-		yMarkers: [
-			{
-				value: 0,
-				label: ''
-			}
-		]
-	};
-
-	return zeroData;
-}
-
-class ChartComponent$1 {
-	constructor({
-		layerClass = '',
-		layerTransform = '',
-		constants,
-
-		getData,
-		makeElements,
-		animateElements
-	}) {
-		this.layerTransform = layerTransform;
-		this.constants = constants;
-
-		this.makeElements = makeElements;
-		this.getData = getData;
-
-		this.animateElements = animateElements;
-
-		this.store = [];
-
-		this.layerClass = layerClass;
-		this.layerClass = typeof(this.layerClass) === 'function'
-			? this.layerClass() : this.layerClass;
-
-		this.refresh();
-	}
-
-	refresh(data) {
-		this.data = data || this.getData();
-	}
-
-	setup(parent) {
-		this.layer = makeSVGGroup(parent, this.layerClass, this.layerTransform);
-	}
-
-	make() {
-		this.render(this.data);
-		this.oldData = this.data;
-	}
-
-	render(data) {
-		this.store = this.makeElements(data);
-
-		this.layer.textContent = '';
-		this.store.forEach(element => {
-			this.layer.appendChild(element);
-		});
-	}
-
-	update(animate = true) {
-		this.refresh();
-		let animateElements = [];
-		if(animate) {
-			animateElements = this.animateElements(this.data);
-		}
-		return animateElements;
-	}
-}
-
-let componentConfigs = {
-	yAxis: {
-		layerClass: 'y axis',
-		makeElements(data) {
-			return data.positions.map((position, i) =>
-				yLine(position, data.labels[i], this.constants.width,
-					{mode: this.constants.mode, pos: this.constants.pos})
-			);
-		},
-
-		animateElements(newData) {
-			let newPos = newData.positions;
-			let newLabels = newData.labels;
-			let oldPos = this.oldData.positions;
-			let oldLabels = this.oldData.labels;
-
-			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
-			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
-
-			this.render({
-				positions: oldPos,
-				labels: newLabels
-			});
-
-			return this.store.map((line, i) => {
-				return translateHoriLine(
-					line, newPos[i], oldPos[i]
-				);
-			});
-		}
-	},
-
-	xAxis: {
-		layerClass: 'x axis',
-		makeElements(data) {
-			return data.positions.map((position, i) =>
-				xLine(position, data.labels[i], this.constants.height,
-					{mode: this.constants.mode, pos: this.constants.pos})
-			);
-		},
-
-		animateElements(newData) {
-			let newPos = newData.positions;
-			let newLabels = newData.labels;
-			let oldPos = this.oldData.positions;
-			let oldLabels = this.oldData.labels;
-
-			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
-			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
-
-			this.render({
-				positions: oldPos,
-				labels: newLabels
-			});
-
-			return this.store.map((line, i) => {
-				return translateVertLine(
-					line, newPos[i], oldPos[i]
-				);
-			});
-		}
-	},
-
-	yMarkers: {
-		layerClass: 'y-markers',
-		makeElements(data) {
-			return data.map(marker =>
-				yMarker(marker.position, marker.label, this.constants.width,
-					{pos:'right', mode: 'span', lineType: 'dashed'})
-			);
-		},
-		animateElements(newData) {
-			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
-
-			let newPos = newData.map(d => d.position);
-			let newLabels = newData.map(d => d.label);
-
-			let oldPos = this.oldData.map(d => d.position);
-			let oldLabels = this.oldData.map(d => d.label);
-
-			this.render(oldPos.map((pos, i) => {
-				return {
-					position: oldPos[i],
-					label: newLabels[i]
-				}
-			}));
-
-			return this.store.map((line, i) => {
-				return translateHoriLine(
-					line, newPos[i], oldPos[i]
-				);
-			});
-		}
-	},
-
-	yRegions: {
-		layerClass: 'y-regions',
-		makeElements(data) {
-			return data.map(region =>
-				yRegion(region.start, region.end, this.constants.width,
-					region.label)
-			);
-		},
-		animateElements(newData) {
-			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
-
-			let newPos = newData.map(d => d.end);
-			let newLabels = newData.map(d => d.label);
-			let newStarts = newData.map(d => d.start);
-
-			let oldPos = this.oldData.map(d => d.end);
-			let oldLabels = this.oldData.map(d => d.label);
-			let oldStarts = this.oldData.map(d => d.start);
-
-			this.render(oldPos.map((pos, i) => {
-				return {
-					start: oldStarts[i],
-					end: oldPos[i],
-					label: newLabels[i]
-				}
-			}));
-
-			let animateElements = [];
-
-			this.store.map((rectGroup, i) => {
-				animateElements = animateElements.concat(animateRegion(
-					rectGroup, newStarts[i], newPos[i], oldPos[i]
-				));
-			});
-
-			return animateElements;
-		}
-	},
-
-	barGraph: {
-		layerClass: function() { return 'dataset-units dataset-bars dataset-' + this.constants.index; },
-		makeElements(data) {
-			let c = this.constants;
-			this.unitType = 'bar';
-			return data.yPositions.map((y, j) => {
-				return datasetBar(
-					data.xPositions[j],
-					y,
-					data.barWidth,
-					c.color,
-					(c.valuesOverPoints ? (c.stacked ? data.cumulativeYs[j] : data.values[j]) : ''),
-					j,
-					y - (c.stacked ? data.cumulativeYPos[j] : y),
-					{
-						zeroLine: data.zeroLine,
-						barsWidth: data.barsWidth,
-						minHeight: c.minHeight
-					}
-				)
-			});
-		},
-		animateElements(newData) {
-			let c = this.constants;
-
-			let newXPos = newData.xPositions;
-			let newYPos = newData.yPositions;
-			let newCYPos = newData.cumulativeYPos;
-			let newValues = newData.values;
-			let newCYs = newData.cumulativeYs;
-
-			let oldXPos = this.oldData.xPositions;
-			let oldYPos = this.oldData.yPositions;
-			let oldCYPos = this.oldData.cumulativeYPos;
-			let oldValues = this.oldData.values;
-			let oldCYs = this.oldData.cumulativeYs;
-
-			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
-			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
-			[oldCYPos, newCYPos] = equilizeNoOfElements(oldCYPos, newCYPos);
-			[oldValues, newValues] = equilizeNoOfElements(oldValues, newValues);
-			[oldCYs, newCYs] = equilizeNoOfElements(oldCYs, newCYs);
-
-			this.render({
-				xPositions: oldXPos,
-				yPositions: oldYPos,
-				cumulativeYPos: oldCYPos,
-
-				values: newValues,
-				cumulativeYs: newCYs,
-
-				zeroLine: this.oldData.zeroLine,
-				barsWidth: this.oldData.barsWidth,
-				barWidth: this.oldData.barWidth,
-			});
-
-			let animateElements = [];
-
-			this.store.map((bar, i) => {
-				animateElements = animateElements.concat(animateBar(
-					bar, newXPos[i], newYPos[i], newData.barWidth, c.index,
-						{zeroLine: newData.zeroLine}
-				));
-			});
-
-			return animateElements;
-		}
-	},
-
-	lineGraph: {
-		layerClass: function() { return 'dataset-units dataset-line dataset-' + this.constants.index; },
-		makeElements(data) {
-			let c = this.constants;
-			this.unitType = 'dot';
-
-			this.paths = getPaths(
-				data.xPositions,
-				data.yPositions,
-				c.color,
-				{
-					heatline: c.heatline,
-					regionFill: c.regionFill
-				},
-				{
-					svgDefs: c.svgDefs,
-					zeroLine: data.zeroLine
-				}
-			);
-
-			this.dots = [];
-
-			if(!c.hideDots) {
-				this.dots = data.yPositions.map((y, j) => {
-					return datasetDot(
-						data.xPositions[j],
-						y,
-						data.radius,
-						c.color,
-						(c.valuesOverPoints ? data.values[j] : ''),
-						j
-					)
-				});
-			}
-
-			return Object.values(this.paths).concat(this.dots);
-			// return this.dots;
-		},
-		animateElements(newData) {
-			let newXPos = newData.xPositions;
-			let newYPos = newData.yPositions;
-			let newValues = newData.values;
-
-
-			let oldXPos = this.oldData.xPositions;
-			let oldYPos = this.oldData.yPositions;
-			let oldValues = this.oldData.values;
-
-			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
-			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
-			[oldValues, newValues] = equilizeNoOfElements(oldValues, newValues);
-
-			this.render({
-				xPositions: oldXPos,
-				yPositions: oldYPos,
-				values: newValues,
-
-				zeroLine: this.oldData.zeroLine,
-				radius: this.oldData.radius,
-			});
-
-			let animateElements = [];
-
-			animateElements = animateElements.concat(animatePath(
-				this.paths, newXPos, newYPos, newData.zeroLine));
-
-			if(this.dots.length) {
-				this.dots.map((dot, i) => {
-					animateElements = animateElements.concat(animateDot(
-						dot, newXPos[i], newYPos[i]));
-				});
-			}
-
-			return animateElements;
-		}
-	}
-};
-
-function getComponent(name, constants, getData) {
-	let keys = Object.keys(componentConfigs).filter(k => name.includes(k));
-	let config = componentConfigs[keys[0]];
-	Object.assign(config, {
-		constants: constants,
-		getData: getData
-	});
-	return new ChartComponent$1(config);
-}
-
-function normalize(x) {
-	// Calculates mantissa and exponent of a number
-	// Returns normalized number and exponent
-	// https://stackoverflow.com/q/9383593/6495043
-
-	if(x===0) {
-		return [0, 0];
-	}
-	if(isNaN(x)) {
-		return {mantissa: -6755399441055744, exponent: 972};
-	}
-	var sig = x > 0 ? 1 : -1;
-	if(!isFinite(x)) {
-		return {mantissa: sig * 4503599627370496, exponent: 972};
-	}
-
-	x = Math.abs(x);
-	var exp = Math.floor(Math.log10(x));
-	var man = x/Math.pow(10, exp);
-
-	return [sig * man, exp];
-}
-
-function getChartRangeIntervals(max, min=0) {
-	let upperBound = Math.ceil(max);
-	let lowerBound = Math.floor(min);
-	let range = upperBound - lowerBound;
-
-	let noOfParts = range;
-	let partSize = 1;
-
-	// To avoid too many partitions
-	if(range > 5) {
-		if(range % 2 !== 0) {
-			upperBound++;
-			// Recalc range
-			range = upperBound - lowerBound;
-		}
-		noOfParts = range/2;
-		partSize = 2;
-	}
-
-	// Special case: 1 and 2
-	if(range <= 2) {
-		noOfParts = 4;
-		partSize = range/noOfParts;
-	}
-
-	// Special case: 0
-	if(range === 0) {
-		noOfParts = 5;
-		partSize = 1;
-	}
-
-	let intervals = [];
-	for(var i = 0; i <= noOfParts; i++){
-		intervals.push(lowerBound + partSize * i);
-	}
-	return intervals;
-}
-
-function getChartIntervals(maxValue, minValue=0) {
-	let [normalMaxValue, exponent] = normalize(maxValue);
-	let normalMinValue = minValue ? minValue/Math.pow(10, exponent): 0;
-
-	// Allow only 7 significant digits
-	normalMaxValue = normalMaxValue.toFixed(6);
-
-	let intervals = getChartRangeIntervals(normalMaxValue, normalMinValue);
-	intervals = intervals.map(value => value * Math.pow(10, exponent));
-	return intervals;
-}
-
-function calcChartIntervals(values, withMinimum=false) {
-	//*** Where the magic happens ***
-
-	// Calculates best-fit y intervals from given values
-	// and returns the interval array
-
-	let maxValue = Math.max(...values);
-	let minValue = Math.min(...values);
-
-	// Exponent to be used for pretty print
-	let exponent = 0, intervals = []; // eslint-disable-line no-unused-vars
-
-	function getPositiveFirstIntervals(maxValue, absMinValue) {
-		let intervals = getChartIntervals(maxValue);
-
-		let intervalSize = intervals[1] - intervals[0];
-
-		// Then unshift the negative values
-		let value = 0;
-		for(var i = 1; value < absMinValue; i++) {
-			value += intervalSize;
-			intervals.unshift((-1) * value);
-		}
-		return intervals;
-	}
-
-	// CASE I: Both non-negative
-
-	if(maxValue >= 0 && minValue >= 0) {
-		exponent = normalize(maxValue)[1];
-		if(!withMinimum) {
-			intervals = getChartIntervals(maxValue);
-		} else {
-			intervals = getChartIntervals(maxValue, minValue);
-		}
-	}
-
-	// CASE II: Only minValue negative
-
-	else if(maxValue > 0 && minValue < 0) {
-		// `withMinimum` irrelevant in this case,
-		// We'll be handling both sides of zero separately
-		// (both starting from zero)
-		// Because ceil() and floor() behave differently
-		// in those two regions
-
-		let absMinValue = Math.abs(minValue);
-
-		if(maxValue >= absMinValue) {
-			exponent = normalize(maxValue)[1];
-			intervals = getPositiveFirstIntervals(maxValue, absMinValue);
-		} else {
-			// Mirror: maxValue => absMinValue, then change sign
-			exponent = normalize(absMinValue)[1];
-			let posIntervals = getPositiveFirstIntervals(absMinValue, maxValue);
-			intervals = posIntervals.map(d => d * (-1));
-		}
-
-	}
-
-	// CASE III: Both non-positive
-
-	else if(maxValue <= 0 && minValue <= 0) {
-		// Mirrored Case I:
-		// Work with positives, then reverse the sign and array
-
-		let pseudoMaxValue = Math.abs(minValue);
-		let pseudoMinValue = Math.abs(maxValue);
-
-		exponent = normalize(pseudoMaxValue)[1];
-		if(!withMinimum) {
-			intervals = getChartIntervals(pseudoMaxValue);
-		} else {
-			intervals = getChartIntervals(pseudoMaxValue, pseudoMinValue);
-		}
-
-		intervals = intervals.reverse().map(d => d * (-1));
-	}
-
-	return intervals;
-}
-
-function getZeroIndex(yPts) {
-	let zeroIndex;
-	let interval = getIntervalSize(yPts);
-	if(yPts.indexOf(0) >= 0) {
-		// the range has a given zero
-		// zero-line on the chart
-		zeroIndex = yPts.indexOf(0);
-	} else if(yPts[0] > 0) {
-		// Minimum value is positive
-		// zero-line is off the chart: below
-		let min = yPts[0];
-		zeroIndex = (-1) * min / interval;
-	} else {
-		// Maximum value is negative
-		// zero-line is off the chart: above
-		let max = yPts[yPts.length - 1];
-		zeroIndex = (-1) * max / interval + (yPts.length - 1);
-	}
-	return zeroIndex;
-}
-
-
-
-function getIntervalSize(orderedArray) {
-	return orderedArray[1] - orderedArray[0];
-}
-
-function getValueRange(orderedArray) {
-	return orderedArray[orderedArray.length-1] - orderedArray[0];
-}
-
-function scale(val, yAxis) {
-	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier)
-}
-
-function calcDistribution(values, distributionSize) {
-	// Assume non-negative values,
-	// implying distribution minimum at zero
-
-	let dataMaxValue = Math.max(...values);
-
-	let distributionStep = 1 / (distributionSize - 1);
-	let distribution = [];
-
-	for(var i = 0; i < distributionSize; i++) {
-		let checkpoint = dataMaxValue * (distributionStep * i);
-		distribution.push(checkpoint);
-	}
-
-	return distribution;
-}
-
-function getMaxCheckpoint(value, distribution) {
-	return distribution.filter(d => d < value).length;
-}
-
-class AxisChart extends BaseChart {
-	constructor(args) {
-		super(args);
-		this.isSeries = args.isSeries;
-		this.valuesOverPoints = args.valuesOverPoints;
-		this.formatTooltipY = args.formatTooltipY;
-		this.formatTooltipX = args.formatTooltipX;
-		this.barOptions = args.barOptions || {};
-		this.lineOptions = args.lineOptions || {};
-		this.type = args.type || 'line';
-
-		this.xAxisMode = args.xAxisMode || 'span';
-		this.yAxisMode = args.yAxisMode || 'span';
-
-		this.setup();
-	}
-
-	configure(args) {3;
-		super.configure();
-		this.config.xAxisMode = args.xAxisMode;
-		this.config.yAxisMode = args.yAxisMode;
-	}
-
-	setMargins() {
-		super.setMargins();
-		this.translateXLeft = Y_AXIS_MARGIN;
-		this.translateXRight = Y_AXIS_MARGIN;
-	}
-
-	prepareData(data=this.data) {
-		return dataPrep(data, this.type);
-	}
-
-	prepareFirstData(data=this.data) {
-		return zeroDataPrep(data);
-	}
-
-	calc() {
-		this.calcXPositions();
-		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
-	}
-
-	calcXPositions(s=this.state) {
-		let labels = this.data.labels;
-		s.datasetLength = labels.length;
-
-		s.unitWidth = this.width/(s.datasetLength);
-		// Default, as per bar, and mixed. Only line will be a special case
-		s.xOffset = s.unitWidth/2;
-
-		// // For a pure Line Chart
-		// s.unitWidth = this.width/(s.datasetLength - 1);
-		// s.xOffset = 0;
-
-		s.xAxis = {
-			labels: labels,
-			positions: labels.map((d, i) =>
-				floatTwo(s.xOffset + i * s.unitWidth)
-			)
-		};
-	}
-
-	calcYAxisParameters(dataValues, withMinimum = 'false') {
-		const yPts = calcChartIntervals(dataValues, withMinimum);
-		const scaleMultiplier = this.height / getValueRange(yPts);
-		const intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
-		const zeroLine = this.height - (getZeroIndex(yPts) * intervalHeight);
-
-		this.state.yAxis = {
-			labels: yPts,
-			positions: yPts.map(d => zeroLine - d * scaleMultiplier),
-			scaleMultiplier: scaleMultiplier,
-			zeroLine: zeroLine,
-		};
-
-		// Dependent if above changes
-		this.calcDatasetPoints();
-		this.calcYExtremes();
-		this.calcYRegions();
-	}
-
-	calcDatasetPoints() {
-		let s = this.state;
-		let scaleAll = values => values.map(val => scale(val, s.yAxis));
-
-		s.datasets = this.data.datasets.map((d, i) => {
-			let values = d.values;
-			let cumulativeYs = d.cumulativeYs || [];
-			return {
-				name: d.name,
-				index: i,
-				chartType: d.chartType,
-
-				values: values,
-				yPositions: scaleAll(values),
-
-				cumulativeYs: cumulativeYs,
-				cumulativeYPos: scaleAll(cumulativeYs),
-			};
-		});
-	}
-
-	calcYExtremes() {
-		let s = this.state;
-		if(this.barOptions.stacked) {
-			s.yExtremes = s.datasets[s.datasets.length - 1].cumulativeYPos;
-			return;
-		}
-		s.yExtremes = new Array(s.datasetLength).fill(9999);
-		s.datasets.map((d, i) => {
-			d.yPositions.map((pos, j) => {
-				if(pos < s.yExtremes[j]) {
-					s.yExtremes[j] = pos;
-				}
-			});
-		});
-	}
-
-	calcYRegions() {
-		let s = this.state;
-		if(this.data.yMarkers) {
-			this.state.yMarkers = this.data.yMarkers.map(d => {
-				d.position = scale(d.value, s.yAxis);
-				d.label += ': ' + d.value;
-				return d;
-			});
-		}
-		if(this.data.yRegions) {
-			this.state.yRegions = this.data.yRegions.map(d => {
-				d.start = scale(d.start, s.yAxis);
-				d.end = scale(d.end, s.yAxis);
-				return d;
-			});
-		}
-	}
-
-	getAllYValues() {
-		// TODO: yMarkers, regions, sums, every Y value ever
-		let key = 'values';
-
-		if(this.barOptions.stacked) {
-			key = 'cumulativeYs';
-			let cumulative = new Array(this.state.datasetLength).fill(0);
-			this.data.datasets.map((d, i) => {
-				let values = this.data.datasets[i].values;
-				d[key] = cumulative = cumulative.map((c, i) => c + values[i]);
-			});
-		}
-
-		return [].concat(...this.data.datasets.map(d => d[key]));
-	}
-
-	setupComponents() {
-		let componentConfigs = [
-			[
-				'yAxis',
-				{
-					mode: this.yAxisMode,
-					width: this.width,
-					// pos: 'right'
-				}
-			],
-
-			[
-				'xAxis',
-				{
-					mode: this.xAxisMode,
-					height: this.height,
-					// pos: 'right'
-				}
-			],
-
-			[
-				'yRegions',
-				{
-					width: this.width,
-					pos: 'right'
-				}
-			],
-		];
-
-		componentConfigs.map(args => {
-			args.push(
-				function() {
-					return this.state[args[0]];
-				}.bind(this)
-			);
-		});
-
-		let barDatasets = this.state.datasets.filter(d => d.chartType === 'bar');
-		let lineDatasets = this.state.datasets.filter(d => d.chartType === 'line');
-
-		// console.log('barDatasets', barDatasets, this.state.datasets);
-
-		let barsConfigs = barDatasets.map(d => {
-			let index = d.index;
-			return [
-				'barGraph' + '-' + d.index,
-				{
-					index: index,
-					color: this.colors[index],
-					stacked: this.barOptions.stacked,
-
-					// same for all datasets
-					valuesOverPoints: this.valuesOverPoints,
-					minHeight: this.height * MIN_BAR_PERCENT_HEIGHT,
-				},
-				function() {
-					let s = this.state;
-					let d = s.datasets[index];
-
-					let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
-					let barsWidth = s.unitWidth * (1 - spaceRatio);
-					let barWidth = barsWidth/(this.barOptions.stacked ? 1 : barDatasets.length);
-
-					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2);
-					if(!this.barOptions.stacked) {
-						xPositions = xPositions.map(p => p + barWidth * index);
-					}
-
-					return {
-						xPositions: xPositions,
-						yPositions: d.yPositions,
-						cumulativeYPos: d.cumulativeYPos,
-
-						values: d.values,
-						cumulativeYs: d.cumulativeYs,
-
-						zeroLine: s.yAxis.zeroLine,
-						barsWidth: barsWidth,
-						barWidth: barWidth,
-					};
-				}.bind(this)
-			];
-		});
-
-		let lineConfigs = lineDatasets.map(d => {
-			let index = d.index;
-			return [
-				'lineGraph' + '-' + d.index,
-				{
-					index: index,
-					color: this.colors[index],
-					svgDefs: this.svgDefs,
-					heatline: this.lineOptions.heatline,
-					regionFill: this.lineOptions.regionFill,
-					hideDots: this.lineOptions.hideDots,
-
-					// same for all datasets
-					valuesOverPoints: this.valuesOverPoints,
-				},
-				function() {
-					let s = this.state;
-					let d = s.datasets[index];
-
-					return {
-						xPositions: s.xAxis.positions,
-						yPositions: d.yPositions,
-
-						values: d.values,
-
-						zeroLine: s.yAxis.zeroLine,
-						radius: this.lineOptions.dotSize || LINE_CHART_DOT_SIZE,
-					};
-				}.bind(this)
-			];
-		});
-
-		let markerConfigs = [
-			[
-				'yMarkers',
-				{
-					width: this.width,
-					pos: 'right'
-				}
-			]
-		];
-
-		markerConfigs.map(args => {
-			args.push(
-				function() {
-					return this.state[args[0]];
-				}.bind(this)
-			);
-		});
-
-		componentConfigs = componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
-
-		let optionals = ['yMarkers', 'yRegions'];
-		this.dataUnitComponents = [];
-
-		this.components = new Map(componentConfigs
-			.filter(args => !optionals.includes(args[0]) || this.state[args[0]])
-			.map(args => {
-				let component = getComponent(...args);
-				if(args[0].includes('lineGraph') || args[0].includes('barGraph')) {
-					this.dataUnitComponents.push(component);
-				}
-				return [args[0], component];
-			}));
-	}
-
-	bindTooltip() {
-		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
-		this.chartWrapper.addEventListener('mousemove', (e) => {
-			let o = getOffset(this.chartWrapper);
-			let relX = e.pageX - o.left - this.translateXLeft;
-			let relY = e.pageY - o.top - this.translateY;
-
-			if(relY < this.height + this.translateY * 2) {
-				this.mapTooltipXPosition(relX);
-			} else {
-				this.tip.hide_tip();
-			}
-		});
-	}
-
-	mapTooltipXPosition(relX) {
-		let s = this.state;
-		if(!s.yExtremes) return;
-
-		let titles = s.xAxis.labels;
-		if(this.formatTooltipX && this.formatTooltipX(titles[0])) {
-			titles = titles.map(d=>this.formatTooltipX(d));
-		}
-
-		let formatY = this.formatTooltipY && this.formatTooltipY(this.y[0].values[0]);
-
-		for(var i=s.datasetLength - 1; i >= 0 ; i--) {
-			let xVal = s.xAxis.positions[i];
-			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxis.positions[i-1];
-			if(relX > xVal - s.unitWidth/2) {
-				let x = xVal + this.translateXLeft;
-				let y = s.yExtremes[i] + this.translateY;
-
-				let values = this.data.datasets.map((set, j) => {
-					return {
-						title: set.title,
-						value: formatY ? this.formatTooltipY(set.values[i]) : set.values[i],
-						color: this.colors[j],
-					};
-				});
-
-				this.tip.set_values(x, y, titles[i], '', values);
-				this.tip.show_tip();
-				break;
-			}
-		}
-	}
-
-	makeOverlays() {
-		// Just make one out of the first element
-		// let index = this.xAxisLabels.length - 1;
-		// let unit = this.y[0].svg_units[index];
-		// this.setCurrentDataPoint(index);
-
-		// if(this.overlay) {
-		// 	this.overlay.parentNode.removeChild(this.overlay);
-		// }
-
-		// this.overlay = unit.cloneNode();
-		// this.overlay.style.fill = '#000000';
-		// this.overlay.style.opacity = '0.4';
-		// this.drawArea.appendChild(this.overlay);
-		this.overlayGuides = this.dataUnitComponents.map(c => {
-			return {
-				type: c.unitType,
-				overlay: undefined,
-				units: c.store,
-			}
-		});
-
-		this.state.currentIndex = 0;
-
-		// Render overlays
-		this.overlayGuides.map(d => {
-			let currentUnit = d.units[this.state.currentIndex];
-			d.overlay = makeOverlay[d.type](currentUnit);
-			this.drawArea.appendChild(d.overlay);
-		});
-	}
-
-	bindOverlay() {
-		// on event, update overlay
-		this.parent.addEventListener('data-select', (e) => {
-			this.updateOverlay(e.svg_unit);
-		});
-	}
-
-	bindUnits(units_array) {
-		// units_array.map(unit => {
-		// 	unit.addEventListener('click', () => {
-		// 		let index = unit.getAttribute('data-point-index');
-		// 		this.setCurrentDataPoint(index);
-		// 	});
-		// });
-	}
-
-	updateOverlay() {
-		this.overlayGuides.map(d => {
-			let currentUnit = d.units[this.state.currentIndex];
-			updateOverlay[d.type](currentUnit, d.overlay);
-		});
-	}
-
-	onLeftArrow() {
-		this.setCurrentDataPoint(this.state.currentIndex - 1);
-	}
-
-	onRightArrow() {
-		this.setCurrentDataPoint(this.state.currentIndex + 1);
-	}
-
-	getDataPoint(index=this.state.currentIndex) {
-		// check for length
-		let data_point = {
-			index: index
-		};
-		// let y = this.y[0];
-		// ['svg_units', 'yUnitPositions', 'values'].map(key => {
-		// 	let data_key = key.slice(0, key.length-1);
-		// 	data_point[data_key] = y[key][index];
-		// });
-		// data_point.label = this.xAxis.labels[index];
-		return data_point;
-	}
-
-	setCurrentDataPoint(index) {
-		let s = this.state;
-		index = parseInt(index);
-		if(index < 0) index = 0;
-		if(index >= s.xAxis.labels.length) index = s.xAxis.labels.length - 1;
-		if(index === s.currentIndex) return;
-		s.currentIndex = index;
-		fire(this.parent, "data-select", this.getDataPoint());
-	}
-
-	// API
-
-	addDataPoint(label, datasetValues, index=this.state.datasetLength) {
-		super.addDataPoint(label, datasetValues, index);
-		// console.log(label, datasetValues, this.data.labels);
-		this.data.labels.splice(index, 0, label);
-		this.data.datasets.map((d, i) => {
-			d.values.splice(index, 0, datasetValues[i]);
-		});
-		// console.log(this.data);
-		this.update(this.data);
-	}
-
-	removeDataPoint(index = this.state.datasetLength-1) {
-		super.removeDataPoint(index);
-		this.data.labels.splice(index, 1);
-		this.data.datasets.map(d => {
-			d.values.splice(index, 1);
-		});
-		this.update(this.data);
-	}
-
-	// getDataPoint(index = 0) {}
-	// setCurrentDataPoint(point) {}
-
-	updateDataset(datasetValues, index=0) {
-		this.data.datasets[index].values = datasetValues;
-		this.update(this.data);
-	}
-	// addDataset(dataset, index) {}
-	// removeDataset(index = 0) {}
-
-	// updateDatasets(datasets) {}
-
-	// updateDataPoint(dataPoint, index = 0) {}
-	// addDataPoint(dataPoint, index = 0) {}
-	// removeDataPoint(index = 0) {}
-}
-
-
-// keep a binding at the end of chart
 
 class PercentageChart extends BaseChart {
 	constructor(args) {
@@ -2892,6 +1768,217 @@ function addDays(date, numberOfDays) {
 
 // export function getMonthName() {}
 
+function normalize(x) {
+	// Calculates mantissa and exponent of a number
+	// Returns normalized number and exponent
+	// https://stackoverflow.com/q/9383593/6495043
+
+	if(x===0) {
+		return [0, 0];
+	}
+	if(isNaN(x)) {
+		return {mantissa: -6755399441055744, exponent: 972};
+	}
+	var sig = x > 0 ? 1 : -1;
+	if(!isFinite(x)) {
+		return {mantissa: sig * 4503599627370496, exponent: 972};
+	}
+
+	x = Math.abs(x);
+	var exp = Math.floor(Math.log10(x));
+	var man = x/Math.pow(10, exp);
+
+	return [sig * man, exp];
+}
+
+function getChartRangeIntervals(max, min=0) {
+	let upperBound = Math.ceil(max);
+	let lowerBound = Math.floor(min);
+	let range = upperBound - lowerBound;
+
+	let noOfParts = range;
+	let partSize = 1;
+
+	// To avoid too many partitions
+	if(range > 5) {
+		if(range % 2 !== 0) {
+			upperBound++;
+			// Recalc range
+			range = upperBound - lowerBound;
+		}
+		noOfParts = range/2;
+		partSize = 2;
+	}
+
+	// Special case: 1 and 2
+	if(range <= 2) {
+		noOfParts = 4;
+		partSize = range/noOfParts;
+	}
+
+	// Special case: 0
+	if(range === 0) {
+		noOfParts = 5;
+		partSize = 1;
+	}
+
+	let intervals = [];
+	for(var i = 0; i <= noOfParts; i++){
+		intervals.push(lowerBound + partSize * i);
+	}
+	return intervals;
+}
+
+function getChartIntervals(maxValue, minValue=0) {
+	let [normalMaxValue, exponent] = normalize(maxValue);
+	let normalMinValue = minValue ? minValue/Math.pow(10, exponent): 0;
+
+	// Allow only 7 significant digits
+	normalMaxValue = normalMaxValue.toFixed(6);
+
+	let intervals = getChartRangeIntervals(normalMaxValue, normalMinValue);
+	intervals = intervals.map(value => value * Math.pow(10, exponent));
+	return intervals;
+}
+
+function calcChartIntervals(values, withMinimum=false) {
+	//*** Where the magic happens ***
+
+	// Calculates best-fit y intervals from given values
+	// and returns the interval array
+
+	let maxValue = Math.max(...values);
+	let minValue = Math.min(...values);
+
+	// Exponent to be used for pretty print
+	let exponent = 0, intervals = []; // eslint-disable-line no-unused-vars
+
+	function getPositiveFirstIntervals(maxValue, absMinValue) {
+		let intervals = getChartIntervals(maxValue);
+
+		let intervalSize = intervals[1] - intervals[0];
+
+		// Then unshift the negative values
+		let value = 0;
+		for(var i = 1; value < absMinValue; i++) {
+			value += intervalSize;
+			intervals.unshift((-1) * value);
+		}
+		return intervals;
+	}
+
+	// CASE I: Both non-negative
+
+	if(maxValue >= 0 && minValue >= 0) {
+		exponent = normalize(maxValue)[1];
+		if(!withMinimum) {
+			intervals = getChartIntervals(maxValue);
+		} else {
+			intervals = getChartIntervals(maxValue, minValue);
+		}
+	}
+
+	// CASE II: Only minValue negative
+
+	else if(maxValue > 0 && minValue < 0) {
+		// `withMinimum` irrelevant in this case,
+		// We'll be handling both sides of zero separately
+		// (both starting from zero)
+		// Because ceil() and floor() behave differently
+		// in those two regions
+
+		let absMinValue = Math.abs(minValue);
+
+		if(maxValue >= absMinValue) {
+			exponent = normalize(maxValue)[1];
+			intervals = getPositiveFirstIntervals(maxValue, absMinValue);
+		} else {
+			// Mirror: maxValue => absMinValue, then change sign
+			exponent = normalize(absMinValue)[1];
+			let posIntervals = getPositiveFirstIntervals(absMinValue, maxValue);
+			intervals = posIntervals.map(d => d * (-1));
+		}
+
+	}
+
+	// CASE III: Both non-positive
+
+	else if(maxValue <= 0 && minValue <= 0) {
+		// Mirrored Case I:
+		// Work with positives, then reverse the sign and array
+
+		let pseudoMaxValue = Math.abs(minValue);
+		let pseudoMinValue = Math.abs(maxValue);
+
+		exponent = normalize(pseudoMaxValue)[1];
+		if(!withMinimum) {
+			intervals = getChartIntervals(pseudoMaxValue);
+		} else {
+			intervals = getChartIntervals(pseudoMaxValue, pseudoMinValue);
+		}
+
+		intervals = intervals.reverse().map(d => d * (-1));
+	}
+
+	return intervals;
+}
+
+function getZeroIndex(yPts) {
+	let zeroIndex;
+	let interval = getIntervalSize(yPts);
+	if(yPts.indexOf(0) >= 0) {
+		// the range has a given zero
+		// zero-line on the chart
+		zeroIndex = yPts.indexOf(0);
+	} else if(yPts[0] > 0) {
+		// Minimum value is positive
+		// zero-line is off the chart: below
+		let min = yPts[0];
+		zeroIndex = (-1) * min / interval;
+	} else {
+		// Maximum value is negative
+		// zero-line is off the chart: above
+		let max = yPts[yPts.length - 1];
+		zeroIndex = (-1) * max / interval + (yPts.length - 1);
+	}
+	return zeroIndex;
+}
+
+
+
+function getIntervalSize(orderedArray) {
+	return orderedArray[1] - orderedArray[0];
+}
+
+function getValueRange(orderedArray) {
+	return orderedArray[orderedArray.length-1] - orderedArray[0];
+}
+
+function scale(val, yAxis) {
+	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier)
+}
+
+function calcDistribution(values, distributionSize) {
+	// Assume non-negative values,
+	// implying distribution minimum at zero
+
+	let dataMaxValue = Math.max(...values);
+
+	let distributionStep = 1 / (distributionSize - 1);
+	let distribution = [];
+
+	for(var i = 0; i < distributionSize; i++) {
+		let checkpoint = dataMaxValue * (distributionStep * i);
+		distribution.push(checkpoint);
+	}
+
+	return distribution;
+}
+
+function getMaxCheckpoint(value, distribution) {
+	return distribution.filter(d => d < value).length;
+}
+
 class Heatmap extends BaseChart {
 	constructor({
 		start = '',
@@ -3153,6 +2240,925 @@ class Heatmap extends BaseChart {
 	}
 }
 
+function dataPrep(data, type) {
+	data.labels = data.labels || [];
+
+	let datasetLength = data.labels.length;
+
+	// Datasets
+	let datasets = data.datasets;
+	let zeroArray = new Array(datasetLength).fill(0);
+	if(!datasets) {
+		// default
+		datasets = [{
+			values: zeroArray
+		}];
+	}
+
+	datasets.map((d, i)=> {
+		// Set values
+		if(!d.values) {
+			d.values = zeroArray;
+		} else {
+			// Check for non values
+			let vals = d.values;
+			vals = vals.map(val => (!isNaN(val) ? val : 0));
+
+			// Trim or extend
+			if(vals.length > datasetLength) {
+				vals = vals.slice(0, datasetLength);
+			} else {
+				vals = fillArray(vals, datasetLength - vals.length, 0);
+			}
+		}
+
+		// Set labels
+		//
+
+		// Set type
+		if(!d.chartType ) {
+			if(!AXIS_DATASET_CHART_TYPES.includes(type)) type === DEFAULT_AXIS_CHART_TYPE;
+			d.chartType = type;
+		}
+
+	});
+
+	// Markers
+
+	// Regions
+	// data.yRegions = data.yRegions || [];
+	if(data.yRegions) {
+		data.yRegions.map(d => {
+			if(d.end < d.start) {
+				[d.start, d.end] = [d.end, d.start];
+			}
+		});
+	}
+
+	return data;
+}
+
+function zeroDataPrep(realData) {
+	let datasetLength = realData.labels.length;
+	let zeroArray = new Array(datasetLength).fill(0);
+
+	let zeroData = {
+		labels: realData.labels.slice(0, -1),
+		datasets: realData.datasets.map(d => {
+			return {
+				name: '',
+				values: zeroArray.slice(0, -1),
+				chartType: d.chartType
+			}
+		}),
+		yRegions: [
+			{
+				start: 0,
+				end: 0,
+				label: ''
+			}
+		],
+		yMarkers: [
+			{
+				value: 0,
+				label: ''
+			}
+		]
+	};
+
+	return zeroData;
+}
+
+class ChartComponent {
+	constructor({
+		layerClass = '',
+		layerTransform = '',
+		constants,
+
+		getData,
+		makeElements,
+		animateElements
+	}) {
+		this.layerTransform = layerTransform;
+		this.constants = constants;
+
+		this.makeElements = makeElements;
+		this.getData = getData;
+
+		this.animateElements = animateElements;
+
+		this.store = [];
+
+		this.layerClass = layerClass;
+		this.layerClass = typeof(this.layerClass) === 'function'
+			? this.layerClass() : this.layerClass;
+
+		this.refresh();
+	}
+
+	refresh(data) {
+		this.data = data || this.getData();
+	}
+
+	setup(parent) {
+		this.layer = makeSVGGroup(parent, this.layerClass, this.layerTransform);
+	}
+
+	make() {
+		this.render(this.data);
+		this.oldData = this.data;
+	}
+
+	render(data) {
+		this.store = this.makeElements(data);
+
+		this.layer.textContent = '';
+		this.store.forEach(element => {
+			this.layer.appendChild(element);
+		});
+	}
+
+	update(animate = true) {
+		this.refresh();
+		let animateElements = [];
+		if(animate) {
+			animateElements = this.animateElements(this.data);
+		}
+		return animateElements;
+	}
+}
+
+let componentConfigs = {
+	yAxis: {
+		layerClass: 'y axis',
+		makeElements(data) {
+			return data.positions.map((position, i) =>
+				yLine(position, data.labels[i], this.constants.width,
+					{mode: this.constants.mode, pos: this.constants.pos})
+			);
+		},
+
+		animateElements(newData) {
+			let newPos = newData.positions;
+			let newLabels = newData.labels;
+			let oldPos = this.oldData.positions;
+			let oldLabels = this.oldData.labels;
+
+			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
+			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+
+			this.render({
+				positions: oldPos,
+				labels: newLabels
+			});
+
+			return this.store.map((line, i) => {
+				return translateHoriLine(
+					line, newPos[i], oldPos[i]
+				);
+			});
+		}
+	},
+
+	xAxis: {
+		layerClass: 'x axis',
+		makeElements(data) {
+			return data.positions.map((position, i) =>
+				xLine(position, data.labels[i], this.constants.height,
+					{mode: this.constants.mode, pos: this.constants.pos})
+			);
+		},
+
+		animateElements(newData) {
+			let newPos = newData.positions;
+			let newLabels = newData.labels;
+			let oldPos = this.oldData.positions;
+			let oldLabels = this.oldData.labels;
+
+			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
+			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+
+			this.render({
+				positions: oldPos,
+				labels: newLabels
+			});
+
+			return this.store.map((line, i) => {
+				return translateVertLine(
+					line, newPos[i], oldPos[i]
+				);
+			});
+		}
+	},
+
+	yMarkers: {
+		layerClass: 'y-markers',
+		makeElements(data) {
+			return data.map(marker =>
+				yMarker(marker.position, marker.label, this.constants.width,
+					{pos:'right', mode: 'span', lineType: 'dashed'})
+			);
+		},
+		animateElements(newData) {
+			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+
+			let newPos = newData.map(d => d.position);
+			let newLabels = newData.map(d => d.label);
+
+			let oldPos = this.oldData.map(d => d.position);
+			let oldLabels = this.oldData.map(d => d.label);
+
+			this.render(oldPos.map((pos, i) => {
+				return {
+					position: oldPos[i],
+					label: newLabels[i]
+				}
+			}));
+
+			return this.store.map((line, i) => {
+				return translateHoriLine(
+					line, newPos[i], oldPos[i]
+				);
+			});
+		}
+	},
+
+	yRegions: {
+		layerClass: 'y-regions',
+		makeElements(data) {
+			return data.map(region =>
+				yRegion(region.start, region.end, this.constants.width,
+					region.label)
+			);
+		},
+		animateElements(newData) {
+			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+
+			let newPos = newData.map(d => d.end);
+			let newLabels = newData.map(d => d.label);
+			let newStarts = newData.map(d => d.start);
+
+			let oldPos = this.oldData.map(d => d.end);
+			let oldLabels = this.oldData.map(d => d.label);
+			let oldStarts = this.oldData.map(d => d.start);
+
+			this.render(oldPos.map((pos, i) => {
+				return {
+					start: oldStarts[i],
+					end: oldPos[i],
+					label: newLabels[i]
+				}
+			}));
+
+			let animateElements = [];
+
+			this.store.map((rectGroup, i) => {
+				animateElements = animateElements.concat(animateRegion(
+					rectGroup, newStarts[i], newPos[i], oldPos[i]
+				));
+			});
+
+			return animateElements;
+		}
+	},
+
+	barGraph: {
+		layerClass: function() { return 'dataset-units dataset-bars dataset-' + this.constants.index; },
+		makeElements(data) {
+			let c = this.constants;
+			this.unitType = 'bar';
+			return data.yPositions.map((y, j) => {
+				return datasetBar(
+					data.xPositions[j],
+					y,
+					data.barWidth,
+					c.color,
+					(c.valuesOverPoints ? (c.stacked ? data.cumulativeYs[j] : data.values[j]) : ''),
+					j,
+					y - (c.stacked ? data.cumulativeYPos[j] : y),
+					{
+						zeroLine: data.zeroLine,
+						barsWidth: data.barsWidth,
+						minHeight: c.minHeight
+					}
+				)
+			});
+		},
+		animateElements(newData) {
+			let c = this.constants;
+
+			let newXPos = newData.xPositions;
+			let newYPos = newData.yPositions;
+			let newCYPos = newData.cumulativeYPos;
+			let newValues = newData.values;
+			let newCYs = newData.cumulativeYs;
+
+			let oldXPos = this.oldData.xPositions;
+			let oldYPos = this.oldData.yPositions;
+			let oldCYPos = this.oldData.cumulativeYPos;
+			let oldValues = this.oldData.values;
+			let oldCYs = this.oldData.cumulativeYs;
+
+			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
+			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
+			[oldCYPos, newCYPos] = equilizeNoOfElements(oldCYPos, newCYPos);
+			[oldValues, newValues] = equilizeNoOfElements(oldValues, newValues);
+			[oldCYs, newCYs] = equilizeNoOfElements(oldCYs, newCYs);
+
+			this.render({
+				xPositions: oldXPos,
+				yPositions: oldYPos,
+				cumulativeYPos: oldCYPos,
+
+				values: newValues,
+				cumulativeYs: newCYs,
+
+				zeroLine: this.oldData.zeroLine,
+				barsWidth: this.oldData.barsWidth,
+				barWidth: this.oldData.barWidth,
+			});
+
+			let animateElements = [];
+
+			this.store.map((bar, i) => {
+				animateElements = animateElements.concat(animateBar(
+					bar, newXPos[i], newYPos[i], newData.barWidth, c.index,
+						{zeroLine: newData.zeroLine}
+				));
+			});
+
+			return animateElements;
+		}
+	},
+
+	lineGraph: {
+		layerClass: function() { return 'dataset-units dataset-line dataset-' + this.constants.index; },
+		makeElements(data) {
+			let c = this.constants;
+			this.unitType = 'dot';
+
+			this.paths = getPaths(
+				data.xPositions,
+				data.yPositions,
+				c.color,
+				{
+					heatline: c.heatline,
+					regionFill: c.regionFill
+				},
+				{
+					svgDefs: c.svgDefs,
+					zeroLine: data.zeroLine
+				}
+			);
+
+			this.dots = [];
+
+			if(!c.hideDots) {
+				this.dots = data.yPositions.map((y, j) => {
+					return datasetDot(
+						data.xPositions[j],
+						y,
+						data.radius,
+						c.color,
+						(c.valuesOverPoints ? data.values[j] : ''),
+						j
+					)
+				});
+			}
+
+			return Object.values(this.paths).concat(this.dots);
+			// return this.dots;
+		},
+		animateElements(newData) {
+			let newXPos = newData.xPositions;
+			let newYPos = newData.yPositions;
+			let newValues = newData.values;
+
+
+			let oldXPos = this.oldData.xPositions;
+			let oldYPos = this.oldData.yPositions;
+			let oldValues = this.oldData.values;
+
+			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
+			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
+			[oldValues, newValues] = equilizeNoOfElements(oldValues, newValues);
+
+			this.render({
+				xPositions: oldXPos,
+				yPositions: oldYPos,
+				values: newValues,
+
+				zeroLine: this.oldData.zeroLine,
+				radius: this.oldData.radius,
+			});
+
+			let animateElements = [];
+
+			animateElements = animateElements.concat(animatePath(
+				this.paths, newXPos, newYPos, newData.zeroLine));
+
+			if(this.dots.length) {
+				this.dots.map((dot, i) => {
+					animateElements = animateElements.concat(animateDot(
+						dot, newXPos[i], newYPos[i]));
+				});
+			}
+
+			return animateElements;
+		}
+	}
+};
+
+function getComponent(name, constants, getData) {
+	let keys = Object.keys(componentConfigs).filter(k => name.includes(k));
+	let config = componentConfigs[keys[0]];
+	Object.assign(config, {
+		constants: constants,
+		getData: getData
+	});
+	return new ChartComponent(config);
+}
+
+class AxisChart extends BaseChart {
+	constructor(args) {
+		super(args);
+		this.isSeries = args.isSeries;
+		this.valuesOverPoints = args.valuesOverPoints;
+		this.formatTooltipY = args.formatTooltipY;
+		this.formatTooltipX = args.formatTooltipX;
+		this.barOptions = args.barOptions || {};
+		this.lineOptions = args.lineOptions || {};
+		this.type = args.type || 'line';
+
+		this.xAxisMode = args.xAxisMode || 'span';
+		this.yAxisMode = args.yAxisMode || 'span';
+
+		this.setup();
+	}
+
+	configure(args) {3;
+		super.configure();
+		this.config.xAxisMode = args.xAxisMode;
+		this.config.yAxisMode = args.yAxisMode;
+	}
+
+	setMargins() {
+		super.setMargins();
+		this.leftMargin = Y_AXIS_MARGIN;
+		this.rightMargin = Y_AXIS_MARGIN;
+	}
+
+	prepareData(data=this.data) {
+		return dataPrep(data, this.type);
+	}
+
+	prepareFirstData(data=this.data) {
+		return zeroDataPrep(data);
+	}
+
+	calc() {
+		this.calcXPositions();
+		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+	}
+
+	calcXPositions(s=this.state) {
+		let labels = this.data.labels;
+		s.datasetLength = labels.length;
+
+		s.unitWidth = this.width/(s.datasetLength);
+		// Default, as per bar, and mixed. Only line will be a special case
+		s.xOffset = s.unitWidth/2;
+
+		// // For a pure Line Chart
+		// s.unitWidth = this.width/(s.datasetLength - 1);
+		// s.xOffset = 0;
+
+		s.xAxis = {
+			labels: labels,
+			positions: labels.map((d, i) =>
+				floatTwo(s.xOffset + i * s.unitWidth)
+			)
+		};
+	}
+
+	calcYAxisParameters(dataValues, withMinimum = 'false') {
+		const yPts = calcChartIntervals(dataValues, withMinimum);
+		const scaleMultiplier = this.height / getValueRange(yPts);
+		const intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
+		const zeroLine = this.height - (getZeroIndex(yPts) * intervalHeight);
+
+		this.state.yAxis = {
+			labels: yPts,
+			positions: yPts.map(d => zeroLine - d * scaleMultiplier),
+			scaleMultiplier: scaleMultiplier,
+			zeroLine: zeroLine,
+		};
+
+		// Dependent if above changes
+		this.calcDatasetPoints();
+		this.calcYExtremes();
+		this.calcYRegions();
+	}
+
+	calcDatasetPoints() {
+		let s = this.state;
+		let scaleAll = values => values.map(val => scale(val, s.yAxis));
+
+		s.datasets = this.data.datasets.map((d, i) => {
+			let values = d.values;
+			let cumulativeYs = d.cumulativeYs || [];
+			return {
+				name: d.name,
+				index: i,
+				chartType: d.chartType,
+
+				values: values,
+				yPositions: scaleAll(values),
+
+				cumulativeYs: cumulativeYs,
+				cumulativeYPos: scaleAll(cumulativeYs),
+			};
+		});
+	}
+
+	calcYExtremes() {
+		let s = this.state;
+		if(this.barOptions.stacked) {
+			s.yExtremes = s.datasets[s.datasets.length - 1].cumulativeYPos;
+			return;
+		}
+		s.yExtremes = new Array(s.datasetLength).fill(9999);
+		s.datasets.map((d, i) => {
+			d.yPositions.map((pos, j) => {
+				if(pos < s.yExtremes[j]) {
+					s.yExtremes[j] = pos;
+				}
+			});
+		});
+	}
+
+	calcYRegions() {
+		let s = this.state;
+		if(this.data.yMarkers) {
+			this.state.yMarkers = this.data.yMarkers.map(d => {
+				d.position = scale(d.value, s.yAxis);
+				d.label += ': ' + d.value;
+				return d;
+			});
+		}
+		if(this.data.yRegions) {
+			this.state.yRegions = this.data.yRegions.map(d => {
+				d.start = scale(d.start, s.yAxis);
+				d.end = scale(d.end, s.yAxis);
+				return d;
+			});
+		}
+	}
+
+	getAllYValues() {
+		// TODO: yMarkers, regions, sums, every Y value ever
+		let key = 'values';
+
+		if(this.barOptions.stacked) {
+			key = 'cumulativeYs';
+			let cumulative = new Array(this.state.datasetLength).fill(0);
+			this.data.datasets.map((d, i) => {
+				let values = this.data.datasets[i].values;
+				d[key] = cumulative = cumulative.map((c, i) => c + values[i]);
+			});
+		}
+
+		return [].concat(...this.data.datasets.map(d => d[key]));
+	}
+
+	setupComponents() {
+		let componentConfigs = [
+			[
+				'yAxis',
+				{
+					mode: this.yAxisMode,
+					width: this.width,
+					// pos: 'right'
+				}
+			],
+
+			[
+				'xAxis',
+				{
+					mode: this.xAxisMode,
+					height: this.height,
+					// pos: 'right'
+				}
+			],
+
+			[
+				'yRegions',
+				{
+					width: this.width,
+					pos: 'right'
+				}
+			],
+		];
+
+		componentConfigs.map(args => {
+			args.push(
+				function() {
+					return this.state[args[0]];
+				}.bind(this)
+			);
+		});
+
+		let barDatasets = this.state.datasets.filter(d => d.chartType === 'bar');
+		let lineDatasets = this.state.datasets.filter(d => d.chartType === 'line');
+
+		// console.log('barDatasets', barDatasets, this.state.datasets);
+
+		let barsConfigs = barDatasets.map(d => {
+			let index = d.index;
+			return [
+				'barGraph' + '-' + d.index,
+				{
+					index: index,
+					color: this.colors[index],
+					stacked: this.barOptions.stacked,
+
+					// same for all datasets
+					valuesOverPoints: this.valuesOverPoints,
+					minHeight: this.height * MIN_BAR_PERCENT_HEIGHT,
+				},
+				function() {
+					let s = this.state;
+					let d = s.datasets[index];
+
+					let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
+					let barsWidth = s.unitWidth * (1 - spaceRatio);
+					let barWidth = barsWidth/(this.barOptions.stacked ? 1 : barDatasets.length);
+
+					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2);
+					if(!this.barOptions.stacked) {
+						xPositions = xPositions.map(p => p + barWidth * index);
+					}
+
+					return {
+						xPositions: xPositions,
+						yPositions: d.yPositions,
+						cumulativeYPos: d.cumulativeYPos,
+
+						values: d.values,
+						cumulativeYs: d.cumulativeYs,
+
+						zeroLine: s.yAxis.zeroLine,
+						barsWidth: barsWidth,
+						barWidth: barWidth,
+					};
+				}.bind(this)
+			];
+		});
+
+		let lineConfigs = lineDatasets.map(d => {
+			let index = d.index;
+			return [
+				'lineGraph' + '-' + d.index,
+				{
+					index: index,
+					color: this.colors[index],
+					svgDefs: this.svgDefs,
+					heatline: this.lineOptions.heatline,
+					regionFill: this.lineOptions.regionFill,
+					hideDots: this.lineOptions.hideDots,
+
+					// same for all datasets
+					valuesOverPoints: this.valuesOverPoints,
+				},
+				function() {
+					let s = this.state;
+					let d = s.datasets[index];
+
+					return {
+						xPositions: s.xAxis.positions,
+						yPositions: d.yPositions,
+
+						values: d.values,
+
+						zeroLine: s.yAxis.zeroLine,
+						radius: this.lineOptions.dotSize || LINE_CHART_DOT_SIZE,
+					};
+				}.bind(this)
+			];
+		});
+
+		let markerConfigs = [
+			[
+				'yMarkers',
+				{
+					width: this.width,
+					pos: 'right'
+				}
+			]
+		];
+
+		markerConfigs.map(args => {
+			args.push(
+				function() {
+					return this.state[args[0]];
+				}.bind(this)
+			);
+		});
+
+		componentConfigs = componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
+
+		let optionals = ['yMarkers', 'yRegions'];
+		this.dataUnitComponents = [];
+
+		this.components = new Map(componentConfigs
+			.filter(args => !optionals.includes(args[0]) || this.state[args[0]])
+			.map(args => {
+				let component = getComponent(...args);
+				if(args[0].includes('lineGraph') || args[0].includes('barGraph')) {
+					this.dataUnitComponents.push(component);
+				}
+				return [args[0], component];
+			}));
+	}
+
+	bindTooltip() {
+		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
+		this.chartWrapper.addEventListener('mousemove', (e) => {
+			let o = getOffset(this.chartWrapper);
+			let relX = e.pageX - o.left - this.leftMargin;
+			let relY = e.pageY - o.top - this.translateY;
+
+			if(relY < this.height + this.translateY * 2) {
+				this.mapTooltipXPosition(relX);
+			} else {
+				this.tip.hide_tip();
+			}
+		});
+	}
+
+	mapTooltipXPosition(relX) {
+		let s = this.state;
+		if(!s.yExtremes) return;
+
+		let titles = s.xAxis.labels;
+		if(this.formatTooltipX && this.formatTooltipX(titles[0])) {
+			titles = titles.map(d=>this.formatTooltipX(d));
+		}
+
+		let formatY = this.formatTooltipY && this.formatTooltipY(this.y[0].values[0]);
+
+		for(var i=s.datasetLength - 1; i >= 0 ; i--) {
+			let xVal = s.xAxis.positions[i];
+			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxis.positions[i-1];
+			if(relX > xVal - s.unitWidth/2) {
+				let x = xVal + this.leftMargin;
+				let y = s.yExtremes[i] + this.translateY;
+
+				let values = this.data.datasets.map((set, j) => {
+					return {
+						title: set.title,
+						value: formatY ? this.formatTooltipY(set.values[i]) : set.values[i],
+						color: this.colors[j],
+					};
+				});
+
+				this.tip.set_values(x, y, titles[i], '', values);
+				this.tip.show_tip();
+				break;
+			}
+		}
+	}
+
+	makeOverlays() {
+		// Just make one out of the first element
+		// let index = this.xAxisLabels.length - 1;
+		// let unit = this.y[0].svg_units[index];
+		// this.setCurrentDataPoint(index);
+
+		// if(this.overlay) {
+		// 	this.overlay.parentNode.removeChild(this.overlay);
+		// }
+
+		// this.overlay = unit.cloneNode();
+		// this.overlay.style.fill = '#000000';
+		// this.overlay.style.opacity = '0.4';
+		// this.drawArea.appendChild(this.overlay);
+		this.overlayGuides = this.dataUnitComponents.map(c => {
+			return {
+				type: c.unitType,
+				overlay: undefined,
+				units: c.store,
+			}
+		});
+
+		this.state.currentIndex = 0;
+
+		// Render overlays
+		this.overlayGuides.map(d => {
+			let currentUnit = d.units[this.state.currentIndex];
+			d.overlay = makeOverlay[d.type](currentUnit);
+			this.drawArea.appendChild(d.overlay);
+		});
+	}
+
+	bindOverlay() {
+		// on event, update overlay
+		this.parent.addEventListener('data-select', (e) => {
+			this.updateOverlay(e.svg_unit);
+		});
+	}
+
+	bindUnits(units_array) {
+		// units_array.map(unit => {
+		// 	unit.addEventListener('click', () => {
+		// 		let index = unit.getAttribute('data-point-index');
+		// 		this.setCurrentDataPoint(index);
+		// 	});
+		// });
+	}
+
+	updateOverlay() {
+		this.overlayGuides.map(d => {
+			let currentUnit = d.units[this.state.currentIndex];
+			updateOverlay[d.type](currentUnit, d.overlay);
+		});
+	}
+
+	onLeftArrow() {
+		this.setCurrentDataPoint(this.state.currentIndex - 1);
+	}
+
+	onRightArrow() {
+		this.setCurrentDataPoint(this.state.currentIndex + 1);
+	}
+
+	getDataPoint(index=this.state.currentIndex) {
+		// check for length
+		let data_point = {
+			index: index
+		};
+		// let y = this.y[0];
+		// ['svg_units', 'yUnitPositions', 'values'].map(key => {
+		// 	let data_key = key.slice(0, key.length-1);
+		// 	data_point[data_key] = y[key][index];
+		// });
+		// data_point.label = this.xAxis.labels[index];
+		return data_point;
+	}
+
+	setCurrentDataPoint(index) {
+		let s = this.state;
+		index = parseInt(index);
+		if(index < 0) index = 0;
+		if(index >= s.xAxis.labels.length) index = s.xAxis.labels.length - 1;
+		if(index === s.currentIndex) return;
+		s.currentIndex = index;
+		fire(this.parent, "data-select", this.getDataPoint());
+	}
+
+	// API
+
+	addDataPoint(label, datasetValues, index=this.state.datasetLength) {
+		super.addDataPoint(label, datasetValues, index);
+		// console.log(label, datasetValues, this.data.labels);
+		this.data.labels.splice(index, 0, label);
+		this.data.datasets.map((d, i) => {
+			d.values.splice(index, 0, datasetValues[i]);
+		});
+		// console.log(this.data);
+		this.update(this.data);
+	}
+
+	removeDataPoint(index = this.state.datasetLength-1) {
+		super.removeDataPoint(index);
+		this.data.labels.splice(index, 1);
+		this.data.datasets.map(d => {
+			d.values.splice(index, 1);
+		});
+		this.update(this.data);
+	}
+
+	// getDataPoint(index = 0) {}
+	// setCurrentDataPoint(point) {}
+
+	updateDataset(datasetValues, index=0) {
+		this.data.datasets[index].values = datasetValues;
+		this.update(this.data);
+	}
+	// addDataset(dataset, index) {}
+	// removeDataset(index = 0) {}
+
+	// updateDatasets(datasets) {}
+
+	// updateDataPoint(dataPoint, index = 0) {}
+	// addDataPoint(dataPoint, index = 0) {}
+	// removeDataPoint(index = 0) {}
+}
+
+
+// keep a binding at the end of chart
+
+// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,

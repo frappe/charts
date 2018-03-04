@@ -2,6 +2,8 @@ import SvgTip from '../objects/SvgTip';
 import { $, isElementInViewport, getElementContentWidth } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup } from '../utils/draw';
 import { getStringWidth } from '../utils/helpers';
+import { VERT_SPACE_OUTSIDE_BASE_CHART, TRANSLATE_Y_BASE_CHART, LEFT_MARGIN_BASE_CHART,
+	RIGHT_MARGIN_BASE_CHART, INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT } from '../utils/constants';
 import { getColor, DEFAULT_COLORS } from '../utils/colors';
 import { getDifferentChart } from '../config';
 import { runSMILAnimation } from '../utils/animation';
@@ -77,15 +79,14 @@ export default class BaseChart {
 	}
 
 	setMargins() {
-		// TODO: think for all
 		let height = this.argHeight;
 		this.baseHeight = height;
-		this.height = height - 40; // change
-		this.translateY = 20;
+		this.height = height - VERT_SPACE_OUTSIDE_BASE_CHART;
+		this.translateY = TRANSLATE_Y_BASE_CHART;
 
 		// Horizontal margins
-		this.translateXLeft = 60;
-		this.translateXRight = 40;
+		this.leftMargin = LEFT_MARGIN_BASE_CHART;
+		this.rightMargin = RIGHT_MARGIN_BASE_CHART;
 	}
 
 	validate(){
@@ -154,7 +155,7 @@ export default class BaseChart {
 		// TODO: remove timeout and decrease post animate time in chart component
 		if(init) {
 			this.data = this.realData;
-			setTimeout(() => {this.update();}, 400);
+			setTimeout(() => {this.update();}, INIT_CHART_UPDATE_TIMEOUT);
 		}
 
 		this.renderLegend();
@@ -171,7 +172,7 @@ export default class BaseChart {
 		// 	}
 		// });
 		this.baseWidth = getElementContentWidth(this.parent) - outerAnnotationsWidth;
-		this.width = this.baseWidth - (this.translateXLeft + this.translateXRight);
+		this.width = this.baseWidth - (this.leftMargin + this.rightMargin);
 	}
 
 	update(data=this.data) {
@@ -206,7 +207,7 @@ export default class BaseChart {
 			setTimeout(() => {
 				components.forEach(c => c.make());
 				this.updateNav();
-			}, 400);
+			}, CHART_POST_ANIMATE_TIMEOUT);
 		} else {
 			this.updateNav();
 		}
@@ -246,7 +247,7 @@ export default class BaseChart {
 		this.drawArea = makeSVGGroup(
 			this.svg,
 			this.type + '-chart',
-			`translate(${this.translateXLeft}, ${this.translateY})`
+			`translate(${this.leftMargin}, ${this.translateY})`
 		);
 	}
 

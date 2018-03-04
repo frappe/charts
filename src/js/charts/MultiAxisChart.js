@@ -17,8 +17,8 @@ export default class MultiAxisChart extends AxisChart {
 	setMargins() {
 		super.setMargins();
 		let noOfLeftAxes = this.data.datasets.filter(d => d.axisPosition === 'left').length;
-		this.translateXLeft = (noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
-		this.translateXRight = (this.data.datasets.length - noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
+		this.leftMargin = (noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
+		this.rightMargin = (this.data.datasets.length - noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
 	}
 
 	prepareYAxis() { }
