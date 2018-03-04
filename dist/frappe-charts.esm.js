@@ -399,7 +399,7 @@ const LEFT_MARGIN_BASE_CHART = 60;
 const RIGHT_MARGIN_BASE_CHART = 40;
 const Y_AXIS_MARGIN = 60;
 
-const INIT_CHART_UPDATE_TIMEOUT = 1000;
+const INIT_CHART_UPDATE_TIMEOUT = 700;
 const CHART_POST_ANIMATE_TIMEOUT = 400;
 
 const DEFAULT_AXIS_CHART_TYPE = 'line';
@@ -1168,8 +1168,8 @@ class BaseChart {
 		this.setMargins();
 
 		// Bind window events
-		window.addEventListener('resize', () => this.draw());
-		window.addEventListener('orientationchange', () => this.draw());
+		window.addEventListener('resize', () => this.draw(true));
+		window.addEventListener('orientationchange', () => this.draw(true));
 	}
 
 	setColors() {
@@ -1214,7 +1214,7 @@ class BaseChart {
 		this.makeContainer();
 		this.makeTooltip();
 
-		this.draw(true);
+		this.draw(false, true);
 	}
 
 	setupComponents() {
@@ -1248,16 +1248,16 @@ class BaseChart {
 
 	bindTooltip() {}
 
-	draw(init=false) {
+	draw(onlyWidthChange=false, init=false) {
 		this.calcWidth();
-		this.calc();
+		this.calc(onlyWidthChange);
 		this.makeChartArea();
 		this.setupComponents();
 
-		this.components.forEach(c => c.setup(this.drawArea)); // or c.build()
-		this.components.forEach(c => c.make()); // or c.build()
+		this.components.forEach(c => c.setup(this.drawArea));
+		// this.components.forEach(c => c.make());
+		this.render(this.components, false);
 
-		// TODO: remove timeout and decrease post animate time in chart component
 		if(init) {
 			this.data = this.realData;
 			setTimeout(() => {this.update();}, INIT_CHART_UPDATE_TIMEOUT);
@@ -1268,15 +1268,7 @@ class BaseChart {
 	}
 
 	calcWidth() {
-		let outerAnnotationsWidth = 0;
-		// let charWidth = 8;
-		// this.specificValues.map(val => {
-		// 	let strWidth = getStringWidth((val.title + ""), charWidth);
-		// 	if(strWidth > outerAnnotationsWidth) {
-		// 		outerAnnotationsWidth = strWidth - 40;
-		// 	}
-		// });
-		this.baseWidth = getElementContentWidth(this.parent) - outerAnnotationsWidth;
+		this.baseWidth = getElementContentWidth(this.parent);
 		this.width = this.baseWidth - (this.leftMargin + this.rightMargin);
 	}
 
@@ -1314,19 +1306,15 @@ class BaseChart {
 				this.updateNav();
 			}, CHART_POST_ANIMATE_TIMEOUT);
 		} else {
+			components.forEach(c => c.make());
 			this.updateNav();
 		}
 	}
 
 	updateNav() {
 		if(this.config.isNavigable) {
-			// Make new overlays
-			if(!this.overlayGuides){
-				this.makeOverlays();
-				this.bindUnits();
-			} else {
-				this.updateOverlays();
-			}
+			this.makeOverlay();
+			this.bindUnits();
 		}
 	}
 
@@ -1381,7 +1369,8 @@ class BaseChart {
 		}
 	}
 
-	makeOverlays() {}
+	makeOverlay() {}
+	updateOverlay() {}
 	bindOverlay() {}
 	bindUnits() {}
 
@@ -2689,8 +2678,9 @@ class AxisChart extends BaseChart {
 		return zeroDataPrep(data);
 	}
 
-	calc() {
+	calc(onlyWidthChange = false) {
 		this.calcXPositions();
+		if(onlyWidthChange) return;
 		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
 	}
 
@@ -2775,7 +2765,9 @@ class AxisChart extends BaseChart {
 		if(this.data.yMarkers) {
 			this.state.yMarkers = this.data.yMarkers.map(d => {
 				d.position = scale(d.value, s.yAxis);
-				d.label += ': ' + d.value;
+				if(!d.label) {
+					d.label += ': ' + d.value;
+				}
 				return d;
 			});
 		}
@@ -3016,7 +3008,7 @@ class AxisChart extends BaseChart {
 		}
 	}
 
-	makeOverlays() {
+	makeOverlay() {
 		// Just make one out of the first element
 		// let index = this.xAxisLabels.length - 1;
 		// let unit = this.y[0].svg_units[index];
@@ -3030,6 +3022,14 @@ class AxisChart extends BaseChart {
 		// this.overlay.style.fill = '#000000';
 		// this.overlay.style.opacity = '0.4';
 		// this.drawArea.appendChild(this.overlay);
+
+		if(this.overlayGuides) {
+			this.overlayGuides.forEach(g => {
+				let o = g.overlay;
+				o.parentNode.removeChild(o);
+			});
+		}
+
 		this.overlayGuides = this.dataUnitComponents.map(c => {
 			return {
 				type: c.unitType,
@@ -3038,7 +3038,9 @@ class AxisChart extends BaseChart {
 			}
 		});
 
-		this.state.currentIndex = 0;
+		if(this.state.currentIndex === undefined) {
+			this.state.currentIndex = 0;
+		}
 
 		// Render overlays
 		this.overlayGuides.map(d => {
@@ -3046,6 +3048,7 @@ class AxisChart extends BaseChart {
 			d.overlay = makeOverlay[d.type](currentUnit);
 			this.drawArea.appendChild(d.overlay);
 		});
+
 	}
 
 	bindOverlay() {

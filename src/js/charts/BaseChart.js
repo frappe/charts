@@ -47,8 +47,8 @@ export default class BaseChart {
 		this.setMargins();
 
 		// Bind window events
-		window.addEventListener('resize', () => this.draw());
-		window.addEventListener('orientationchange', () => this.draw());
+		window.addEventListener('resize', () => this.draw(true));
+		window.addEventListener('orientationchange', () => this.draw(true));
 	}
 
 	setColors() {
@@ -93,7 +93,7 @@ export default class BaseChart {
 		this.makeContainer();
 		this.makeTooltip();
 
-		this.draw(true);
+		this.draw(false, true);
 	}
 
 	setupComponents() {
@@ -127,16 +127,16 @@ export default class BaseChart {
 
 	bindTooltip() {}
 
-	draw(init=false) {
+	draw(onlyWidthChange=false, init=false) {
 		this.calcWidth();
-		this.calc();
+		this.calc(onlyWidthChange);
 		this.makeChartArea();
 		this.setupComponents();
 
-		this.components.forEach(c => c.setup(this.drawArea)); // or c.build()
-		this.components.forEach(c => c.make()); // or c.build()
+		this.components.forEach(c => c.setup(this.drawArea));
+		// this.components.forEach(c => c.make());
+		this.render(this.components, false);
 
-		// TODO: remove timeout and decrease post animate time in chart component
 		if(init) {
 			this.data = this.realData;
 			setTimeout(() => {this.update();}, INIT_CHART_UPDATE_TIMEOUT);
@@ -147,15 +147,7 @@ export default class BaseChart {
 	}
 
 	calcWidth() {
-		let outerAnnotationsWidth = 0;
-		// let charWidth = 8;
-		// this.specificValues.map(val => {
-		// 	let strWidth = getStringWidth((val.title + ""), charWidth);
-		// 	if(strWidth > outerAnnotationsWidth) {
-		// 		outerAnnotationsWidth = strWidth - 40;
-		// 	}
-		// });
-		this.baseWidth = getElementContentWidth(this.parent) - outerAnnotationsWidth;
+		this.baseWidth = getElementContentWidth(this.parent);
 		this.width = this.baseWidth - (this.leftMargin + this.rightMargin);
 	}
 
@@ -193,19 +185,15 @@ export default class BaseChart {
 				this.updateNav();
 			}, CHART_POST_ANIMATE_TIMEOUT);
 		} else {
+			components.forEach(c => c.make());
 			this.updateNav();
 		}
 	}
 
 	updateNav() {
 		if(this.config.isNavigable) {
-			// Make new overlays
-			if(!this.overlayGuides){
-				this.makeOverlays();
-				this.bindUnits();
-			} else {
-				this.updateOverlays();
-			}
+			this.makeOverlay();
+			this.bindUnits();
 		}
 	}
 
@@ -260,7 +248,8 @@ export default class BaseChart {
 		}
 	}
 
-	makeOverlays() {}
+	makeOverlay() {}
+	updateOverlay() {}
 	bindOverlay() {}
 	bindUnits() {}
 

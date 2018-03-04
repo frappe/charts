@@ -45,8 +45,9 @@ export default class AxisChart extends BaseChart {
 		return zeroDataPrep(data);
 	}
 
-	calc() {
+	calc(onlyWidthChange = false) {
 		this.calcXPositions();
+		if(onlyWidthChange) return;
 		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
 	}
 
@@ -131,7 +132,9 @@ export default class AxisChart extends BaseChart {
 		if(this.data.yMarkers) {
 			this.state.yMarkers = this.data.yMarkers.map(d => {
 				d.position = scale(d.value, s.yAxis);
-				d.label += ': ' + d.value;
+				if(!d.label) {
+					d.label += ': ' + d.value;
+				}
 				return d;
 			});
 		}
@@ -373,7 +376,7 @@ export default class AxisChart extends BaseChart {
 		}
 	}
 
-	makeOverlays() {
+	makeOverlay() {
 		// Just make one out of the first element
 		// let index = this.xAxisLabels.length - 1;
 		// let unit = this.y[0].svg_units[index];
@@ -387,6 +390,14 @@ export default class AxisChart extends BaseChart {
 		// this.overlay.style.fill = '#000000';
 		// this.overlay.style.opacity = '0.4';
 		// this.drawArea.appendChild(this.overlay);
+
+		if(this.overlayGuides) {
+			this.overlayGuides.forEach(g => {
+				let o = g.overlay;
+				o.parentNode.removeChild(o);
+			});
+		}
+
 		this.overlayGuides = this.dataUnitComponents.map(c => {
 			return {
 				type: c.unitType,
@@ -395,7 +406,9 @@ export default class AxisChart extends BaseChart {
 			}
 		});
 
-		this.state.currentIndex = 0;
+		if(this.state.currentIndex === undefined) {
+			this.state.currentIndex = 0;
+		}
 
 		// Render overlays
 		this.overlayGuides.map(d => {
@@ -403,6 +416,7 @@ export default class AxisChart extends BaseChart {
 			d.overlay = makeOverlay[d.type](currentUnit);
 			this.drawArea.appendChild(d.overlay);
 		})
+
 	}
 
 	bindOverlay() {
