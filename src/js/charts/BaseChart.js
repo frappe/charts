@@ -35,7 +35,6 @@ export default class BaseChart {
 		this.options = {};
 
 		if(this.config.isNavigable) {
-			this.state.currentIndex = 0;
 			this.overlays = [];
 		}
 
@@ -192,8 +191,12 @@ export default class BaseChart {
 
 	updateNav() {
 		if(this.config.isNavigable) {
-			this.makeOverlay();
-			this.bindUnits();
+			// if(!this.overlayGuides){
+				this.makeOverlay();
+				this.bindUnits();
+			// } else {
+			// 	this.updateOverlay();
+			// }
 		}
 	}
 
@@ -242,7 +245,9 @@ export default class BaseChart {
 			document.addEventListener('keydown', (e) => {
 				if(isElementInViewport(this.chartWrapper)) {
 					e = e || window.event;
-					this.keyActions[e.keyCode]();
+					if(this.keyActions[e.keyCode]) {
+						this.keyActions[e.keyCode]();
+					}
 				}
 			});
 		}

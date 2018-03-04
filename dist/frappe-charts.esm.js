@@ -1156,7 +1156,6 @@ class BaseChart {
 		this.options = {};
 
 		if(this.config.isNavigable) {
-			this.state.currentIndex = 0;
 			this.overlays = [];
 		}
 
@@ -1313,8 +1312,12 @@ class BaseChart {
 
 	updateNav() {
 		if(this.config.isNavigable) {
-			this.makeOverlay();
-			this.bindUnits();
+			// if(!this.overlayGuides){
+				this.makeOverlay();
+				this.bindUnits();
+			// } else {
+			// 	this.updateOverlay();
+			// }
 		}
 	}
 
@@ -1363,7 +1366,9 @@ class BaseChart {
 			document.addEventListener('keydown', (e) => {
 				if(isElementInViewport(this.chartWrapper)) {
 					e = e || window.event;
-					this.keyActions[e.keyCode]();
+					if(this.keyActions[e.keyCode]) {
+						this.keyActions[e.keyCode]();
+					}
 				}
 			});
 		}
@@ -2494,7 +2499,7 @@ let componentConfigs = {
 		makeElements(data) {
 			let c = this.constants;
 			this.unitType = 'bar';
-			return data.yPositions.map((y, j) => {
+			this.units = data.yPositions.map((y, j) => {
 				return datasetBar(
 					data.xPositions[j],
 					y,
@@ -2510,6 +2515,7 @@ let componentConfigs = {
 					}
 				)
 			});
+			return this.units;
 		},
 		animateElements(newData) {
 			let c = this.constants;
@@ -2573,10 +2579,10 @@ let componentConfigs = {
 				}
 			);
 
-			this.dots = [];
+			this.units = [];
 
 			if(!c.hideDots) {
-				this.dots = data.yPositions.map((y, j) => {
+				this.units = data.yPositions.map((y, j) => {
 					return datasetDot(
 						data.xPositions[j],
 						y,
@@ -2588,8 +2594,7 @@ let componentConfigs = {
 				});
 			}
 
-			return Object.values(this.paths).concat(this.dots);
-			// return this.dots;
+			return Object.values(this.paths).concat(this.units);
 		},
 		animateElements(newData) {
 			let newXPos = newData.xPositions;
@@ -2619,8 +2624,8 @@ let componentConfigs = {
 			animateElements = animateElements.concat(animatePath(
 				this.paths, newXPos, newYPos, newData.zeroLine));
 
-			if(this.dots.length) {
-				this.dots.map((dot, i) => {
+			if(this.units.length) {
+				this.units.map((dot, i) => {
 					animateElements = animateElements.concat(animateDot(
 						dot, newXPos[i], newYPos[i]));
 				});
@@ -3009,20 +3014,6 @@ class AxisChart extends BaseChart {
 	}
 
 	makeOverlay() {
-		// Just make one out of the first element
-		// let index = this.xAxisLabels.length - 1;
-		// let unit = this.y[0].svg_units[index];
-		// this.setCurrentDataPoint(index);
-
-		// if(this.overlay) {
-		// 	this.overlay.parentNode.removeChild(this.overlay);
-		// }
-
-		// this.overlay = unit.cloneNode();
-		// this.overlay.style.fill = '#000000';
-		// this.overlay.style.opacity = '0.4';
-		// this.drawArea.appendChild(this.overlay);
-
 		if(this.overlayGuides) {
 			this.overlayGuides.forEach(g => {
 				let o = g.overlay;
@@ -3034,12 +3025,12 @@ class AxisChart extends BaseChart {
 			return {
 				type: c.unitType,
 				overlay: undefined,
-				units: c.store,
+				units: c.units,
 			}
 		});
 
 		if(this.state.currentIndex === undefined) {
-			this.state.currentIndex = 0;
+			this.state.currentIndex = this.state.datasetLength - 1;
 		}
 
 		// Render overlays
@@ -3051,10 +3042,19 @@ class AxisChart extends BaseChart {
 
 	}
 
+	updateOverlayGuides() {
+		if(this.overlayGuides) {
+			this.overlayGuides.forEach(g => {
+				let o = g.overlay;
+				o.parentNode.removeChild(o);
+			});
+		}
+	}
+
 	bindOverlay() {
 		// on event, update overlay
 		this.parent.addEventListener('data-select', (e) => {
-			this.updateOverlay(e.svg_unit);
+			this.updateOverlay();
 		});
 	}
 

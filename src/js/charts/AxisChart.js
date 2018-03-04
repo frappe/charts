@@ -377,20 +377,6 @@ export default class AxisChart extends BaseChart {
 	}
 
 	makeOverlay() {
-		// Just make one out of the first element
-		// let index = this.xAxisLabels.length - 1;
-		// let unit = this.y[0].svg_units[index];
-		// this.setCurrentDataPoint(index);
-
-		// if(this.overlay) {
-		// 	this.overlay.parentNode.removeChild(this.overlay);
-		// }
-
-		// this.overlay = unit.cloneNode();
-		// this.overlay.style.fill = '#000000';
-		// this.overlay.style.opacity = '0.4';
-		// this.drawArea.appendChild(this.overlay);
-
 		if(this.overlayGuides) {
 			this.overlayGuides.forEach(g => {
 				let o = g.overlay;
@@ -402,12 +388,12 @@ export default class AxisChart extends BaseChart {
 			return {
 				type: c.unitType,
 				overlay: undefined,
-				units: c.store,
+				units: c.units,
 			}
 		});
 
 		if(this.state.currentIndex === undefined) {
-			this.state.currentIndex = 0;
+			this.state.currentIndex = this.state.datasetLength - 1;
 		}
 
 		// Render overlays
@@ -419,10 +405,19 @@ export default class AxisChart extends BaseChart {
 
 	}
 
+	updateOverlayGuides() {
+		if(this.overlayGuides) {
+			this.overlayGuides.forEach(g => {
+				let o = g.overlay;
+				o.parentNode.removeChild(o);
+			});
+		}
+	}
+
 	bindOverlay() {
 		// on event, update overlay
 		this.parent.addEventListener('data-select', (e) => {
-			this.updateOverlay(e.svg_unit);
+			this.updateOverlay();
 		});
 	}
 

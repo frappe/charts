@@ -1,7 +1,7 @@
 // Composite Chart
 // ================================================================================
 let report_count_list = [17, 40, 33, 44, 126, 156,
-	324, 333, 478, 495, 527];
+	324, 333, 478, 495, 176];
 
 let bar_composite_data = {
 	labels: ["2007", "2008", "2009", "2010", "2011", "2012",
@@ -36,7 +36,7 @@ let bar_composite_data = {
 let line_composite_data = {
 	labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
 	datasets: [{
-		"values": [37, 36, 32, 33, 12, 34, 52, 45, 58, 57, 64, 35],
+		"values": [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 0, 0],
 		// "values": [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 40, 40],
 		// "values": [-36, -46, -45, -32, -27, -31, -30, -36, -39, -49, -40, -40],
 	}]
@@ -54,7 +54,7 @@ let more_line_data = [
 	[29, 20, 22, 16, 16, 19, 24, 26, 57, 31, 46, 27],
 	[36, 24, 38, 27, 15, 22, 24, 38, 32, 57, 139, 26],
 	[37, 36, 32, 33, 12, 34, 52, 45, 58, 57, 64, 35],
-	[36, 46, 45, 32, 27, 31, 30, 36, 39, 58, 82, 62],
+	[36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 0, 0],
 	// [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 40, 40]
 	// [-36, -46, -45, -32, -27, -31, -30, -36, -39, -49, -40, -40]
 ];
@@ -65,29 +65,26 @@ let c2 = document.querySelector("#chart-composite-2");
 let bar_composite_chart = new Chart (c1, {
 	title: "Fireball/Bolide Events - Yearly (more than 5 reports)",
 	data: bar_composite_data,
-	type: 'line',
+	type: 'bar',
 	height: 180,
-	colors: ['green'],
+	colors: ['orange'],
 	isNavigable: 1,
 	isSeries: 1,
-	// valuesOverPoints: 1,
-
-	lineOptions: {
-		dotSize: 8
-	},
-	// yAxisMode: 'tick'
+	valuesOverPoints: 1,
+	yAxisMode: 'tick'
 	// regionFill: 1
 });
 
 let line_composite_chart = new Chart (c2, {
 	data: line_composite_data,
-	type: 'bar',
+	type: 'line',
+	lineOptions: {
+		dotSize: 10
+	},
 	height: 180,
-	colors: ['#46a9f9'],
+	colors: ['green'],
 	isSeries: 1,
 	valuesOverPoints: 1,
-	xAxisMode: 'tick'
-
 });
 
 bar_composite_chart.parent.addEventListener('data-select', (e) => {
@@ -176,7 +173,6 @@ let type_chart = new Chart("#chart-types", {
 	xAxisMode: 'tick',
 	yAxisMode: 'span',
 	valuesOverPoints: 1,
-	isNavigable: 1,
 	barOptions: {
 		stacked: 1
 	}
@@ -417,7 +413,7 @@ let aggr_chart = new Chart("#chart-aggr", {
 	colors: ['light-green', 'blue'],
 	valuesOverPoints: 1,
 	barOptions: {
-		stacked: 1
+		// stacked: 1
 	}
 });
 
