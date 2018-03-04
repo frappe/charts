@@ -4,7 +4,7 @@ export const LEFT_MARGIN_BASE_CHART = 60;
 export const RIGHT_MARGIN_BASE_CHART = 40;
 export const Y_AXIS_MARGIN = 60;
 
-export const INIT_CHART_UPDATE_TIMEOUT = 400;
+export const INIT_CHART_UPDATE_TIMEOUT = 1000;
 export const CHART_POST_ANIMATE_TIMEOUT = 400;
 
 export const DEFAULT_AXIS_CHART_TYPE = 'line';

@@ -13,9 +13,9 @@ export default class BaseChart {
 		this.rawChartArgs = options;
 
 		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
-        if (!(this.parent instanceof HTMLElement)) {
-            throw new Error('No `parent` element to render on was provided.');
-        }
+		if (!(this.parent instanceof HTMLElement)) {
+			throw new Error('No `parent` element to render on was provided.');
+		}
 
 		this.title = options.title || '';
 		this.subtitle = options.subtitle || '';
@@ -249,7 +249,7 @@ export default class BaseChart {
 				'38': this.onUpArrow.bind(this),
 				'39': this.onRightArrow.bind(this),
 				'40': this.onDownArrow.bind(this),
-			}
+			};
 
 			document.addEventListener('keydown', (e) => {
 				if(isElementInViewport(this.chartWrapper)) {

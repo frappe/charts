@@ -336,8 +336,9 @@ function animateRegion(rectGroup, newY1, newY2, oldY2) {
 	return [rectAnim, groupAnim];
 }
 
-function animateBar(bar, x, yTop, width, index=0, meta={}) {
+function animateBar(bar, x, yTop, width, offset=0, index=0, meta={}) {
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
+	y -= offset;
 	if(bar.nodeName !== 'rect') {
 		let rect = bar.childNodes[0];
 		let rectAnim = [
@@ -398,7 +399,7 @@ const LEFT_MARGIN_BASE_CHART = 60;
 const RIGHT_MARGIN_BASE_CHART = 40;
 const Y_AXIS_MARGIN = 60;
 
-const INIT_CHART_UPDATE_TIMEOUT = 400;
+const INIT_CHART_UPDATE_TIMEOUT = 1000;
 const CHART_POST_ANIMATE_TIMEOUT = 400;
 
 const DEFAULT_AXIS_CHART_TYPE = 'line';
@@ -1133,9 +1134,9 @@ class BaseChart {
 		this.rawChartArgs = options;
 
 		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
-        if (!(this.parent instanceof HTMLElement)) {
-            throw new Error('No `parent` element to render on was provided.');
-        }
+		if (!(this.parent instanceof HTMLElement)) {
+			throw new Error('No `parent` element to render on was provided.');
+		}
 
 		this.title = options.title || '';
 		this.subtitle = options.subtitle || '';
@@ -2510,9 +2511,9 @@ let componentConfigs = {
 					y,
 					data.barWidth,
 					c.color,
-					(c.valuesOverPoints ? (c.stacked ? data.cumulativeYs[j] : data.values[j]) : ''),
+					data.labels[j],
 					j,
-					y - (c.stacked ? data.cumulativeYPos[j] : y),
+					data.offsets[j],
 					{
 						zeroLine: data.zeroLine,
 						barsWidth: data.barsWidth,
@@ -2526,29 +2527,24 @@ let componentConfigs = {
 
 			let newXPos = newData.xPositions;
 			let newYPos = newData.yPositions;
-			let newCYPos = newData.cumulativeYPos;
-			let newValues = newData.values;
-			let newCYs = newData.cumulativeYs;
+			let newOffsets = newData.offsets;
+			let newLabels = newData.labels;
 
 			let oldXPos = this.oldData.xPositions;
 			let oldYPos = this.oldData.yPositions;
-			let oldCYPos = this.oldData.cumulativeYPos;
-			let oldValues = this.oldData.values;
-			let oldCYs = this.oldData.cumulativeYs;
+			let oldOffsets = this.oldData.offsets;
+			let oldLabels = this.oldData.labels;
 
 			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
 			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
-			[oldCYPos, newCYPos] = equilizeNoOfElements(oldCYPos, newCYPos);
-			[oldValues, newValues] = equilizeNoOfElements(oldValues, newValues);
-			[oldCYs, newCYs] = equilizeNoOfElements(oldCYs, newCYs);
+			[oldOffsets, newOffsets] = equilizeNoOfElements(oldOffsets, newOffsets);
+			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
 
 			this.render({
 				xPositions: oldXPos,
 				yPositions: oldYPos,
-				cumulativeYPos: oldCYPos,
-
-				values: newValues,
-				cumulativeYs: newCYs,
+				offsets: oldOffsets,
+				labels: newLabels,
 
 				zeroLine: this.oldData.zeroLine,
 				barsWidth: this.oldData.barsWidth,
@@ -2559,7 +2555,7 @@ let componentConfigs = {
 
 			this.store.map((bar, i) => {
 				animateElements = animateElements.concat(animateBar(
-					bar, newXPos[i], newYPos[i], newData.barWidth, c.index,
+					bar, newXPos[i], newYPos[i], newData.barWidth, newOffsets[i], c.index,
 						{zeroLine: newData.zeroLine}
 				));
 			});
@@ -2866,23 +2862,37 @@ class AxisChart extends BaseChart {
 				function() {
 					let s = this.state;
 					let d = s.datasets[index];
+					let stacked = this.barOptions.stacked;
 
 					let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
 					let barsWidth = s.unitWidth * (1 - spaceRatio);
-					let barWidth = barsWidth/(this.barOptions.stacked ? 1 : barDatasets.length);
+					let barWidth = barsWidth/(stacked ? 1 : barDatasets.length);
 
 					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2);
-					if(!this.barOptions.stacked) {
+					if(!stacked) {
 						xPositions = xPositions.map(p => p + barWidth * index);
+					}
+
+					let labels = new Array(s.datasetLength).fill('');
+					if(this.valuesOverPoints) {
+						if(stacked && d.index === s.datasets.length - 1) {
+							labels = d.cumulativeYs;
+						} else {
+							labels = d.values;
+						}
+					}
+
+					let offsets = new Array(s.datasetLength).fill(0);
+					if(stacked) {
+						offsets = d.yPositions.map((y, j) => y - d.cumulativeYPos[j]);
 					}
 
 					return {
 						xPositions: xPositions,
 						yPositions: d.yPositions,
-						cumulativeYPos: d.cumulativeYPos,
-
-						values: d.values,
-						cumulativeYs: d.cumulativeYs,
+						offsets: offsets,
+						// values: d.values,
+						labels: labels,
 
 						zeroLine: s.yAxis.zeroLine,
 						barsWidth: barsWidth,

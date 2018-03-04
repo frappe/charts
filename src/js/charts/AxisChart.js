@@ -219,23 +219,37 @@ export default class AxisChart extends BaseChart {
 				function() {
 					let s = this.state;
 					let d = s.datasets[index];
+					let stacked = this.barOptions.stacked;
 
 					let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
 					let barsWidth = s.unitWidth * (1 - spaceRatio);
-					let barWidth = barsWidth/(this.barOptions.stacked ? 1 : barDatasets.length);
+					let barWidth = barsWidth/(stacked ? 1 : barDatasets.length);
 
 					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2);
-					if(!this.barOptions.stacked) {
+					if(!stacked) {
 						xPositions = xPositions.map(p => p + barWidth * index);
+					}
+
+					let labels = new Array(s.datasetLength).fill('');
+					if(this.valuesOverPoints) {
+						if(stacked && d.index === s.datasets.length - 1) {
+							labels = d.cumulativeYs;
+						} else {
+							labels = d.values;
+						}
+					}
+
+					let offsets = new Array(s.datasetLength).fill(0);
+					if(stacked) {
+						offsets = d.yPositions.map((y, j) => y - d.cumulativeYPos[j]);
 					}
 
 					return {
 						xPositions: xPositions,
 						yPositions: d.yPositions,
-						cumulativeYPos: d.cumulativeYPos,
-
-						values: d.values,
-						cumulativeYs: d.cumulativeYs,
+						offsets: offsets,
+						// values: d.values,
+						labels: labels,
 
 						zeroLine: s.yAxis.zeroLine,
 						barsWidth: barsWidth,

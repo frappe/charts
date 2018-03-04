@@ -42,8 +42,9 @@ export function animateRegion(rectGroup, newY1, newY2, oldY2) {
 	return [rectAnim, groupAnim];
 }
 
-export function animateBar(bar, x, yTop, width, index=0, meta={}) {
+export function animateBar(bar, x, yTop, width, offset=0, index=0, meta={}) {
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
+	y -= offset;
 	if(bar.nodeName !== 'rect') {
 		let rect = bar.childNodes[0];
 		let rectAnim = [

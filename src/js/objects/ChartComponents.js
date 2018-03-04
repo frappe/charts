@@ -207,9 +207,9 @@ let componentConfigs = {
 					y,
 					data.barWidth,
 					c.color,
-					(c.valuesOverPoints ? (c.stacked ? data.cumulativeYs[j] : data.values[j]) : ''),
+					data.labels[j],
 					j,
-					y - (c.stacked ? data.cumulativeYPos[j] : y),
+					data.offsets[j],
 					{
 						zeroLine: data.zeroLine,
 						barsWidth: data.barsWidth,
@@ -223,29 +223,24 @@ let componentConfigs = {
 
 			let newXPos = newData.xPositions;
 			let newYPos = newData.yPositions;
-			let newCYPos = newData.cumulativeYPos;
-			let newValues = newData.values;
-			let newCYs = newData.cumulativeYs;
+			let newOffsets = newData.offsets;
+			let newLabels = newData.labels;
 
 			let oldXPos = this.oldData.xPositions;
 			let oldYPos = this.oldData.yPositions;
-			let oldCYPos = this.oldData.cumulativeYPos;
-			let oldValues = this.oldData.values;
-			let oldCYs = this.oldData.cumulativeYs;
+			let oldOffsets = this.oldData.offsets;
+			let oldLabels = this.oldData.labels;
 
 			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
 			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
-			[oldCYPos, newCYPos] = equilizeNoOfElements(oldCYPos, newCYPos);
-			[oldValues, newValues] = equilizeNoOfElements(oldValues, newValues);
-			[oldCYs, newCYs] = equilizeNoOfElements(oldCYs, newCYs);
+			[oldOffsets, newOffsets] = equilizeNoOfElements(oldOffsets, newOffsets);
+			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
 
 			this.render({
 				xPositions: oldXPos,
 				yPositions: oldYPos,
-				cumulativeYPos: oldCYPos,
-
-				values: newValues,
-				cumulativeYs: newCYs,
+				offsets: oldOffsets,
+				labels: newLabels,
 
 				zeroLine: this.oldData.zeroLine,
 				barsWidth: this.oldData.barsWidth,
@@ -256,7 +251,7 @@ let componentConfigs = {
 
 			this.store.map((bar, i) => {
 				animateElements = animateElements.concat(animateBar(
-					bar, newXPos[i], newYPos[i], newData.barWidth, c.index,
+					bar, newXPos[i], newYPos[i], newData.barWidth, newOffsets[i], c.index,
 						{zeroLine: newData.zeroLine}
 				));
 			});
