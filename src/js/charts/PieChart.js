@@ -7,8 +7,8 @@ const ANGLE_RATIO = Math.PI / 180;
 const FULL_ANGLE = 360;
 
 export default class PieChart extends BaseChart {
-	constructor(args) {
-		super(args);
+	constructor(parent, args) {
+		super(parent, args);
 		this.type = 'pie';
 		this.elements_to_animate = null;
 		this.hoverRadio = args.hoverRadio || 0.1;

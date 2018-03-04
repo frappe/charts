@@ -987,7 +987,7 @@ const COLOR_COMPATIBLE_CHARTS = {
 	heatmap: []
 };
 
-function getDifferentChart(type, current_type, args) {
+function getDifferentChart(type, current_type, parent, args) {
 	if(type === current_type) return;
 
 	if(!ALL_CHART_TYPES.includes(type)) {
@@ -1004,8 +1004,7 @@ function getDifferentChart(type, current_type, args) {
 	// Okay, this is anticlimactic
 	// this function will need to actually be 'changeChartType(type)'
 	// that will update only the required elements, but for now ...
-	return new Chart({
-		parent: args.parent,
+	return new Chart(parent, {
 		title: args.title,
 		data: args.data,
 		type: type,
@@ -1130,36 +1129,26 @@ function runSMILAnimation(parent, svgElement, elementsToAnimate) {
 }
 
 class BaseChart {
-	constructor({
-		height = 240,
-
-		title = '',
-		subtitle = '',
-		colors = [],
-
-		isNavigable = 0,
-		showLegend = 1,
-
-		type = '',
-
-		parent,
-		data
-	}) {
-		this.rawChartArgs = arguments[0];
+	constructor(parent, options) {
+		this.rawChartArgs = options;
 
 		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
-		this.title = title;
-		this.subtitle = subtitle;
-		this.argHeight = height;
-		this.type = type;
+        if (!(this.parent instanceof HTMLElement)) {
+            throw new Error('No `parent` element to render on was provided.');
+        }
 
-		this.realData = this.prepareData(data);
+		this.title = options.title || '';
+		this.subtitle = options.subtitle || '';
+		this.argHeight = options.height || 240;
+		this.type = options.type || '';
+
+		this.realData = this.prepareData(options.data);
 		this.data = this.prepareFirstData(this.realData);
 		this.colors = [];
 		this.config = {
 			showTooltip: 1, // calculate
-			showLegend: 1,
-			isNavigable: isNavigable,
+			showLegend: options.showLegend || 1,
+			isNavigable: options.isNavigable || 0,
 			animate: 1
 		};
 		this.state = {};
@@ -1170,7 +1159,7 @@ class BaseChart {
 			this.overlays = [];
 		}
 
-		this.configure(arguments[0]);
+		this.configure(options);
 	}
 
 	configure(args) {
@@ -1210,11 +1199,7 @@ class BaseChart {
 		this.rightMargin = RIGHT_MARGIN_BASE_CHART;
 	}
 
-	validate(){
-		if(!this.parent) {
-			console.error("No parent element to render on was provided.");
-			return false;
-		}
+	validate() {
 		return true;
 	}
 
@@ -1419,13 +1404,13 @@ class BaseChart {
 	removeDataPoint(index = 0) {}
 
 	getDifferentChart(type) {
-		return getDifferentChart(type, this.type, this.rawChartArgs);
+		return getDifferentChart(type, this.type, this.parent, this.rawChartArgs);
 	}
 }
 
 class PercentageChart extends BaseChart {
-	constructor(args) {
-		super(args);
+	constructor(parent, args) {
+		super(parent, args);
 		this.type = 'percentage';
 
 		this.max_slices = 10;
@@ -1549,8 +1534,8 @@ const ANGLE_RATIO = Math.PI / 180;
 const FULL_ANGLE = 360;
 
 class PieChart extends BaseChart {
-	constructor(args) {
-		super(args);
+	constructor(parent, args) {
+		super(parent, args);
 		this.type = 'pie';
 		this.elements_to_animate = null;
 		this.hoverRadio = args.hoverRadio || 0.1;
@@ -1980,29 +1965,21 @@ function getMaxCheckpoint(value, distribution) {
 }
 
 class Heatmap extends BaseChart {
-	constructor({
-		start = '',
-		domain = '',
-		subdomain = '',
-		data = {},
-		discrete_domains = 0,
-		count_label = '',
-		legend_colors = []
-	}) {
-		super(arguments[0]);
+	constructor(parent, options) {
+		super(parent, options);
 
 		this.type = 'heatmap';
 
-		this.domain = domain;
-		this.subdomain = subdomain;
-		this.data = data;
-		this.discrete_domains = discrete_domains;
-		this.count_label = count_label;
+		this.domain = options.domain || '';
+		this.subdomain = options.subdomain || '';
+		this.data = options.data || {};
+		this.discrete_domains = options.discrete_domains || 1;
+		this.count_label = options.count_label || '';
 
 		let today = new Date();
-		this.start = start || addDays(today, 365);
+		this.start = options.start || addDays(today, 365);
 
-		legend_colors = legend_colors.slice(0, 5);
+		let legend_colors = (options.legend_colors || []).slice(0, 5);
 		this.legend_colors = this.validate_colors(legend_colors)
 			? legend_colors
 			: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
@@ -2680,8 +2657,8 @@ function getComponent(name, constants, getData) {
 }
 
 class AxisChart extends BaseChart {
-	constructor(args) {
-		super(args);
+	constructor(parent, args) {
+		super(parent, args);
 		this.isSeries = args.isSeries;
 		this.valuesOverPoints = args.valuesOverPoints;
 		this.formatTooltipY = args.formatTooltipY;
@@ -3158,7 +3135,6 @@ class AxisChart extends BaseChart {
 
 // keep a binding at the end of chart
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,
@@ -3166,16 +3142,16 @@ const chartTypes = {
 	pie: PieChart
 };
 
-function getChartByType(chartType = 'line', options) {
+function getChartByType(chartType = 'line', parent, options) {
 	if(chartType === 'line') {
 		options.type = 'line';
-		return new AxisChart(options);
+		return new AxisChart(parent, options);
 	} else if (chartType === 'bar') {
 		options.type = 'bar';
-		return new AxisChart(options);
+		return new AxisChart(parent, options);
 	} else if (chartType === 'axis-mixed') {
 		options.type = 'line';
-		return new AxisChart(options);
+		return new AxisChart(parent, options);
 	}
 
 	if (!chartTypes[chartType]) {
@@ -3183,12 +3159,12 @@ function getChartByType(chartType = 'line', options) {
 		return;
 	}
 
-	return new chartTypes[chartType](options);
+	return new chartTypes[chartType](parent, options);
 }
 
 class Chart {
-	constructor(args) {
-		return getChartByType(args.type, arguments[0]);
+	constructor(parent, options) {
+		return getChartByType(options.type, parent, options);
 	}
 }
 

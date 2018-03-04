@@ -2,8 +2,8 @@ import BaseChart from './BaseChart';
 import { $, getOffset } from '../utils/dom';
 
 export default class PercentageChart extends BaseChart {
-	constructor(args) {
-		super(args);
+	constructor(parent, args) {
+		super(parent, args);
 		this.type = 'percentage';
 
 		this.max_slices = 10;

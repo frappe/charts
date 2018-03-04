@@ -9,8 +9,8 @@ import { makeOverlay, updateOverlay } from '../utils/draw';
 import { MIN_BAR_PERCENT_HEIGHT, DEFAULT_AXIS_CHART_TYPE, BAR_CHART_SPACE_RATIO, LINE_CHART_DOT_SIZE } from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
-	constructor(args) {
-		super(args);
+	constructor(parent, args) {
+		super(parent, args);
 		this.isSeries = args.isSeries;
 		this.valuesOverPoints = args.valuesOverPoints;
 		this.formatTooltipY = args.formatTooltipY;

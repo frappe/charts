@@ -5,29 +5,21 @@ import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
 import { isValidColor } from '../utils/colors';
 
 export default class Heatmap extends BaseChart {
-	constructor({
-		start = '',
-		domain = '',
-		subdomain = '',
-		data = {},
-		discrete_domains = 0,
-		count_label = '',
-		legend_colors = []
-	}) {
-		super(arguments[0]);
+	constructor(parent, options) {
+		super(parent, options);
 
 		this.type = 'heatmap';
 
-		this.domain = domain;
-		this.subdomain = subdomain;
-		this.data = data;
-		this.discrete_domains = discrete_domains;
-		this.count_label = count_label;
+		this.domain = options.domain || '';
+		this.subdomain = options.subdomain || '';
+		this.data = options.data || {};
+		this.discrete_domains = options.discrete_domains || 1;
+		this.count_label = options.count_label || '';
 
 		let today = new Date();
-		this.start = start || addDays(today, 365);
+		this.start = options.start || addDays(today, 365);
 
-		legend_colors = legend_colors.slice(0, 5);
+		let legend_colors = (options.legend_colors || []).slice(0, 5);
 		this.legend_colors = this.validate_colors(legend_colors)
 			? legend_colors
 			: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];

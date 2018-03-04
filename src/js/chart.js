@@ -13,16 +13,16 @@ const chartTypes = {
 	pie: PieChart
 };
 
-function getChartByType(chartType = 'line', options) {
+function getChartByType(chartType = 'line', parent, options) {
 	if(chartType === 'line') {
 		options.type = 'line';
-		return new AxisChart(options);
+		return new AxisChart(parent, options);
 	} else if (chartType === 'bar') {
 		options.type = 'bar';
-		return new AxisChart(options);
+		return new AxisChart(parent, options);
 	} else if (chartType === 'axis-mixed') {
 		options.type = 'line';
-		return new AxisChart(options);
+		return new AxisChart(parent, options);
 	}
 
 	if (!chartTypes[chartType]) {
@@ -30,11 +30,11 @@ function getChartByType(chartType = 'line', options) {
 		return;
 	}
 
-	return new chartTypes[chartType](options);
+	return new chartTypes[chartType](parent, options);
 }
 
 export default class Chart {
-	constructor(args) {
-		return getChartByType(args.type, arguments[0]);
+	constructor(parent, options) {
+		return getChartByType(options.type, parent, options);
 	}
 }

@@ -9,36 +9,26 @@ import { getDifferentChart } from '../config';
 import { runSMILAnimation } from '../utils/animation';
 
 export default class BaseChart {
-	constructor({
-		height = 240,
-
-		title = '',
-		subtitle = '',
-		colors = [],
-
-		isNavigable = 0,
-		showLegend = 1,
-
-		type = '',
-
-		parent,
-		data
-	}) {
-		this.rawChartArgs = arguments[0];
+	constructor(parent, options) {
+		this.rawChartArgs = options;
 
 		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
-		this.title = title;
-		this.subtitle = subtitle;
-		this.argHeight = height;
-		this.type = type;
+        if (!(this.parent instanceof HTMLElement)) {
+            throw new Error('No `parent` element to render on was provided.');
+        }
 
-		this.realData = this.prepareData(data);
+		this.title = options.title || '';
+		this.subtitle = options.subtitle || '';
+		this.argHeight = options.height || 240;
+		this.type = options.type || '';
+
+		this.realData = this.prepareData(options.data);
 		this.data = this.prepareFirstData(this.realData);
 		this.colors = [];
 		this.config = {
 			showTooltip: 1, // calculate
-			showLegend: 1,
-			isNavigable: isNavigable,
+			showLegend: options.showLegend || 1,
+			isNavigable: options.isNavigable || 0,
 			animate: 1
 		};
 		this.state = {};
@@ -49,7 +39,7 @@ export default class BaseChart {
 			this.overlays = [];
 		}
 
-		this.configure(arguments[0]);
+		this.configure(options);
 	}
 
 	configure(args) {
@@ -89,13 +79,7 @@ export default class BaseChart {
 		this.rightMargin = RIGHT_MARGIN_BASE_CHART;
 	}
 
-	validate(){
-		let args = this.rawChartArgs;
-		// Now yo have the args, set this stuff only after validating
-		if(!this.parent) {
-			console.error("No parent element to render on was provided.");
-			return false;
-		}
+	validate() {
 		return true;
 	}
 
@@ -300,6 +284,6 @@ export default class BaseChart {
 	removeDataPoint(index = 0) {}
 
 	getDifferentChart(type) {
-		return getDifferentChart(type, this.type, this.rawChartArgs);
+		return getDifferentChart(type, this.type, this.parent, this.rawChartArgs);
 	}
 }

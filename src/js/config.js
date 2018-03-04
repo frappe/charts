@@ -21,7 +21,7 @@ const COLOR_COMPATIBLE_CHARTS = {
 	heatmap: []
 };
 
-export function getDifferentChart(type, current_type, args) {
+export function getDifferentChart(type, current_type, parent, args) {
 	if(type === current_type) return;
 
 	if(!ALL_CHART_TYPES.includes(type)) {
@@ -38,8 +38,7 @@ export function getDifferentChart(type, current_type, args) {
 	// Okay, this is anticlimactic
 	// this function will need to actually be 'changeChartType(type)'
 	// that will update only the required elements, but for now ...
-	return new Chart({
-		parent: args.parent,
+	return new Chart(parent, {
 		title: args.title,
 		data: args.data,
 		type: type,

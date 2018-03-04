@@ -62,8 +62,7 @@ let more_line_data = [
 let c1 = document.querySelector("#chart-composite-1");
 let c2 = document.querySelector("#chart-composite-2");
 
-let bar_composite_chart = new Chart ({
-	parent: c1,
+let bar_composite_chart = new Chart (c1, {
 	title: "Fireball/Bolide Events - Yearly (more than 5 reports)",
 	data: bar_composite_data,
 	type: 'bar',
@@ -76,8 +75,7 @@ let bar_composite_chart = new Chart ({
 	// regionFill: 1
 });
 
-let line_composite_chart = new Chart ({
-	parent: c2,
+let line_composite_chart = new Chart (c2, {
 	data: line_composite_data,
 	type: 'line',
 	lineOptions: {
@@ -165,8 +163,7 @@ let type_data = {
 	]
 };
 
-let type_chart = new Chart({
-	parent: "#chart-types",
+let type_chart = new Chart("#chart-types", {
 	// title: "My Awesome Chart",
 	data: type_data,
 	type: 'bar',
@@ -222,7 +219,6 @@ let trends_data = {
 };
 
 let plot_chart_args = {
-	parent: "#chart-trends",
 	title: "Mean Total Sunspot Count - Yearly",
 	data: trends_data,
 	type: 'line',
@@ -237,7 +233,7 @@ let plot_chart_args = {
 	yAxisMode: 'span'
 };
 
-new Chart(plot_chart_args);
+new Chart("#chart-trends", plot_chart_args);
 
 Array.prototype.slice.call(
 	document.querySelectorAll('.chart-plot-buttons button')
@@ -261,7 +257,7 @@ Array.prototype.slice.call(
 
 		plot_chart_args.init = false;
 
-		new Chart(plot_chart_args);
+		new Chart("#chart-trends", plot_chart_args);
 
 		Array.prototype.slice.call(
 			btn.parentNode.querySelectorAll('button')).map(el => {
@@ -301,8 +297,7 @@ let update_data = {
 	]
 };
 
-let update_chart = new Chart({
-	parent: "#chart-update",
+let update_chart = new Chart("#chart-update", {
 	data: update_data,
 	type: 'line',
 	height: 250,
@@ -377,8 +372,7 @@ let events_data = {
 	]
 };
 
-let events_chart = new Chart({
-	parent: "#chart-events",
+let events_chart = new Chart("#chart-events", {
 	title: "Jupiter's Moons: Semi-major Axis (1000 km)",
 	data: events_data,
 	type: 'bar',
@@ -412,8 +406,7 @@ let aggr_data = {
 	]
 };
 
-let aggr_chart = new Chart({
-	parent: "#chart-aggr",
+let aggr_chart = new Chart("#chart-aggr", {
 	data: aggr_data,
 	type: 'bar',
 	height: 250,
@@ -456,8 +449,7 @@ for (var i = 0; i< 375; i++) {
 	timestamp = Math.floor(timestamp - 86400).toFixed(1);
 }
 
-new Chart({
-	parent: "#chart-heatmap",
+new Chart("#chart-heatmap", {
 	data: heatmap_data,
 	type: 'heatmap',
 	legend_scale: [0, 1, 2, 4, 5],
@@ -485,8 +477,7 @@ Array.prototype.slice.call(
 			colors = ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'];
 		}
 
-		new Chart({
-			parent: "#chart-heatmap",
+		new Chart("#chart-heatmap", {
 			data: heatmap_data,
 			type: 'heatmap',
 			legend_scale: [0, 1, 2, 4, 5],
@@ -524,8 +515,7 @@ Array.prototype.slice.call(
 			discrete_domains = 0;
 		}
 
-		new Chart({
-			parent: "#chart-heatmap",
+		new Chart("#chart-heatmap", {
 			data: heatmap_data,
 			type: 'heatmap',
 			legend_scale: [0, 1, 2, 4, 5],
