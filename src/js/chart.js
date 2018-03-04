@@ -20,20 +20,21 @@ import AxisChart from './charts/AxisChart';
 
 
 const chartTypes = {
-	mixed: AxisChart,
-	multiaxis: MultiAxisChart,
+	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,
 	heatmap: Heatmap,
 	pie: PieChart
 };
 
 function getChartByType(chartType = 'line', options) {
-	debugger;
 	if(chartType === 'line') {
 		options.type = 'line';
 		return new AxisChart(options);
 	} else if (chartType === 'bar') {
 		options.type = 'bar';
+		return new AxisChart(options);
+	} else if (chartType === 'axis-mixed') {
+		options.type = 'line';
 		return new AxisChart(options);
 	}
 

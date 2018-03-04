@@ -154,7 +154,7 @@ export default class BaseChart {
 		// TODO: remove timeout and decrease post animate time in chart component
 		if(init) {
 			this.data = this.realData;
-			setTimeout(() => {this.update();}, 1000);
+			setTimeout(() => {this.update();}, 400);
 		}
 
 		this.renderLegend();

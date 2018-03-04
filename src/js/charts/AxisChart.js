@@ -22,8 +22,6 @@ export default class AxisChart extends BaseChart {
 		this.xAxisMode = args.xAxisMode || 'span';
 		this.yAxisMode = args.yAxisMode || 'span';
 
-		this.zeroLine = this.height;
-		// this.setTrivialState();
 		this.setup();
 	}
 

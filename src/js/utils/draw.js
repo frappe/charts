@@ -146,7 +146,7 @@ export function makeHeatSquare(className, x, y, size, fill='none', data={}) {
 		y: y,
 		width: size,
 		height: size,
-		fill: 1
+		fill: fill
 	};
 
 	Object.keys(data).map(key => {

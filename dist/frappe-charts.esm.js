@@ -523,7 +523,7 @@ function makeHeatSquare(className, x, y, size, fill='none', data={}) {
 		y: y,
 		width: size,
 		height: size,
-		fill: 1
+		fill: fill
 	};
 
 	Object.keys(data).map(key => {
@@ -1269,7 +1269,7 @@ class BaseChart {
 		// TODO: remove timeout and decrease post animate time in chart component
 		if(init) {
 			this.data = this.realData;
-			setTimeout(() => {this.update();}, 1000);
+			setTimeout(() => {this.update();}, 400);
 		}
 
 		this.renderLegend();
@@ -2082,8 +2082,6 @@ class AxisChart extends BaseChart {
 		this.xAxisMode = args.xAxisMode || 'span';
 		this.yAxisMode = args.yAxisMode || 'span';
 
-		this.zeroLine = this.height;
-		// this.setTrivialState();
 		this.setup();
 	}
 
@@ -2549,175 +2547,6 @@ class AxisChart extends BaseChart {
 
 // keep a binding at the end of chart
 
-class MultiAxisChart extends AxisChart {
-	constructor(args) {
-		super(args);
-		// this.unitType = args.unitType || 'line';
-		// this.setup();
-	}
-
-	preSetup() {
-		this.type = 'multiaxis';
-	}
-
-	setMargins() {
-		super.setMargins();
-		let noOfLeftAxes = this.data.datasets.filter(d => d.axisPosition === 'left').length;
-		this.translateXLeft = (noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
-		this.translateXRight = (this.data.datasets.length - noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
-	}
-
-	prepareYAxis() { }
-
-	prepareData(data) {
-		super.prepareData(data);
-		let sets = this.state.datasets;
-		// let axesLeft = sets.filter(d => d.axisPosition === 'left');
-		// let axesRight = sets.filter(d => d.axisPosition === 'right');
-		// let axesNone = sets.filter(d => !d.axisPosition ||
-		// 	!['left', 'right'].includes(d.axisPosition));
-
-		let leftCount = 0, rightCount = 0;
-
-		sets.forEach((d, i) => {
-			d.yAxis = {
-				position: d.axisPosition,
-				index: d.axisPosition === 'left' ? leftCount++ : rightCount++
-			};
-		});
-	}
-
-	configure(args) {
-		super.configure(args);
-		this.config.xAxisMode = args.xAxisMode || 'tick';
-		this.config.yAxisMode = args.yAxisMode || 'span';
-	}
-
-	// setUnitWidthAndXOffset() {
-	// 	this.state.unitWidth = this.width/(this.state.datasetLength);
-	// 	this.state.xOffset = this.state.unitWidth/2;
-	// }
-
-	configUnits() {
-		this.unitArgs = {
-			type: 'bar',
-			args: {
-				spaceWidth: this.state.unitWidth/2,
-			}
-		};
-	}
-
-	setYAxis() {
-		this.state.datasets.map(d => {
-			this.calcYAxisParameters(d.yAxis, d.values, this.unitType === 'line');
-		});
-	}
-
-	calcYUnits() {
-		this.state.datasets.map(d => {
-			d.positions = d.values.map(val => floatTwo(d.yAxis.zeroLine - val * d.yAxis.scaleMultiplier));
-		});
-	}
-
-	// TODO: function doesn't exist, handle with components
-	renderConstants() {
-		this.state.datasets.map(d => {
-			let guidePos = d.yAxis.position === 'left'
-				? -1 * d.yAxis.index * Y_AXIS_MARGIN
-				: this.width + d.yAxis.index * Y_AXIS_MARGIN;
-			this.renderer.xLine(guidePos, '', {
-				pos:'top',
-				mode: 'span',
-				stroke: this.colors[i],
-				className: 'y-axis-guide'
-			});
-		});
-	}
-
-	getYAxesComponents() {
-		return this.data.datasets.map((e, i) => {
-			return new ChartComponent({
-				layerClass: 'y axis y-axis-' + i,
-				make: () => {
-					let yAxis = this.state.datasets[i].yAxis;
-					this.renderer.setZeroline(yAxis.zeroline);
-					let options = {
-						pos: yAxis.position,
-						mode: 'tick',
-						offset: yAxis.index * Y_AXIS_MARGIN,
-						stroke: this.colors[i]
-					};
-
-					return yAxis.positions.map((position, j) =>
-						this.renderer.yLine(position, yAxis.labels[j], options)
-					);
-				},
-				animate: () => {}
-			});
-		});
-	}
-
-	// TODO remove renderer zeroline from above and below
-	getChartComponents() {
-		return this.data.datasets.map((d, index) => {
-			return new ChartComponent({
-				layerClass: 'dataset-units dataset-' + index,
-				make: () => {
-					let d = this.state.datasets[index];
-					let unitType = this.unitArgs;
-
-					// the only difference, should be tied to datasets or default
-					this.renderer.setZeroline(d.yAxis.zeroLine);
-
-					return d.positions.map((y, j) => {
-						return this.renderer[unitType.type](
-							this.state.xAxisPositions[j],
-							y,
-							unitType.args,
-							this.colors[index],
-							j,
-							index,
-							this.state.datasetLength
-						);
-					});
-				},
-				animate: (svgUnits) => {
-					let d = this.state.datasets[index];
-					let unitType = this.unitArgs.type;
-
-					// have been updated in axis render;
-					let newX = this.state.xAxisPositions;
-					let newY = this.state.datasets[index].positions;
-
-					let lastUnit = svgUnits[svgUnits.length - 1];
-					let parentNode = lastUnit.parentNode;
-
-					if(this.oldState.xExtra > 0) {
-						for(var i = 0; i<this.oldState.xExtra; i++) {
-							let unit = lastUnit.cloneNode(true);
-							parentNode.appendChild(unit);
-							svgUnits.push(unit);
-						}
-					}
-
-					this.renderer.setZeroline(d.yAxis.zeroLine);
-
-					svgUnits.map((unit, i) => {
-						if(newX[i] === undefined || newY[i] === undefined) return;
-						this.elementsToAnimate.push(this.renderer['animate' + unitType](
-							unit, // unit, with info to replace where it came from in the data
-							newX[i],
-							newY[i],
-							index,
-							this.state.noOfDatasets
-						));
-					});
-				}
-			});
-		});
-	}
-}
-
 class PercentageChart extends BaseChart {
 	constructor(args) {
 		super(args);
@@ -3096,7 +2925,7 @@ class Heatmap extends BaseChart {
 		this.distribution_size = 5;
 
 		this.translateX = 0;
-		// this.setup();
+		this.setup();
 	}
 
 	validate_colors(colors) {
@@ -3140,19 +2969,25 @@ class Heatmap extends BaseChart {
 		}
 	}
 
-	setupLayers() {
-		this.domain_label_group = this.makeLayer(
+	makeChartArea() {
+		super.makeChartArea();
+		this.domainLabelGroup = makeSVGGroup(this.drawArea,
 			'domain-label-group chart-label');
 
-		this.data_groups = this.makeLayer(
+		this.dataGroups = makeSVGGroup(this.drawArea,
 			'data-groups',
 			`translate(0, 20)`
 		);
+		// Array.prototype.slice.call(
+		// 	this.container.querySelectorAll('.graph-stats-container, .sub-title, .title')
+		// ).map(d => {
+		// 	d.style.display = 'None';
+		// });
+		// this.chartWrapper.style.marginTop = '0px';
+		// this.chartWrapper.style.paddingTop = '0px';
 	}
 
-	setupValues() {
-		this.domain_label_group.textContent = '';
-		this.data_groups.textContent = '';
+	calc() {
 
 		let data_values = Object.keys(this.data).map(key => this.data[key]);
 		this.distribution = calcDistribution(data_values, this.distribution_size);
@@ -3160,11 +2995,17 @@ class Heatmap extends BaseChart {
 		this.month_names = ["January", "February", "March", "April", "May", "June",
 			"July", "August", "September", "October", "November", "December"
 		];
-
-		this.render_all_weeks_and_store_x_values(this.no_of_cols);
 	}
 
-	render_all_weeks_and_store_x_values(no_of_weeks) {
+	render() {
+		this.renderAllWeeksAndStoreXValues(this.no_of_cols);
+	}
+
+	renderAllWeeksAndStoreXValues(no_of_weeks) {
+		// renderAllWeeksAndStoreXValues
+		this.domainLabelGroup.textContent = '';
+		this.dataGroups.textContent = '';
+
 		let current_week_sunday = new Date(this.first_week_start);
 		this.week_col = 0;
 		this.current_month = current_week_sunday.getMonth();
@@ -3179,7 +3020,7 @@ class Heatmap extends BaseChart {
 			let day = new Date(current_week_sunday);
 
 			[data_group, month_change] = this.get_week_squares_group(day, this.week_col);
-			this.data_groups.appendChild(data_group);
+			this.dataGroups.appendChild(data_group);
 			this.week_col += 1 + parseInt(this.discrete_domains && month_change);
 			this.month_weeks[this.current_month]++;
 			if(month_change) {
@@ -3202,11 +3043,11 @@ class Heatmap extends BaseChart {
 		let month_change = 0;
 		let week_col_change = 0;
 
-		let data_group = makeSVGGroup(this.data_groups, 'data-group');
+		let data_group = makeSVGGroup(this.dataGroups, 'data-group');
 
 		for(var y = 0, i = 0; i < no_of_weekdays; i += step, y += (square_side + cell_padding)) {
 			let data_value = 0;
-			let color_index = 0;
+			let colorIndex = 0;
 
 			let current_timestamp = current_date.getTime()/1000;
 			let timestamp = Math.floor(current_timestamp - (current_timestamp % 86400)).toFixed(1);
@@ -3220,7 +3061,7 @@ class Heatmap extends BaseChart {
 			}
 
 			if(data_value) {
-				color_index = getMaxCheckpoint(data_value, this.distribution);
+				colorIndex = getMaxCheckpoint(data_value, this.distribution);
 			}
 
 			let x = 13 + (index + week_col_change) * 12;
@@ -3230,8 +3071,9 @@ class Heatmap extends BaseChart {
 				'data-value': data_value,
 				'data-day': current_date.getDay()
 			};
+
 			let heatSquare = makeHeatSquare('day', x, y, square_side,
-				this.legend_colors[color_index], dataAttr);
+				this.legend_colors[colorIndex], dataAttr);
 
 			data_group.appendChild(heatSquare);
 
@@ -3277,18 +3119,8 @@ class Heatmap extends BaseChart {
 		this.month_start_points.map((start, i) => {
 			let month_name =  this.month_names[this.months[i]].substring(0, 3);
 			let text = makeText('y-value-text', start+12, 10, month_name);
-			this.domain_label_group.appendChild(text);
+			this.domainLabelGroup.appendChild(text);
 		});
-	}
-
-	renderComponents() {
-		Array.prototype.slice.call(
-			this.container.querySelectorAll('.graph-stats-container, .sub-title, .title')
-		).map(d => {
-			d.style.display = 'None';
-		});
-		this.chartWrapper.style.marginTop = '0px';
-		this.chartWrapper.style.paddingTop = '0px';
 	}
 
 	bindTooltip() {
@@ -3316,27 +3148,27 @@ class Heatmap extends BaseChart {
 	}
 
 	update(data) {
-		this.data = data;
-		this.setupValues();
+		super.update(data);
 		this.bindTooltip();
 	}
 }
 
 const chartTypes = {
-	mixed: AxisChart,
-	multiaxis: MultiAxisChart,
+	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,
 	heatmap: Heatmap,
 	pie: PieChart
 };
 
 function getChartByType(chartType = 'line', options) {
-	debugger;
 	if(chartType === 'line') {
 		options.type = 'line';
 		return new AxisChart(options);
 	} else if (chartType === 'bar') {
 		options.type = 'bar';
+		return new AxisChart(options);
+	} else if (chartType === 'axis-mixed') {
+		options.type = 'line';
 		return new AxisChart(options);
 	}
 
