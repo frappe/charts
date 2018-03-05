@@ -2,11 +2,11 @@ import BaseChart from './BaseChart';
 import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-utils';
 import { Y_AXIS_MARGIN } from '../utils/constants';
 import { getComponent } from '../objects/ChartComponents';
-import { getOffset, fire } from '../utils/dom';
+import { $, getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale } from '../utils/intervals';
 import { floatTwo } from '../utils/helpers';
 import { makeOverlay, updateOverlay } from '../utils/draw';
-import { MIN_BAR_PERCENT_HEIGHT, DEFAULT_AXIS_CHART_TYPE, BAR_CHART_SPACE_RATIO, LINE_CHART_DOT_SIZE } from '../utils/constants';
+import { MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO, LINE_CHART_DOT_SIZE } from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
 	constructor(parent, args) {
@@ -28,7 +28,7 @@ export default class AxisChart extends BaseChart {
 
 		this.config.xAxisMode = args.axisOptions.xAxisMode || 'span';
 		this.config.yAxisMode = args.axisOptions.yAxisMode || 'span';
-		this.config.xIsSeries = args.axisOptions.xIsSeries || 1;
+		this.config.xIsSeries = args.axisOptions.xIsSeries || 0;
 
 		this.config.formatTooltipX = args.tooltipOptions.formatTooltipX;
 		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
@@ -88,7 +88,7 @@ export default class AxisChart extends BaseChart {
 			positions: yPts.map(d => zeroLine - d * scaleMultiplier),
 			scaleMultiplier: scaleMultiplier,
 			zeroLine: zeroLine,
-		}
+		};
 
 		// Dependent if above changes
 		this.calcDatasetPoints();
@@ -124,7 +124,7 @@ export default class AxisChart extends BaseChart {
 			return;
 		}
 		s.yExtremes = new Array(s.datasetLength).fill(9999);
-		s.datasets.map((d, i) => {
+		s.datasets.map(d => {
 			d.yPositions.map((pos, j) => {
 				if(pos < s.yExtremes[j]) {
 					s.yExtremes[j] = pos;
@@ -138,9 +138,9 @@ export default class AxisChart extends BaseChart {
 		if(this.data.yMarkers) {
 			this.state.yMarkers = this.data.yMarkers.map(d => {
 				d.position = scale(d.value, s.yAxis);
-				if(!d.label.includes(':')) {
-					d.label += ': ' + d.value;
-				}
+				// if(!d.label.includes(':')) {
+				// 	d.label += ': ' + d.value;
+				// }
 				return d;
 			});
 		}
@@ -170,7 +170,6 @@ export default class AxisChart extends BaseChart {
 	}
 
 	setupComponents() {
-		let s = this.state;
 		let componentConfigs = [
 			[
 				'yAxis',
@@ -243,7 +242,7 @@ export default class AxisChart extends BaseChart {
 					}
 
 					let labels = new Array(s.datasetLength).fill('');
-					if(this.valuesOverPoints) {
+					if(this.config.valuesOverPoints) {
 						if(stacked && d.index === s.datasets.length - 1) {
 							labels = d.cumulativeYs;
 						} else {
@@ -352,12 +351,15 @@ export default class AxisChart extends BaseChart {
 		let s = this.state;
 		if(!s.yExtremes) return;
 
+		let formatY = this.config.formatTooltipY;
+		let formatX = this.config.formatTooltipX;
+
 		let titles = s.xAxis.labels;
-		if(this.formatTooltipX && this.formatTooltipX(titles[0])) {
-			titles = titles.map(d=>this.formatTooltipX(d));
+		if(formatX && formatX(titles[0])) {
+			titles = titles.map(d=>formatX(d));
 		}
 
-		let formatY = this.formatTooltipY && this.formatTooltipY(this.y[0].values[0]);
+		formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
 
 		for(var i=s.datasetLength - 1; i >= 0 ; i--) {
 			let xVal = s.xAxis.positions[i];
@@ -368,16 +370,34 @@ export default class AxisChart extends BaseChart {
 
 				let values = this.data.datasets.map((set, j) => {
 					return {
-						title: set.title,
-						value: formatY ? this.formatTooltipY(set.values[i]) : set.values[i],
+						title: set.name,
+						value: formatY ? formatY(set.values[i]) : set.values[i],
 						color: this.colors[j],
 					};
 				});
 
-				this.tip.setValues(x, y, titles[i], '', values);
+				this.tip.setValues(x, y, {name: titles[i], value: ''}, values, i);
 				this.tip.showTip();
 				break;
 			}
+		}
+	}
+
+	renderLegend() {
+		let s = this.data;
+		this.statsWrapper.textContent = '';
+
+		if(s.datasets.length > 1) {
+			s.datasets.map((d, i) => {
+				let stats = $.create('div', {
+					className: 'stats',
+					inside: this.statsWrapper
+				});
+				stats.innerHTML = `<span class="indicator">
+					<i style="background: ${this.colors[i]}"></i>
+					${d.name}
+				</span>`;
+			});
 		}
 	}
 
@@ -394,7 +414,7 @@ export default class AxisChart extends BaseChart {
 				type: c.unitType,
 				overlay: undefined,
 				units: c.units,
-			}
+			};
 		});
 
 		if(this.state.currentIndex === undefined) {
@@ -406,7 +426,7 @@ export default class AxisChart extends BaseChart {
 			let currentUnit = d.units[this.state.currentIndex];
 			d.overlay = makeOverlay[d.type](currentUnit);
 			this.drawArea.appendChild(d.overlay);
-		})
+		});
 
 	}
 
@@ -420,26 +440,33 @@ export default class AxisChart extends BaseChart {
 	}
 
 	bindOverlay() {
-		// on event, update overlay
-		this.parent.addEventListener('data-select', (e) => {
+		this.parent.addEventListener('data-select', () => {
 			this.updateOverlay();
 		});
 	}
 
-	bindUnits(units_array) {
-		// units_array.map(unit => {
-		// 	unit.addEventListener('click', () => {
-		// 		let index = unit.getAttribute('data-point-index');
-		// 		this.setCurrentDataPoint(index);
-		// 	});
-		// });
+	bindUnits() {
+		this.dataUnitComponents.map(c => {
+			c.units.map(unit => {
+				unit.addEventListener('click', () => {
+					let index = unit.getAttribute('data-point-index');
+					this.setCurrentDataPoint(index);
+				});
+			});
+		});
+
+		// Note: Doesn't work as tooltip is absolutely positioned
+		this.tip.container.addEventListener('click', () => {
+			let index = this.tip.container.getAttribute('data-point-index');
+			this.setCurrentDataPoint(index);
+		});
 	}
 
 	updateOverlay() {
 		this.overlayGuides.map(d => {
 			let currentUnit = d.units[this.state.currentIndex];
 			updateOverlay[d.type](currentUnit, d.overlay);
-		})
+		});
 	}
 
 	onLeftArrow() {
@@ -451,16 +478,12 @@ export default class AxisChart extends BaseChart {
 	}
 
 	getDataPoint(index=this.state.currentIndex) {
-		// check for length
+		let s = this.state;
 		let data_point = {
-			index: index
+			index: index,
+			label: s.xAxis.labels[index],
+			values: s.datasets.map(d => d.values[index])
 		};
-		// let y = this.y[0];
-		// ['svg_units', 'yUnitPositions', 'values'].map(key => {
-		// 	let data_key = key.slice(0, key.length-1);
-		// 	data_point[data_key] = y[key][index];
-		// });
-		// data_point.label = this.xAxis.labels[index];
 		return data_point;
 	}
 
@@ -501,7 +524,14 @@ export default class AxisChart extends BaseChart {
 	// addDataset(dataset, index) {}
 	// removeDataset(index = 0) {}
 
-	// updateDatasets(datasets) {}
+	updateDatasets(datasets) {
+		this.data.datasets.map((d, i) => {
+			if(datasets[i]) {
+				d.values = datasets[i];
+			}
+		});
+		this.update(this.data);
+	}
 
 	// updateDataPoint(dataPoint, index = 0) {}
 	// addDataPoint(dataPoint, index = 0) {}

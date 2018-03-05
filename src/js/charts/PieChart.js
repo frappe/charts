@@ -2,7 +2,7 @@ import AggregationChart from './AggregationChart';
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset } from '../utils/dom';
 import { getPositionByAngle } from '../utils/helpers';
-import { makePath, makeArcPathStr } from '../utils/draw';
+import { makeArcPathStr } from '../utils/draw';
 import { lightenDarkenColor } from '../utils/colors';
 import { transform } from '../utils/animation';
 import { FULL_ANGLE } from '../utils/constants';
@@ -39,7 +39,7 @@ export default class PieChart extends AggregationChart {
 		this.center = {
 			x: this.width / 2,
 			y: this.height / 2
-		}
+		};
 		this.radius = (this.height > this.width ? this.center.x : this.center.y);
 
 		s.grandTotal = s.sliceTotals.reduce((a, b) => a + b, 0);
@@ -102,7 +102,7 @@ export default class PieChart extends AggregationChart {
 					return {
 						sliceStrings: s.sliceStrings,
 						colors: this.colors
-					}
+					};
 				}.bind(this)
 			]
 		];
@@ -132,7 +132,7 @@ export default class PieChart extends AggregationChart {
 			let title = (this.formatted_labels && this.formatted_labels.length > 0
 				? this.formatted_labels[i] : this.state.labels[i]) + ': ';
 			let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1);
-			this.tip.setValues(x, y, title, percent + "%");
+			this.tip.setValues(x, y, {name: title, value: percent + "%"});
 			this.tip.showTip();
 		} else {
 			transform(path,'translate3d(0,0,0)');

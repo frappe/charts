@@ -133,6 +133,9 @@ class SvgTip {
 
 	fill() {
 		let title;
+		if(this.index) {
+			this.container.setAttribute('data-point-index', this.index);
+		}
 		if(this.titleValueFirst) {
 			title = `<strong>${this.titleValue}</strong>${this.titleName}`;
 		} else {
@@ -179,13 +182,14 @@ class SvgTip {
 		}
 	}
 
-	setValues(x, y, titleName = '', titleValue = '', listValues = [], titleValueFirst = 0) {
-		this.titleName = titleName;
-		this.titleValue = titleValue;
+	setValues(x, y, title = {}, listValues = [], index = -1) {
+		this.titleName = title.name;
+		this.titleValue = title.value;
 		this.listValues = listValues;
 		this.x = x;
 		this.y = y;
-		this.titleValueFirst = titleValueFirst;
+		this.titleValueFirst = title.valueFirst || 0;
+		this.index = index;
 		this.refresh();
 	}
 
@@ -202,7 +206,7 @@ class SvgTip {
 	}
 }
 
-const VERT_SPACE_OUTSIDE_BASE_CHART = 40;
+const VERT_SPACE_OUTSIDE_BASE_CHART = 50;
 const TRANSLATE_Y_BASE_CHART = 20;
 const LEFT_MARGIN_BASE_CHART = 60;
 const RIGHT_MARGIN_BASE_CHART = 40;
@@ -220,7 +224,7 @@ const MIN_BAR_PERCENT_HEIGHT = 0.01;
 const LINE_CHART_DOT_SIZE = 4;
 const DOT_OVERLAY_SIZE_INCR = 4;
 
-const DEFAULT_CHAR_WIDTH = 8;
+const DEFAULT_CHAR_WIDTH = 7;
 
 // Universal constants
 const ANGLE_RATIO = Math.PI / 180;
@@ -574,7 +578,7 @@ function makeVertLine(x, label, y1, y2, options={}) {
 		dy: FONT_SIZE + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': 'middle',
-		innerHTML: label
+		innerHTML: label + ""
 	});
 
 	let line = createSVG('g', {
@@ -729,7 +733,7 @@ function yRegion(y1, y2, width, label) {
 
 	let labelSvg = createSVG('text', {
 		className: 'chart-label',
-		x: width - getStringWidth(label, 4.5) - LABEL_MARGIN,
+		x: width - getStringWidth(label+"", 4.5) - LABEL_MARGIN,
 		y: 0,
 		dy: (FONT_SIZE / -2) + 'px',
 		'font-size': FONT_SIZE + 'px',
@@ -761,6 +765,8 @@ function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={})
 		height: height || meta.minHeight // TODO: correct y for positive min height
 	});
 
+	label += "";
+
 	if(!label && !label.length) {
 		return rect;
 	} else {
@@ -777,6 +783,7 @@ function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={})
 		});
 
 		let group = createSVG('g', {
+			'data-point-index': index,
 			transform: `translate(${x}, ${y})`
 		});
 		group.appendChild(rect);
@@ -795,6 +802,8 @@ function datasetDot(x, y, radius, color, label='', index=0, meta={}) {
 		r: radius
 	});
 
+	label += "";
+
 	if(!label && !label.length) {
 		return dot;
 	} else {
@@ -812,6 +821,7 @@ function datasetDot(x, y, radius, color, label='', index=0, meta={}) {
 		});
 
 		let group = createSVG('g', {
+			'data-point-index': index,
 			transform: `translate(${x}, ${y})`
 		});
 		group.appendChild(dot);
@@ -873,9 +883,10 @@ let makeOverlay = {
 		}
 		let overlay = unit.cloneNode();
 		let radius = unit.getAttribute('r');
-		overlay.setAttribute('r', radius + DOT_OVERLAY_SIZE_INCR);
-		overlay.style.fill = '#000000';
-		overlay.style.opacity = '0.4';
+		let fill = unit.getAttribute('fill');
+		overlay.setAttribute('r', parseInt(radius) + DOT_OVERLAY_SIZE_INCR);
+		overlay.setAttribute('fill', fill);
+		overlay.style.opacity = '0.6';
 
 		if(transformValue) {
 			overlay.setAttribute('transform', transformValue);
@@ -1266,7 +1277,10 @@ class BaseChart {
 			setTimeout(() => {this.update();}, this.initTimeout);
 		}
 
-		this.renderLegend();
+		if(!onlyWidthChange) {
+			this.renderLegend();
+		}
+
 		this.setupNavigation(init);
 	}
 
@@ -1456,10 +1470,11 @@ class AggregationChart extends BaseChart {
 	renderLegend() {
 		let s = this.state;
 
+		this.statsWrapper.textContent = '';
+
 		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
 
-		let x_values = this.formatted_labels && this.formatted_labels.length > 0
-			? this.formatted_labels : s.labels;
+		let xValues = s.labels;
 		this.legendTotals.map((d, i) => {
 			if(d) {
 				let stats = $.create('div', {
@@ -1468,7 +1483,7 @@ class AggregationChart extends BaseChart {
 				});
 				stats.innerHTML = `<span class="indicator">
 					<i style="background: ${this.colors[i]}"></i>
-					<span class="text-muted">${x_values[i]}:</span>
+					<span class="text-muted">${xValues[i]}:</span>
 					${d}
 				</span>`;
 			}
@@ -1542,7 +1557,7 @@ class PercentageChart extends AggregationChart {
 					? this.formattedLabels[i] : this.state.labels[i]) + ': ';
 				let percent = (s.sliceTotals[i]*100/this.grandTotal).toFixed(1);
 
-				this.tip.setValues(x, y, title, percent + "%");
+				this.tip.setValues(x, y, {name: title, value: percent + "%"});
 				this.tip.showTip();
 			}
 		});
@@ -2008,7 +2023,7 @@ class PieChart extends AggregationChart {
 					return {
 						sliceStrings: s.sliceStrings,
 						colors: this.colors
-					}
+					};
 				}.bind(this)
 			]
 		];
@@ -2038,7 +2053,7 @@ class PieChart extends AggregationChart {
 			let title = (this.formatted_labels && this.formatted_labels.length > 0
 				? this.formatted_labels[i] : this.state.labels[i]) + ': ';
 			let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1);
-			this.tip.setValues(x, y, title, percent + "%");
+			this.tip.setValues(x, y, {name: title, value: percent + "%"});
 			this.tip.showTip();
 		} else {
 			transform(path,'translate3d(0,0,0)');
@@ -2105,8 +2120,6 @@ function getDaysBetween(startDateStr, endDateStr) {
 function addDays(date, numberOfDays) {
 	date.setDate(date.getDate() + numberOfDays);
 }
-
-// export function getMonthName() {}
 
 function normalize(x) {
 	// Calculates mantissa and exponent of a number
@@ -2328,15 +2341,15 @@ class Heatmap extends BaseChart {
 		this.domain = options.domain || '';
 		this.subdomain = options.subdomain || '';
 		this.data = options.data || {};
-		this.discrete_domains = options.discrete_domains || 1;
-		this.count_label = options.count_label || '';
+		this.discreteDomains = options.discreteDomains === 0 ? 0 : 1;
+		this.countLabel = options.countLabel || '';
 
 		let today = new Date();
 		this.start = options.start || addDays(today, 365);
 
-		let legend_colors = (options.legend_colors || []).slice(0, 5);
-		this.legend_colors = this.validate_colors(legend_colors)
-			? legend_colors
+		let legendColors = (options.legendColors || []).slice(0, 5);
+		this.legendColors = this.validate_colors(legendColors)
+			? legendColors
 			: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
 
 		// Fixed 5-color theme,
@@ -2345,6 +2358,12 @@ class Heatmap extends BaseChart {
 
 		this.translateX = 0;
 		this.setup();
+	}
+
+	setMargins() {
+		super.setMargins();
+		this.leftMargin = 10;
+		this.translateY = 10;
 	}
 
 	validate_colors(colors) {
@@ -2369,21 +2388,21 @@ class Heatmap extends BaseChart {
 			this.start = new Date();
 			this.start.setFullYear( this.start.getFullYear() - 1 );
 		}
-		this.first_week_start = new Date(this.start.toDateString());
-		this.last_week_start = new Date(this.today.toDateString());
-		if(this.first_week_start.getDay() !== 7) {
-			addDays(this.first_week_start, (-1) * this.first_week_start.getDay());
+		this.firstWeekStart = new Date(this.start.toDateString());
+		this.lastWeekStart = new Date(this.today.toDateString());
+		if(this.firstWeekStart.getDay() !== 7) {
+			addDays(this.firstWeekStart, (-1) * this.firstWeekStart.getDay());
 		}
-		if(this.last_week_start.getDay() !== 7) {
-			addDays(this.last_week_start, (-1) * this.last_week_start.getDay());
+		if(this.lastWeekStart.getDay() !== 7) {
+			addDays(this.lastWeekStart, (-1) * this.lastWeekStart.getDay());
 		}
-		this.no_of_cols = getWeeksBetween(this.first_week_start + '', this.last_week_start + '') + 1;
+		this.no_of_cols = getWeeksBetween(this.firstWeekStart + '', this.lastWeekStart + '') + 1;
 	}
 
 	calcWidth() {
 		this.baseWidth = (this.no_of_cols + 3) * 12 ;
 
-		if(this.discrete_domains) {
+		if(this.discreteDomains) {
 			this.baseWidth += (12 * 12);
 		}
 	}
@@ -2397,21 +2416,20 @@ class Heatmap extends BaseChart {
 			'data-groups',
 			`translate(0, 20)`
 		);
-		// Array.prototype.slice.call(
-		// 	this.container.querySelectorAll('.graph-stats-container, .sub-title, .title')
-		// ).map(d => {
-		// 	d.style.display = 'None';
-		// });
-		// this.chartWrapper.style.marginTop = '0px';
-		// this.chartWrapper.style.paddingTop = '0px';
+
+		this.container.querySelector('.title').style.display = 'None';
+		this.container.querySelector('.sub-title').style.display = 'None';
+		this.container.querySelector('.graph-stats-container').style.display = 'None';
+		this.chartWrapper.style.marginTop = '0px';
+		this.chartWrapper.style.paddingTop = '0px';
 	}
 
 	calc() {
 
-		let data_values = Object.keys(this.data).map(key => this.data[key]);
-		this.distribution = calcDistribution(data_values, this.distribution_size);
+		let dataValues = Object.keys(this.data).map(key => this.data[key]);
+		this.distribution = calcDistribution(dataValues, this.distribution_size);
 
-		this.month_names = ["January", "February", "March", "April", "May", "June",
+		this.monthNames = ["January", "February", "March", "April", "May", "June",
 			"July", "August", "September", "October", "November", "December"
 		];
 	}
@@ -2425,118 +2443,118 @@ class Heatmap extends BaseChart {
 		this.domainLabelGroup.textContent = '';
 		this.dataGroups.textContent = '';
 
-		let current_week_sunday = new Date(this.first_week_start);
-		this.week_col = 0;
-		this.current_month = current_week_sunday.getMonth();
+		let currentWeekSunday = new Date(this.firstWeekStart);
+		this.weekCol = 0;
+		this.currentMonth = currentWeekSunday.getMonth();
 
-		this.months = [this.current_month + ''];
-		this.month_weeks = {}, this.month_start_points = [];
-		this.month_weeks[this.current_month] = 0;
-		this.month_start_points.push(13);
+		this.months = [this.currentMonth + ''];
+		this.monthWeeks = {}, this.monthStartPoints = [];
+		this.monthWeeks[this.currentMonth] = 0;
+		this.monthStartPoints.push(13);
 
 		for(var i = 0; i < no_of_weeks; i++) {
-			let data_group, month_change = 0;
-			let day = new Date(current_week_sunday);
+			let dataGroup, monthChange = 0;
+			let day = new Date(currentWeekSunday);
 
-			[data_group, month_change] = this.get_week_squares_group(day, this.week_col);
-			this.dataGroups.appendChild(data_group);
-			this.week_col += 1 + parseInt(this.discrete_domains && month_change);
-			this.month_weeks[this.current_month]++;
-			if(month_change) {
-				this.current_month = (this.current_month + 1) % 12;
-				this.months.push(this.current_month + '');
-				this.month_weeks[this.current_month] = 1;
+			[dataGroup, monthChange] = this.get_week_squares_group(day, this.weekCol);
+			this.dataGroups.appendChild(dataGroup);
+			this.weekCol += 1 + parseInt(this.discreteDomains && monthChange);
+			this.monthWeeks[this.currentMonth]++;
+			if(monthChange) {
+				this.currentMonth = (this.currentMonth + 1) % 12;
+				this.months.push(this.currentMonth + '');
+				this.monthWeeks[this.currentMonth] = 1;
 			}
-			addDays(current_week_sunday, 7);
+			addDays(currentWeekSunday, 7);
 		}
 		this.render_month_labels();
 	}
 
-	get_week_squares_group(current_date, index) {
-		const no_of_weekdays = 7;
-		const square_side = 10;
-		const cell_padding = 2;
+	get_week_squares_group(currentDate, index) {
+		const noOfWeekdays = 7;
+		const squareSide = 10;
+		const cellPadding = 2;
 		const step = 1;
-		const today_time = this.today.getTime();
+		const todayTime = this.today.getTime();
 
-		let month_change = 0;
-		let week_col_change = 0;
+		let monthChange = 0;
+		let weekColChange = 0;
 
-		let data_group = makeSVGGroup(this.dataGroups, 'data-group');
+		let dataGroup = makeSVGGroup(this.dataGroups, 'data-group');
 
-		for(var y = 0, i = 0; i < no_of_weekdays; i += step, y += (square_side + cell_padding)) {
-			let data_value = 0;
+		for(var y = 0, i = 0; i < noOfWeekdays; i += step, y += (squareSide + cellPadding)) {
+			let dataValue = 0;
 			let colorIndex = 0;
 
-			let current_timestamp = current_date.getTime()/1000;
-			let timestamp = Math.floor(current_timestamp - (current_timestamp % 86400)).toFixed(1);
+			let currentTimestamp = currentDate.getTime()/1000;
+			let timestamp = Math.floor(currentTimestamp - (currentTimestamp % 86400)).toFixed(1);
 
 			if(this.data[timestamp]) {
-				data_value = this.data[timestamp];
+				dataValue = this.data[timestamp];
 			}
 
 			if(this.data[Math.round(timestamp)]) {
-				data_value = this.data[Math.round(timestamp)];
+				dataValue = this.data[Math.round(timestamp)];
 			}
 
-			if(data_value) {
-				colorIndex = getMaxCheckpoint(data_value, this.distribution);
+			if(dataValue) {
+				colorIndex = getMaxCheckpoint(dataValue, this.distribution);
 			}
 
-			let x = 13 + (index + week_col_change) * 12;
+			let x = 13 + (index + weekColChange) * 12;
 
 			let dataAttr = {
-				'data-date': getDdMmYyyy(current_date),
-				'data-value': data_value,
-				'data-day': current_date.getDay()
+				'data-date': getDdMmYyyy(currentDate),
+				'data-value': dataValue,
+				'data-day': currentDate.getDay()
 			};
 
-			let heatSquare = makeHeatSquare('day', x, y, square_side,
-				this.legend_colors[colorIndex], dataAttr);
+			let heatSquare = makeHeatSquare('day', x, y, squareSide,
+				this.legendColors[colorIndex], dataAttr);
 
-			data_group.appendChild(heatSquare);
+			dataGroup.appendChild(heatSquare);
 
-			let next_date = new Date(current_date);
-			addDays(next_date, 1);
-			if(next_date.getTime() > today_time) break;
+			let nextDate = new Date(currentDate);
+			addDays(nextDate, 1);
+			if(nextDate.getTime() > todayTime) break;
 
 
-			if(next_date.getMonth() - current_date.getMonth()) {
-				month_change = 1;
-				if(this.discrete_domains) {
-					week_col_change = 1;
+			if(nextDate.getMonth() - currentDate.getMonth()) {
+				monthChange = 1;
+				if(this.discreteDomains) {
+					weekColChange = 1;
 				}
 
-				this.month_start_points.push(13 + (index + week_col_change) * 12);
+				this.monthStartPoints.push(13 + (index + weekColChange) * 12);
 			}
-			current_date = next_date;
+			currentDate = nextDate;
 		}
 
-		return [data_group, month_change];
+		return [dataGroup, monthChange];
 	}
 
 	render_month_labels() {
 		// this.first_month_label = 1;
-		// if (this.first_week_start.getDate() > 8) {
+		// if (this.firstWeekStart.getDate() > 8) {
 		// 	this.first_month_label = 0;
 		// }
 		// this.last_month_label = 1;
 
 		// let first_month = this.months.shift();
-		// let first_month_start = this.month_start_points.shift();
+		// let first_month_start = this.monthStartPoints.shift();
 		// render first month if
 
 		// let last_month = this.months.pop();
-		// let last_month_start = this.month_start_points.pop();
+		// let last_month_start = this.monthStartPoints.pop();
 		// render last month if
 
 		this.months.shift();
-		this.month_start_points.shift();
+		this.monthStartPoints.shift();
 		this.months.pop();
-		this.month_start_points.pop();
+		this.monthStartPoints.pop();
 
-		this.month_start_points.map((start, i) => {
-			let month_name =  this.month_names[this.months[i]].substring(0, 3);
+		this.monthStartPoints.map((start, i) => {
+			let month_name =  this.monthNames[this.months[i]].substring(0, 3);
 			let text = makeText('y-value-text', start+12, 10, month_name);
 			this.domainLabelGroup.appendChild(text);
 		});
@@ -2548,19 +2566,19 @@ class Heatmap extends BaseChart {
 		).map(el => {
 			el.addEventListener('mouseenter', (e) => {
 				let count = e.target.getAttribute('data-value');
-				let date_parts = e.target.getAttribute('data-date').split('-');
+				let dateParts = e.target.getAttribute('data-date').split('-');
 
-				let month = this.month_names[parseInt(date_parts[1])-1].substring(0, 3);
+				let month = this.monthNames[parseInt(dateParts[1])-1].substring(0, 3);
 
-				let g_off = this.chartWrapper.getBoundingClientRect(), p_off = e.target.getBoundingClientRect();
+				let gOff = this.chartWrapper.getBoundingClientRect(), pOff = e.target.getBoundingClientRect();
 
 				let width = parseInt(e.target.getAttribute('width'));
-				let x = p_off.left - g_off.left + (width+2)/2;
-				let y = p_off.top - g_off.top - (width+2)/2;
-				let value = count + ' ' + this.count_label;
-				let name = ' on ' + month + ' ' + date_parts[0] + ', ' + date_parts[2];
+				let x = pOff.left - gOff.left + (width+2)/2;
+				let y = pOff.top - gOff.top - (width+2)/2;
+				let value = count + ' ' + this.countLabel;
+				let name = ' on ' + month + ' ' + dateParts[0] + ', ' + dateParts[2];
 
-				this.tip.setValues(x, y, name, value, [], 1);
+				this.tip.setValues(x, y, {name: name, value: value, valueFirst: 1}, []);
 				this.tip.showTip();
 			});
 		});
@@ -2714,7 +2732,7 @@ class AxisChart extends BaseChart {
 
 		this.config.xAxisMode = args.axisOptions.xAxisMode || 'span';
 		this.config.yAxisMode = args.axisOptions.yAxisMode || 'span';
-		this.config.xIsSeries = args.axisOptions.xIsSeries || 1;
+		this.config.xIsSeries = args.axisOptions.xIsSeries || 0;
 
 		this.config.formatTooltipX = args.tooltipOptions.formatTooltipX;
 		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
@@ -2810,7 +2828,7 @@ class AxisChart extends BaseChart {
 			return;
 		}
 		s.yExtremes = new Array(s.datasetLength).fill(9999);
-		s.datasets.map((d, i) => {
+		s.datasets.map(d => {
 			d.yPositions.map((pos, j) => {
 				if(pos < s.yExtremes[j]) {
 					s.yExtremes[j] = pos;
@@ -2824,9 +2842,9 @@ class AxisChart extends BaseChart {
 		if(this.data.yMarkers) {
 			this.state.yMarkers = this.data.yMarkers.map(d => {
 				d.position = scale(d.value, s.yAxis);
-				if(!d.label.includes(':')) {
-					d.label += ': ' + d.value;
-				}
+				// if(!d.label.includes(':')) {
+				// 	d.label += ': ' + d.value;
+				// }
 				return d;
 			});
 		}
@@ -2928,7 +2946,7 @@ class AxisChart extends BaseChart {
 					}
 
 					let labels = new Array(s.datasetLength).fill('');
-					if(this.valuesOverPoints) {
+					if(this.config.valuesOverPoints) {
 						if(stacked && d.index === s.datasets.length - 1) {
 							labels = d.cumulativeYs;
 						} else {
@@ -3037,12 +3055,15 @@ class AxisChart extends BaseChart {
 		let s = this.state;
 		if(!s.yExtremes) return;
 
+		let formatY = this.config.formatTooltipY;
+		let formatX = this.config.formatTooltipX;
+
 		let titles = s.xAxis.labels;
-		if(this.formatTooltipX && this.formatTooltipX(titles[0])) {
-			titles = titles.map(d=>this.formatTooltipX(d));
+		if(formatX && formatX(titles[0])) {
+			titles = titles.map(d=>formatX(d));
 		}
 
-		let formatY = this.formatTooltipY && this.formatTooltipY(this.y[0].values[0]);
+		formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
 
 		for(var i=s.datasetLength - 1; i >= 0 ; i--) {
 			let xVal = s.xAxis.positions[i];
@@ -3053,16 +3074,34 @@ class AxisChart extends BaseChart {
 
 				let values = this.data.datasets.map((set, j) => {
 					return {
-						title: set.title,
-						value: formatY ? this.formatTooltipY(set.values[i]) : set.values[i],
+						title: set.name,
+						value: formatY ? formatY(set.values[i]) : set.values[i],
 						color: this.colors[j],
 					};
 				});
 
-				this.tip.setValues(x, y, titles[i], '', values);
+				this.tip.setValues(x, y, {name: titles[i], value: ''}, values, i);
 				this.tip.showTip();
 				break;
 			}
+		}
+	}
+
+	renderLegend() {
+		let s = this.data;
+		this.statsWrapper.textContent = '';
+
+		if(s.datasets.length > 1) {
+			s.datasets.map((d, i) => {
+				let stats = $.create('div', {
+					className: 'stats',
+					inside: this.statsWrapper
+				});
+				stats.innerHTML = `<span class="indicator">
+					<i style="background: ${this.colors[i]}"></i>
+					${d.name}
+				</span>`;
+			});
 		}
 	}
 
@@ -3079,7 +3118,7 @@ class AxisChart extends BaseChart {
 				type: c.unitType,
 				overlay: undefined,
 				units: c.units,
-			}
+			};
 		});
 
 		if(this.state.currentIndex === undefined) {
@@ -3105,19 +3144,26 @@ class AxisChart extends BaseChart {
 	}
 
 	bindOverlay() {
-		// on event, update overlay
-		this.parent.addEventListener('data-select', (e) => {
+		this.parent.addEventListener('data-select', () => {
 			this.updateOverlay();
 		});
 	}
 
-	bindUnits(units_array) {
-		// units_array.map(unit => {
-		// 	unit.addEventListener('click', () => {
-		// 		let index = unit.getAttribute('data-point-index');
-		// 		this.setCurrentDataPoint(index);
-		// 	});
-		// });
+	bindUnits() {
+		this.dataUnitComponents.map(c => {
+			c.units.map(unit => {
+				unit.addEventListener('click', () => {
+					let index = unit.getAttribute('data-point-index');
+					this.setCurrentDataPoint(index);
+				});
+			});
+		});
+
+		// Note: Doesn't work as tooltip is absolutely positioned
+		this.tip.container.addEventListener('click', () => {
+			let index = this.tip.container.getAttribute('data-point-index');
+			this.setCurrentDataPoint(index);
+		});
 	}
 
 	updateOverlay() {
@@ -3136,16 +3182,12 @@ class AxisChart extends BaseChart {
 	}
 
 	getDataPoint(index=this.state.currentIndex) {
-		// check for length
+		let s = this.state;
 		let data_point = {
-			index: index
+			index: index,
+			label: s.xAxis.labels[index],
+			values: s.datasets.map(d => d.values[index])
 		};
-		// let y = this.y[0];
-		// ['svg_units', 'yUnitPositions', 'values'].map(key => {
-		// 	let data_key = key.slice(0, key.length-1);
-		// 	data_point[data_key] = y[key][index];
-		// });
-		// data_point.label = this.xAxis.labels[index];
 		return data_point;
 	}
 
@@ -3186,7 +3228,14 @@ class AxisChart extends BaseChart {
 	// addDataset(dataset, index) {}
 	// removeDataset(index = 0) {}
 
-	// updateDatasets(datasets) {}
+	updateDatasets(datasets) {
+		this.data.datasets.map((d, i) => {
+			if(datasets[i]) {
+				d.values = datasets[i];
+			}
+		});
+		this.update(this.data);
+	}
 
 	// updateDataPoint(dataPoint, index = 0) {}
 	// addDataPoint(dataPoint, index = 0) {}

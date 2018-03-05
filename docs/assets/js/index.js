@@ -1,76 +1,100 @@
 // Composite Chart
 // ================================================================================
-let report_count_list = [17, 40, 33, 44, 126, 156,
-	324, 333, 478, 495, 527];
+let reportCountList = [152, 222, 199, 287, 534, 709,
+	1179, 1256, 1632, 1856, 1850];
 
-let bar_composite_data = {
+let lineCompositeData = {
 	labels: ["2007", "2008", "2009", "2010", "2011", "2012",
 		"2013", "2014", "2015", "2016", "2017"],
 
 	yMarkers: [
 		{
-			label: "Marker 1",
-			value: 420,
-		},
-		{
-			label: "Marker 2",
-			value: 250,
+			label: "Average 100 reports/month",
+			value: 1200,
 		}
-	],
-
-	yRegions: [
-		{
-			label: "Region Y 1",
-			start: 100,
-			end: 300
-		},
 	],
 
 	datasets: [{
 		"name": "Events",
-		"values": report_count_list,
-		// "formatted": report_count_list.map(d => d + " reports")
+		"values": reportCountList
 	}]
 };
 
-let line_composite_data = {
-	labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-	datasets: [{
-		"values": [37, 36, 32, 33, 12, 34, 52, 45, 58, 57, 64, 35],
-		// "values": [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 40, 40],
-		// "values": [-36, -46, -45, -32, -27, -31, -30, -36, -39, -49, -40, -40],
-	}]
-};
 
-let more_line_data = [
-	[4, 0, 3, 1, 1, 2, 1, 2, 1, 0, 1, 1],
-	// [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[2, 3, 3, 2, 1, 4, 0, 1, 2, 7, 11, 4],
-	[7, 7, 2, 4, 0, 1, 5, 3, 1, 2, 0, 1],
-	[0, 2, 6, 2, 2, 1, 2, 3, 6, 3, 7, 10],
-	[9, 10, 8, 10, 6, 5, 8, 8, 24, 15, 10, 13],
-	[9, 13, 16, 9, 4, 5, 7, 10, 14, 22, 23, 24],
-	[20, 22, 28, 19, 28, 19, 14, 19, 51, 37, 29, 38],
-	[29, 20, 22, 16, 16, 19, 24, 26, 57, 31, 46, 27],
-	[36, 24, 38, 27, 15, 22, 24, 38, 32, 57, 139, 26],
-	[37, 36, 32, 33, 12, 34, 52, 45, 58, 57, 64, 35],
-	[36, 46, 45, 32, 27, 31, 30, 36, 39, 58, 82, 62],
-	// [36, 46, 45, 32, 27, 31, 30, 36, 39, 49, 40, 40]
-	// [-36, -46, -45, -32, -27, -31, -30, -36, -39, -49, -40, -40]
+let fireball_5_25 = [
+	[4, 0, 3, 1, 1, 2, 1, 1, 1, 0, 1, 1],
+	[2, 3, 3, 2, 1, 3, 0, 1, 2, 7, 10, 4],
+	[5, 6, 2, 4, 0, 1, 4, 3, 0, 2, 0, 1],
+	[0, 2, 6, 2, 1, 1, 2, 3, 6, 3, 7, 8],
+	[6, 8, 7, 7, 4, 5, 6, 5, 22, 12, 10, 11],
+	[7, 10, 11, 7, 3, 2, 7, 7, 11, 15, 22, 20],
+	[13, 16, 21, 18, 19, 17, 12, 17, 31, 28, 25, 29],
+	[24, 14, 21, 14, 11, 15, 19, 21, 41, 22, 32, 18],
+	[31, 20, 30, 22, 14, 17, 21, 35, 27, 50, 117, 24],
+	[32, 24, 21, 27, 11, 27, 43, 37, 44, 40, 48, 32],
+	[31, 38, 36, 26, 23, 23, 25, 29, 26, 47, 61, 50],
 ];
+let fireball_2_5 = [
+	[22, 6, 6, 9, 7, 8, 6, 14, 19, 10, 8, 20],
+	[11, 13, 12, 8, 9, 11, 9, 13, 10, 22, 40, 24],
+	[20, 13, 13, 19, 13, 10, 14, 13, 20, 18, 5, 9],
+	[7, 13, 16, 19, 12, 11, 21, 27, 27, 24, 33, 33],
+	[38, 25, 28, 22, 31, 21, 35, 42, 37, 32, 46, 53],
+	[50, 33, 36, 34, 35, 28, 27, 52, 58, 59, 75, 69],
+	[54, 67, 67, 45, 66, 51, 38, 64, 90, 113, 116, 87],
+	[84, 52, 56, 51, 55, 46, 50, 87, 114, 83, 152, 93],
+	[73, 58, 59, 63, 56, 51, 83, 140, 103, 115, 265, 89],
+	[106, 95, 94, 71, 77, 75, 99, 136, 129, 154, 168, 156],
+	[81, 102, 95, 72, 58, 91, 89, 122, 124, 135, 183, 171],
+];
+let fireballOver25 = [
+	// [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+	[0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+	[1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0],
+	[0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2],
+	[3, 2, 1, 3, 2, 0, 2, 2, 2, 3, 0, 1],
+	[2, 3, 5, 2, 1, 3, 0, 2, 3, 5, 1, 4],
+	[7, 4, 6, 1, 9, 2, 2, 2, 20, 9, 4, 9],
+	[5, 6, 1, 2, 5, 4, 5, 5, 16, 9, 14, 9],
+	[5, 4, 7, 5, 1, 5, 3, 3, 5, 7, 22, 2],
+	[5, 13, 11, 6, 1, 7, 9, 8, 14, 17, 16, 3],
+	[8, 9, 8, 6, 4, 8, 5, 6, 14, 11, 21, 12]
+];
+
+let monthNames = ["January", "February", "March", "April", "May", "June",
+	"July", "August", "September", "October", "November", "December"];
+
+let barCompositeData = {
+	labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+	datasets: [
+		{
+			name: "Over 25 reports",
+			values: fireballOver25[9],
+		},
+		{
+			name: "5 to 25 reports",
+			values: fireball_5_25[9],
+		},
+		{
+			name: "2 to 5 reports",
+			values: fireball_2_5[9]
+		}
+	]
+};
 
 let c1 = document.querySelector("#chart-composite-1");
 let c2 = document.querySelector("#chart-composite-2");
 
-let bar_composite_chart = new Chart (c1, {
+let lineCompositeChart = new Chart (c1, {
 	title: "Fireball/Bolide Events - Yearly (reported)",
-	data: bar_composite_data,
+	data: lineCompositeData,
 	type: 'line',
-	height: 180,
+	height: 190,
 	colors: ['green'],
 	isNavigable: 1,
 	isSeries: 1,
-	// valuesOverPoints: 1,
+	valuesOverPoints: 1,
 
 	lineOptions: {
 		dotSize: 8
@@ -79,25 +103,33 @@ let bar_composite_chart = new Chart (c1, {
 	// regionFill: 1
 });
 
-let line_composite_chart = new Chart (c2, {
-	data: line_composite_data,
+let barCompositeChart = new Chart (c2, {
+	data: barCompositeData,
 	type: 'bar',
-	height: 180,
-	colors: ['#46a9f9'],
+	height: 190,
+	colors: ['violet', 'light-blue', '#46a9f9'],
 	isSeries: 1,
 	valuesOverPoints: 1,
-	xAxisMode: 'tick'
+	axisOptions: {
+		xAxisMode: 'tick'
+	},
+	barOptions: {
+		stacked: 1
+	},
 
 });
 
-bar_composite_chart.parent.addEventListener('data-select', (e) => {
-	line_composite_chart.updateDataset(more_line_data[e.index]);
+lineCompositeChart.parent.addEventListener('data-select', (e) => {
+	let i = e.index;
+	barCompositeChart.updateDatasets([
+		fireballOver25[i], fireball_5_25[i], fireball_2_5[i]
+	]);
 });
 
 
 // Demo Chart (bar, linepts, scatter(blobs), percentage)
 // ================================================================================
-let type_data = {
+let typeData = {
 	labels: ["12am-3am", "3am-6am", "6am-9am", "9am-12pm",
 		"12pm-3pm", "3pm-6pm", "6pm-9pm", "9pm-12am"],
 
@@ -166,15 +198,13 @@ let type_data = {
 	]
 };
 
-let type_chart = new Chart("#chart-types", {
-	// title: "My Awesome Chart",
-	data: type_data,
+let typeChart = new Chart("#chart-types", {
+	title: "My Awesome Chart",
+	data: typeData,
 	type: 'bar',
 	height: 250,
 	colors: ['purple', 'magenta', 'light-blue'],
 	isSeries: 1,
-	xAxisMode: 'tick',
-	yAxisMode: 'span',
 	valuesOverPoints: 1,
 	// maxLegendPoints: 6,
 	// maxSlices: 3,
@@ -184,86 +214,45 @@ let type_chart = new Chart("#chart-types", {
 	},
 	tooltipOptions: {
 		formatTooltipX: d => (d + '').toUpperCase(),
-		formatTooltipY: d => d + ' pts'
+		formatTooltipY: d => d + ' pts',
 	}
 });
 
-Array.prototype.slice.call(
-	document.querySelectorAll('.chart-type-buttons button')
-).map(el => {
-	el.addEventListener('click', (e) => {
-		let btn = e.target;
-		let type = btn.getAttribute('data-type');
 
-		let newChart = type_chart.getDifferentChart(type);
-		if(newChart){
-			type_chart = newChart;
-		}
-		Array.prototype.slice.call(
-			btn.parentNode.querySelectorAll('button')).map(el => {
-			el.classList.remove('active');
-		});
-		btn.classList.add('active');
-	});
-});
 
-// Trends Chart
+
+// Aggregation chart
 // ================================================================================
-let trends_data = {
-	labels: [1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976,
-		1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986,
-		1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996,
-		1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
-		2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016] ,
-	datasets: [
-		{
-			"values": [132.9, 150.0, 149.4, 148.0,  94.4,  97.6,  54.1,  49.2,  22.5, 18.4,
-				39.3, 131.0, 220.1, 218.9, 198.9, 162.4,  91.0,  60.5,  20.6,  14.8,
-				33.9, 123.0, 211.1, 191.8, 203.3, 133.0,  76.1,  44.9,  25.1,  11.6,
-				28.9,  88.3, 136.3, 173.9, 170.4, 163.6,  99.3,  65.3,  45.8,  24.7,
-				12.6,   4.2,   4.8,  24.9,  80.8,  84.5,  94.0, 113.3,  69.8,  39.8]
-		}
-	]
-};
-
-let plotChartArgs = {
-	title: "Mean Total Sunspot Count - Yearly",
-	data: trends_data,
-	type: 'line',
+let aggrChart = new Chart("#chart-aggr", {
+	data: typeData,
+	type: 'pie',
 	height: 250,
-	colors: ['blue'],
+	colors: ['purple', 'magenta', 'light-blue'],
 	isSeries: 1,
-	lineOptions: {
-		hideDots: 1,
-		heatline: 1,
-	},
-	axisOptions: {
-		xAxisMode: 'tick',
-		yAxisMode: 'span',
-		xIsSeries: 1
-	}
-};
 
-new Chart("#chart-trends", plotChartArgs);
+	maxLegendPoints: 6,
+	maxSlices: 10,
+
+	barOptions: {
+		stacked: 1
+	},
+	tooltipOptions: {
+		formatTooltipX: d => (d + '').toUpperCase(),
+		formatTooltipY: d => d + ' pts',
+	}
+});
 
 Array.prototype.slice.call(
-	document.querySelectorAll('.chart-plot-buttons button')
+	document.querySelectorAll('.aggr-type-buttons button')
 ).map(el => {
 	el.addEventListener('click', (e) => {
 		let btn = e.target;
 		let type = btn.getAttribute('data-type');
-		let config = {};
-		config[type] = 1;
 
-		if(['regionFill', 'heatline'].includes(type)) {
-			config.hideDots = 1;
+		let newChart = aggrChart.getDifferentChart(type);
+		if(newChart){
+			aggrChart = newChart;
 		}
-
-		// plotChartArgs.init = false;
-		plotChartArgs.lineOptions = config;
-
-		new Chart("#chart-trends", plotChartArgs);
-
 		Array.prototype.slice.call(
 			btn.parentNode.querySelectorAll('button')).map(el => {
 			el.classList.remove('active');
@@ -337,6 +326,71 @@ chart_update_buttons.querySelector('[data-update="remove"]').addEventListener("c
 	update_chart.removeDataPoint();
 });
 
+// Trends Chart
+// ================================================================================
+let trends_data = {
+	labels: [1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976,
+		1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986,
+		1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996,
+		1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
+		2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016] ,
+	datasets: [
+		{
+			values: [132.9, 150.0, 149.4, 148.0,  94.4,  97.6,  54.1,  49.2,  22.5, 18.4,
+				39.3, 131.0, 220.1, 218.9, 198.9, 162.4,  91.0,  60.5,  20.6,  14.8,
+				33.9, 123.0, 211.1, 191.8, 203.3, 133.0,  76.1,  44.9,  25.1,  11.6,
+				28.9,  88.3, 136.3, 173.9, 170.4, 163.6,  99.3,  65.3,  45.8,  24.7,
+				12.6,   4.2,   4.8,  24.9,  80.8,  84.5,  94.0, 113.3,  69.8,  39.8]
+		}
+	]
+};
+
+let plotChartArgs = {
+	title: "Mean Total Sunspot Count - Yearly",
+	data: trends_data,
+	type: 'line',
+	height: 250,
+	colors: ['blue'],
+	isSeries: 1,
+	lineOptions: {
+		hideDots: 1,
+		heatline: 1,
+	},
+	axisOptions: {
+		xAxisMode: 'tick',
+		yAxisMode: 'span',
+		xIsSeries: 1
+	}
+};
+
+new Chart("#chart-trends", plotChartArgs);
+
+Array.prototype.slice.call(
+	document.querySelectorAll('.chart-plot-buttons button')
+).map(el => {
+	el.addEventListener('click', (e) => {
+		let btn = e.target;
+		let type = btn.getAttribute('data-type');
+		let config = {};
+		config[type] = 1;
+
+		if(['regionFill', 'heatline'].includes(type)) {
+			config.hideDots = 1;
+		}
+
+		// plotChartArgs.init = false;
+		plotChartArgs.lineOptions = config;
+
+		new Chart("#chart-trends", plotChartArgs);
+
+		Array.prototype.slice.call(
+			btn.parentNode.querySelectorAll('button')).map(el => {
+			el.classList.remove('active');
+		});
+		btn.classList.add('active');
+	});
+});
+
 
 // Event chart
 // ================================================================================
@@ -398,28 +452,24 @@ events_chart.parent.addEventListener('data-select', (e) => {
 	data_div.querySelector('img').src = "./assets/img/" + name.toLowerCase() + ".jpg";
 });
 
-// Aggregation chart
-// ================================================================================
-
-
 // Heatmap
 // ================================================================================
 
-let heatmap_data = {};
+let heatmapData = {};
 let current_date = new Date();
 let timestamp = current_date.getTime()/1000;
 timestamp = Math.floor(timestamp - (timestamp % 86400)).toFixed(1); // convert to midnight
 for (var i = 0; i< 375; i++) {
-	heatmap_data[parseInt(timestamp)] = Math.floor(Math.random() * 5);
+	heatmapData[parseInt(timestamp)] = Math.floor(Math.random() * 5);
 	timestamp = Math.floor(timestamp - 86400).toFixed(1);
 }
 
 new Chart("#chart-heatmap", {
-	data: heatmap_data,
+	data: heatmapData,
 	type: 'heatmap',
-	legend_scale: [0, 1, 2, 4, 5],
+	legendScale: [0, 1, 2, 4, 5],
 	height: 115,
-	discrete_domains: 1
+	discreteDomains: 1
 });
 
 Array.prototype.slice.call(
@@ -428,10 +478,10 @@ Array.prototype.slice.call(
 	el.addEventListener('click', (e) => {
 		let btn = e.target;
 		let mode = btn.getAttribute('data-mode');
-		let discrete_domains = 0;
+		let discreteDomains = 0;
 
 		if(mode === 'discrete') {
-			discrete_domains = 1;
+			discreteDomains = 1;
 		}
 
 		let colors = [];
@@ -443,12 +493,12 @@ Array.prototype.slice.call(
 		}
 
 		new Chart("#chart-heatmap", {
-			data: heatmap_data,
+			data: heatmapData,
 			type: 'heatmap',
-			legend_scale: [0, 1, 2, 4, 5],
+			legendScale: [0, 1, 2, 4, 5],
 			height: 115,
-			discrete_domains: discrete_domains,
-			legend_colors: colors
+			discreteDomains: discreteDomains,
+			legendColors: colors
 		});
 
 		Array.prototype.slice.call(
@@ -471,22 +521,22 @@ Array.prototype.slice.call(
 			colors = ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'];
 		}
 
-		let discrete_domains = 1;
+		let discreteDomains = 1;
 
 		let view_mode = document
 			.querySelector('.heatmap-mode-buttons .active')
 			.getAttribute('data-mode');
 		if(view_mode === 'continuous') {
-			discrete_domains = 0;
+			discreteDomains = 0;
 		}
 
 		new Chart("#chart-heatmap", {
-			data: heatmap_data,
+			data: heatmapData,
 			type: 'heatmap',
-			legend_scale: [0, 1, 2, 4, 5],
+			legendScale: [0, 1, 2, 4, 5],
 			height: 115,
-			discrete_domains: discrete_domains,
-			legend_colors: colors
+			discreteDomains: discreteDomains,
+			legendColors: colors
 		});
 
 		Array.prototype.slice.call(

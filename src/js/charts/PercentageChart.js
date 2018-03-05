@@ -67,7 +67,7 @@ export default class PercentageChart extends AggregationChart {
 					? this.formattedLabels[i] : this.state.labels[i]) + ': ';
 				let percent = (s.sliceTotals[i]*100/this.grandTotal).toFixed(1);
 
-				this.tip.setValues(x, y, title, percent + "%");
+				this.tip.setValues(x, y, {name: title, value: percent + "%"});
 				this.tip.showTip();
 			}
 		});

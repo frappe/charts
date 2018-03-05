@@ -50,10 +50,11 @@ export default class AggregationChart extends BaseChart {
 	renderLegend() {
 		let s = this.state;
 
+		this.statsWrapper.textContent = '';
+
 		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
 
-		let x_values = this.formatted_labels && this.formatted_labels.length > 0
-			? this.formatted_labels : s.labels;
+		let xValues = s.labels;
 		this.legendTotals.map((d, i) => {
 			if(d) {
 				let stats = $.create('div', {
@@ -62,7 +63,7 @@ export default class AggregationChart extends BaseChart {
 				});
 				stats.innerHTML = `<span class="indicator">
 					<i style="background: ${this.colors[i]}"></i>
-					<span class="text-muted">${x_values[i]}:</span>
+					<span class="text-muted">${xValues[i]}:</span>
 					${d}
 				</span>`;
 			}

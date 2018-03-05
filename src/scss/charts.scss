@@ -28,8 +28,13 @@
 	}
 	.graph-stats-container {
 		display: flex;
-		justify-content: space-around;
-		padding-top: 10px;
+		justify-content: space-between;
+		padding: 10px;
+		&:before,
+		&:after {
+			content: '';
+			display: block;
+		}
 		.stats {
 			padding-bottom: 15px;
 		}

@@ -51,6 +51,9 @@ export default class SvgTip {
 
 	fill() {
 		let title;
+		if(this.index) {
+			this.container.setAttribute('data-point-index', this.index);
+		}
 		if(this.titleValueFirst) {
 			title = `<strong>${this.titleValue}</strong>${this.titleName}`;
 		} else {
@@ -97,13 +100,14 @@ export default class SvgTip {
 		}
 	}
 
-	setValues(x, y, titleName = '', titleValue = '', listValues = [], titleValueFirst = 0) {
-		this.titleName = titleName;
-		this.titleValue = titleValue;
+	setValues(x, y, title = {}, listValues = [], index = -1) {
+		this.titleName = title.name;
+		this.titleValue = title.value;
 		this.listValues = listValues;
 		this.x = x;
 		this.y = y;
-		this.titleValueFirst = titleValueFirst;
+		this.titleValueFirst = title.valueFirst || 0;
+		this.index = index;
 		this.refresh();
 	}
 

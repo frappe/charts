@@ -1,4 +1,4 @@
-export const VERT_SPACE_OUTSIDE_BASE_CHART = 40;
+export const VERT_SPACE_OUTSIDE_BASE_CHART = 50;
 export const TRANSLATE_Y_BASE_CHART = 20;
 export const LEFT_MARGIN_BASE_CHART = 60;
 export const RIGHT_MARGIN_BASE_CHART = 40;
@@ -16,7 +16,7 @@ export const MIN_BAR_PERCENT_HEIGHT = 0.01;
 export const LINE_CHART_DOT_SIZE = 4;
 export const DOT_OVERLAY_SIZE_INCR = 4;
 
-export const DEFAULT_CHAR_WIDTH = 8;
+export const DEFAULT_CHAR_WIDTH = 7;
 
 // Universal constants
 export const ANGLE_RATIO = Math.PI / 180;

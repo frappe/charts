@@ -180,7 +180,7 @@ function makeVertLine(x, label, y1, y2, options={}) {
 		dy: FONT_SIZE + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': 'middle',
-		innerHTML: label
+		innerHTML: label + ""
 	});
 
 	let line = createSVG('g', {
@@ -337,7 +337,7 @@ export function yRegion(y1, y2, width, label) {
 
 	let labelSvg = createSVG('text', {
 		className: 'chart-label',
-		x: width - getStringWidth(label, 4.5) - LABEL_MARGIN,
+		x: width - getStringWidth(label+"", 4.5) - LABEL_MARGIN,
 		y: 0,
 		dy: (FONT_SIZE / -2) + 'px',
 		'font-size': FONT_SIZE + 'px',
@@ -369,6 +369,8 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 		height: height || meta.minHeight // TODO: correct y for positive min height
 	});
 
+	label += "";
+
 	if(!label && !label.length) {
 		return rect;
 	} else {
@@ -385,6 +387,7 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 		});
 
 		let group = createSVG('g', {
+			'data-point-index': index,
 			transform: `translate(${x}, ${y})`
 		});
 		group.appendChild(rect);
@@ -403,6 +406,8 @@ export function datasetDot(x, y, radius, color, label='', index=0, meta={}) {
 		r: radius
 	});
 
+	label += "";
+
 	if(!label && !label.length) {
 		return dot;
 	} else {
@@ -420,6 +425,7 @@ export function datasetDot(x, y, radius, color, label='', index=0, meta={}) {
 		});
 
 		let group = createSVG('g', {
+			'data-point-index': index,
 			transform: `translate(${x}, ${y})`
 		});
 		group.appendChild(dot);
@@ -481,9 +487,10 @@ export let makeOverlay = {
 		}
 		let overlay = unit.cloneNode();
 		let radius = unit.getAttribute('r');
-		overlay.setAttribute('r', radius + DOT_OVERLAY_SIZE_INCR);
-		overlay.style.fill = '#000000';
-		overlay.style.opacity = '0.4';
+		let fill = unit.getAttribute('fill');
+		overlay.setAttribute('r', parseInt(radius) + DOT_OVERLAY_SIZE_INCR);
+		overlay.setAttribute('fill', fill);
+		overlay.style.opacity = '0.6';
 
 		if(transformValue) {
 			overlay.setAttribute('transform', transformValue);

@@ -143,7 +143,10 @@ export default class BaseChart {
 			setTimeout(() => {this.update();}, this.initTimeout);
 		}
 
-		this.renderLegend();
+		if(!onlyWidthChange) {
+			this.renderLegend();
+		}
+
 		this.setupNavigation(init);
 	}
 
