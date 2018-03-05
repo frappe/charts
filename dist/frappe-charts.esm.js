@@ -202,10 +202,30 @@ class SvgTip {
 	}
 }
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
+const VERT_SPACE_OUTSIDE_BASE_CHART = 40;
+const TRANSLATE_Y_BASE_CHART = 20;
+const LEFT_MARGIN_BASE_CHART = 60;
+const RIGHT_MARGIN_BASE_CHART = 40;
+const Y_AXIS_MARGIN = 60;
+
+const INIT_CHART_UPDATE_TIMEOUT = 700;
+const CHART_POST_ANIMATE_TIMEOUT = 400;
+
+const DEFAULT_AXIS_CHART_TYPE = 'line';
+const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
+
+const BAR_CHART_SPACE_RATIO = 0.5;
+const MIN_BAR_PERCENT_HEIGHT = 0.01;
+
+const LINE_CHART_DOT_SIZE = 4;
+const DOT_OVERLAY_SIZE_INCR = 4;
+
+const DEFAULT_CHAR_WIDTH = 8;
+
+// Universal constants
+const ANGLE_RATIO = Math.PI / 180;
+const FULL_ANGLE = 360;
+
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -246,6 +266,15 @@ function fillArray(array, count, element, start=false) {
  */
 function getStringWidth(string, charWidth) {
 	return (string+"").length * charWidth;
+}
+
+
+
+function getPositionByAngle(angle, radius) {
+	return {
+		x:Math.sin(angle * ANGLE_RATIO) * radius,
+		y:Math.cos(angle * ANGLE_RATIO) * radius,
+	};
 }
 
 function getBarHeightAndYAttr(yTop, zeroLine) {
@@ -372,26 +401,6 @@ function animatePath(paths, newXList, newYList, zeroLine) {
 	return pathComponents;
 }
 
-const VERT_SPACE_OUTSIDE_BASE_CHART = 40;
-const TRANSLATE_Y_BASE_CHART = 20;
-const LEFT_MARGIN_BASE_CHART = 60;
-const RIGHT_MARGIN_BASE_CHART = 40;
-const Y_AXIS_MARGIN = 60;
-
-const INIT_CHART_UPDATE_TIMEOUT = 700;
-const CHART_POST_ANIMATE_TIMEOUT = 400;
-
-const DEFAULT_AXIS_CHART_TYPE = 'line';
-const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
-
-const BAR_CHART_SPACE_RATIO = 0.5;
-const MIN_BAR_PERCENT_HEIGHT = 0.01;
-
-const LINE_CHART_DOT_SIZE = 4;
-const DOT_OVERLAY_SIZE_INCR = 4;
-
-const DEFAULT_CHAR_WIDTH = 8;
-
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 const FONT_SIZE = 10;
@@ -487,6 +496,16 @@ function makePath(pathStr, className='', stroke='none', fill='none') {
 			fill: fill
 		}
 	});
+}
+
+function makeArcPathStr(startPosition, endPosition, center, radius, clockWise=1){
+	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
+	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
+
+	return `M${center.x} ${center.y}
+		L${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY} z`;
 }
 
 function makeGradient(svgDefElem, color, lighter = false) {
@@ -917,7 +936,7 @@ const PRESET_COLOR_MAP = {
 };
 
 const DEFAULT_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
-	'yellow', 'green', 'light-green', 'purple', 'magenta'];
+	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
 
 function limitColor(r){
 	if (r > 255) return 255;
@@ -986,13 +1005,11 @@ function getDifferentChart(type, current_type, parent, args) {
 	// Okay, this is anticlimactic
 	// this function will need to actually be 'changeChartType(type)'
 	// that will update only the required elements, but for now ...
-	return new Chart(parent, {
-		title: args.title,
-		data: args.data,
-		type: type,
-		height: args.height,
-		colors: useColor ? args.colors : undefined
-	});
+
+	args.type = type;
+	args.colors = useColor ? args.colors : undefined;
+
+	return new Chart(parent, args);
 }
 
 // Leveraging SMIL Animations
@@ -1384,13 +1401,83 @@ class BaseChart {
 	}
 }
 
-class PercentageChart extends BaseChart {
+class AggregationChart extends BaseChart {
+	constructor(parent, args) {
+		super(parent, args);
+	}
+
+	configure(args) {
+		super.configure(args);
+
+		this.config.maxSlices = args.maxSlices || 20;
+		this.config.maxLegendPoints = args.maxLegendPoints || 20;
+	}
+
+	calc() {
+		let s = this.state;
+		let maxSlices = this.config.maxSlices;
+		s.sliceTotals = [];
+
+		let allTotals = this.data.labels.map((label, i) => {
+			let total = 0;
+			this.data.datasets.map(e => {
+				total += e.values[i];
+			});
+			return [total, label];
+		}).filter(d => { return d[0] > 0; }); // keep only positive results
+
+		let totals = allTotals;
+		if(allTotals.length > maxSlices) {
+			// Prune and keep a grey area for rest as per maxSlices
+			allTotals.sort((a, b) => { return b[0] - a[0]; });
+
+			totals = allTotals.slice(0, maxSlices-1);
+			let remaining = allTotals.slice(maxSlices-1);
+
+			let sumOfRemaining = 0;
+			remaining.map(d => {sumOfRemaining += d[0];});
+			totals.push([sumOfRemaining, 'Rest']);
+			this.colors[maxSlices-1] = 'grey';
+		}
+
+		this.labels = [];
+		totals.map(d => {
+			s.sliceTotals.push(d[0]);
+			this.labels.push(d[1]);
+		});
+	}
+
+	render() { }
+
+	bindTooltip() { }
+
+	renderLegend() {
+		let s = this.state;
+
+		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
+
+		let x_values = this.formatted_labels && this.formatted_labels.length > 0
+			? this.formatted_labels : this.labels;
+		this.legendTotals.map((d, i) => {
+			if(d) {
+				let stats = $.create('div', {
+					className: 'stats',
+					inside: this.statsWrapper
+				});
+				stats.innerHTML = `<span class="indicator">
+					<i style="background: ${this.colors[i]}"></i>
+					<span class="text-muted">${x_values[i]}:</span>
+					${d}
+				</span>`;
+			}
+		});
+	}
+}
+
+class PercentageChart extends AggregationChart {
 	constructor(parent, args) {
 		super(parent, args);
 		this.type = 'percentage';
-
-		this.max_slices = 10;
-		this.max_legend_points = 6;
 
 		this.setup();
 	}
@@ -1420,9 +1507,10 @@ class PercentageChart extends BaseChart {
 	}
 
 	render() {
-		this.grand_total = this.sliceTotals.reduce((a, b) => a + b, 0);
+		let s = this.state;
+		this.grand_total = s.sliceTotals.reduce((a, b) => a + b, 0);
 		this.slices = [];
-		this.sliceTotals.map((total, i) => {
+		s.sliceTotals.map((total, i) => {
 			let slice = $.create('div', {
 				className: `progress-bar`,
 				inside: this.percentageBar,
@@ -1435,42 +1523,8 @@ class PercentageChart extends BaseChart {
 		});
 	}
 
-	calc() {
-		this.sliceTotals = [];
-		let all_totals = this.data.labels.map((d, i) => {
-			let total = 0;
-			this.data.datasets.map(e => {
-				total += e.values[i];
-			});
-			return [total, d];
-		}).filter(d => { return d[0] > 0; }); // keep only positive results
-
-		let totals = all_totals;
-
-		if(all_totals.length > this.max_slices) {
-			all_totals.sort((a, b) => { return b[0] - a[0]; });
-
-			totals = all_totals.slice(0, this.max_slices-1);
-			let others = all_totals.slice(this.max_slices-1);
-
-			let sum_of_others = 0;
-			others.map(d => {sum_of_others += d[0];});
-
-			totals.push([sum_of_others, 'Rest']);
-
-			this.colors[this.max_slices-1] = 'grey';
-		}
-
-		this.labels = [];
-		totals.map(d => {
-			this.sliceTotals.push(d[0]);
-			this.labels.push(d[1]);
-		});
-
-		this.legend_totals = this.sliceTotals.slice(0, this.max_legend_points);
-	}
-
 	bindTooltip() {
+		
 		// this.slices.map((slice, i) => {
 		// 	slice.addEventListener('mouseenter', () => {
 		// 		let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
@@ -1479,114 +1533,57 @@ class PercentageChart extends BaseChart {
 		// 		let y = p_off.top - g_off.top - 6;
 		// 		let title = (this.formatted_labels && this.formatted_labels.length>0
 		// 			? this.formatted_labels[i] : this.labels[i]) + ': ';
-		// 		let percent = (this.sliceTotals[i]*100/this.grand_total).toFixed(1);
+		// 		let percent = (s.sliceTotals[i]*100/this.grand_total).toFixed(1);
 
 		// 		this.tip.set_values(x, y, title, percent + "%");
 		// 		this.tip.show_tip();
 		// 	});
 		// });
 	}
-
-	renderLegend() {
-		// let x_values = this.formatted_labels && this.formatted_labels.length > 0
-		// 	? this.formatted_labels : this.labels;
-		// this.legend_totals.map((d, i) => {
-		// 	if(d) {
-		// 		let stats = $.create('div', {
-		// 			className: 'stats',
-		// 			inside: this.statsWrapper
-		// 		});
-		// 		stats.innerHTML = `<span class="indicator">
-		// 			<i style="background: ${this.colors[i]}"></i>
-		// 			<span class="text-muted">${x_values[i]}:</span>
-		// 			${d}
-		// 		</span>`;
-		// 	}
-		// });
-	}
 }
 
-const ANGLE_RATIO = Math.PI / 180;
-const FULL_ANGLE = 360;
-
-class PieChart extends BaseChart {
+class PieChart extends AggregationChart {
 	constructor(parent, args) {
 		super(parent, args);
 		this.type = 'pie';
-		this.elements_to_animate = null;
+
 		this.hoverRadio = args.hoverRadio || 0.1;
-		this.max_slices = 10;
-		this.max_legend_points = 6;
-		this.isAnimate = false;
 		this.startAngle = args.startAngle || 0;
 		this.clockWise = args.clockWise || false;
-		this.mouseMove = this.mouseMove.bind(this);
-		this.mouseLeave = this.mouseLeave.bind(this);
+
 		this.setup();
 	}
+
+	configure(args) {
+		super.configure(args);
+		this.mouseMove = this.mouseMove.bind(this);
+		this.mouseLeave = this.mouseLeave.bind(this);
+	}
 	calc() {
-		this.centerX = this.width / 2;
-		this.centerY = this.height / 2;
-		this.radius = (this.height > this.width ? this.centerX : this.centerY);
-		this.slice_totals = [];
-		let all_totals = this.data.labels.map((d, i) => {
-			let total = 0;
-			this.data.datasets.map(e => {
-				total += e.values[i];
-			});
-			return [total, d];
-		}).filter(d => { return d[0] > 0; }); // keep only positive results
-
-		let totals = all_totals;
-
-		if(all_totals.length > this.max_slices) {
-			all_totals.sort((a, b) => { return b[0] - a[0]; });
-
-			totals = all_totals.slice(0, this.max_slices-1);
-			let others = all_totals.slice(this.max_slices-1);
-
-			let sum_of_others = 0;
-			others.map(d => {sum_of_others += d[0];});
-
-			totals.push([sum_of_others, 'Rest']);
-
-			this.colors[this.max_slices-1] = 'grey';
-		}
-
-		this.labels = [];
-		totals.map(d => {
-			this.slice_totals.push(d[0]);
-			this.labels.push(d[1]);
-		});
-
-		this.legend_totals = this.slice_totals.slice(0, this.max_legend_points);
-	}
-
-	static getPositionByAngle(angle,radius) {
-		return {
-			x:Math.sin(angle * ANGLE_RATIO) * radius,
-			y:Math.cos(angle * ANGLE_RATIO) * radius,
+		super.calc();
+		this.center = {
+			x: this.width / 2,
+			y: this.height / 2
 		};
+		this.radius = (this.height > this.width ? this.center.x : this.center.y);
 	}
-	makeArcPath(startPosition,endPosition){
-		const{centerX,centerY,radius,clockWise} = this;
-		return `M${centerX} ${centerY} L${centerX+startPosition.x} ${centerY+startPosition.y} A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0} ${centerX+endPosition.x} ${centerY+endPosition.y} z`;
-	}
+
 	render(init) {
 		const{radius,clockWise} = this;
-		this.grand_total = this.slice_totals.reduce((a, b) => a + b, 0);
+		this.grand_total = this.state.sliceTotals.reduce((a, b) => a + b, 0);
 		const prevSlicesProperties = this.slicesProperties || [];
 		this.slices = [];
 		this.elements_to_animate = [];
 		this.slicesProperties = [];
 		let curAngle = 180 - this.startAngle;
-		this.slice_totals.map((total, i) => {
+
+		this.state.sliceTotals.map((total, i) => {
 			const startAngle = curAngle;
 			const originDiffAngle = (total / this.grand_total) * FULL_ANGLE;
 			const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
 			const endAngle = curAngle = curAngle + diffAngle;
-			const startPosition = PieChart.getPositionByAngle(startAngle,radius);
-			const endPosition = PieChart.getPositionByAngle(endAngle,radius);
+			const startPosition = getPositionByAngle(startAngle, radius);
+			const endPosition = getPositionByAngle(endAngle, radius);
 			const prevProperty = init && prevSlicesProperties[i];
 			let curStart,curEnd;
 			if(init){
@@ -1596,7 +1593,7 @@ class PieChart extends BaseChart {
 				curStart = startPosition;
 				curEnd = endPosition;
 			}
-			const curPath = this.makeArcPath(curStart,curEnd);
+			const curPath = makeArcPathStr(curStart, curEnd, this.center, this.radius, this.clockWise);
 			let slice = makePath(curPath, 'pie-path', 'none', this.colors[i]);
 			slice.style.transition = 'transform .3s;';
 			this.drawArea.appendChild(slice);
@@ -1609,42 +1606,44 @@ class PieChart extends BaseChart {
 				total: this.grand_total,
 				startAngle,
 				endAngle,
-				angle:diffAngle
+				angle: diffAngle
 			});
 			if(init){
-				this.elements_to_animate.push([{unit: slice, array: this.slices, index: this.slices.length - 1},
-					{d:this.makeArcPath(startPosition,endPosition)},
+				this.elements_to_animate.push([slice,
+					{d: makeArcPathStr(startPosition, endPosition, this.center, this.radius, this.clockWise)},
 					650, "easein",null,{
 						d:curPath
 					}]);
 			}
 
 		});
-		if(init){
-			runSMILAnimation(this.chartWrapper, this.svg, this.elements_to_animate);
-		}
+		// if(init){
+		// 	runSMILAnimation(this.chartWrapper, this.svg, this.elements_to_animate);
+		// }
 	}
 
 	calTranslateByAngle(property){
 		const{radius,hoverRadio} = this;
-		const position = PieChart.getPositionByAngle(property.startAngle+(property.angle / 2),radius);
+		const position = getPositionByAngle(property.startAngle+(property.angle / 2),radius);
 		return `translate3d(${(position.x) * hoverRadio}px,${(position.y) * hoverRadio}px,0)`;
 	}
+
 	hoverSlice(path,i,flag,e){
 		if(!path) return;
 		const color = this.colors[i];
-		if(flag){
-			transform(path,this.calTranslateByAngle(this.slicesProperties[i]));
-			path.style.fill = lightenDarkenColor(color,50);
+		if(flag) {
+
+			transform(path, this.calTranslateByAngle(this.slicesProperties[i]));
+			path.style.fill = lightenDarkenColor(color, 50);
 			let g_off = getOffset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
-			let title = (this.formatted_labels && this.formatted_labels.length>0
+			let title = (this.formatted_labels && this.formatted_labels.length > 0
 				? this.formatted_labels[i] : this.labels[i]) + ': ';
-			let percent = (this.slice_totals[i]*100/this.grand_total).toFixed(1);
+			let percent = (this.state.sliceTotals[i]*100/this.grand_total).toFixed(1);
 			this.tip.set_values(x, y, title, percent + "%");
 			this.tip.show_tip();
-		}else{
+		} else {
 			transform(path,'translate3d(0,0,0)');
 			this.tip.hide_tip();
 			path.style.fill = color;
@@ -1671,26 +1670,6 @@ class PieChart extends BaseChart {
 	bindTooltip() {
 		// this.drawArea.addEventListener('mousemove',this.mouseMove);
 		// this.drawArea.addEventListener('mouseleave',this.mouseLeave);
-	}
-
-	renderLegend() {
-		let x_values = this.formatted_labels && this.formatted_labels.length > 0
-			? this.formatted_labels : this.labels;
-		this.legend_totals.map((d, i) => {
-			const color = this.colors[i];
-
-			if(d) {
-				let stats = $.create('div', {
-					className: 'stats',
-					inside: this.statsWrapper
-				});
-				stats.innerHTML = `<span class="indicator">
-					<i style="background-color:${color};"></i>
-					<span class="text-muted">${x_values[i]}:</span>
-					${d}
-				</span>`;
-			}
-		});
 	}
 }
 
@@ -2711,7 +2690,8 @@ class AxisChart extends BaseChart {
 		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
 	}
 
-	calcXPositions(s=this.state) {
+	calcXPositions() {
+		let s = this.state;
 		let labels = this.data.labels;
 		s.datasetLength = labels.length;
 

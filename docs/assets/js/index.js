@@ -176,6 +176,8 @@ let type_chart = new Chart("#chart-types", {
 	xAxisMode: 'tick',
 	yAxisMode: 'span',
 	valuesOverPoints: 1,
+	// maxLegendPoints: 6,
+	// maxSlices: 3,
 	isNavigable: 1,
 	barOptions: {
 		stacked: 1

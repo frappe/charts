@@ -108,6 +108,16 @@ export function makePath(pathStr, className='', stroke='none', fill='none') {
 	});
 }
 
+export function makeArcPathStr(startPosition, endPosition, center, radius, clockWise=1){
+	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
+	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
+
+	return `M${center.x} ${center.y}
+		L${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY} z`;
+}
+
 export function makeGradient(svgDefElem, color, lighter = false) {
 	let gradientId ='path-fill-gradient' + '-' + color + '-' +(lighter ? 'lighter' : 'default');
 	let gradientDef = renderVerticalGradient(svgDefElem, gradientId);

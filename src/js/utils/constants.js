@@ -17,3 +17,7 @@ export const LINE_CHART_DOT_SIZE = 4;
 export const DOT_OVERLAY_SIZE_INCR = 4;
 
 export const DEFAULT_CHAR_WIDTH = 8;
+
+// Universal constants
+export const ANGLE_RATIO = Math.PI / 180;
+export const FULL_ANGLE = 360;

@@ -38,11 +38,9 @@ export function getDifferentChart(type, current_type, parent, args) {
 	// Okay, this is anticlimactic
 	// this function will need to actually be 'changeChartType(type)'
 	// that will update only the required elements, but for now ...
-	return new Chart(parent, {
-		title: args.title,
-		data: args.data,
-		type: type,
-		height: args.height,
-		colors: useColor ? args.colors : undefined
-	});
+
+	args.type = type;
+	args.colors = useColor ? args.colors : undefined;
+
+	return new Chart(parent, args);
 }

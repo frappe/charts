@@ -1,3 +1,5 @@
+import { ANGLE_RATIO } from './constants';
+
 /**
  * Returns the value of a number upto 2 decimal places.
  * @param {Number} d Any number
@@ -73,4 +75,11 @@ export function bindChange(obj, getFn, setFn) {
 			return Reflect.get(target, prop);
 		}
 	});
+}
+
+export function getPositionByAngle(angle, radius) {
+	return {
+		x:Math.sin(angle * ANGLE_RATIO) * radius,
+		y:Math.cos(angle * ANGLE_RATIO) * radius,
+	};
 }

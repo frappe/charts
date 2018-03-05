@@ -56,7 +56,8 @@ export default class AxisChart extends BaseChart {
 		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
 	}
 
-	calcXPositions(s=this.state) {
+	calcXPositions() {
+		let s = this.state;
 		let labels = this.data.labels;
 		s.datasetLength = labels.length;
 

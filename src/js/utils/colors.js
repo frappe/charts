@@ -16,7 +16,7 @@ const PRESET_COLOR_MAP = {
 };
 
 export const DEFAULT_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
-	'yellow', 'green', 'light-green', 'purple', 'magenta'];
+	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
 
 function limitColor(r){
 	if (r > 255) return 255;
