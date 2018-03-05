@@ -1,5 +1,5 @@
 import { floatTwo, fillArray } from '../utils/helpers';
-import { DEFAULT_AXIS_CHART_TYPE, AXIS_DATASET_CHART_TYPES } from '../utils/constants';
+import { DEFAULT_AXIS_CHART_TYPE, AXIS_DATASET_CHART_TYPES, DEFAULT_CHAR_WIDTH } from '../utils/constants';
 
 export function dataPrep(data, type) {
 	data.labels = data.labels || [];
@@ -72,20 +72,53 @@ export function zeroDataPrep(realData) {
 				chartType: d.chartType
 			}
 		}),
-		yRegions: [
+	};
+
+	if(realData.yMarkers) {
+		zeroData.yMarkers = [
+			{
+				value: 0,
+				label: ''
+			}
+		];
+	}
+
+	if(realData.yRegions) {
+		zeroData.yRegions = [
 			{
 				start: 0,
 				end: 0,
 				label: ''
 			}
-		],
-		yMarkers: [
-			{
-				value: 0,
-				label: ''
-			}
-		]
-	};
+		];
+	}
 
 	return zeroData;
+}
+
+export function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
+	let allowedSpace = chartWidth / labels.length;
+	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
+
+	let calcLabels = labels.map((label, i) => {
+		label += "";
+		if(label.length > allowedLetters) {
+
+			if(!isSeries) {
+				if(allowedLetters-3 > 0) {
+					label = label.slice(0, allowedLetters-3) + " ...";
+				} else {
+					label = label.slice(0, allowedLetters) + '..';
+				}
+			} else {
+				let multiple = Math.ceil(label.length/allowedLetters);
+				if(i % multiple !== 0) {
+					label = "";
+				}
+			}
+		}
+		return label;
+	});
+
+	return calcLabels;
 }

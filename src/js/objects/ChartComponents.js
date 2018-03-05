@@ -98,23 +98,23 @@ let componentConfigs = {
 		layerClass: 'x axis',
 		makeElements(data) {
 			return data.positions.map((position, i) =>
-				xLine(position, data.labels[i], this.constants.height,
+				xLine(position, data.calcLabels[i], this.constants.height,
 					{mode: this.constants.mode, pos: this.constants.pos})
 			);
 		},
 
 		animateElements(newData) {
 			let newPos = newData.positions;
-			let newLabels = newData.labels;
+			let newLabels = newData.calcLabels;
 			let oldPos = this.oldData.positions;
-			let oldLabels = this.oldData.labels;
+			let oldLabels = this.oldData.calcLabels;
 
 			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
 			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
 
 			this.render({
 				positions: oldPos,
-				labels: newLabels
+				calcLabels: newLabels
 			});
 
 			return this.store.map((line, i) => {
@@ -266,23 +266,24 @@ let componentConfigs = {
 		makeElements(data) {
 			let c = this.constants;
 			this.unitType = 'dot';
-
-			this.paths = getPaths(
-				data.xPositions,
-				data.yPositions,
-				c.color,
-				{
-					heatline: c.heatline,
-					regionFill: c.regionFill
-				},
-				{
-					svgDefs: c.svgDefs,
-					zeroLine: data.zeroLine
-				}
-			)
+			this.paths = {};
+			if(!c.hideLine) {
+				this.paths = getPaths(
+					data.xPositions,
+					data.yPositions,
+					c.color,
+					{
+						heatline: c.heatline,
+						regionFill: c.regionFill
+					},
+					{
+						svgDefs: c.svgDefs,
+						zeroLine: data.zeroLine
+					}
+				)
+			}
 
 			this.units = []
-
 			if(!c.hideDots) {
 				this.units = data.yPositions.map((y, j) => {
 					return datasetDot(
@@ -325,8 +326,10 @@ let componentConfigs = {
 
 			let animateElements = [];
 
-			animateElements = animateElements.concat(animatePath(
-				this.paths, newXPos, newYPos, newData.zeroLine));
+			if(Object.keys(this.paths).length) {
+				animateElements = animateElements.concat(animatePath(
+					this.paths, newXPos, newYPos, newData.zeroLine));
+			}
 
 			if(this.units.length) {
 				this.units.map((dot, i) => {

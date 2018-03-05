@@ -24,24 +24,3 @@ export function equilizeNoOfElements(array1, array2,
 	}
 	return [array1, array2];
 }
-
-// let char_width = 8;
-// let allowed_space = avgUnitWidth * 1.5;
-// let allowed_letters = allowed_space / 8;
-
-// return values.map((value, i) => {
-// 	let space_taken = getStringWidth(value, char_width) + 2;
-// 	if(space_taken > allowed_space) {
-// 		if(isSeries) {
-// 			// Skip some axis lines if X axis is a series
-// 			let skips = 1;
-// 			while((space_taken/skips)*2 > allowed_space) {
-// 				skips++;
-// 			}
-// 			if(i % skips !== 0) {
-// 				return;
-// 			}
-// 		} else {
-// 			value = value.slice(0, allowed_letters-3) + " ...";
-// 		}
-// 	}

@@ -63,7 +63,7 @@ let c1 = document.querySelector("#chart-composite-1");
 let c2 = document.querySelector("#chart-composite-2");
 
 let bar_composite_chart = new Chart (c1, {
-	title: "Fireball/Bolide Events - Yearly (more than 5 reports)",
+	title: "Fireball/Bolide Events - Yearly (reported)",
 	data: bar_composite_data,
 	type: 'line',
 	height: 180,
@@ -179,9 +179,11 @@ let type_chart = new Chart("#chart-types", {
 	isNavigable: 1,
 	barOptions: {
 		stacked: 1
+	},
+	tooltipOptions: {
+		formatTooltipX: d => (d + '').toUpperCase(),
+		formatTooltipY: d => d + ' pts'
 	}
-    // formatTooltipX: d => (d + '').toUpperCase(),
-    // formatTooltipY: d => d + ' pts'
 });
 
 Array.prototype.slice.call(
@@ -222,7 +224,7 @@ let trends_data = {
 	]
 };
 
-let plot_chart_args = {
+let plotChartArgs = {
 	title: "Mean Total Sunspot Count - Yearly",
 	data: trends_data,
 	type: 'line',
@@ -233,11 +235,14 @@ let plot_chart_args = {
 		hideDots: 1,
 		heatline: 1,
 	},
-	xAxisMode: 'tick',
-	yAxisMode: 'span'
+	axisOptions: {
+		xAxisMode: 'tick',
+		yAxisMode: 'span',
+		xIsSeries: 1
+	}
 };
 
-new Chart("#chart-trends", plot_chart_args);
+new Chart("#chart-trends", plotChartArgs);
 
 Array.prototype.slice.call(
 	document.querySelectorAll('.chart-plot-buttons button')
@@ -245,23 +250,17 @@ Array.prototype.slice.call(
 	el.addEventListener('click', (e) => {
 		let btn = e.target;
 		let type = btn.getAttribute('data-type');
-		let config = [];
+		let config = {};
+		config[type] = 1;
 
-		if(type === 'line') {
-			config = [0, 0, 0];
-		} else if(type === 'region') {
-			config = [0, 0, 1];
-		} else {
-			config = [0, 1, 0];
+		if(['regionFill', 'heatline'].includes(type)) {
+			config.hideDots = 1;
 		}
 
-		plot_chart_args.hideDots = config[0];
-		plot_chart_args.heatline = config[1];
-		plot_chart_args.regionFill = config[2];
+		// plotChartArgs.init = false;
+		plotChartArgs.lineOptions = config;
 
-		plot_chart_args.init = false;
-
-		new Chart("#chart-trends", plot_chart_args);
+		new Chart("#chart-trends", plotChartArgs);
 
 		Array.prototype.slice.call(
 			btn.parentNode.querySelectorAll('button')).map(el => {
@@ -308,6 +307,7 @@ let update_chart = new Chart("#chart-update", {
 	colors: ['red'],
 	isSeries: 1,
 	lineOptions: {
+		// hideLine: 1,
 		regionFill: 1
 	},
 });
@@ -398,48 +398,7 @@ events_chart.parent.addEventListener('data-select', (e) => {
 
 // Aggregation chart
 // ================================================================================
-let aggr_data = {
-	labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-	datasets: [
-		{
-			"values": [25, 40, 30, 35, 8, 52, 17]
-		},
-		{
-			"values": [25, 50, 10, 15, 18, 32, 27],
-		}
-	]
-};
 
-let aggr_chart = new Chart("#chart-aggr", {
-	data: aggr_data,
-	type: 'bar',
-	height: 250,
-	colors: ['light-green', 'blue'],
-	valuesOverPoints: 1,
-	barOptions: {
-		stacked: 1
-	}
-});
-
-document.querySelector('[data-aggregation="sums"]').addEventListener("click", (e) => {
-	if(e.target.innerHTML === "Show Sums") {
-		aggr_chart.show_sums();
-		e.target.innerHTML = "Hide Sums";
-	} else {
-		aggr_chart.hide_sums();
-		e.target.innerHTML = "Show Sums";
-	}
-});
-
-document.querySelector('[data-aggregation="average"]').addEventListener("click", (e) => {
-	if(e.target.innerHTML === "Show Averages") {
-		aggr_chart.show_averages();
-		e.target.innerHTML = "Hide Averages";
-	} else {
-		aggr_chart.hide_averages();
-		e.target.innerHTML = "Show Averages";
-	}
-});
 
 // Heatmap
 // ================================================================================

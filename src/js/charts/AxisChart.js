@@ -1,5 +1,5 @@
 import BaseChart from './BaseChart';
-import { dataPrep, zeroDataPrep } from './axis-chart-utils';
+import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-utils';
 import { Y_AXIS_MARGIN } from '../utils/constants';
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
@@ -11,24 +11,29 @@ import { MIN_BAR_PERCENT_HEIGHT, DEFAULT_AXIS_CHART_TYPE, BAR_CHART_SPACE_RATIO,
 export default class AxisChart extends BaseChart {
 	constructor(parent, args) {
 		super(parent, args);
-		this.isSeries = args.isSeries;
-		this.valuesOverPoints = args.valuesOverPoints;
-		this.formatTooltipY = args.formatTooltipY;
-		this.formatTooltipX = args.formatTooltipX;
+
 		this.barOptions = args.barOptions || {};
 		this.lineOptions = args.lineOptions || {};
-		this.type = args.type || 'line';
 
-		this.xAxisMode = args.xAxisMode || 'span';
-		this.yAxisMode = args.yAxisMode || 'span';
+		this.type = args.type || 'line';
 
 		this.setup();
 	}
 
-	configure(args) {3
+	configure(args) {
 		super.configure();
-		this.config.xAxisMode = args.xAxisMode;
-		this.config.yAxisMode = args.yAxisMode;
+
+		args.axisOptions = args.axisOptions || {};
+		args.tooltipOptions = args.tooltipOptions || {};
+
+		this.config.xAxisMode = args.axisOptions.xAxisMode || 'span';
+		this.config.yAxisMode = args.axisOptions.yAxisMode || 'span';
+		this.config.xIsSeries = args.axisOptions.xIsSeries || 1;
+
+		this.config.formatTooltipX = args.tooltipOptions.formatTooltipX;
+		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
+
+		this.config.valuesOverPoints = args.valuesOverPoints;
 	}
 
 	setMargins() {
@@ -132,7 +137,7 @@ export default class AxisChart extends BaseChart {
 		if(this.data.yMarkers) {
 			this.state.yMarkers = this.data.yMarkers.map(d => {
 				d.position = scale(d.value, s.yAxis);
-				if(!d.label) {
+				if(!d.label.includes(':')) {
 					d.label += ': ' + d.value;
 				}
 				return d;
@@ -169,19 +174,29 @@ export default class AxisChart extends BaseChart {
 			[
 				'yAxis',
 				{
-					mode: this.yAxisMode,
+					mode: this.config.yAxisMode,
 					width: this.width,
 					// pos: 'right'
-				}
+				},
+				function() {
+					return this.state.yAxis;
+				}.bind(this)
 			],
 
 			[
 				'xAxis',
 				{
-					mode: this.xAxisMode,
+					mode: this.config.xAxisMode,
 					height: this.height,
 					// pos: 'right'
-				}
+				},
+				function() {
+					let s = this.state;
+					s.xAxis.calcLabels = getShortenedLabels(this.width,
+						s.xAxis.labels, this.config.xIsSeries);
+
+					return s.xAxis;
+				}.bind(this)
 			],
 
 			[
@@ -189,17 +204,12 @@ export default class AxisChart extends BaseChart {
 				{
 					width: this.width,
 					pos: 'right'
-				}
+				},
+				function() {
+					return this.state.yRegions;
+				}.bind(this)
 			],
 		];
-
-		componentConfigs.map(args => {
-			args.push(
-				function() {
-					return this.state[args[0]];
-				}.bind(this)
-			);
-		});
 
 		let barDatasets = this.state.datasets.filter(d => d.chartType === 'bar');
 		let lineDatasets = this.state.datasets.filter(d => d.chartType === 'line');
@@ -216,7 +226,7 @@ export default class AxisChart extends BaseChart {
 					stacked: this.barOptions.stacked,
 
 					// same for all datasets
-					valuesOverPoints: this.valuesOverPoints,
+					valuesOverPoints: this.config.valuesOverPoints,
 					minHeight: this.height * MIN_BAR_PERCENT_HEIGHT,
 				},
 				function() {
@@ -273,9 +283,10 @@ export default class AxisChart extends BaseChart {
 					heatline: this.lineOptions.heatline,
 					regionFill: this.lineOptions.regionFill,
 					hideDots: this.lineOptions.hideDots,
+					hideLine: this.lineOptions.hideLine,
 
 					// same for all datasets
-					valuesOverPoints: this.valuesOverPoints,
+					valuesOverPoints: this.config.valuesOverPoints,
 				},
 				function() {
 					let s = this.state;
@@ -300,17 +311,12 @@ export default class AxisChart extends BaseChart {
 				{
 					width: this.width,
 					pos: 'right'
-				}
+				},
+				function() {
+					return this.state.yMarkers;
+				}.bind(this)
 			]
 		];
-
-		markerConfigs.map(args => {
-			args.push(
-				function() {
-					return this.state[args[0]];
-				}.bind(this)
-			);
-		});
 
 		componentConfigs = componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
 

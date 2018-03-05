@@ -273,27 +273,6 @@ function equilizeNoOfElements(array1, array2,
 	return [array1, array2];
 }
 
-// let char_width = 8;
-// let allowed_space = avgUnitWidth * 1.5;
-// let allowed_letters = allowed_space / 8;
-
-// return values.map((value, i) => {
-// 	let space_taken = getStringWidth(value, char_width) + 2;
-// 	if(space_taken > allowed_space) {
-// 		if(isSeries) {
-// 			// Skip some axis lines if X axis is a series
-// 			let skips = 1;
-// 			while((space_taken/skips)*2 > allowed_space) {
-// 				skips++;
-// 			}
-// 			if(i % skips !== 0) {
-// 				return;
-// 			}
-// 		} else {
-// 			value = value.slice(0, allowed_letters-3) + " ...";
-// 		}
-// 	}
-
 const UNIT_ANIM_DUR = 350;
 const PATH_ANIM_DUR = 350;
 const MARKER_LINE_ANIM_DUR = UNIT_ANIM_DUR;
@@ -410,6 +389,8 @@ const MIN_BAR_PERCENT_HEIGHT = 0.01;
 
 const LINE_CHART_DOT_SIZE = 4;
 const DOT_OVERLAY_SIZE_INCR = 4;
+
+const DEFAULT_CHAR_WIDTH = 8;
 
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
@@ -2283,22 +2264,55 @@ function zeroDataPrep(realData) {
 				chartType: d.chartType
 			}
 		}),
-		yRegions: [
+	};
+
+	if(realData.yMarkers) {
+		zeroData.yMarkers = [
+			{
+				value: 0,
+				label: ''
+			}
+		];
+	}
+
+	if(realData.yRegions) {
+		zeroData.yRegions = [
 			{
 				start: 0,
 				end: 0,
 				label: ''
 			}
-		],
-		yMarkers: [
-			{
-				value: 0,
-				label: ''
-			}
-		]
-	};
+		];
+	}
 
 	return zeroData;
+}
+
+function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
+	let allowedSpace = chartWidth / labels.length;
+	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
+
+	let calcLabels = labels.map((label, i) => {
+		label += "";
+		if(label.length > allowedLetters) {
+
+			if(!isSeries) {
+				if(allowedLetters-3 > 0) {
+					label = label.slice(0, allowedLetters-3) + " ...";
+				} else {
+					label = label.slice(0, allowedLetters) + '..';
+				}
+			} else {
+				let multiple = Math.ceil(label.length/allowedLetters);
+				if(i % multiple !== 0) {
+					label = "";
+				}
+			}
+		}
+		return label;
+	});
+
+	return calcLabels;
 }
 
 class ChartComponent {
@@ -2396,23 +2410,23 @@ let componentConfigs = {
 		layerClass: 'x axis',
 		makeElements(data) {
 			return data.positions.map((position, i) =>
-				xLine(position, data.labels[i], this.constants.height,
+				xLine(position, data.calcLabels[i], this.constants.height,
 					{mode: this.constants.mode, pos: this.constants.pos})
 			);
 		},
 
 		animateElements(newData) {
 			let newPos = newData.positions;
-			let newLabels = newData.labels;
+			let newLabels = newData.calcLabels;
 			let oldPos = this.oldData.positions;
-			let oldLabels = this.oldData.labels;
+			let oldLabels = this.oldData.calcLabels;
 
 			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
 			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
 
 			this.render({
 				positions: oldPos,
-				labels: newLabels
+				calcLabels: newLabels
 			});
 
 			return this.store.map((line, i) => {
@@ -2564,23 +2578,24 @@ let componentConfigs = {
 		makeElements(data) {
 			let c = this.constants;
 			this.unitType = 'dot';
-
-			this.paths = getPaths(
-				data.xPositions,
-				data.yPositions,
-				c.color,
-				{
-					heatline: c.heatline,
-					regionFill: c.regionFill
-				},
-				{
-					svgDefs: c.svgDefs,
-					zeroLine: data.zeroLine
-				}
-			);
+			this.paths = {};
+			if(!c.hideLine) {
+				this.paths = getPaths(
+					data.xPositions,
+					data.yPositions,
+					c.color,
+					{
+						heatline: c.heatline,
+						regionFill: c.regionFill
+					},
+					{
+						svgDefs: c.svgDefs,
+						zeroLine: data.zeroLine
+					}
+				);
+			}
 
 			this.units = [];
-
 			if(!c.hideDots) {
 				this.units = data.yPositions.map((y, j) => {
 					return datasetDot(
@@ -2621,8 +2636,10 @@ let componentConfigs = {
 
 			let animateElements = [];
 
-			animateElements = animateElements.concat(animatePath(
-				this.paths, newXPos, newYPos, newData.zeroLine));
+			if(Object.keys(this.paths).length) {
+				animateElements = animateElements.concat(animatePath(
+					this.paths, newXPos, newYPos, newData.zeroLine));
+			}
 
 			if(this.units.length) {
 				this.units.map((dot, i) => {
@@ -2649,24 +2666,29 @@ function getComponent(name, constants, getData) {
 class AxisChart extends BaseChart {
 	constructor(parent, args) {
 		super(parent, args);
-		this.isSeries = args.isSeries;
-		this.valuesOverPoints = args.valuesOverPoints;
-		this.formatTooltipY = args.formatTooltipY;
-		this.formatTooltipX = args.formatTooltipX;
+
 		this.barOptions = args.barOptions || {};
 		this.lineOptions = args.lineOptions || {};
-		this.type = args.type || 'line';
 
-		this.xAxisMode = args.xAxisMode || 'span';
-		this.yAxisMode = args.yAxisMode || 'span';
+		this.type = args.type || 'line';
 
 		this.setup();
 	}
 
-	configure(args) {3;
+	configure(args) {
 		super.configure();
-		this.config.xAxisMode = args.xAxisMode;
-		this.config.yAxisMode = args.yAxisMode;
+
+		args.axisOptions = args.axisOptions || {};
+		args.tooltipOptions = args.tooltipOptions || {};
+
+		this.config.xAxisMode = args.axisOptions.xAxisMode || 'span';
+		this.config.yAxisMode = args.axisOptions.yAxisMode || 'span';
+		this.config.xIsSeries = args.axisOptions.xIsSeries || 1;
+
+		this.config.formatTooltipX = args.tooltipOptions.formatTooltipX;
+		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
+
+		this.config.valuesOverPoints = args.valuesOverPoints;
 	}
 
 	setMargins() {
@@ -2770,7 +2792,7 @@ class AxisChart extends BaseChart {
 		if(this.data.yMarkers) {
 			this.state.yMarkers = this.data.yMarkers.map(d => {
 				d.position = scale(d.value, s.yAxis);
-				if(!d.label) {
+				if(!d.label.includes(':')) {
 					d.label += ': ' + d.value;
 				}
 				return d;
@@ -2806,19 +2828,29 @@ class AxisChart extends BaseChart {
 			[
 				'yAxis',
 				{
-					mode: this.yAxisMode,
+					mode: this.config.yAxisMode,
 					width: this.width,
 					// pos: 'right'
-				}
+				},
+				function() {
+					return this.state.yAxis;
+				}.bind(this)
 			],
 
 			[
 				'xAxis',
 				{
-					mode: this.xAxisMode,
+					mode: this.config.xAxisMode,
 					height: this.height,
 					// pos: 'right'
-				}
+				},
+				function() {
+					let s = this.state;
+					s.xAxis.calcLabels = getShortenedLabels(this.width,
+						s.xAxis.labels, this.config.xIsSeries);
+
+					return s.xAxis;
+				}.bind(this)
 			],
 
 			[
@@ -2826,17 +2858,12 @@ class AxisChart extends BaseChart {
 				{
 					width: this.width,
 					pos: 'right'
-				}
+				},
+				function() {
+					return this.state.yRegions;
+				}.bind(this)
 			],
 		];
-
-		componentConfigs.map(args => {
-			args.push(
-				function() {
-					return this.state[args[0]];
-				}.bind(this)
-			);
-		});
 
 		let barDatasets = this.state.datasets.filter(d => d.chartType === 'bar');
 		let lineDatasets = this.state.datasets.filter(d => d.chartType === 'line');
@@ -2853,7 +2880,7 @@ class AxisChart extends BaseChart {
 					stacked: this.barOptions.stacked,
 
 					// same for all datasets
-					valuesOverPoints: this.valuesOverPoints,
+					valuesOverPoints: this.config.valuesOverPoints,
 					minHeight: this.height * MIN_BAR_PERCENT_HEIGHT,
 				},
 				function() {
@@ -2910,9 +2937,10 @@ class AxisChart extends BaseChart {
 					heatline: this.lineOptions.heatline,
 					regionFill: this.lineOptions.regionFill,
 					hideDots: this.lineOptions.hideDots,
+					hideLine: this.lineOptions.hideLine,
 
 					// same for all datasets
-					valuesOverPoints: this.valuesOverPoints,
+					valuesOverPoints: this.config.valuesOverPoints,
 				},
 				function() {
 					let s = this.state;
@@ -2937,17 +2965,12 @@ class AxisChart extends BaseChart {
 				{
 					width: this.width,
 					pos: 'right'
-				}
+				},
+				function() {
+					return this.state.yMarkers;
+				}.bind(this)
 			]
 		];
-
-		markerConfigs.map(args => {
-			args.push(
-				function() {
-					return this.state[args[0]];
-				}.bind(this)
-			);
-		});
 
 		componentConfigs = componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
 
