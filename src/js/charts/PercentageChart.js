@@ -40,6 +40,7 @@ export default class PercentageChart extends AggregationChart {
 		s.sliceTotals.map((total, i) => {
 			let slice = $.create('div', {
 				className: `progress-bar`,
+				'data-index': i,
 				inside: this.percentageBar,
 				styles: {
 					background: this.colors[i],
@@ -52,19 +53,23 @@ export default class PercentageChart extends AggregationChart {
 
 	bindTooltip() {
 		let s = this.state;
-		// this.slices.map((slice, i) => {
-		// 	slice.addEventListener('mouseenter', () => {
-		// 		let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
 
-		// 		let x = p_off.left - g_off.left + slice.offsetWidth/2;
-		// 		let y = p_off.top - g_off.top - 6;
-		// 		let title = (this.formatted_labels && this.formatted_labels.length>0
-		// 			? this.formatted_labels[i] : this.labels[i]) + ': ';
-		// 		let percent = (s.sliceTotals[i]*100/this.grand_total).toFixed(1);
+		this.chartWrapper.addEventListener('mousemove', (e) => {
+			let slice = e.target;
+			if(slice.classList.contains('progress-bar')) {
 
-		// 		this.tip.set_values(x, y, title, percent + "%");
-		// 		this.tip.show_tip();
-		// 	});
-		// });
+				let i = slice.getAttribute('data-index');
+				let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
+
+				let x = p_off.left - g_off.left + slice.offsetWidth/2;
+				let y = p_off.top - g_off.top - 6;
+				let title = (this.formatted_labels && this.formatted_labels.length>0
+					? this.formatted_labels[i] : this.state.labels[i]) + ': ';
+				let percent = (s.sliceTotals[i]*100/this.grand_total).toFixed(1);
+
+				this.tip.setValues(x, y, title, percent + "%");
+				this.tip.showTip();
+			}
+		});
 	}
 }

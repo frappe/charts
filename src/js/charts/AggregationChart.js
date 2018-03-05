@@ -40,10 +40,10 @@ export default class AggregationChart extends BaseChart {
 			this.colors[maxSlices-1] = 'grey';
 		}
 
-		this.labels = [];
+		s.labels = [];
 		totals.map(d => {
 			s.sliceTotals.push(d[0]);
-			this.labels.push(d[1]);
+			s.labels.push(d[1]);
 		});
 	}
 
@@ -57,7 +57,7 @@ export default class AggregationChart extends BaseChart {
 		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
 
 		let x_values = this.formatted_labels && this.formatted_labels.length > 0
-			? this.formatted_labels : this.labels;
+			? this.formatted_labels : s.labels;
 		this.legendTotals.map((d, i) => {
 			if(d) {
 				let stats = $.create('div', {

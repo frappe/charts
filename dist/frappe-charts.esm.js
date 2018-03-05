@@ -89,10 +89,10 @@ class SvgTip {
 	}) {
 		this.parent = parent;
 		this.colors = colors;
-		this.title_name = '';
-		this.title_value = '';
-		this.list_values = [];
-		this.title_value_first = 0;
+		this.titleName = '';
+		this.titleValue = '';
+		this.listValues = [];
+		this.titleValueFirst = 0;
 
 		this.x = 0;
 		this.y = 0;
@@ -104,16 +104,16 @@ class SvgTip {
 	}
 
 	setup() {
-		this.make_tooltip();
+		this.makeTooltip();
 	}
 
 	refresh() {
 		this.fill();
-		this.calc_position();
-		// this.show_tip();
+		this.calcPosition();
+		// this.showTip();
 	}
 
-	make_tooltip() {
+	makeTooltip() {
 		this.container = $.create('div', {
 			inside: this.parent,
 			className: 'graph-svg-tip comparison',
@@ -121,27 +121,27 @@ class SvgTip {
 				<ul class="data-point-list"></ul>
 				<div class="svg-pointer"></div>`
 		});
-		this.hide_tip();
+		this.hideTip();
 
 		this.title = this.container.querySelector('.title');
-		this.data_point_list = this.container.querySelector('.data-point-list');
+		this.dataPointList = this.container.querySelector('.data-point-list');
 
 		this.parent.addEventListener('mouseleave', () => {
-			this.hide_tip();
+			this.hideTip();
 		});
 	}
 
 	fill() {
 		let title;
-		if(this.title_value_first) {
-			title = `<strong>${this.title_value}</strong>${this.title_name}`;
+		if(this.titleValueFirst) {
+			title = `<strong>${this.titleValue}</strong>${this.titleName}`;
 		} else {
-			title = `${this.title_name}<strong>${this.title_value}</strong>`;
+			title = `${this.titleName}<strong>${this.titleValue}</strong>`;
 		}
 		this.title.innerHTML = title;
-		this.data_point_list.innerHTML = '';
+		this.dataPointList.innerHTML = '';
 
-		this.list_values.map((set, i) => {
+		this.listValues.map((set, i) => {
 			const color = this.colors[i] || 'black';
 
 			let li = $.create('li', {
@@ -152,50 +152,50 @@ class SvgTip {
 					${set.title ? set.title : '' }`
 			});
 
-			this.data_point_list.appendChild(li);
+			this.dataPointList.appendChild(li);
 		});
 	}
 
-	calc_position() {
+	calcPosition() {
 		let width = this.container.offsetWidth;
 
 		this.top = this.y - this.container.offsetHeight;
 		this.left = this.x - width/2;
-		let max_left = this.parent.offsetWidth - width;
+		let maxLeft = this.parent.offsetWidth - width;
 
 		let pointer = this.container.querySelector('.svg-pointer');
 
 		if(this.left < 0) {
 			pointer.style.left = `calc(50% - ${-1 * this.left}px)`;
 			this.left = 0;
-		} else if(this.left > max_left) {
-			let delta = this.left - max_left;
-			let pointer_offset = `calc(50% + ${delta}px)`;
-			pointer.style.left = pointer_offset;
+		} else if(this.left > maxLeft) {
+			let delta = this.left - maxLeft;
+			let pointerOffset = `calc(50% + ${delta}px)`;
+			pointer.style.left = pointerOffset;
 
-			this.left = max_left;
+			this.left = maxLeft;
 		} else {
 			pointer.style.left = `50%`;
 		}
 	}
 
-	set_values(x, y, title_name = '', title_value = '', list_values = [], title_value_first = 0) {
-		this.title_name = title_name;
-		this.title_value = title_value;
-		this.list_values = list_values;
+	setValues(x, y, titleName = '', titleValue = '', listValues = [], titleValueFirst = 0) {
+		this.titleName = titleName;
+		this.titleValue = titleValue;
+		this.listValues = listValues;
 		this.x = x;
 		this.y = y;
-		this.title_value_first = title_value_first;
+		this.titleValueFirst = titleValueFirst;
 		this.refresh();
 	}
 
-	hide_tip() {
+	hideTip() {
 		this.container.style.top = '0px';
 		this.container.style.left = '0px';
 		this.container.style.opacity = '0';
 	}
 
-	show_tip() {
+	showTip() {
 		this.container.style.top = this.top + 'px';
 		this.container.style.left = this.left + 'px';
 		this.container.style.opacity = '1';
@@ -1440,10 +1440,10 @@ class AggregationChart extends BaseChart {
 			this.colors[maxSlices-1] = 'grey';
 		}
 
-		this.labels = [];
+		s.labels = [];
 		totals.map(d => {
 			s.sliceTotals.push(d[0]);
-			this.labels.push(d[1]);
+			s.labels.push(d[1]);
 		});
 	}
 
@@ -1457,7 +1457,7 @@ class AggregationChart extends BaseChart {
 		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
 
 		let x_values = this.formatted_labels && this.formatted_labels.length > 0
-			? this.formatted_labels : this.labels;
+			? this.formatted_labels : s.labels;
 		this.legendTotals.map((d, i) => {
 			if(d) {
 				let stats = $.create('div', {
@@ -1513,6 +1513,7 @@ class PercentageChart extends AggregationChart {
 		s.sliceTotals.map((total, i) => {
 			let slice = $.create('div', {
 				className: `progress-bar`,
+				'data-index': i,
 				inside: this.percentageBar,
 				styles: {
 					background: this.colors[i],
@@ -1524,21 +1525,25 @@ class PercentageChart extends AggregationChart {
 	}
 
 	bindTooltip() {
-		
-		// this.slices.map((slice, i) => {
-		// 	slice.addEventListener('mouseenter', () => {
-		// 		let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
+		let s = this.state;
 
-		// 		let x = p_off.left - g_off.left + slice.offsetWidth/2;
-		// 		let y = p_off.top - g_off.top - 6;
-		// 		let title = (this.formatted_labels && this.formatted_labels.length>0
-		// 			? this.formatted_labels[i] : this.labels[i]) + ': ';
-		// 		let percent = (s.sliceTotals[i]*100/this.grand_total).toFixed(1);
+		this.chartWrapper.addEventListener('mousemove', (e) => {
+			let slice = e.target;
+			if(slice.classList.contains('progress-bar')) {
 
-		// 		this.tip.set_values(x, y, title, percent + "%");
-		// 		this.tip.show_tip();
-		// 	});
-		// });
+				let i = slice.getAttribute('data-index');
+				let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
+
+				let x = p_off.left - g_off.left + slice.offsetWidth/2;
+				let y = p_off.top - g_off.top - 6;
+				let title = (this.formatted_labels && this.formatted_labels.length>0
+					? this.formatted_labels[i] : this.state.labels[i]) + ': ';
+				let percent = (s.sliceTotals[i]*100/this.grand_total).toFixed(1);
+
+				this.tip.setValues(x, y, title, percent + "%");
+				this.tip.showTip();
+			}
+		});
 	}
 }
 
@@ -1639,7 +1644,7 @@ class PieChart extends AggregationChart {
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
 			let title = (this.formatted_labels && this.formatted_labels.length > 0
-				? this.formatted_labels[i] : this.labels[i]) + ': ';
+				? this.formatted_labels[i] : this.state.labels[i]) + ': ';
 			let percent = (this.state.sliceTotals[i]*100/this.grand_total).toFixed(1);
 			this.tip.set_values(x, y, title, percent + "%");
 			this.tip.show_tip();
@@ -2160,8 +2165,8 @@ class Heatmap extends BaseChart {
 				let value = count + ' ' + this.count_label;
 				let name = ' on ' + month + ' ' + date_parts[0] + ', ' + date_parts[2];
 
-				this.tip.set_values(x, y, name, value, [], 1);
-				this.tip.show_tip();
+				this.tip.setValues(x, y, name, value, [], 1);
+				this.tip.showTip();
 			});
 		});
 	}
@@ -2978,7 +2983,7 @@ class AxisChart extends BaseChart {
 			if(relY < this.height + this.translateY * 2) {
 				this.mapTooltipXPosition(relX);
 			} else {
-				this.tip.hide_tip();
+				this.tip.hideTip();
 			}
 		});
 	}
@@ -3009,8 +3014,8 @@ class AxisChart extends BaseChart {
 					};
 				});
 
-				this.tip.set_values(x, y, titles[i], '', values);
-				this.tip.show_tip();
+				this.tip.setValues(x, y, titles[i], '', values);
+				this.tip.showTip();
 				break;
 			}
 		}

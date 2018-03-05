@@ -245,8 +245,8 @@ export default class Heatmap extends BaseChart {
 				let value = count + ' ' + this.count_label;
 				let name = ' on ' + month + ' ' + date_parts[0] + ', ' + date_parts[2];
 
-				this.tip.set_values(x, y, name, value, [], 1);
-				this.tip.show_tip();
+				this.tip.setValues(x, y, name, value, [], 1);
+				this.tip.showTip();
 			});
 		});
 	}

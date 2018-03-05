@@ -345,7 +345,7 @@ export default class AxisChart extends BaseChart {
 			if(relY < this.height + this.translateY * 2) {
 				this.mapTooltipXPosition(relX);
 			} else {
-				this.tip.hide_tip();
+				this.tip.hideTip();
 			}
 		});
 	}
@@ -376,8 +376,8 @@ export default class AxisChart extends BaseChart {
 					};
 				});
 
-				this.tip.set_values(x, y, titles[i], '', values);
-				this.tip.show_tip();
+				this.tip.setValues(x, y, titles[i], '', values);
+				this.tip.showTip();
 				break;
 			}
 		}
