@@ -34,6 +34,8 @@ export default class BaseChart {
 		this.state = {};
 		this.options = {};
 
+		this.initTimeout = INIT_CHART_UPDATE_TIMEOUT;
+
 		if(this.config.isNavigable) {
 			this.overlays = [];
 		}
@@ -138,7 +140,7 @@ export default class BaseChart {
 
 		if(init) {
 			this.data = this.realData;
-			setTimeout(() => {this.update();}, INIT_CHART_UPDATE_TIMEOUT);
+			setTimeout(() => {this.update();}, this.initTimeout);
 		}
 
 		this.renderLegend();

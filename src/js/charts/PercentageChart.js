@@ -35,8 +35,8 @@ export default class PercentageChart extends AggregationChart {
 
 	render() {
 		let s = this.state;
-		this.grand_total = s.sliceTotals.reduce((a, b) => a + b, 0);
-		this.slices = [];
+		this.grandTotal = s.sliceTotals.reduce((a, b) => a + b, 0);
+		s.slices = [];
 		s.sliceTotals.map((total, i) => {
 			let slice = $.create('div', {
 				className: `progress-bar`,
@@ -44,10 +44,10 @@ export default class PercentageChart extends AggregationChart {
 				inside: this.percentageBar,
 				styles: {
 					background: this.colors[i],
-					width: total*100/this.grand_total + "%"
+					width: total*100/this.grandTotal + "%"
 				}
 			});
-			this.slices.push(slice);
+			s.slices.push(slice);
 		});
 	}
 
@@ -59,13 +59,13 @@ export default class PercentageChart extends AggregationChart {
 			if(slice.classList.contains('progress-bar')) {
 
 				let i = slice.getAttribute('data-index');
-				let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
+				let gOff = getOffset(this.chartWrapper), pOff = getOffset(slice);
 
-				let x = p_off.left - g_off.left + slice.offsetWidth/2;
-				let y = p_off.top - g_off.top - 6;
-				let title = (this.formatted_labels && this.formatted_labels.length>0
-					? this.formatted_labels[i] : this.state.labels[i]) + ': ';
-				let percent = (s.sliceTotals[i]*100/this.grand_total).toFixed(1);
+				let x = pOff.left - gOff.left + slice.offsetWidth/2;
+				let y = pOff.top - gOff.top - 6;
+				let title = (this.formattedLabels && this.formattedLabels.length>0
+					? this.formattedLabels[i] : this.state.labels[i]) + ': ';
+				let percent = (s.sliceTotals[i]*100/this.grandTotal).toFixed(1);
 
 				this.tip.setValues(x, y, title, percent + "%");
 				this.tip.showTip();

@@ -1,7 +1,8 @@
 import { makeSVGGroup } from '../utils/draw';
-import { xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, getPaths } from '../utils/draw';
+import { makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, getPaths } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
-import { translateHoriLine, translateVertLine, animateRegion, animateBar, animateDot, animatePath } from '../utils/animate';
+import { translateHoriLine, translateVertLine, animateRegion, animateBar,
+	animateDot, animatePath, animatePathStr } from '../utils/animate';
 
 class ChartComponent {
 	constructor({
@@ -63,6 +64,22 @@ class ChartComponent {
 }
 
 let componentConfigs = {
+	pieSlices: {
+		layerClass: 'pie-slices',
+		makeElements(data) {
+			return data.sliceStrings.map((s, i) =>{
+				let slice = makePath(s, 'pie-path', 'none', data.colors[i]);
+				slice.style.transition = 'transform .3s;';
+				return slice;
+			});
+		},
+
+		animateElements(newData) {
+			return this.store.map((slice, i) =>
+				animatePathStr(slice, newData.sliceStrings[i])
+			);
+		}
+	},
 	yAxis: {
 		layerClass: 'y axis',
 		makeElements(data) {

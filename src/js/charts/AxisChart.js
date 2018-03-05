@@ -215,8 +215,6 @@ export default class AxisChart extends BaseChart {
 		let barDatasets = this.state.datasets.filter(d => d.chartType === 'bar');
 		let lineDatasets = this.state.datasets.filter(d => d.chartType === 'line');
 
-		// console.log('barDatasets', barDatasets, this.state.datasets);
-
 		let barsConfigs = barDatasets.map(d => {
 			let index = d.index;
 			return [
@@ -480,12 +478,10 @@ export default class AxisChart extends BaseChart {
 
 	addDataPoint(label, datasetValues, index=this.state.datasetLength) {
 		super.addDataPoint(label, datasetValues, index);
-		// console.log(label, datasetValues, this.data.labels);
 		this.data.labels.splice(index, 0, label);
 		this.data.datasets.map((d, i) => {
 			d.values.splice(index, 0, datasetValues[i]);
 		});
-		// console.log(this.data);
 		this.update(this.data);
 	}
 
@@ -497,9 +493,6 @@ export default class AxisChart extends BaseChart {
 		});
 		this.update(this.data);
 	}
-
-	// getDataPoint(index = 0) {}
-	// setCurrentDataPoint(point) {}
 
 	updateDataset(datasetValues, index=0) {
 		this.data.datasets[index].values = datasetValues;
@@ -514,7 +507,3 @@ export default class AxisChart extends BaseChart {
 	// addDataPoint(dataPoint, index = 0) {}
 	// removeDataPoint(index = 0) {}
 }
-
-
-// keep a binding at the end of chart
-

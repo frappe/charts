@@ -14,13 +14,13 @@ export function getBarHeightAndYAttr(yTop, zeroLine) {
 }
 
 export function equilizeNoOfElements(array1, array2,
-	extra_count=array2.length - array1.length) {
+	extraCount = array2.length - array1.length) {
 
 	// Doesn't work if either has zero elements.
-	if(extra_count > 0) {
-		array1 = fillArray(array1, extra_count);
+	if(extraCount > 0) {
+		array1 = fillArray(array1, extraCount);
 	} else {
-		array2 = fillArray(array2, extra_count);
+		array2 = fillArray(array2, extraCount);
 	}
 	return [array1, array2];
 }

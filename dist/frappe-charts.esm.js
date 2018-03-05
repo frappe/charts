@@ -291,13 +291,13 @@ function getBarHeightAndYAttr(yTop, zeroLine) {
 }
 
 function equilizeNoOfElements(array1, array2,
-	extra_count=array2.length - array1.length) {
+	extraCount = array2.length - array1.length) {
 
 	// Doesn't work if either has zero elements.
-	if(extra_count > 0) {
-		array1 = fillArray(array1, extra_count);
+	if(extraCount > 0) {
+		array1 = fillArray(array1, extraCount);
 	} else {
-		array2 = fillArray(array2, extra_count);
+		array2 = fillArray(array2, extraCount);
 	}
 	return [array1, array2];
 }
@@ -399,6 +399,10 @@ function animatePath(paths, newXList, newYList, zeroLine) {
 	}
 
 	return pathComponents;
+}
+
+function animatePathStr(oldPath, pathStr) {
+	return [oldPath, {d: pathStr}, UNIT_ANIM_DUR, STD_EASING];
 }
 
 const AXIS_TICK_LENGTH = 6;
@@ -1153,6 +1157,8 @@ class BaseChart {
 		this.state = {};
 		this.options = {};
 
+		this.initTimeout = INIT_CHART_UPDATE_TIMEOUT;
+
 		if(this.config.isNavigable) {
 			this.overlays = [];
 		}
@@ -1257,7 +1263,7 @@ class BaseChart {
 
 		if(init) {
 			this.data = this.realData;
-			setTimeout(() => {this.update();}, INIT_CHART_UPDATE_TIMEOUT);
+			setTimeout(() => {this.update();}, this.initTimeout);
 		}
 
 		this.renderLegend();
@@ -1447,10 +1453,6 @@ class AggregationChart extends BaseChart {
 		});
 	}
 
-	render() { }
-
-	bindTooltip() { }
-
 	renderLegend() {
 		let s = this.state;
 
@@ -1508,8 +1510,8 @@ class PercentageChart extends AggregationChart {
 
 	render() {
 		let s = this.state;
-		this.grand_total = s.sliceTotals.reduce((a, b) => a + b, 0);
-		this.slices = [];
+		this.grandTotal = s.sliceTotals.reduce((a, b) => a + b, 0);
+		s.slices = [];
 		s.sliceTotals.map((total, i) => {
 			let slice = $.create('div', {
 				className: `progress-bar`,
@@ -1517,10 +1519,10 @@ class PercentageChart extends AggregationChart {
 				inside: this.percentageBar,
 				styles: {
 					background: this.colors[i],
-					width: total*100/this.grand_total + "%"
+					width: total*100/this.grandTotal + "%"
 				}
 			});
-			this.slices.push(slice);
+			s.slices.push(slice);
 		});
 	}
 
@@ -1532,13 +1534,13 @@ class PercentageChart extends AggregationChart {
 			if(slice.classList.contains('progress-bar')) {
 
 				let i = slice.getAttribute('data-index');
-				let g_off = getOffset(this.chartWrapper), p_off = getOffset(slice);
+				let gOff = getOffset(this.chartWrapper), pOff = getOffset(slice);
 
-				let x = p_off.left - g_off.left + slice.offsetWidth/2;
-				let y = p_off.top - g_off.top - 6;
-				let title = (this.formatted_labels && this.formatted_labels.length>0
-					? this.formatted_labels[i] : this.state.labels[i]) + ': ';
-				let percent = (s.sliceTotals[i]*100/this.grand_total).toFixed(1);
+				let x = pOff.left - gOff.left + slice.offsetWidth/2;
+				let y = pOff.top - gOff.top - 6;
+				let title = (this.formattedLabels && this.formattedLabels.length>0
+					? this.formattedLabels[i] : this.state.labels[i]) + ': ';
+				let percent = (s.sliceTotals[i]*100/this.grandTotal).toFixed(1);
 
 				this.tip.setValues(x, y, title, percent + "%");
 				this.tip.showTip();
@@ -1547,14 +1549,375 @@ class PercentageChart extends AggregationChart {
 	}
 }
 
+class ChartComponent {
+	constructor({
+		layerClass = '',
+		layerTransform = '',
+		constants,
+
+		getData,
+		makeElements,
+		animateElements
+	}) {
+		this.layerTransform = layerTransform;
+		this.constants = constants;
+
+		this.makeElements = makeElements;
+		this.getData = getData;
+
+		this.animateElements = animateElements;
+
+		this.store = [];
+
+		this.layerClass = layerClass;
+		this.layerClass = typeof(this.layerClass) === 'function'
+			? this.layerClass() : this.layerClass;
+
+		this.refresh();
+	}
+
+	refresh(data) {
+		this.data = data || this.getData();
+	}
+
+	setup(parent) {
+		this.layer = makeSVGGroup(parent, this.layerClass, this.layerTransform);
+	}
+
+	make() {
+		this.render(this.data);
+		this.oldData = this.data;
+	}
+
+	render(data) {
+		this.store = this.makeElements(data);
+
+		this.layer.textContent = '';
+		this.store.forEach(element => {
+			this.layer.appendChild(element);
+		});
+	}
+
+	update(animate = true) {
+		this.refresh();
+		let animateElements = [];
+		if(animate) {
+			animateElements = this.animateElements(this.data);
+		}
+		return animateElements;
+	}
+}
+
+let componentConfigs = {
+	pieSlices: {
+		layerClass: 'pie-slices',
+		makeElements(data) {
+			return data.sliceStrings.map((s, i) =>{
+				let slice = makePath(s, 'pie-path', 'none', data.colors[i]);
+				slice.style.transition = 'transform .3s;';
+				return slice;
+			});
+		},
+
+		animateElements(newData) {
+			return this.store.map((slice, i) =>
+				animatePathStr(slice, newData.sliceStrings[i])
+			);
+		}
+	},
+	yAxis: {
+		layerClass: 'y axis',
+		makeElements(data) {
+			return data.positions.map((position, i) =>
+				yLine(position, data.labels[i], this.constants.width,
+					{mode: this.constants.mode, pos: this.constants.pos})
+			);
+		},
+
+		animateElements(newData) {
+			let newPos = newData.positions;
+			let newLabels = newData.labels;
+			let oldPos = this.oldData.positions;
+			let oldLabels = this.oldData.labels;
+
+			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
+			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+
+			this.render({
+				positions: oldPos,
+				labels: newLabels
+			});
+
+			return this.store.map((line, i) => {
+				return translateHoriLine(
+					line, newPos[i], oldPos[i]
+				);
+			});
+		}
+	},
+
+	xAxis: {
+		layerClass: 'x axis',
+		makeElements(data) {
+			return data.positions.map((position, i) =>
+				xLine(position, data.calcLabels[i], this.constants.height,
+					{mode: this.constants.mode, pos: this.constants.pos})
+			);
+		},
+
+		animateElements(newData) {
+			let newPos = newData.positions;
+			let newLabels = newData.calcLabels;
+			let oldPos = this.oldData.positions;
+			let oldLabels = this.oldData.calcLabels;
+
+			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
+			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+
+			this.render({
+				positions: oldPos,
+				calcLabels: newLabels
+			});
+
+			return this.store.map((line, i) => {
+				return translateVertLine(
+					line, newPos[i], oldPos[i]
+				);
+			});
+		}
+	},
+
+	yMarkers: {
+		layerClass: 'y-markers',
+		makeElements(data) {
+			return data.map(marker =>
+				yMarker(marker.position, marker.label, this.constants.width,
+					{pos:'right', mode: 'span', lineType: 'dashed'})
+			);
+		},
+		animateElements(newData) {
+			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+
+			let newPos = newData.map(d => d.position);
+			let newLabels = newData.map(d => d.label);
+
+			let oldPos = this.oldData.map(d => d.position);
+			let oldLabels = this.oldData.map(d => d.label);
+
+			this.render(oldPos.map((pos, i) => {
+				return {
+					position: oldPos[i],
+					label: newLabels[i]
+				}
+			}));
+
+			return this.store.map((line, i) => {
+				return translateHoriLine(
+					line, newPos[i], oldPos[i]
+				);
+			});
+		}
+	},
+
+	yRegions: {
+		layerClass: 'y-regions',
+		makeElements(data) {
+			return data.map(region =>
+				yRegion(region.start, region.end, this.constants.width,
+					region.label)
+			);
+		},
+		animateElements(newData) {
+			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
+
+			let newPos = newData.map(d => d.end);
+			let newLabels = newData.map(d => d.label);
+			let newStarts = newData.map(d => d.start);
+
+			let oldPos = this.oldData.map(d => d.end);
+			let oldLabels = this.oldData.map(d => d.label);
+			let oldStarts = this.oldData.map(d => d.start);
+
+			this.render(oldPos.map((pos, i) => {
+				return {
+					start: oldStarts[i],
+					end: oldPos[i],
+					label: newLabels[i]
+				}
+			}));
+
+			let animateElements = [];
+
+			this.store.map((rectGroup, i) => {
+				animateElements = animateElements.concat(animateRegion(
+					rectGroup, newStarts[i], newPos[i], oldPos[i]
+				));
+			});
+
+			return animateElements;
+		}
+	},
+
+	barGraph: {
+		layerClass: function() { return 'dataset-units dataset-bars dataset-' + this.constants.index; },
+		makeElements(data) {
+			let c = this.constants;
+			this.unitType = 'bar';
+			this.units = data.yPositions.map((y, j) => {
+				return datasetBar(
+					data.xPositions[j],
+					y,
+					data.barWidth,
+					c.color,
+					data.labels[j],
+					j,
+					data.offsets[j],
+					{
+						zeroLine: data.zeroLine,
+						barsWidth: data.barsWidth,
+						minHeight: c.minHeight
+					}
+				)
+			});
+			return this.units;
+		},
+		animateElements(newData) {
+			let c = this.constants;
+
+			let newXPos = newData.xPositions;
+			let newYPos = newData.yPositions;
+			let newOffsets = newData.offsets;
+			let newLabels = newData.labels;
+
+			let oldXPos = this.oldData.xPositions;
+			let oldYPos = this.oldData.yPositions;
+			let oldOffsets = this.oldData.offsets;
+			let oldLabels = this.oldData.labels;
+
+			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
+			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
+			[oldOffsets, newOffsets] = equilizeNoOfElements(oldOffsets, newOffsets);
+			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+
+			this.render({
+				xPositions: oldXPos,
+				yPositions: oldYPos,
+				offsets: oldOffsets,
+				labels: newLabels,
+
+				zeroLine: this.oldData.zeroLine,
+				barsWidth: this.oldData.barsWidth,
+				barWidth: this.oldData.barWidth,
+			});
+
+			let animateElements = [];
+
+			this.store.map((bar, i) => {
+				animateElements = animateElements.concat(animateBar(
+					bar, newXPos[i], newYPos[i], newData.barWidth, newOffsets[i], c.index,
+						{zeroLine: newData.zeroLine}
+				));
+			});
+
+			return animateElements;
+		}
+	},
+
+	lineGraph: {
+		layerClass: function() { return 'dataset-units dataset-line dataset-' + this.constants.index; },
+		makeElements(data) {
+			let c = this.constants;
+			this.unitType = 'dot';
+			this.paths = {};
+			if(!c.hideLine) {
+				this.paths = getPaths(
+					data.xPositions,
+					data.yPositions,
+					c.color,
+					{
+						heatline: c.heatline,
+						regionFill: c.regionFill
+					},
+					{
+						svgDefs: c.svgDefs,
+						zeroLine: data.zeroLine
+					}
+				);
+			}
+
+			this.units = [];
+			if(!c.hideDots) {
+				this.units = data.yPositions.map((y, j) => {
+					return datasetDot(
+						data.xPositions[j],
+						y,
+						data.radius,
+						c.color,
+						(c.valuesOverPoints ? data.values[j] : ''),
+						j
+					)
+				});
+			}
+
+			return Object.values(this.paths).concat(this.units);
+		},
+		animateElements(newData) {
+			let newXPos = newData.xPositions;
+			let newYPos = newData.yPositions;
+			let newValues = newData.values;
+
+
+			let oldXPos = this.oldData.xPositions;
+			let oldYPos = this.oldData.yPositions;
+			let oldValues = this.oldData.values;
+
+			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
+			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
+			[oldValues, newValues] = equilizeNoOfElements(oldValues, newValues);
+
+			this.render({
+				xPositions: oldXPos,
+				yPositions: oldYPos,
+				values: newValues,
+
+				zeroLine: this.oldData.zeroLine,
+				radius: this.oldData.radius,
+			});
+
+			let animateElements = [];
+
+			if(Object.keys(this.paths).length) {
+				animateElements = animateElements.concat(animatePath(
+					this.paths, newXPos, newYPos, newData.zeroLine));
+			}
+
+			if(this.units.length) {
+				this.units.map((dot, i) => {
+					animateElements = animateElements.concat(animateDot(
+						dot, newXPos[i], newYPos[i]));
+				});
+			}
+
+			return animateElements;
+		}
+	}
+};
+
+function getComponent(name, constants, getData) {
+	let keys = Object.keys(componentConfigs).filter(k => name.includes(k));
+	let config = componentConfigs[keys[0]];
+	Object.assign(config, {
+		constants: constants,
+		getData: getData
+	});
+	return new ChartComponent(config);
+}
+
 class PieChart extends AggregationChart {
 	constructor(parent, args) {
 		super(parent, args);
 		this.type = 'pie';
-
-		this.hoverRadio = args.hoverRadio || 0.1;
-		this.startAngle = args.startAngle || 0;
-		this.clockWise = args.clockWise || false;
+		this.initTimeout = 0;
 
 		this.setup();
 	}
@@ -1563,68 +1926,98 @@ class PieChart extends AggregationChart {
 		super.configure(args);
 		this.mouseMove = this.mouseMove.bind(this);
 		this.mouseLeave = this.mouseLeave.bind(this);
+
+		this.hoverRadio = args.hoverRadio || 0.1;
+		this.config.startAngle = args.startAngle || 0;
+
+		this.clockWise = args.clockWise || false;
 	}
+
+	prepareFirstData(data=this.data) {
+		this.init = 1;
+		return data;
+	}
+
 	calc() {
 		super.calc();
+		let s = this.state;
+
 		this.center = {
 			x: this.width / 2,
 			y: this.height / 2
 		};
 		this.radius = (this.height > this.width ? this.center.x : this.center.y);
+
+		s.grandTotal = s.sliceTotals.reduce((a, b) => a + b, 0);
+
+		this.calcSlices();
 	}
 
-	render(init) {
-		const{radius,clockWise} = this;
-		this.grand_total = this.state.sliceTotals.reduce((a, b) => a + b, 0);
-		const prevSlicesProperties = this.slicesProperties || [];
-		this.slices = [];
-		this.elements_to_animate = [];
-		this.slicesProperties = [];
-		let curAngle = 180 - this.startAngle;
+	calcSlices() {
+		let s = this.state;
+		const { radius, clockWise } = this;
 
-		this.state.sliceTotals.map((total, i) => {
+		const prevSlicesProperties = s.slicesProperties || [];
+		s.sliceStrings = [];
+		s.slicesProperties = [];
+		let curAngle = 180 - this.config.startAngle;
+
+		s.sliceTotals.map((total, i) => {
 			const startAngle = curAngle;
-			const originDiffAngle = (total / this.grand_total) * FULL_ANGLE;
+			const originDiffAngle = (total / s.grandTotal) * FULL_ANGLE;
 			const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
 			const endAngle = curAngle = curAngle + diffAngle;
 			const startPosition = getPositionByAngle(startAngle, radius);
 			const endPosition = getPositionByAngle(endAngle, radius);
-			const prevProperty = init && prevSlicesProperties[i];
+
+			const prevProperty = this.init && prevSlicesProperties[i];
+
 			let curStart,curEnd;
-			if(init){
-				curStart = prevProperty?prevProperty.startPosition : startPosition;
-				curEnd = prevProperty? prevProperty.endPosition : startPosition;
-			}else{
+			if(this.init) {
+				curStart = prevProperty ? prevProperty.startPosition : startPosition;
+				curEnd = prevProperty ? prevProperty.endPosition : startPosition;
+			} else {
 				curStart = startPosition;
 				curEnd = endPosition;
 			}
 			const curPath = makeArcPathStr(curStart, curEnd, this.center, this.radius, this.clockWise);
-			let slice = makePath(curPath, 'pie-path', 'none', this.colors[i]);
-			slice.style.transition = 'transform .3s;';
-			this.drawArea.appendChild(slice);
 
-			this.slices.push(slice);
-			this.slicesProperties.push({
+			s.sliceStrings.push(curPath);
+			s.slicesProperties.push({
 				startPosition,
 				endPosition,
 				value: total,
-				total: this.grand_total,
+				total: s.grandTotal,
 				startAngle,
 				endAngle,
 				angle: diffAngle
 			});
-			if(init){
-				this.elements_to_animate.push([slice,
-					{d: makeArcPathStr(startPosition, endPosition, this.center, this.radius, this.clockWise)},
-					650, "easein",null,{
-						d:curPath
-					}]);
-			}
 
 		});
-		// if(init){
-		// 	runSMILAnimation(this.chartWrapper, this.svg, this.elements_to_animate);
-		// }
+		this.init = 0;
+	}
+
+	setupComponents() {
+		let s = this.state;
+
+		let componentConfigs = [
+			[
+				'pieSlices',
+				{ },
+				function() {
+					return {
+						sliceStrings: s.sliceStrings,
+						colors: this.colors
+					}
+				}.bind(this)
+			]
+		];
+
+		this.components = new Map(componentConfigs
+			.map(args => {
+				let component = getComponent(...args);
+				return [args[0], component];
+			}));
 	}
 
 	calTranslateByAngle(property){
@@ -1637,44 +2030,46 @@ class PieChart extends AggregationChart {
 		if(!path) return;
 		const color = this.colors[i];
 		if(flag) {
-
-			transform(path, this.calTranslateByAngle(this.slicesProperties[i]));
+			transform(path, this.calTranslateByAngle(this.state.slicesProperties[i]));
 			path.style.fill = lightenDarkenColor(color, 50);
 			let g_off = getOffset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
 			let title = (this.formatted_labels && this.formatted_labels.length > 0
 				? this.formatted_labels[i] : this.state.labels[i]) + ': ';
-			let percent = (this.state.sliceTotals[i]*100/this.grand_total).toFixed(1);
-			this.tip.set_values(x, y, title, percent + "%");
-			this.tip.show_tip();
+			let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1);
+			this.tip.setValues(x, y, title, percent + "%");
+			this.tip.showTip();
 		} else {
 			transform(path,'translate3d(0,0,0)');
-			this.tip.hide_tip();
+			this.tip.hideTip();
 			path.style.fill = color;
 		}
 	}
 
+	bindTooltip() {
+		this.chartWrapper.addEventListener('mousemove', this.mouseMove);
+		this.chartWrapper.addEventListener('mouseleave', this.mouseLeave);
+	}
+
 	mouseMove(e){
 		const target = e.target;
+		let slices = this.components.get('pieSlices').store;
 		let prevIndex = this.curActiveSliceIndex;
 		let prevAcitve = this.curActiveSlice;
-		for(let i = 0; i < this.slices.length; i++){
-			if(target === this.slices[i]){
-				this.hoverSlice(prevAcitve,prevIndex,false);
-				this.curActiveSlice = target;
-				this.curActiveSliceIndex = i;
-				this.hoverSlice(target,i,true,e);
-				break;
-			}
+		if(slices.includes(target)) {
+			let i = slices.indexOf(target);
+			this.hoverSlice(prevAcitve, prevIndex,false);
+			this.curActiveSlice = target;
+			this.curActiveSliceIndex = i;
+			this.hoverSlice(target, i, true, e);
+		} else {
+			this.mouseLeave();
 		}
 	}
+
 	mouseLeave(){
 		this.hoverSlice(this.curActiveSlice,this.curActiveSliceIndex,false);
-	}
-	bindTooltip() {
-		// this.drawArea.addEventListener('mousemove',this.mouseMove);
-		// this.drawArea.addEventListener('mouseleave',this.mouseLeave);
 	}
 }
 
@@ -2299,354 +2694,6 @@ function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
 	return calcLabels;
 }
 
-class ChartComponent {
-	constructor({
-		layerClass = '',
-		layerTransform = '',
-		constants,
-
-		getData,
-		makeElements,
-		animateElements
-	}) {
-		this.layerTransform = layerTransform;
-		this.constants = constants;
-
-		this.makeElements = makeElements;
-		this.getData = getData;
-
-		this.animateElements = animateElements;
-
-		this.store = [];
-
-		this.layerClass = layerClass;
-		this.layerClass = typeof(this.layerClass) === 'function'
-			? this.layerClass() : this.layerClass;
-
-		this.refresh();
-	}
-
-	refresh(data) {
-		this.data = data || this.getData();
-	}
-
-	setup(parent) {
-		this.layer = makeSVGGroup(parent, this.layerClass, this.layerTransform);
-	}
-
-	make() {
-		this.render(this.data);
-		this.oldData = this.data;
-	}
-
-	render(data) {
-		this.store = this.makeElements(data);
-
-		this.layer.textContent = '';
-		this.store.forEach(element => {
-			this.layer.appendChild(element);
-		});
-	}
-
-	update(animate = true) {
-		this.refresh();
-		let animateElements = [];
-		if(animate) {
-			animateElements = this.animateElements(this.data);
-		}
-		return animateElements;
-	}
-}
-
-let componentConfigs = {
-	yAxis: {
-		layerClass: 'y axis',
-		makeElements(data) {
-			return data.positions.map((position, i) =>
-				yLine(position, data.labels[i], this.constants.width,
-					{mode: this.constants.mode, pos: this.constants.pos})
-			);
-		},
-
-		animateElements(newData) {
-			let newPos = newData.positions;
-			let newLabels = newData.labels;
-			let oldPos = this.oldData.positions;
-			let oldLabels = this.oldData.labels;
-
-			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
-			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
-
-			this.render({
-				positions: oldPos,
-				labels: newLabels
-			});
-
-			return this.store.map((line, i) => {
-				return translateHoriLine(
-					line, newPos[i], oldPos[i]
-				);
-			});
-		}
-	},
-
-	xAxis: {
-		layerClass: 'x axis',
-		makeElements(data) {
-			return data.positions.map((position, i) =>
-				xLine(position, data.calcLabels[i], this.constants.height,
-					{mode: this.constants.mode, pos: this.constants.pos})
-			);
-		},
-
-		animateElements(newData) {
-			let newPos = newData.positions;
-			let newLabels = newData.calcLabels;
-			let oldPos = this.oldData.positions;
-			let oldLabels = this.oldData.calcLabels;
-
-			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
-			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
-
-			this.render({
-				positions: oldPos,
-				calcLabels: newLabels
-			});
-
-			return this.store.map((line, i) => {
-				return translateVertLine(
-					line, newPos[i], oldPos[i]
-				);
-			});
-		}
-	},
-
-	yMarkers: {
-		layerClass: 'y-markers',
-		makeElements(data) {
-			return data.map(marker =>
-				yMarker(marker.position, marker.label, this.constants.width,
-					{pos:'right', mode: 'span', lineType: 'dashed'})
-			);
-		},
-		animateElements(newData) {
-			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
-
-			let newPos = newData.map(d => d.position);
-			let newLabels = newData.map(d => d.label);
-
-			let oldPos = this.oldData.map(d => d.position);
-			let oldLabels = this.oldData.map(d => d.label);
-
-			this.render(oldPos.map((pos, i) => {
-				return {
-					position: oldPos[i],
-					label: newLabels[i]
-				}
-			}));
-
-			return this.store.map((line, i) => {
-				return translateHoriLine(
-					line, newPos[i], oldPos[i]
-				);
-			});
-		}
-	},
-
-	yRegions: {
-		layerClass: 'y-regions',
-		makeElements(data) {
-			return data.map(region =>
-				yRegion(region.start, region.end, this.constants.width,
-					region.label)
-			);
-		},
-		animateElements(newData) {
-			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
-
-			let newPos = newData.map(d => d.end);
-			let newLabels = newData.map(d => d.label);
-			let newStarts = newData.map(d => d.start);
-
-			let oldPos = this.oldData.map(d => d.end);
-			let oldLabels = this.oldData.map(d => d.label);
-			let oldStarts = this.oldData.map(d => d.start);
-
-			this.render(oldPos.map((pos, i) => {
-				return {
-					start: oldStarts[i],
-					end: oldPos[i],
-					label: newLabels[i]
-				}
-			}));
-
-			let animateElements = [];
-
-			this.store.map((rectGroup, i) => {
-				animateElements = animateElements.concat(animateRegion(
-					rectGroup, newStarts[i], newPos[i], oldPos[i]
-				));
-			});
-
-			return animateElements;
-		}
-	},
-
-	barGraph: {
-		layerClass: function() { return 'dataset-units dataset-bars dataset-' + this.constants.index; },
-		makeElements(data) {
-			let c = this.constants;
-			this.unitType = 'bar';
-			this.units = data.yPositions.map((y, j) => {
-				return datasetBar(
-					data.xPositions[j],
-					y,
-					data.barWidth,
-					c.color,
-					data.labels[j],
-					j,
-					data.offsets[j],
-					{
-						zeroLine: data.zeroLine,
-						barsWidth: data.barsWidth,
-						minHeight: c.minHeight
-					}
-				)
-			});
-			return this.units;
-		},
-		animateElements(newData) {
-			let c = this.constants;
-
-			let newXPos = newData.xPositions;
-			let newYPos = newData.yPositions;
-			let newOffsets = newData.offsets;
-			let newLabels = newData.labels;
-
-			let oldXPos = this.oldData.xPositions;
-			let oldYPos = this.oldData.yPositions;
-			let oldOffsets = this.oldData.offsets;
-			let oldLabels = this.oldData.labels;
-
-			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
-			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
-			[oldOffsets, newOffsets] = equilizeNoOfElements(oldOffsets, newOffsets);
-			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
-
-			this.render({
-				xPositions: oldXPos,
-				yPositions: oldYPos,
-				offsets: oldOffsets,
-				labels: newLabels,
-
-				zeroLine: this.oldData.zeroLine,
-				barsWidth: this.oldData.barsWidth,
-				barWidth: this.oldData.barWidth,
-			});
-
-			let animateElements = [];
-
-			this.store.map((bar, i) => {
-				animateElements = animateElements.concat(animateBar(
-					bar, newXPos[i], newYPos[i], newData.barWidth, newOffsets[i], c.index,
-						{zeroLine: newData.zeroLine}
-				));
-			});
-
-			return animateElements;
-		}
-	},
-
-	lineGraph: {
-		layerClass: function() { return 'dataset-units dataset-line dataset-' + this.constants.index; },
-		makeElements(data) {
-			let c = this.constants;
-			this.unitType = 'dot';
-			this.paths = {};
-			if(!c.hideLine) {
-				this.paths = getPaths(
-					data.xPositions,
-					data.yPositions,
-					c.color,
-					{
-						heatline: c.heatline,
-						regionFill: c.regionFill
-					},
-					{
-						svgDefs: c.svgDefs,
-						zeroLine: data.zeroLine
-					}
-				);
-			}
-
-			this.units = [];
-			if(!c.hideDots) {
-				this.units = data.yPositions.map((y, j) => {
-					return datasetDot(
-						data.xPositions[j],
-						y,
-						data.radius,
-						c.color,
-						(c.valuesOverPoints ? data.values[j] : ''),
-						j
-					)
-				});
-			}
-
-			return Object.values(this.paths).concat(this.units);
-		},
-		animateElements(newData) {
-			let newXPos = newData.xPositions;
-			let newYPos = newData.yPositions;
-			let newValues = newData.values;
-
-
-			let oldXPos = this.oldData.xPositions;
-			let oldYPos = this.oldData.yPositions;
-			let oldValues = this.oldData.values;
-
-			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
-			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
-			[oldValues, newValues] = equilizeNoOfElements(oldValues, newValues);
-
-			this.render({
-				xPositions: oldXPos,
-				yPositions: oldYPos,
-				values: newValues,
-
-				zeroLine: this.oldData.zeroLine,
-				radius: this.oldData.radius,
-			});
-
-			let animateElements = [];
-
-			if(Object.keys(this.paths).length) {
-				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine));
-			}
-
-			if(this.units.length) {
-				this.units.map((dot, i) => {
-					animateElements = animateElements.concat(animateDot(
-						dot, newXPos[i], newYPos[i]));
-				});
-			}
-
-			return animateElements;
-		}
-	}
-};
-
-function getComponent(name, constants, getData) {
-	let keys = Object.keys(componentConfigs).filter(k => name.includes(k));
-	let config = componentConfigs[keys[0]];
-	Object.assign(config, {
-		constants: constants,
-		getData: getData
-	});
-	return new ChartComponent(config);
-}
-
 class AxisChart extends BaseChart {
 	constructor(parent, args) {
 		super(parent, args);
@@ -2852,8 +2899,6 @@ class AxisChart extends BaseChart {
 
 		let barDatasets = this.state.datasets.filter(d => d.chartType === 'bar');
 		let lineDatasets = this.state.datasets.filter(d => d.chartType === 'line');
-
-		// console.log('barDatasets', barDatasets, this.state.datasets);
 
 		let barsConfigs = barDatasets.map(d => {
 			let index = d.index;
@@ -3118,12 +3163,10 @@ class AxisChart extends BaseChart {
 
 	addDataPoint(label, datasetValues, index=this.state.datasetLength) {
 		super.addDataPoint(label, datasetValues, index);
-		// console.log(label, datasetValues, this.data.labels);
 		this.data.labels.splice(index, 0, label);
 		this.data.datasets.map((d, i) => {
 			d.values.splice(index, 0, datasetValues[i]);
 		});
-		// console.log(this.data);
 		this.update(this.data);
 	}
 
@@ -3135,9 +3178,6 @@ class AxisChart extends BaseChart {
 		});
 		this.update(this.data);
 	}
-
-	// getDataPoint(index = 0) {}
-	// setCurrentDataPoint(point) {}
 
 	updateDataset(datasetValues, index=0) {
 		this.data.datasets[index].values = datasetValues;
@@ -3152,9 +3192,6 @@ class AxisChart extends BaseChart {
 	// addDataPoint(dataPoint, index = 0) {}
 	// removeDataPoint(index = 0) {}
 }
-
-
-// keep a binding at the end of chart
 
 const chartTypes = {
 	// multiaxis: MultiAxisChart,

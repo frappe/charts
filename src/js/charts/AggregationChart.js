@@ -47,10 +47,6 @@ export default class AggregationChart extends BaseChart {
 		});
 	}
 
-	render() { }
-
-	bindTooltip() { }
-
 	renderLegend() {
 		let s = this.state;
 
