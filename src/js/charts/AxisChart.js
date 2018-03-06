@@ -1,835 +1,556 @@
-import { offset } from '../utils/dom';
-import { UnitRenderer, makeXLine, makeYLine } from '../utils/draw';
-import { Animator } from '../utils/animate';
-import { runSVGAnimation } from '../utils/animation';
-import { calcIntervals } from '../utils/intervals';
-import { floatTwo, arraysEqual, getStringWidth } from '../utils/helpers';
 import BaseChart from './BaseChart';
+import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-utils';
+import { Y_AXIS_MARGIN } from '../utils/constants';
+import { getComponent } from '../objects/ChartComponents';
+import { $, getOffset, fire } from '../utils/dom';
+import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale } from '../utils/intervals';
+import { floatTwo } from '../utils/helpers';
+import { makeOverlay, updateOverlay } from '../utils/draw';
+import { MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO, LINE_CHART_DOT_SIZE } from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
-	constructor(args) {
-		super(args);
+	constructor(parent, args) {
+		super(parent, args);
 
-		this.x = this.data.labels || [];
-		this.y = this.data.datasets || [];
+		this.barOptions = args.barOptions || {};
+		this.lineOptions = args.lineOptions || {};
 
-		this.is_series = args.is_series;
+		this.type = args.type || 'line';
+		this.init = 1;
 
-		this.format_tooltip_y = args.format_tooltip_y;
-		this.format_tooltip_x = args.format_tooltip_x;
-
-		this.zero_line = this.height;
-
-		// this.old_values = {};
+		this.setup();
 	}
 
-	validate_and_prepare_data() {
-		return true;
+	configure(args) {
+		super.configure();
+
+		args.axisOptions = args.axisOptions || {};
+		args.tooltipOptions = args.tooltipOptions || {};
+
+		this.config.xAxisMode = args.axisOptions.xAxisMode || 'span';
+		this.config.yAxisMode = args.axisOptions.yAxisMode || 'span';
+		this.config.xIsSeries = args.axisOptions.xIsSeries || 0;
+
+		this.config.formatTooltipX = args.tooltipOptions.formatTooltipX;
+		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
+
+		this.config.valuesOverPoints = args.valuesOverPoints;
 	}
 
-	setup_values() {
-		this.data.datasets.map(d => {
-			d.values = d.values.map(val => (!isNaN(val) ? val : 0));
-		});
-		this.setup_x();
-		this.setup_y();
+	setMargins() {
+		super.setMargins();
+		this.leftMargin = Y_AXIS_MARGIN;
+		this.rightMargin = Y_AXIS_MARGIN;
 	}
 
-	setup_x() {
-		this.set_avg_unit_width_and_x_offset();
-
-		if(this.x_axis_positions) {
-			this.x_old_axis_positions =  this.x_axis_positions.slice();
-		}
-		this.x_axis_positions = this.x.map((d, i) =>
-			floatTwo(this.x_offset + i * this.avg_unit_width));
-
-		if(!this.x_old_axis_positions) {
-			this.x_old_axis_positions = this.x_axis_positions.slice();
-		}
+	prepareData(data=this.data) {
+		return dataPrep(data, this.type);
 	}
 
-	setup_y() {
-		if(this.y_axis_values) {
-			this.y_old_axis_values =  this.y_axis_values.slice();
-		}
-
-		let values = this.get_all_y_values();
-
-		if(this.y_sums && this.y_sums.length > 0) {
-			values = values.concat(this.y_sums);
-		}
-
-		this.y_axis_values = calcIntervals(values, this.type === 'line');
-
-		if(!this.y_old_axis_values) {
-			this.y_old_axis_values = this.y_axis_values.slice();
-		}
-
-		const y_pts = this.y_axis_values;
-		const value_range = y_pts[y_pts.length-1] - y_pts[0];
-
-		if(this.multiplier) this.old_multiplier = this.multiplier;
-		this.multiplier = this.height / value_range;
-		if(!this.old_multiplier) this.old_multiplier = this.multiplier;
-
-		const interval = y_pts[1] - y_pts[0];
-		const interval_height = interval * this.multiplier;
-
-		let zero_index;
-
-		if(y_pts.indexOf(0) >= 0) {
-			// the range has a given zero
-			// zero-line on the chart
-			zero_index = y_pts.indexOf(0);
-		} else if(y_pts[0] > 0) {
-			// Minimum value is positive
-			// zero-line is off the chart: below
-			let min = y_pts[0];
-			zero_index = (-1) * min / interval;
-		} else {
-			// Maximum value is negative
-			// zero-line is off the chart: above
-			let max = y_pts[y_pts.length - 1];
-			zero_index = (-1) * max / interval + (y_pts.length - 1);
-		}
-
-		if(this.zero_line) this.old_zero_line = this.zero_line;
-		this.zero_line = this.height - (zero_index * interval_height);
-		if(!this.old_zero_line) this.old_zero_line = this.zero_line;
+	prepareFirstData(data=this.data) {
+		return zeroDataPrep(data);
 	}
 
-	setup_components() {
-		super.setup_components();
-		this.setup_marker_components();
-		this.setup_aggregation_components();
-		this.setup_graph_components();
+	calc(onlyWidthChange = false) {
+		this.calcXPositions();
+		if(onlyWidthChange) return;
+		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
 	}
 
-	setup_marker_components() {
-		this.y_axis_group = this.makeDrawAreaComponent('y axis');
-		this.x_axis_group = this.makeDrawAreaComponent('x axis');
-		this.specific_y_group = this.makeDrawAreaComponent('specific axis');
+	calcXPositions() {
+		let s = this.state;
+		let labels = this.data.labels;
+		s.datasetLength = labels.length;
+
+		s.unitWidth = this.width/(s.datasetLength);
+		// Default, as per bar, and mixed. Only line will be a special case
+		s.xOffset = s.unitWidth/2;
+
+		// // For a pure Line Chart
+		// s.unitWidth = this.width/(s.datasetLength - 1);
+		// s.xOffset = 0;
+
+		s.xAxis = {
+			labels: labels,
+			positions: labels.map((d, i) =>
+				floatTwo(s.xOffset + i * s.unitWidth)
+			)
+		};
 	}
 
-	setup_aggregation_components() {
-		this.sum_group = this.makeDrawAreaComponent('data-points');
-		this.average_group = this.makeDrawAreaComponent('chart-area');
+	calcYAxisParameters(dataValues, withMinimum = 'false') {
+		const yPts = calcChartIntervals(dataValues, withMinimum);
+		const scaleMultiplier = this.height / getValueRange(yPts);
+		const intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
+		const zeroLine = this.height - (getZeroIndex(yPts) * intervalHeight);
+
+		this.state.yAxis = {
+			labels: yPts,
+			positions: yPts.map(d => zeroLine - d * scaleMultiplier),
+			scaleMultiplier: scaleMultiplier,
+			zeroLine: zeroLine,
+		};
+
+		// Dependent if above changes
+		this.calcDatasetPoints();
+		this.calcYExtremes();
+		this.calcYRegions();
 	}
 
-	setup_graph_components() {
-		this.svg_units_groups = [];
-		this.y.map((d, i) => {
-			this.svg_units_groups[i] = this.makeDrawAreaComponent(
-				'data-points data-points-' + i);
+	calcDatasetPoints() {
+		let s = this.state;
+		let scaleAll = values => values.map(val => scale(val, s.yAxis));
+
+		s.datasets = this.data.datasets.map((d, i) => {
+			let values = d.values;
+			let cumulativeYs = d.cumulativeYs || [];
+			return {
+				name: d.name,
+				index: i,
+				chartType: d.chartType,
+
+				values: values,
+				yPositions: scaleAll(values),
+
+				cumulativeYs: cumulativeYs,
+				cumulativeYPos: scaleAll(cumulativeYs),
+			};
 		});
 	}
 
-	make_graph_components(init=false) {
-		this.make_y_axis();
-		this.make_x_axis();
-		this.draw_graph(init);
-		this.make_y_specifics();
-	}
-
-	// make VERTICAL lines for x values
-	make_x_axis(animate=false) {
-		let char_width = 8;
-		let start_at, height, text_start_at, axis_line_class = '';
-		if(this.x_axis_mode === 'span') {		// long spanning lines
-			start_at = -7;
-			height = this.height + 15;
-			text_start_at = this.height + 25;
-		} else if(this.x_axis_mode === 'tick'){	// short label lines
-			start_at = this.height;
-			height = 6;
-			text_start_at = 9;
-			axis_line_class = 'x-axis-label';
-		}
-
-		this.x_axis_group.setAttribute('transform', `translate(0,${start_at})`);
-
-		if(animate) {
-			this.make_anim_x_axis(height, text_start_at, axis_line_class);
+	calcYExtremes() {
+		let s = this.state;
+		if(this.barOptions.stacked) {
+			s.yExtremes = s.datasets[s.datasets.length - 1].cumulativeYPos;
 			return;
 		}
-
-		let allowed_space = this.avg_unit_width * 1.5;
-		let allowed_letters = allowed_space / 8;
-
-		this.x_axis_group.textContent = '';
-		this.x.map((point, i) => {
-			let space_taken = getStringWidth(point, char_width) + 2;
-			if(space_taken > allowed_space) {
-				if(this.is_series) {
-					// Skip some axis lines if X axis is a series
-					let skips = 1;
-					while((space_taken/skips)*2 > allowed_space) {
-						skips++;
-					}
-					if(i % skips !== 0) {
-						return;
-					}
-				} else {
-					point = point.slice(0, allowed_letters-3) + " ...";
+		s.yExtremes = new Array(s.datasetLength).fill(9999);
+		s.datasets.map(d => {
+			d.yPositions.map((pos, j) => {
+				if(pos < s.yExtremes[j]) {
+					s.yExtremes[j] = pos;
 				}
-			}
-			this.x_axis_group.appendChild(
-				makeXLine(
-					height,
-					text_start_at,
-					point,
-					'x-value-text',
-					axis_line_class,
-					this.x_axis_positions[i]
-				)
-			);
-		});
-	}
-
-	// make HORIZONTAL lines for y values
-	make_y_axis(animate=false) {
-		if(animate) {
-			this.make_anim_y_axis();
-			this.make_anim_y_specifics();
-			return;
-		}
-
-		let [width, text_end_at, axis_line_class, start_at] = this.get_y_axis_line_props();
-
-		this.y_axis_group.textContent = '';
-		this.y_axis_values.map((value, i) => {
-			this.y_axis_group.appendChild(
-				makeYLine(
-					start_at,
-					width,
-					text_end_at,
-					value,
-					'y-value-text',
-					axis_line_class,
-					this.zero_line - value * this.multiplier,
-					(value === 0 && i !== 0) // Non-first Zero line
-				)
-			);
-		});
-	}
-
-	get_y_axis_line_props(specific=false) {
-		if(specific) {
-			return[this.width, this.width + 5, 'specific-value', 0];
-		}
-		let width, text_end_at = -9, axis_line_class = '', start_at = 0;
-		if(this.y_axis_mode === 'span') {		// long spanning lines
-			width = this.width + 6;
-			start_at = -6;
-		} else if(this.y_axis_mode === 'tick'){	// short label lines
-			width = -6;
-			axis_line_class = 'y-axis-label';
-		}
-
-		return [width, text_end_at, axis_line_class, start_at];
-	}
-
-	draw_graph(init=false) {
-		if(this.raw_chart_args.hasOwnProperty("init") && !this.raw_chart_args.init) {
-			this.y.map((d, i) => {
-				d.svg_units = [];
-				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
-				this.make_new_units(d, i);
-				this.calc_y_dependencies();
 			});
-			return;
-		}
-		if(init) {
-			this.draw_new_graph_and_animate();
-			return;
-		}
-		this.y.map((d, i) => {
-			d.svg_units = [];
-			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
-			this.make_new_units(d, i);
 		});
 	}
 
-	draw_new_graph_and_animate() {
-		let data = [];
-		this.y.map((d, i) => {
-			// Anim: Don't draw initial values, store them and update later
-			d.y_tops = new Array(d.values.length).fill(this.zero_line); // no value
-			data.push({values: d.values});
-			d.svg_units = [];
-
-			this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
-			this.make_new_units(d, i);
-		});
-
-		setTimeout(() => {
-			this.update_values(data);
-		}, 350);
-	}
-
-	setup_navigation(init) {
-		if(init) {
-			// Hack: defer nav till initial update_values
-			setTimeout(() => {
-				super.setup_navigation(init);
-			}, 500);
-		} else {
-			super.setup_navigation(init);
+	calcYRegions() {
+		let s = this.state;
+		if(this.data.yMarkers) {
+			this.state.yMarkers = this.data.yMarkers.map(d => {
+				d.position = scale(d.value, s.yAxis);
+				// if(!d.label.includes(':')) {
+				// 	d.label += ': ' + d.value;
+				// }
+				return d;
+			});
+		}
+		if(this.data.yRegions) {
+			this.state.yRegions = this.data.yRegions.map(d => {
+				d.startPos = scale(d.start, s.yAxis);
+				d.endPos = scale(d.end, s.yAxis);
+				return d;
+			});
 		}
 	}
 
-	make_new_units(d, i) {
-		this.make_new_units_for_dataset(
-			this.x_axis_positions,
-			d.y_tops,
-			this.colors[i],
-			i,
-			this.y.length
-		);
-	}
+	getAllYValues() {
+		// TODO: yMarkers, regions, sums, every Y value ever
+		let key = 'values';
 
-	make_new_units_for_dataset(x_values, y_values, color, dataset_index,
-		no_of_datasets, units_group, units_array, unit) {
-
-		if(!units_group) units_group = this.svg_units_groups[dataset_index];
-		if(!units_array) units_array = this.y[dataset_index].svg_units;
-		if(!unit) unit = this.unit_args;
-
-		units_group.textContent = '';
-		units_array.length = 0;
-
-		let unit_renderer = new UnitRenderer(this.height, this.zero_line, this.avg_unit_width);
-
-		y_values.map((y, i) => {
-			let data_unit = unit_renderer[unit.type](
-				x_values[i],
-				y,
-				unit.args,
-				color,
-				i,
-				dataset_index,
-				no_of_datasets
-			);
-			units_group.appendChild(data_unit);
-			units_array.push(data_unit);
-		});
-
-		if(this.is_navigable) {
-			this.bind_units(units_array);
+		if(this.barOptions.stacked) {
+			key = 'cumulativeYs';
+			let cumulative = new Array(this.state.datasetLength).fill(0);
+			this.data.datasets.map((d, i) => {
+				let values = this.data.datasets[i].values;
+				d[key] = cumulative = cumulative.map((c, i) => c + values[i]);
+			});
 		}
+
+		let allValueLists = this.data.datasets.map(d => d[key]);
+		if(this.data.yMarkers) {
+			allValueLists.push(this.data.yMarkers.map(d => d.value));
+		}
+		if(this.data.yRegions) {
+			this.data.yRegions.map(d => {
+				allValueLists.push([d.end, d.start]);
+			})
+		}
+
+		return [].concat(...allValueLists);
 	}
 
-	make_y_specifics() {
-		this.specific_y_group.textContent = '';
-		this.specific_values.map(d => {
-			this.specific_y_group.appendChild(
-				makeYLine(
-					0,
-					this.width,
-					this.width + 5,
-					d.title.toUpperCase(),
-					'specific-value',
-					'specific-value',
-					this.zero_line - d.value * this.multiplier,
-					false,
-					d.line_type
-				)
-			);
+	setupComponents() {
+		let componentConfigs = [
+			[
+				'yAxis',
+				{
+					mode: this.config.yAxisMode,
+					width: this.width,
+					// pos: 'right'
+				},
+				function() {
+					return this.state.yAxis;
+				}.bind(this)
+			],
+
+			[
+				'xAxis',
+				{
+					mode: this.config.xAxisMode,
+					height: this.height,
+					// pos: 'right'
+				},
+				function() {
+					let s = this.state;
+					s.xAxis.calcLabels = getShortenedLabels(this.width,
+						s.xAxis.labels, this.config.xIsSeries);
+
+					return s.xAxis;
+				}.bind(this)
+			],
+
+			[
+				'yRegions',
+				{
+					width: this.width,
+					pos: 'right'
+				},
+				function() {
+					return this.state.yRegions;
+				}.bind(this)
+			],
+		];
+
+		let barDatasets = this.state.datasets.filter(d => d.chartType === 'bar');
+		let lineDatasets = this.state.datasets.filter(d => d.chartType === 'line');
+
+		let barsConfigs = barDatasets.map(d => {
+			let index = d.index;
+			return [
+				'barGraph' + '-' + d.index,
+				{
+					index: index,
+					color: this.colors[index],
+					stacked: this.barOptions.stacked,
+
+					// same for all datasets
+					valuesOverPoints: this.config.valuesOverPoints,
+					minHeight: this.height * MIN_BAR_PERCENT_HEIGHT,
+				},
+				function() {
+					let s = this.state;
+					let d = s.datasets[index];
+					let stacked = this.barOptions.stacked;
+
+					let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
+					let barsWidth = s.unitWidth * (1 - spaceRatio);
+					let barWidth = barsWidth/(stacked ? 1 : barDatasets.length);
+
+					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2);
+					if(!stacked) {
+						xPositions = xPositions.map(p => p + barWidth * index);
+					}
+
+					let labels = new Array(s.datasetLength).fill('');
+					if(this.config.valuesOverPoints) {
+						if(stacked && d.index === s.datasets.length - 1) {
+							labels = d.cumulativeYs;
+						} else {
+							labels = d.values;
+						}
+					}
+
+					let offsets = new Array(s.datasetLength).fill(0);
+					if(stacked) {
+						offsets = d.yPositions.map((y, j) => y - d.cumulativeYPos[j]);
+					}
+
+					return {
+						xPositions: xPositions,
+						yPositions: d.yPositions,
+						offsets: offsets,
+						// values: d.values,
+						labels: labels,
+
+						zeroLine: s.yAxis.zeroLine,
+						barsWidth: barsWidth,
+						barWidth: barWidth,
+					};
+				}.bind(this)
+			];
 		});
+
+		let lineConfigs = lineDatasets.map(d => {
+			let index = d.index;
+			return [
+				'lineGraph' + '-' + d.index,
+				{
+					index: index,
+					color: this.colors[index],
+					svgDefs: this.svgDefs,
+					heatline: this.lineOptions.heatline,
+					regionFill: this.lineOptions.regionFill,
+					hideDots: this.lineOptions.hideDots,
+					hideLine: this.lineOptions.hideLine,
+
+					// same for all datasets
+					valuesOverPoints: this.config.valuesOverPoints,
+				},
+				function() {
+					let s = this.state;
+					let d = s.datasets[index];
+
+					return {
+						xPositions: s.xAxis.positions,
+						yPositions: d.yPositions,
+
+						values: d.values,
+
+						zeroLine: s.yAxis.zeroLine,
+						radius: this.lineOptions.dotSize || LINE_CHART_DOT_SIZE,
+					};
+				}.bind(this)
+			];
+		});
+
+		let markerConfigs = [
+			[
+				'yMarkers',
+				{
+					width: this.width,
+					pos: 'right'
+				},
+				function() {
+					return this.state.yMarkers;
+				}.bind(this)
+			]
+		];
+
+		componentConfigs = componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
+
+		let optionals = ['yMarkers', 'yRegions'];
+		this.dataUnitComponents = [];
+
+		this.components = new Map(componentConfigs
+			.filter(args => !optionals.includes(args[0]) || this.state[args[0]])
+			.map(args => {
+				let component = getComponent(...args);
+				if(args[0].includes('lineGraph') || args[0].includes('barGraph')) {
+					this.dataUnitComponents.push(component);
+				}
+				return [args[0], component];
+			}));
 	}
 
-	bind_tooltip() {
-		// TODO: could be in tooltip itself, as it is a given functionality for its parent
-		this.chart_wrapper.addEventListener('mousemove', (e) => {
-			let o = offset(this.chart_wrapper);
-			let relX = e.pageX - o.left - this.translate_x;
-			let relY = e.pageY - o.top - this.translate_y;
+	bindTooltip() {
+		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
+		this.chartWrapper.addEventListener('mousemove', (e) => {
+			let o = getOffset(this.chartWrapper);
+			let relX = e.pageX - o.left - this.leftMargin;
+			let relY = e.pageY - o.top - this.translateY;
 
-			if(relY < this.height + this.translate_y * 2) {
-				this.map_tooltip_x_position_and_show(relX);
+			if(relY < this.height + this.translateY * 2) {
+				this.mapTooltipXPosition(relX);
 			} else {
-				this.tip.hide_tip();
+				this.tip.hideTip();
 			}
 		});
 	}
 
-	map_tooltip_x_position_and_show(relX) {
-		if(!this.y_min_tops) return;
+	mapTooltipXPosition(relX) {
+		let s = this.state;
+		if(!s.yExtremes) return;
 
-		let titles = this.x;
-		if(this.format_tooltip_x && this.format_tooltip_x(this.x[0])) {
-			titles = this.x.map(d=>this.format_tooltip_x(d));
+		let formatY = this.config.formatTooltipY;
+		let formatX = this.config.formatTooltipX;
+
+		let titles = s.xAxis.labels;
+		if(formatX && formatX(titles[0])) {
+			titles = titles.map(d=>formatX(d));
 		}
 
-		let y_format = this.format_tooltip_y && this.format_tooltip_y(this.y[0].values[0]);
+		formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
 
-		for(var i=this.x_axis_positions.length - 1; i >= 0 ; i--) {
-			let x_val = this.x_axis_positions[i];
-			// let delta = i === 0 ? this.avg_unit_width : x_val - this.x_axis_positions[i-1];
-			if(relX > x_val - this.avg_unit_width/2) {
-				let x = x_val + this.translate_x;
-				let y = this.y_min_tops[i] + this.translate_y;
+		for(var i=s.datasetLength - 1; i >= 0 ; i--) {
+			let xVal = s.xAxis.positions[i];
+			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxis.positions[i-1];
+			if(relX > xVal - s.unitWidth/2) {
+				let x = xVal + this.leftMargin;
+				let y = s.yExtremes[i] + this.translateY;
 
-				let title = titles[i];
-				let values = this.y.map((set, j) => {
+				let values = this.data.datasets.map((set, j) => {
 					return {
-						title: set.title,
-						value: y_format ? this.format_tooltip_y(set.values[i]) : set.values[i],
+						title: set.name,
+						value: formatY ? formatY(set.values[i]) : set.values[i],
 						color: this.colors[j],
 					};
 				});
 
-				this.tip.set_values(x, y, title, '', values);
-				this.tip.show_tip();
+				this.tip.setValues(x, y, {name: titles[i], value: ''}, values, i);
+				this.tip.showTip();
 				break;
 			}
 		}
 	}
 
-	// API
-	show_sums() {
-		this.updating = true;
+	renderLegend() {
+		let s = this.data;
+		this.statsWrapper.textContent = '';
 
-		this.y_sums = new Array(this.x_axis_positions.length).fill(0);
-		this.y.map(d => {
-			d.values.map( (value, i) => {
-				this.y_sums[i] += value;
+		if(s.datasets.length > 1) {
+			s.datasets.map((d, i) => {
+				let stats = $.create('div', {
+					className: 'stats',
+					inside: this.statsWrapper
+				});
+				stats.innerHTML = `<span class="indicator">
+					<i style="background: ${this.colors[i]}"></i>
+					${d.name}
+				</span>`;
+			});
+		}
+	}
+
+	makeOverlay() {
+		if(this.init) {
+			this.init = 0;
+			return;
+		}
+		if(this.overlayGuides) {
+			this.overlayGuides.forEach(g => {
+				let o = g.overlay;
+				o.parentNode.removeChild(o);
+			});
+		}
+
+		this.overlayGuides = this.dataUnitComponents.map(c => {
+			return {
+				type: c.unitType,
+				overlay: undefined,
+				units: c.units,
+			};
+		});
+
+		if(this.state.currentIndex === undefined) {
+			this.state.currentIndex = this.state.datasetLength - 1;
+		}
+
+		// Render overlays
+		this.overlayGuides.map(d => {
+			let currentUnit = d.units[this.state.currentIndex];
+			d.overlay = makeOverlay[d.type](currentUnit);
+			this.drawArea.appendChild(d.overlay);
+		});
+
+	}
+
+	updateOverlayGuides() {
+		if(this.overlayGuides) {
+			this.overlayGuides.forEach(g => {
+				let o = g.overlay;
+				o.parentNode.removeChild(o);
+			});
+		}
+	}
+
+	bindOverlay() {
+		this.parent.addEventListener('data-select', () => {
+			this.updateOverlay();
+		});
+	}
+
+	bindUnits() {
+		this.dataUnitComponents.map(c => {
+			c.units.map(unit => {
+				unit.addEventListener('click', () => {
+					let index = unit.getAttribute('data-point-index');
+					this.setCurrentDataPoint(index);
+				});
 			});
 		});
 
-		// Remake y axis, animate
-		this.update_values();
-
-		// Then make sum units, don't animate
-		this.sum_units = [];
-
-		this.make_new_units_for_dataset(
-			this.x_axis_positions,
-			this.y_sums.map( val => floatTwo(this.zero_line - val * this.multiplier)),
-			'#f0f4f7',
-			0,
-			1,
-			this.sum_group,
-			this.sum_units
-		);
-
-		// this.make_path && this.make_path(d, i, old_x, old_y, this.colors[i]);
-
-		this.updating = false;
-	}
-
-	hide_sums() {
-		if(this.updating) return;
-		this.y_sums = [];
-		this.sum_group.textContent = '';
-		this.sum_units = [];
-		this.update_values();
-	}
-
-	show_averages() {
-		this.old_specific_values = this.specific_values.slice();
-		this.y.map((d, i) => {
-			let sum = 0;
-			d.values.map(e => {sum+=e;});
-			let average = sum/d.values.length;
-
-			this.specific_values.push({
-				title: "AVG" + " " + (i+1),
-				line_type: "dashed",
-				value: average,
-				auto: 1
-			});
-		});
-
-		this.update_values();
-	}
-
-	hide_averages() {
-		this.old_specific_values = this.specific_values.slice();
-
-		let indices_to_remove = [];
-		this.specific_values.map((d, i) => {
-			if(d.auto) indices_to_remove.unshift(i);
-		});
-
-		indices_to_remove.map(index => {
-			this.specific_values.splice(index, 1);
-		});
-
-		this.update_values();
-	}
-
-	update_values(new_y, new_x) {
-		if(!new_x) {
-			new_x = this.x;
-		}
-		this.elements_to_animate = [];
-		this.updating = true;
-
-		this.old_x_values = this.x.slice();
-		this.old_y_axis_tops = this.y.map(d => d.y_tops.slice());
-
-		this.old_y_values = this.y.map(d => d.values);
-
-		this.no_of_extra_pts = new_x.length - this.x.length;
-
-		// Just update values prop, setup_x/y() will do the rest
-		if(new_y) this.y.map((d, i) => {d.values = new_y[i].values;});
-		if(new_x) this.x = new_x;
-
-		this.setup_x();
-		this.setup_y();
-
-		// Change in data, so calculate dependencies
-		this.calc_y_dependencies();
-
-		// Got the values? Now begin drawing
-		this.animator = new Animator(this.height, this.width, this.zero_line, this.avg_unit_width);
-
-		// Animate only if positions have changed
-		if(!arraysEqual(this.x_old_axis_positions, this.x_axis_positions)) {
-			this.make_x_axis(true);
-			setTimeout(() => {
-				if(!this.updating) this.make_x_axis();
-			}, 350);
-		}
-
-		if(!arraysEqual(this.y_old_axis_values, this.y_axis_values) ||
-			(this.old_specific_values &&
-			!arraysEqual(this.old_specific_values, this.specific_values))) {
-
-			this.make_y_axis(true);
-			setTimeout(() => {
-				if(!this.updating) {
-					this.make_y_axis();
-					this.make_y_specifics();
-				}
-			}, 350);
-		}
-
-		this.animate_graphs();
-
-		// Trigger animation with the animatable elements in this.elements_to_animate
-		this.run_animation();
-
-		this.updating = false;
-	}
-
-	add_data_point(y_point, x_point, index=this.x.length) {
-		let new_y = this.y.map(data_set => { return {values:data_set.values}; });
-		new_y.map((d, i) => { d.values.splice(index, 0, y_point[i]); });
-		let new_x = this.x.slice();
-		new_x.splice(index, 0, x_point);
-
-		this.update_values(new_y, new_x);
-	}
-
-	remove_data_point(index = this.x.length-1) {
-		if(this.x.length < 3) return;
-
-		let new_y = this.y.map(data_set => { return {values:data_set.values}; });
-		new_y.map((d) => { d.values.splice(index, 1); });
-		let new_x = this.x.slice();
-		new_x.splice(index, 1);
-
-		this.update_values(new_y, new_x);
-	}
-
-	run_animation() {
-		let anim_svg = runSVGAnimation(this.svg, this.elements_to_animate);
-
-		if(this.svg.parentNode == this.chart_wrapper) {
-			this.chart_wrapper.removeChild(this.svg);
-			this.chart_wrapper.appendChild(anim_svg);
-
-		}
-
-		// Replace the new svg (data has long been replaced)
-		setTimeout(() => {
-			if(anim_svg.parentNode == this.chart_wrapper) {
-				this.chart_wrapper.removeChild(anim_svg);
-				this.chart_wrapper.appendChild(this.svg);
-			}
-		}, 250);
-	}
-
-	animate_graphs() {
-		this.y.map((d, i) => {
-			// Pre-prep, equilize no of positions between old and new
-			let [old_x, old_y, new_x, new_y] = this.calc_old_and_new_postions(d, i);
-			if(this.no_of_extra_pts >= 0) {
-				this.make_path && this.make_path(d, i, old_x, old_y, this.colors[i]);
-				this.make_new_units_for_dataset(old_x, old_y, this.colors[i], i, this.y.length);
-			}
-			d.path && this.animate_path(d, i, old_x, old_y, new_x, new_y);
-			this.animate_units(d, i, old_x, old_y, new_x, new_y);
-		});
-
-		// TODO: replace with real units
-		setTimeout(() => {
-			this.y.map((d, i) => {
-				this.make_path && this.make_path(d, i, this.x_axis_positions, d.y_tops, this.colors[i]);
-				this.make_new_units(d, i);
-			});
-		}, 400);
-	}
-
-	animate_path(d, i, old_x, old_y, new_x, new_y) {
-		const newPointsList = new_y.map((y, i) => (new_x[i] + ',' + y));
-		const newPathStr = newPointsList.join("L");
-		this.elements_to_animate = this.elements_to_animate
-			.concat(this.animator['path'](d, newPathStr));
-	}
-
-	animate_units(d, index, old_x, old_y, new_x, new_y) {
-		let type = this.unit_args.type;
-
-		d.svg_units.map((unit, i) => {
-			if(new_x[i] === undefined || new_y[i] === undefined) return;
-			this.elements_to_animate.push(this.animator[type](
-				{unit:unit, array:d.svg_units, index: i}, // unit, with info to replace where it came from in the data
-				new_x[i],
-				new_y[i],
-				index,
-				this.y.length
-			));
+		// Note: Doesn't work as tooltip is absolutely positioned
+		this.tip.container.addEventListener('click', () => {
+			let index = this.tip.container.getAttribute('data-point-index');
+			this.setCurrentDataPoint(index);
 		});
 	}
 
-	calc_old_and_new_postions(d, i) {
-		let old_x = this.x_old_axis_positions.slice();
-		let new_x = this.x_axis_positions.slice();
-
-		let old_y = this.old_y_axis_tops[i].slice();
-		let new_y = d.y_tops.slice();
-
-		const last_old_x_pos = old_x[old_x.length - 1];
-		const last_old_y_pos = old_y[old_y.length - 1];
-
-		const last_new_x_pos = new_x[new_x.length - 1];
-		const last_new_y_pos = new_y[new_y.length - 1];
-
-		if(this.no_of_extra_pts >= 0) {
-			// First substitute current path with a squiggled one
-			// (that looks the same but has more points at end),
-			// then animate to stretch it later to new points
-			// (new points already have more points)
-
-			// Hence, the extra end points will correspond to current(old) positions
-			let filler_x = new Array(Math.abs(this.no_of_extra_pts)).fill(last_old_x_pos);
-			let filler_y = new Array(Math.abs(this.no_of_extra_pts)).fill(last_old_y_pos);
-
-			old_x = old_x.concat(filler_x);
-			old_y = old_y.concat(filler_y);
-
-		} else {
-			// Just modify the new points to have extra points
-			// with the same position at end
-			let filler_x = new Array(Math.abs(this.no_of_extra_pts)).fill(last_new_x_pos);
-			let filler_y = new Array(Math.abs(this.no_of_extra_pts)).fill(last_new_y_pos);
-
-			new_x = new_x.concat(filler_x);
-			new_y = new_y.concat(filler_y);
-		}
-
-		return [old_x, old_y, new_x, new_y];
+	updateOverlay() {
+		this.overlayGuides.map(d => {
+			let currentUnit = d.units[this.state.currentIndex];
+			updateOverlay[d.type](currentUnit, d.overlay);
+		});
 	}
 
-	make_anim_x_axis(height, text_start_at, axis_line_class) {
-		// Animate X AXIS to account for more or less axis lines
+	onLeftArrow() {
+		this.setCurrentDataPoint(this.state.currentIndex - 1);
+	}
 
-		const old_pos = this.x_old_axis_positions;
-		const new_pos = this.x_axis_positions;
+	onRightArrow() {
+		this.setCurrentDataPoint(this.state.currentIndex + 1);
+	}
 
-		const old_vals = this.old_x_values;
-		const new_vals = this.x;
-
-		const last_line_pos = old_pos[old_pos.length - 1];
-
-		let add_and_animate_line = (value, old_pos, new_pos) => {
-			if(typeof new_pos === 'string') {
-				new_pos = parseInt(new_pos.substring(0, new_pos.length-1));
-			}
-			const x_line = makeXLine(
-				height,
-				text_start_at,
-				value, // new value
-				'x-value-text',
-				axis_line_class,
-				old_pos // old position
-			);
-			this.x_axis_group.appendChild(x_line);
-
-			this.elements_to_animate && this.elements_to_animate.push([
-				{unit: x_line, array: [0], index: 0},
-				{transform: `${ new_pos }, 0`},
-				350,
-				"easein",
-				"translate",
-				{transform: `${ old_pos }, 0`}
-			]);
+	getDataPoint(index=this.state.currentIndex) {
+		let s = this.state;
+		let data_point = {
+			index: index,
+			label: s.xAxis.labels[index],
+			values: s.datasets.map(d => d.values[index])
 		};
-
-		this.x_axis_group.textContent = '';
-
-		this.make_new_axis_anim_lines(
-			old_pos,
-			new_pos,
-			old_vals,
-			new_vals,
-			last_line_pos,
-			add_and_animate_line
-		);
+		return data_point;
 	}
 
-	make_anim_y_axis() {
-		// Animate Y AXIS to account for more or less axis lines
-
-		const old_pos = this.y_old_axis_values.map(value =>
-			this.zero_line - value * this.multiplier);
-		const new_pos = this.y_axis_values.map(value =>
-			this.zero_line - value * this.multiplier);
-
-		const old_vals = this.y_old_axis_values;
-		const new_vals = this.y_axis_values;
-
-		const last_line_pos = old_pos[old_pos.length - 1];
-
-		this.y_axis_group.textContent = '';
-
-		this.make_new_axis_anim_lines(
-			old_pos,
-			new_pos,
-			old_vals,
-			new_vals,
-			last_line_pos,
-			this.add_and_animate_y_line.bind(this),
-			this.y_axis_group
-		);
+	setCurrentDataPoint(index) {
+		let s = this.state;
+		index = parseInt(index);
+		if(index < 0) index = 0;
+		if(index >= s.xAxis.labels.length) index = s.xAxis.labels.length - 1;
+		if(index === s.currentIndex) return;
+		s.currentIndex = index;
+		fire(this.parent, "data-select", this.getDataPoint());
 	}
 
-	make_anim_y_specifics() {
-		this.specific_y_group.textContent = '';
-		this.specific_values.map((d) => {
-			this.add_and_animate_y_line(
-				d.title,
-				this.old_zero_line - d.value * this.old_multiplier,
-				this.zero_line - d.value * this.multiplier,
-				0,
-				this.specific_y_group,
-				d.line_type,
-				true
-			);
+	// API
+	addDataPoint(label, datasetValues, index=this.state.datasetLength) {
+		super.addDataPoint(label, datasetValues, index);
+		this.data.labels.splice(index, 0, label);
+		this.data.datasets.map((d, i) => {
+			d.values.splice(index, 0, datasetValues[i]);
 		});
+		this.update(this.data);
 	}
 
-	make_new_axis_anim_lines(old_pos, new_pos, old_vals, new_vals, last_line_pos, add_and_animate_line, group) {
-		let superimposed_positions, superimposed_values;
-		let no_of_extras = new_vals.length - old_vals.length;
-		if(no_of_extras > 0) {
-			// More axis are needed
-			// First make only the superimposed (same position) ones
-			// Add in the extras at the end later
-			superimposed_positions = new_pos.slice(0, old_pos.length);
-			superimposed_values = new_vals.slice(0, old_vals.length);
-		} else {
-			// Axis have to be reduced
-			// Fake it by moving all current extra axis to the last position
-			// You'll need filler positions and values in the new arrays
-			const filler_vals = new Array(Math.abs(no_of_extras)).fill("");
-			superimposed_values = new_vals.concat(filler_vals);
-
-			const filler_pos = new Array(Math.abs(no_of_extras)).fill(last_line_pos + "F");
-			superimposed_positions = new_pos.concat(filler_pos);
+	removeDataPoint(index = this.state.datasetLength-1) {
+		if (this.data.labels.length <= 1) {
+			return;
 		}
-
-		superimposed_values.map((value, i) => {
-			add_and_animate_line(value, old_pos[i], superimposed_positions[i], i, group);
+		super.removeDataPoint(index);
+		this.data.labels.splice(index, 1);
+		this.data.datasets.map(d => {
+			d.values.splice(index, 1);
 		});
-
-		if(no_of_extras > 0) {
-			// Add in extra axis in the end
-			// and then animate to new positions
-			const extra_values = new_vals.slice(old_vals.length);
-			const extra_positions = new_pos.slice(old_pos.length);
-
-			extra_values.map((value, i) => {
-				add_and_animate_line(value, last_line_pos, extra_positions[i], i, group);
-			});
-		}
+		this.update(this.data);
 	}
 
-	add_and_animate_y_line(value, old_pos, new_pos, i, group, type, specific=false) {
-		let filler = false;
-		if(typeof new_pos === 'string') {
-			new_pos = parseInt(new_pos.substring(0, new_pos.length-1));
-			filler = true;
-		}
-		let new_props = {transform: `0, ${ new_pos }`};
-		let old_props = {transform: `0, ${ old_pos }`};
-
-		if(filler) {
-			new_props['stroke-opacity'] = 0;
-			// old_props['stroke-opacity'] = 1;
-		}
-
-		let [width, text_end_at, axis_line_class, start_at] = this.get_y_axis_line_props(specific);
-		let axis_label_class = !specific ? 'y-value-text' : 'specific-value';
-		value = !specific ? value : (value+"").toUpperCase();
-		const y_line = makeYLine(
-			start_at,
-			width,
-			text_end_at,
-			value,
-			axis_label_class,
-			axis_line_class,
-			old_pos,  // old position
-			(value === 0 && i !== 0), // Non-first Zero line
-			type
-		);
-
-		group.appendChild(y_line);
-
-		this.elements_to_animate && this.elements_to_animate.push([
-			{unit: y_line, array: [0], index: 0},
-			new_props,
-			350,
-			"easein",
-			"translate",
-			old_props
-		]);
+	updateDataset(datasetValues, index=0) {
+		this.data.datasets[index].values = datasetValues;
+		this.update(this.data);
 	}
+	// addDataset(dataset, index) {}
+	// removeDataset(index = 0) {}
 
-	set_avg_unit_width_and_x_offset() {
-		// Set the ... you get it
-		this.avg_unit_width = this.width/(this.x.length - 1);
-		this.x_offset = 0;
-	}
-
-	get_all_y_values() {
-		let all_values = [];
-
-		// Add in all the y values in the datasets
-		this.y.map(d => {
-			all_values = all_values.concat(d.values);
+	updateDatasets(datasets) {
+		this.data.datasets.map((d, i) => {
+			if(datasets[i]) {
+				d.values = datasets[i];
+			}
 		});
-
-		// Add in all the specific values
-		return all_values.concat(this.specific_values.map(d => d.value));
+		this.update(this.data);
 	}
 
-	calc_y_dependencies() {
-		this.y_min_tops = new Array(this.x_axis_positions.length).fill(9999);
-		this.y.map(d => {
-			d.y_tops = d.values.map( val => floatTwo(this.zero_line - val * this.multiplier));
-			d.y_tops.map( (y_top, i) => {
-				if(y_top < this.y_min_tops[i]) {
-					this.y_min_tops[i] = y_top;
-				}
-			});
-		});
-		// this.chart_wrapper.removeChild(this.tip.container);
-		// this.make_tooltip();
-	}
+	// updateDataPoint(dataPoint, index = 0) {}
+	// addDataPoint(dataPoint, index = 0) {}
+	// removeDataPoint(index = 0) {}
 }

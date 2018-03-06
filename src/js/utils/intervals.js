@@ -1,3 +1,5 @@
+import { floatTwo } from './helpers';
+
 function normalize(x) {
 	// Calculates mantissa and exponent of a number
 	// Returns normalized number and exponent
@@ -21,7 +23,7 @@ function normalize(x) {
 	return [sig * man, exp];
 }
 
-function getRangeIntervals(max, min=0) {
+function getChartRangeIntervals(max, min=0) {
 	let upperBound = Math.ceil(max);
 	let lowerBound = Math.floor(min);
 	let range = upperBound - lowerBound;
@@ -59,19 +61,19 @@ function getRangeIntervals(max, min=0) {
 	return intervals;
 }
 
-function getIntervals(maxValue, minValue=0) {
+function getChartIntervals(maxValue, minValue=0) {
 	let [normalMaxValue, exponent] = normalize(maxValue);
 	let normalMinValue = minValue ? minValue/Math.pow(10, exponent): 0;
 
 	// Allow only 7 significant digits
 	normalMaxValue = normalMaxValue.toFixed(6);
 
-	let intervals = getRangeIntervals(normalMaxValue, normalMinValue);
+	let intervals = getChartRangeIntervals(normalMaxValue, normalMinValue);
 	intervals = intervals.map(value => value * Math.pow(10, exponent));
 	return intervals;
 }
 
-export function calcIntervals(values, withMinimum=false) {
+export function calcChartIntervals(values, withMinimum=false) {
 	//*** Where the magic happens ***
 
 	// Calculates best-fit y intervals from given values
@@ -84,7 +86,7 @@ export function calcIntervals(values, withMinimum=false) {
 	let exponent = 0, intervals = []; // eslint-disable-line no-unused-vars
 
 	function getPositiveFirstIntervals(maxValue, absMinValue) {
-		let intervals = getIntervals(maxValue);
+		let intervals = getChartIntervals(maxValue);
 
 		let intervalSize = intervals[1] - intervals[0];
 
@@ -102,9 +104,9 @@ export function calcIntervals(values, withMinimum=false) {
 	if(maxValue >= 0 && minValue >= 0) {
 		exponent = normalize(maxValue)[1];
 		if(!withMinimum) {
-			intervals = getIntervals(maxValue);
+			intervals = getChartIntervals(maxValue);
 		} else {
-			intervals = getIntervals(maxValue, minValue);
+			intervals = getChartIntervals(maxValue, minValue);
 		}
 	}
 
@@ -142,15 +144,60 @@ export function calcIntervals(values, withMinimum=false) {
 
 		exponent = normalize(pseudoMaxValue)[1];
 		if(!withMinimum) {
-			intervals = getIntervals(pseudoMaxValue);
+			intervals = getChartIntervals(pseudoMaxValue);
 		} else {
-			intervals = getIntervals(pseudoMaxValue, pseudoMinValue);
+			intervals = getChartIntervals(pseudoMaxValue, pseudoMinValue);
 		}
 
 		intervals = intervals.reverse().map(d => d * (-1));
 	}
 
 	return intervals;
+}
+
+export function getZeroIndex(yPts) {
+	let zeroIndex;
+	let interval = getIntervalSize(yPts);
+	if(yPts.indexOf(0) >= 0) {
+		// the range has a given zero
+		// zero-line on the chart
+		zeroIndex = yPts.indexOf(0);
+	} else if(yPts[0] > 0) {
+		// Minimum value is positive
+		// zero-line is off the chart: below
+		let min = yPts[0];
+		zeroIndex = (-1) * min / interval;
+	} else {
+		// Maximum value is negative
+		// zero-line is off the chart: above
+		let max = yPts[yPts.length - 1];
+		zeroIndex = (-1) * max / interval + (yPts.length - 1);
+	}
+	return zeroIndex;
+}
+
+export function getRealIntervals(max, noOfIntervals, min = 0, asc = 1) {
+	let range = max - min;
+	let part = range * 1.0 / noOfIntervals;
+	let intervals = [];
+
+	for(var i = 0; i <= noOfIntervals; i++) {
+		intervals.push(min + part * i);
+	}
+
+	return asc ? intervals : intervals.reverse();
+}
+
+export function getIntervalSize(orderedArray) {
+	return orderedArray[1] - orderedArray[0];
+}
+
+export function getValueRange(orderedArray) {
+	return orderedArray[orderedArray.length-1] - orderedArray[0];
+}
+
+export function scale(val, yAxis) {
+	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier)
 }
 
 export function calcDistribution(values, distributionSize) {

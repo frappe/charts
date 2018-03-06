@@ -31,4 +31,9 @@ export function addDays(date, numberOfDays) {
 	date.setDate(date.getDate() + numberOfDays);
 }
 
-// export function getMonthName() {}
+export function getMonthName(i) {
+	let monthNames = ["January", "February", "March", "April", "May", "June",
+		"July", "August", "September", "October", "November", "December"
+	];
+	return monthNames[i];
+}

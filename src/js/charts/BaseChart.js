@@ -2,177 +2,106 @@ import SvgTip from '../objects/SvgTip';
 import { $, isElementInViewport, getElementContentWidth } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup } from '../utils/draw';
 import { getStringWidth } from '../utils/helpers';
+import { VERT_SPACE_OUTSIDE_BASE_CHART, TRANSLATE_Y_BASE_CHART, LEFT_MARGIN_BASE_CHART,
+	RIGHT_MARGIN_BASE_CHART, INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT } from '../utils/constants';
 import { getColor, DEFAULT_COLORS } from '../utils/colors';
-import Chart from '../charts';
-
-const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
-
-const COMPATIBLE_CHARTS = {
-	bar: ['line', 'scatter', 'percentage', 'pie'],
-	line: ['scatter', 'bar', 'percentage', 'pie'],
-	pie: ['line', 'scatter', 'percentage', 'bar'],
-	scatter: ['line', 'bar', 'percentage', 'pie'],
-	percentage: ['bar', 'line', 'scatter', 'pie'],
-	heatmap: []
-};
-
-// TODO: Needs structure as per only labels/datasets
-const COLOR_COMPATIBLE_CHARTS = {
-	bar: ['line', 'scatter'],
-	line: ['scatter', 'bar'],
-	pie: ['percentage'],
-	scatter: ['line', 'bar'],
-	percentage: ['pie'],
-	heatmap: []
-};
+import { getDifferentChart } from '../config';
+import { runSMILAnimation } from '../utils/animation';
 
 export default class BaseChart {
-	constructor({
-		height = 240,
-
-		title = '',
-		subtitle = '',
-		colors = [],
-		summary = [],
-
-		is_navigable = 0,
-		has_legend = 0,
-
-		type = '',
-
-		parent,
-		data
-	}) {
-		this.raw_chart_args = arguments[0];
+	constructor(parent, options) {
+		this.rawChartArgs = options;
 
 		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
-		this.title = title;
-		this.subtitle = subtitle;
-
-		this.data = data;
-
-		this.specific_values = data.specific_values || [];
-		this.summary = summary;
-
-		this.is_navigable = is_navigable;
-		if(this.is_navigable) {
-			this.current_index = 0;
+		if (!(this.parent instanceof HTMLElement)) {
+			throw new Error('No `parent` element to render on was provided.');
 		}
-		this.has_legend = has_legend;
 
-		this.setColors(colors, type);
-		this.set_margins(height);
+		this.title = options.title || '';
+		this.subtitle = options.subtitle || '';
+		this.argHeight = options.height || 240;
+		this.type = options.type || '';
+
+		this.realData = this.prepareData(options.data);
+		this.data = this.prepareFirstData(this.realData);
+		this.colors = [];
+		this.config = {
+			showTooltip: 1, // calculate
+			showLegend: options.showLegend || 1,
+			isNavigable: options.isNavigable || 0,
+			animate: 1
+		};
+		this.state = {};
+		this.options = {};
+
+		this.initTimeout = INIT_CHART_UPDATE_TIMEOUT;
+
+		if(this.config.isNavigable) {
+			this.overlays = [];
+		}
+
+		this.configure(options);
 	}
 
-	get_different_chart(type) {
-		if(type === this.type) return;
+	configure(args) {
+		this.setColors();
+		this.setMargins();
 
-		if(!ALL_CHART_TYPES.includes(type)) {
-			console.error(`'${type}' is not a valid chart type.`);
-		}
-
-		if(!COMPATIBLE_CHARTS[this.type].includes(type)) {
-			console.error(`'${this.type}' chart cannot be converted to a '${type}' chart.`);
-		}
-
-		// whether the new chart can use the existing colors
-		const use_color = COLOR_COMPATIBLE_CHARTS[this.type].includes(type);
-
-		// Okay, this is anticlimactic
-		// this function will need to actually be 'change_chart_type(type)'
-		// that will update only the required elements, but for now ...
-		return new Chart({
-			parent: this.raw_chart_args.parent,
-			title: this.title,
-			data: this.raw_chart_args.data,
-			type: type,
-			height: this.raw_chart_args.height,
-			colors: use_color ? this.colors : undefined
-		});
+		// Bind window events
+		window.addEventListener('resize', () => this.draw(true));
+		window.addEventListener('orientationchange', () => this.draw(true));
 	}
 
-	setColors(colors, type) {
-		this.colors = colors;
+	setColors() {
+		let args = this.rawChartArgs;
 
-		// TODO: Needs structure as per only labels/datasets
-		const list = type === 'percentage' || type === 'pie'
-			? this.data.labels
-			: this.data.datasets;
+		// Needs structure as per only labels/datasets, from config
+		const list = args.type === 'percentage' || args.type === 'pie'
+			? args.data.labels
+			: args.data.datasets;
 
-		if(!this.colors || (list && this.colors.length < list.length)) {
+		if(!args.colors || (list && args.colors.length < list.length)) {
 			this.colors = DEFAULT_COLORS;
+		} else {
+			this.colors = args.colors;
 		}
 
 		this.colors = this.colors.map(color => getColor(color));
 	}
 
-	set_margins(height) {
-		this.base_height = height;
-		this.height = height - 40;
-		this.translate_x = 60;
-		this.translate_y = 10;
+	setMargins() {
+		let height = this.argHeight;
+		this.baseHeight = height;
+		this.height = height - VERT_SPACE_OUTSIDE_BASE_CHART;
+		this.translateY = TRANSLATE_Y_BASE_CHART;
+
+		// Horizontal margins
+		this.leftMargin = LEFT_MARGIN_BASE_CHART;
+		this.rightMargin = RIGHT_MARGIN_BASE_CHART;
 	}
 
-	setup() {
-		if(!this.parent) {
-			console.error("No parent element to render on was provided.");
-			return;
-		}
-		if(this.validate_and_prepare_data()) {
-			this.bind_window_events();
-			this.refresh(true);
-		}
-	}
-
-	validate_and_prepare_data() {
+	validate() {
 		return true;
 	}
 
-	bind_window_events() {
-		window.addEventListener('resize', () => this.refresh());
-		window.addEventListener('orientationchange', () => this.refresh());
-	}
-
-	refresh(init=false) {
-		this.setup_base_values();
-		this.set_width();
-
-		this.setup_container();
-		this.setup_components();
-
-		this.setup_values();
-		this.setup_utils();
-
-		this.make_graph_components(init);
-		this.make_tooltip();
-
-		if(this.summary.length > 0) {
-			this.show_custom_summary();
-		} else {
-			this.show_summary();
-		}
-
-		if(this.is_navigable) {
-			this.setup_navigation(init);
+	setup() {
+		if(this.validate()) {
+			this._setup();
 		}
 	}
 
-	set_width() {
-		let special_values_width = 0;
-		let char_width = 8;
-		this.specific_values.map(val => {
-			let str_width = getStringWidth((val.title + ""), char_width);
-			if(str_width > special_values_width) {
-				special_values_width = str_width - 40;
-			}
-		});
-		this.base_width = getElementContentWidth(this.parent) - special_values_width;
-		this.width = this.base_width - this.translate_x * 2;
+	_setup() {
+		this.makeContainer();
+		this.makeTooltip();
+
+		this.draw(false, true);
 	}
 
-	setup_base_values() {}
+	setupComponents() {
+		this.components = new Map();
+	}
 
-	setup_container() {
+	makeContainer() {
 		this.container = $.create('div', {
 			className: 'chart-container',
 			innerHTML: `<h6 class="title">${this.title}</h6>
@@ -185,120 +114,175 @@ export default class BaseChart {
 		this.parent.innerHTML = '';
 		this.parent.appendChild(this.container);
 
-		this.chart_wrapper = this.container.querySelector('.frappe-chart');
-		this.stats_wrapper = this.container.querySelector('.graph-stats-container');
-
-		this.make_chart_area();
-		this.make_draw_area();
+		this.chartWrapper = this.container.querySelector('.frappe-chart');
+		this.statsWrapper = this.container.querySelector('.graph-stats-container');
 	}
 
-	make_chart_area() {
-		this.svg = makeSVGContainer(
-			this.chart_wrapper,
-			'chart',
-			this.base_width,
-			this.base_height
-		);
-		this.svg_defs = makeSVGDefs(this.svg);
-		return this.svg;
-	}
-
-	make_draw_area() {
-		this.draw_area = makeSVGGroup(
-			this.svg,
-			this.type + '-chart',
-			`translate(${this.translate_x}, ${this.translate_y})`
-		);
-	}
-
-	setup_components() { }
-
-	make_tooltip() {
+	makeTooltip() {
 		this.tip = new SvgTip({
-			parent: this.chart_wrapper,
+			parent: this.chartWrapper,
 			colors: this.colors
 		});
-		this.bind_tooltip();
+		this.bindTooltip();
 	}
 
+	bindTooltip() {}
 
-	show_summary() {}
-	show_custom_summary() {
-		this.summary.map(d => {
-			let stats = $.create('div', {
-				className: 'stats',
-				innerHTML: `<span class="indicator">
-					<i style="background:${d.color}"></i>
-					${d.title}: ${d.value}
-				</span>`
-			});
-			this.stats_wrapper.appendChild(stats);
-		});
-	}
+	draw(onlyWidthChange=false, init=false) {
+		this.calcWidth();
+		this.calc(onlyWidthChange);
+		this.makeChartArea();
+		this.setupComponents();
 
-	setup_navigation(init=false) {
-		this.make_overlay();
+		this.components.forEach(c => c.setup(this.drawArea));
+		// this.components.forEach(c => c.make());
+		this.render(this.components, false);
 
 		if(init) {
-			this.bind_overlay();
+			this.data = this.realData;
+			setTimeout(() => {this.update();}, this.initTimeout);
+		}
+
+		if(!onlyWidthChange) {
+			this.renderLegend();
+		}
+
+		this.setupNavigation(init);
+	}
+
+	calcWidth() {
+		this.baseWidth = getElementContentWidth(this.parent);
+		this.width = this.baseWidth - (this.leftMargin + this.rightMargin);
+	}
+
+	update(data=this.data) {
+		this.data = this.prepareData(data);
+		this.calc(); // builds state
+		this.render();
+	}
+
+	prepareData(data=this.data) {
+		return data;
+	}
+
+	prepareFirstData(data=this.data) {
+		return data;
+	}
+
+	calc() {} // builds state
+
+	render(components=this.components, animate=true) {
+		if(this.config.isNavigable) {
+			// Remove all existing overlays
+			this.overlays.map(o => o.parentNode.removeChild(o));
+			// ref.parentNode.insertBefore(element, ref);
+		}
+		let elementsToAnimate = [];
+		// Can decouple to this.refreshComponents() first to save animation timeout
+		components.forEach(c => {
+			elementsToAnimate = elementsToAnimate.concat(c.update(animate));
+		});
+		if(elementsToAnimate.length > 0) {
+			runSMILAnimation(this.chartWrapper, this.svg, elementsToAnimate);
+			setTimeout(() => {
+				components.forEach(c => c.make());
+				this.updateNav();
+			}, CHART_POST_ANIMATE_TIMEOUT);
+		} else {
+			components.forEach(c => c.make());
+			this.updateNav();
+		}
+	}
+
+	updateNav() {
+		if(this.config.isNavigable) {
+			// if(!this.overlayGuides){
+				this.makeOverlay();
+				this.bindUnits();
+			// } else {
+			// 	this.updateOverlay();
+			// }
+		}
+	}
+
+	makeChartArea() {
+		if(this.svg) {
+			this.chartWrapper.removeChild(this.svg);
+		}
+		this.svg = makeSVGContainer(
+			this.chartWrapper,
+			'chart',
+			this.baseWidth,
+			this.baseHeight
+		);
+		this.svgDefs = makeSVGDefs(this.svg);
+
+		// I WISH !!!
+		// this.svg = makeSVGGroup(
+		// 	svgContainer,
+		// 	'flipped-coord-system',
+		// 	`translate(0, ${this.baseHeight}) scale(1, -1)`
+		// );
+
+		this.drawArea = makeSVGGroup(
+			this.svg,
+			this.type + '-chart',
+			`translate(${this.leftMargin}, ${this.translateY})`
+		);
+	}
+
+	renderLegend() {}
+
+	setupNavigation(init=false) {
+		if(!this.config.isNavigable) return;
+
+		if(init) {
+			this.bindOverlay();
+
+			this.keyActions = {
+				'13': this.onEnterKey.bind(this),
+				'37': this.onLeftArrow.bind(this),
+				'38': this.onUpArrow.bind(this),
+				'39': this.onRightArrow.bind(this),
+				'40': this.onDownArrow.bind(this),
+			};
 
 			document.addEventListener('keydown', (e) => {
-				if(isElementInViewport(this.chart_wrapper)) {
+				if(isElementInViewport(this.chartWrapper)) {
 					e = e || window.event;
-
-					if (e.keyCode == '37') {
-						this.on_left_arrow();
-					} else if (e.keyCode == '39') {
-						this.on_right_arrow();
-					} else if (e.keyCode == '38') {
-						this.on_up_arrow();
-					} else if (e.keyCode == '40') {
-						this.on_down_arrow();
-					} else if (e.keyCode == '13') {
-						this.on_enter_key();
+					if(this.keyActions[e.keyCode]) {
+						this.keyActions[e.keyCode]();
 					}
 				}
 			});
 		}
 	}
 
-	make_overlay() {}
-	bind_overlay() {}
-	bind_units() {}
+	makeOverlay() {}
+	updateOverlay() {}
+	bindOverlay() {}
+	bindUnits() {}
 
-	on_left_arrow() {}
-	on_right_arrow() {}
-	on_up_arrow() {}
-	on_down_arrow() {}
-	on_enter_key() {}
+	onLeftArrow() {}
+	onRightArrow() {}
+	onUpArrow() {}
+	onDownArrow() {}
+	onEnterKey() {}
 
-	get_data_point(index=this.current_index) {
-		// check for length
-		let data_point = {
-			index: index
-		};
-		let y = this.y[0];
-		['svg_units', 'y_tops', 'values'].map(key => {
-			let data_key = key.slice(0, key.length-1);
-			data_point[data_key] = y[key][index];
-		});
-		data_point.label = this.x[index];
-		return data_point;
-	}
+	getDataPoint(index = 0) {}
+	setCurrentDataPoint(point) {}
 
-	update_current_data_point(index) {
-		index = parseInt(index);
-		if(index < 0) index = 0;
-		if(index >= this.x.length) index = this.x.length - 1;
-		if(index === this.current_index) return;
-		this.current_index = index;
-		$.fire(this.parent, "data-select", this.get_data_point());
-	}
+	updateDataset(dataset, index) {}
+	addDataset(dataset, index) {}
+	removeDataset(index = 0) {}
 
-	// Objects
-	setup_utils() { }
+	updateDatasets(datasets) {}
 
-	makeDrawAreaComponent(className, transform='') {
-		return makeSVGGroup(this.draw_area, className, transform);
+	updateDataPoint(dataPoint, index = 0) {}
+	addDataPoint(dataPoint, index = 0) {}
+	removeDataPoint(index = 0) {}
+
+	getDifferentChart(type) {
+		return getDifferentChart(type, this.type, this.parent, this.rawChartArgs);
 	}
 }
