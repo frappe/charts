@@ -93,7 +93,6 @@ let lineCompositeChart = new Chart (c1, {
 	height: 190,
 	colors: ['green'],
 	isNavigable: 1,
-	isSeries: 1,
 	valuesOverPoints: 1,
 
 	lineOptions: {
@@ -108,7 +107,6 @@ let barCompositeChart = new Chart (c2, {
 	type: 'bar',
 	height: 190,
 	colors: ['violet', 'light-blue', '#46a9f9'],
-	isSeries: 1,
 	valuesOverPoints: 1,
 	axisOptions: {
 		xAxisMode: 'tick'
@@ -135,33 +133,19 @@ let typeData = {
 
 	yMarkers: [
 		{
-			label: "Marker 1",
-			value: 42,
-			type: 'dashed'
-		},
-		{
-			label: "Marker 2",
-			value: 25,
-			type: 'dashed'
+			label: "Marker",
+			value: 43,
+			// type: 'dashed'
 		}
 	],
 
 	yRegions: [
 		{
-			label: "Region Y 1",
+			label: "Region",
 			start: -10,
 			end: 50
 		},
 	],
-
-	// will depend on series code for calculating X values
-	// xRegions: [
-	// 	{
-	// 		label: "Region X 2",
-	// 		start: ,
-	// 		end: ,
-	// 	}
-	// ],
 
 	datasets: [
 		{
@@ -181,66 +165,41 @@ let typeData = {
 			values: [15, 20, -3, -15, 58, 12, -17, 37],
 			chartType: 'line'
 		}
-
-		// temp : Stacked
-		// {
-		// 	name: "Some Data",
-		// 	values:[25, 30, 50, 45, 18, 12, 27, 14]
-		// },
-		// {
-		// 	name: "Another Set",
-		// 	values: [18, 20, 30, 35, 8, 7, 17, 4]
-		// },
-		// {
-		// 	name: "Another Set",
-		// 	values: [11, 8, 19, 15, 3, 4, 10, 2]
-		// },
 	]
 };
 
-let typeChart = new Chart("#chart-types", {
-	title: "My Awesome Chart",
-	data: typeData,
-	type: 'bar',
-	height: 250,
-	colors: ['purple', 'magenta', 'light-blue'],
-	isSeries: 1,
-	valuesOverPoints: 1,
-	// maxLegendPoints: 6,
-	// maxSlices: 3,
-	isNavigable: 1,
-	barOptions: {
-		stacked: 1
-	},
-	tooltipOptions: {
-		formatTooltipX: d => (d + '').toUpperCase(),
-		formatTooltipY: d => d + ' pts',
-	}
-});
+// let typeChart = new Chart("#chart-types", {
+// 	title: "My Awesome Chart",
+// 	data: typeData,
+// 	type: 'bar',
+// 	height: 250,
+// 	colors: ['purple', 'magenta', 'red'],
+// 	tooltipOptions: {
+// 		formatTooltipX: d => (d + '').toUpperCase(),
+// 		formatTooltipY: d => d + ' pts',
+// 	}
+// });
 
 
 
 
 // Aggregation chart
 // ================================================================================
-let aggrChart = new Chart("#chart-aggr", {
+let args = {
 	data: typeData,
-	type: 'pie',
+	type: 'axis-mixed',
 	height: 250,
 	colors: ['purple', 'magenta', 'light-blue'],
-	isSeries: 1,
 
 	maxLegendPoints: 6,
 	maxSlices: 10,
 
-	barOptions: {
-		stacked: 1
-	},
 	tooltipOptions: {
 		formatTooltipX: d => (d + '').toUpperCase(),
 		formatTooltipY: d => d + ' pts',
 	}
-});
+}
+let aggrChart = new Chart("#chart-aggr", args);
 
 Array.prototype.slice.call(
 	document.querySelectorAll('.aggr-type-buttons button')
@@ -248,8 +207,9 @@ Array.prototype.slice.call(
 	el.addEventListener('click', (e) => {
 		let btn = e.target;
 		let type = btn.getAttribute('data-type');
+		args.type = type;
 
-		let newChart = aggrChart.getDifferentChart(type);
+		let newChart = new Chart("#chart-aggr", args);;
 		if(newChart){
 			aggrChart = newChart;
 		}
@@ -266,7 +226,9 @@ Array.prototype.slice.call(
 let update_data_all_labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue",
 	"Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri",
 	"Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon"];
-let update_data_all_values = Array.from({length: 30}, () => Math.floor(Math.random() * 75 - 15));
+
+let getRandom = () => Math.floor(Math.random() * 75 - 15);
+let update_data_all_values = Array.from({length: 30}, getRandom);
 
 // We're gonna be shuffling this
 let update_data_all_indices = update_data_all_labels.map((d,i) => i);
@@ -281,22 +243,27 @@ let update_data = {
 	datasets: [{
 		"values": get_update_data(update_data_all_values)
 	}],
-	"specific_values": [
+	yMarkers: [
 		{
-			name: "Altitude",
-			// name: "A very long text",
-			line_type: "dashed",
-			value: 38
+			label: "Altitude",
+			value: 25,
+			type: 'dashed'
+		}
+	],
+	yRegions: [
+		{
+			label: "Range",
+			start: 10,
+			end: 45
 		},
-	]
+	],
 };
 
 let update_chart = new Chart("#chart-update", {
 	data: update_data,
 	type: 'line',
 	height: 250,
-	colors: ['red'],
-	isSeries: 1,
+	colors: ['#ff6c03'],
 	lineOptions: {
 		// hideLine: 1,
 		regionFill: 1
@@ -307,9 +274,26 @@ let chart_update_buttons = document.querySelector('.chart-update-buttons');
 
 chart_update_buttons.querySelector('[data-update="random"]').addEventListener("click", (e) => {
 	shuffle(update_data_all_indices);
+	let value = getRandom();
+	let start = getRandom();
+	let end = getRandom();
 	let data = {
 		labels: update_data_all_labels.slice(0, 10),
 		datasets: [{values: get_update_data(update_data_all_values)}],
+		yMarkers: [
+			{
+				label: "Altitude",
+				value: value,
+				type: 'dashed'
+			}
+		],
+		yRegions: [
+			{
+				label: "Range",
+				start: start,
+				end: end
+			},
+		],
 	}
 	update_chart.update(data);
 });
@@ -350,8 +334,7 @@ let plotChartArgs = {
 	data: trends_data,
 	type: 'line',
 	height: 250,
-	colors: ['blue'],
-	isSeries: 1,
+	colors: ['#238e38'],
 	lineOptions: {
 		hideDots: 1,
 		heatline: 1,
@@ -469,7 +452,8 @@ new Chart("#chart-heatmap", {
 	type: 'heatmap',
 	legendScale: [0, 1, 2, 4, 5],
 	height: 115,
-	discreteDomains: 1
+	discreteDomains: 1,
+	legendColors: ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c']
 });
 
 Array.prototype.slice.call(

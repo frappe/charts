@@ -16,6 +16,7 @@ export default class AxisChart extends BaseChart {
 		this.lineOptions = args.lineOptions || {};
 
 		this.type = args.type || 'line';
+		this.init = 1;
 
 		this.setup();
 	}
@@ -146,8 +147,8 @@ export default class AxisChart extends BaseChart {
 		}
 		if(this.data.yRegions) {
 			this.state.yRegions = this.data.yRegions.map(d => {
-				d.start = scale(d.start, s.yAxis);
-				d.end = scale(d.end, s.yAxis);
+				d.startPos = scale(d.start, s.yAxis);
+				d.endPos = scale(d.end, s.yAxis);
 				return d;
 			});
 		}
@@ -166,7 +167,17 @@ export default class AxisChart extends BaseChart {
 			});
 		}
 
-		return [].concat(...this.data.datasets.map(d => d[key]));
+		let allValueLists = this.data.datasets.map(d => d[key]);
+		if(this.data.yMarkers) {
+			allValueLists.push(this.data.yMarkers.map(d => d.value));
+		}
+		if(this.data.yRegions) {
+			this.data.yRegions.map(d => {
+				allValueLists.push([d.end, d.start]);
+			})
+		}
+
+		return [].concat(...allValueLists);
 	}
 
 	setupComponents() {
@@ -402,6 +413,10 @@ export default class AxisChart extends BaseChart {
 	}
 
 	makeOverlay() {
+		if(this.init) {
+			this.init = 0;
+			return;
+		}
 		if(this.overlayGuides) {
 			this.overlayGuides.forEach(g => {
 				let o = g.overlay;
@@ -498,7 +513,6 @@ export default class AxisChart extends BaseChart {
 	}
 
 	// API
-
 	addDataPoint(label, datasetValues, index=this.state.datasetLength) {
 		super.addDataPoint(label, datasetValues, index);
 		this.data.labels.splice(index, 0, label);
@@ -509,6 +523,9 @@ export default class AxisChart extends BaseChart {
 	}
 
 	removeDataPoint(index = this.state.datasetLength-1) {
+		if (this.data.labels.length <= 1) {
+			return;
+		}
 		super.removeDataPoint(index);
 		this.data.labels.splice(index, 1);
 		this.data.datasets.map(d => {

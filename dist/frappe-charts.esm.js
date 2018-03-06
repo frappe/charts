@@ -1717,13 +1717,12 @@ let componentConfigs = {
 			let newLabels = newData.map(d => d.label);
 
 			let oldPos = this.oldData.map(d => d.position);
-			let oldLabels = this.oldData.map(d => d.label);
 
 			this.render(oldPos.map((pos, i) => {
 				return {
 					position: oldPos[i],
 					label: newLabels[i]
-				}
+				};
 			}));
 
 			return this.store.map((line, i) => {
@@ -1738,27 +1737,26 @@ let componentConfigs = {
 		layerClass: 'y-regions',
 		makeElements(data) {
 			return data.map(region =>
-				yRegion(region.start, region.end, this.constants.width,
+				yRegion(region.startPos, region.endPos, this.constants.width,
 					region.label)
 			);
 		},
 		animateElements(newData) {
 			[this.oldData, newData] = equilizeNoOfElements(this.oldData, newData);
 
-			let newPos = newData.map(d => d.end);
+			let newPos = newData.map(d => d.endPos);
 			let newLabels = newData.map(d => d.label);
-			let newStarts = newData.map(d => d.start);
+			let newStarts = newData.map(d => d.startPos);
 
-			let oldPos = this.oldData.map(d => d.end);
-			let oldLabels = this.oldData.map(d => d.label);
-			let oldStarts = this.oldData.map(d => d.start);
+			let oldPos = this.oldData.map(d => d.endPos);
+			let oldStarts = this.oldData.map(d => d.startPos);
 
 			this.render(oldPos.map((pos, i) => {
 				return {
-					start: oldStarts[i],
-					end: oldPos[i],
+					startPos: oldStarts[i],
+					endPos: oldPos[i],
 					label: newLabels[i]
-				}
+				};
 			}));
 
 			let animateElements = [];
@@ -1792,7 +1790,7 @@ let componentConfigs = {
 						barsWidth: data.barsWidth,
 						minHeight: c.minHeight
 					}
-				)
+				);
 			});
 			return this.units;
 		},
@@ -1830,7 +1828,7 @@ let componentConfigs = {
 			this.store.map((bar, i) => {
 				animateElements = animateElements.concat(animateBar(
 					bar, newXPos[i], newYPos[i], newData.barWidth, newOffsets[i], c.index,
-						{zeroLine: newData.zeroLine}
+					{zeroLine: newData.zeroLine}
 				));
 			});
 
@@ -1870,7 +1868,7 @@ let componentConfigs = {
 						c.color,
 						(c.valuesOverPoints ? data.values[j] : ''),
 						j
-					)
+					);
 				});
 			}
 
@@ -1880,7 +1878,6 @@ let componentConfigs = {
 			let newXPos = newData.xPositions;
 			let newYPos = newData.yPositions;
 			let newValues = newData.values;
-
 
 			let oldXPos = this.oldData.xPositions;
 			let oldYPos = this.oldData.yPositions;
@@ -2720,6 +2717,7 @@ class AxisChart extends BaseChart {
 		this.lineOptions = args.lineOptions || {};
 
 		this.type = args.type || 'line';
+		this.init = 1;
 
 		this.setup();
 	}
@@ -2850,8 +2848,8 @@ class AxisChart extends BaseChart {
 		}
 		if(this.data.yRegions) {
 			this.state.yRegions = this.data.yRegions.map(d => {
-				d.start = scale(d.start, s.yAxis);
-				d.end = scale(d.end, s.yAxis);
+				d.startPos = scale(d.start, s.yAxis);
+				d.endPos = scale(d.end, s.yAxis);
 				return d;
 			});
 		}
@@ -2870,7 +2868,17 @@ class AxisChart extends BaseChart {
 			});
 		}
 
-		return [].concat(...this.data.datasets.map(d => d[key]));
+		let allValueLists = this.data.datasets.map(d => d[key]);
+		if(this.data.yMarkers) {
+			allValueLists.push(this.data.yMarkers.map(d => d.value));
+		}
+		if(this.data.yRegions) {
+			this.data.yRegions.map(d => {
+				allValueLists.push([d.end, d.start]);
+			});
+		}
+
+		return [].concat(...allValueLists);
 	}
 
 	setupComponents() {
@@ -3106,6 +3114,10 @@ class AxisChart extends BaseChart {
 	}
 
 	makeOverlay() {
+		if(this.init) {
+			this.init = 0;
+			return;
+		}
 		if(this.overlayGuides) {
 			this.overlayGuides.forEach(g => {
 				let o = g.overlay;
@@ -3202,7 +3214,6 @@ class AxisChart extends BaseChart {
 	}
 
 	// API
-
 	addDataPoint(label, datasetValues, index=this.state.datasetLength) {
 		super.addDataPoint(label, datasetValues, index);
 		this.data.labels.splice(index, 0, label);
@@ -3213,6 +3224,9 @@ class AxisChart extends BaseChart {
 	}
 
 	removeDataPoint(index = this.state.datasetLength-1) {
+		if (this.data.labels.length <= 1) {
+			return;
+		}
 		super.removeDataPoint(index);
 		this.data.labels.splice(index, 1);
 		this.data.datasets.map(d => {
