@@ -42,6 +42,8 @@
 * ...or include within your HTML
 
   ```html
+    <script src="https://cdn.jsdelivr.net/npm/frappe-charts@0.0.8/dist/frappe-charts.min.iife.js"></script>
+    <!-- or -->
     <script src="https://unpkg.com/frappe-charts@0.0.8/dist/frappe-charts.min.iife.js"></script>
   ```
 
@@ -85,6 +87,9 @@ If you want to contribute:
 4. `npm run dev`
 
 #### Updates
+
+##### Please read [#93](https://github.com/frappe/charts/issues/93) for v0.1.0 updates on rework and development.
+
 ##### v0.0.7
 - [Custom color values](https://github.com/frappe/charts/pull/71) for charts as hex codes. The API now takes an array of colors for all charts instead of a color for each dataset.
 - [@iamkdev's](https://github.com/iamkdev) blog on [usage with Angular](https://medium.com/@iamkdev/frappé-charts-with-angular-c9c5dd075d9f).
