@@ -1,13 +1,11 @@
 import { getBarHeightAndYAttr } from './draw-utils';
 import { getStringWidth } from './helpers';
-import { STD_EASING, UNIT_ANIM_DUR, MARKER_LINE_ANIM_DUR, PATH_ANIM_DUR } from './animate';
 import { DOT_OVERLAY_SIZE_INCR } from './constants';
 
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 export const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
-const BASE_BG_COLOR = '#F7FAFC';
 
 function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
@@ -245,11 +243,11 @@ export function yLine(y, label, width, options={}) {
 	let x2 = options.mode === 'span' ? width + AXIS_TICK_LENGTH : 0;
 
 	if(options.mode === 'tick' && options.pos === 'right') {
-		x1 = width + AXIS_TICK_LENGTH
+		x1 = width + AXIS_TICK_LENGTH;
 		x2 = width;
 	}
 
-	let offset = options.pos === 'left' ? -1 * options.offset : options.offset;
+	// let offset = options.pos === 'left' ? -1 * options.offset : options.offset;
 
 	x1 += options.offset;
 	x2 += options.offset;
@@ -397,7 +395,7 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 	}
 }
 
-export function datasetDot(x, y, radius, color, label='', index=0, meta={}) {
+export function datasetDot(x, y, radius, color, label='', index=0) {
 	let dot = createSVG('circle', {
 		style: `fill: ${color}`,
 		'data-point-index': index,
@@ -448,7 +446,7 @@ export function getPaths(xList, yList, color, options={}, meta={}) {
 
 	let paths = {
 		path: path
-	}
+	};
 
 	// Region
 	if(options.regionFill) {
@@ -497,7 +495,7 @@ export let makeOverlay = {
 		}
 		return overlay;
 	}
-}
+};
 
 export let updateOverlay = {
 	'bar': (unit, overlay) => {
@@ -508,10 +506,10 @@ export let updateOverlay = {
 		}
 		let attributes = ['x', 'y', 'width', 'height'];
 		Object.values(unit.attributes)
-		.filter(attr => attributes.includes(attr.name) && attr.specified)
-		.map(attr => {
-			overlay.setAttribute(attr.name, attr.nodeValue);
-		});
+			.filter(attr => attributes.includes(attr.name) && attr.specified)
+			.map(attr => {
+				overlay.setAttribute(attr.name, attr.nodeValue);
+			});
 
 		if(transformValue) {
 			overlay.setAttribute('transform', transformValue);
@@ -526,14 +524,13 @@ export let updateOverlay = {
 		}
 		let attributes = ['cx', 'cy'];
 		Object.values(unit.attributes)
-		.filter(attr => attributes.includes(attr.name) && attr.specified)
-		.map(attr => {
-			overlay.setAttribute(attr.name, attr.nodeValue);
-		});
+			.filter(attr => attributes.includes(attr.name) && attr.specified)
+			.map(attr => {
+				overlay.setAttribute(attr.name, attr.nodeValue);
+			});
 
 		if(transformValue) {
 			overlay.setAttribute('transform', transformValue);
 		}
 	}
-}
-
+};

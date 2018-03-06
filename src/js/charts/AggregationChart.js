@@ -1,5 +1,5 @@
 import BaseChart from './BaseChart';
-import { $, getOffset } from '../utils/dom';
+import { $ } from '../utils/dom';
 
 export default class AggregationChart extends BaseChart {
 	constructor(parent, args) {

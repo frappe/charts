@@ -174,7 +174,7 @@ export default class AxisChart extends BaseChart {
 		if(this.data.yRegions) {
 			this.data.yRegions.map(d => {
 				allValueLists.push([d.end, d.start]);
-			})
+			});
 		}
 
 		return [].concat(...allValueLists);
