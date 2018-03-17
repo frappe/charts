@@ -86,7 +86,7 @@ let barCompositeData = {
 let c1 = document.querySelector("#chart-composite-1");
 let c2 = document.querySelector("#chart-composite-2");
 
-let lineCompositeChart = new Chart (c1, {
+let lineCompositeChart = new frappe.Chart (c1, {
 	title: "Fireball/Bolide Events - Yearly (reported)",
 	data: lineCompositeData,
 	type: 'line',
@@ -102,7 +102,7 @@ let lineCompositeChart = new Chart (c1, {
 	// regionFill: 1
 });
 
-let barCompositeChart = new Chart (c2, {
+let barCompositeChart = new frappe.Chart (c2, {
 	data: barCompositeData,
 	type: 'bar',
 	height: 190,
@@ -168,7 +168,7 @@ let typeData = {
 	]
 };
 
-// let typeChart = new Chart("#chart-types", {
+// let typeChart = new frappe.Chart("#chart-types", {
 // 	title: "My Awesome Chart",
 // 	data: typeData,
 // 	type: 'bar',
@@ -199,7 +199,7 @@ let args = {
 		formatTooltipY: d => d + ' pts',
 	}
 }
-let aggrChart = new Chart("#chart-aggr", args);
+let aggrChart = new frappe.Chart("#chart-aggr", args);
 
 Array.prototype.slice.call(
 	document.querySelectorAll('.aggr-type-buttons button')
@@ -209,7 +209,7 @@ Array.prototype.slice.call(
 		let type = btn.getAttribute('data-type');
 		args.type = type;
 
-		let newChart = new Chart("#chart-aggr", args);;
+		let newChart = new frappe.Chart("#chart-aggr", args);;
 		if(newChart){
 			aggrChart = newChart;
 		}
@@ -259,7 +259,7 @@ let update_data = {
 	],
 };
 
-let update_chart = new Chart("#chart-update", {
+let update_chart = new frappe.Chart("#chart-update", {
 	data: update_data,
 	type: 'line',
 	height: 250,
@@ -346,7 +346,7 @@ let plotChartArgs = {
 	}
 };
 
-new Chart("#chart-trends", plotChartArgs);
+new frappe.Chart("#chart-trends", plotChartArgs);
 
 Array.prototype.slice.call(
 	document.querySelectorAll('.chart-plot-buttons button')
@@ -364,7 +364,7 @@ Array.prototype.slice.call(
 		// plotChartArgs.init = false;
 		plotChartArgs.lineOptions = config;
 
-		new Chart("#chart-trends", plotChartArgs);
+		new frappe.Chart("#chart-trends", plotChartArgs);
 
 		Array.prototype.slice.call(
 			btn.parentNode.querySelectorAll('button')).map(el => {
@@ -415,7 +415,7 @@ let events_data = {
 	]
 };
 
-let events_chart = new Chart("#chart-events", {
+let events_chart = new frappe.Chart("#chart-events", {
 	title: "Jupiter's Moons: Semi-major Axis (1000 km)",
 	data: events_data,
 	type: 'bar',
@@ -447,7 +447,7 @@ for (var i = 0; i< 375; i++) {
 	timestamp = Math.floor(timestamp - 86400).toFixed(1);
 }
 
-new Chart("#chart-heatmap", {
+new frappe.Chart("#chart-heatmap", {
 	data: heatmapData,
 	type: 'heatmap',
 	legendScale: [0, 1, 2, 4, 5],
@@ -476,7 +476,7 @@ Array.prototype.slice.call(
 			colors = ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'];
 		}
 
-		new Chart("#chart-heatmap", {
+		new frappe.Chart("#chart-heatmap", {
 			data: heatmapData,
 			type: 'heatmap',
 			legendScale: [0, 1, 2, 4, 5],
@@ -514,7 +514,7 @@ Array.prototype.slice.call(
 			discreteDomains = 0;
 		}
 
-		new Chart("#chart-heatmap", {
+		new frappe.Chart("#chart-heatmap", {
 			data: heatmapData,
 			type: 'heatmap',
 			legendScale: [0, 1, 2, 4, 5],
