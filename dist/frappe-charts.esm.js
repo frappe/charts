@@ -230,6 +230,10 @@ const DEFAULT_CHAR_WIDTH = 7;
 const ANGLE_RATIO = Math.PI / 180;
 const FULL_ANGLE = 360;
 
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -3256,6 +3260,7 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
+// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,
@@ -3289,4 +3294,4 @@ class Chart {
 	}
 }
 
-export default Chart;
+export { Chart, PercentageChart, PieChart, Heatmap, AxisChart };
