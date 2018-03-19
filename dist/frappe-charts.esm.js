@@ -230,6 +230,10 @@ const DEFAULT_CHAR_WIDTH = 7;
 const ANGLE_RATIO = Math.PI / 180;
 const FULL_ANGLE = 360;
 
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -306,113 +310,11 @@ function equilizeNoOfElements(array1, array2,
 	return [array1, array2];
 }
 
-const UNIT_ANIM_DUR = 350;
-const PATH_ANIM_DUR = 350;
-const MARKER_LINE_ANIM_DUR = UNIT_ANIM_DUR;
-const REPLACE_ALL_NEW_DUR = 250;
-
-const STD_EASING = 'easein';
-
-function translate(unit, oldCoord, newCoord, duration) {
-	let old = typeof oldCoord === 'string' ? oldCoord : oldCoord.join(', ');
-	return [
-		unit,
-		{transform: newCoord.join(', ')},
-		duration,
-		STD_EASING,
-		"translate",
-		{transform: old}
-	];
-}
-
-function translateVertLine(xLine, newX, oldX) {
-	return translate(xLine, [oldX, 0], [newX, 0], MARKER_LINE_ANIM_DUR);
-}
-
-function translateHoriLine(yLine, newY, oldY) {
-	return translate(yLine, [0, oldY], [0, newY], MARKER_LINE_ANIM_DUR);
-}
-
-function animateRegion(rectGroup, newY1, newY2, oldY2) {
-	let newHeight = newY1 - newY2;
-	let rect = rectGroup.childNodes[0];
-	let width = rect.getAttribute("width");
-	let rectAnim = [
-		rect,
-		{ height: newHeight, 'stroke-dasharray': `${width}, ${newHeight}` },
-		MARKER_LINE_ANIM_DUR,
-		STD_EASING
-	];
-
-	let groupAnim = translate(rectGroup, [0, oldY2], [0, newY2], MARKER_LINE_ANIM_DUR);
-	return [rectAnim, groupAnim];
-}
-
-function animateBar(bar, x, yTop, width, offset=0, index=0, meta={}) {
-	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
-	y -= offset;
-	if(bar.nodeName !== 'rect') {
-		let rect = bar.childNodes[0];
-		let rectAnim = [
-			rect,
-			{width: width, height: height},
-			UNIT_ANIM_DUR,
-			STD_EASING
-		];
-
-		let oldCoordStr = bar.getAttribute("transform").split("(")[1].slice(0, -1);
-		let groupAnim = translate(bar, oldCoordStr, [x, y], MARKER_LINE_ANIM_DUR);
-		return [rectAnim, groupAnim];
-	} else {
-		return [[bar, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING]];
-	}
-	// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
-}
-
-function animateDot(dot, x, y) {
-	if(dot.nodeName !== 'circle') {
-		let oldCoordStr = dot.getAttribute("transform").split("(")[1].slice(0, -1);
-		let groupAnim = translate(dot, oldCoordStr, [x, y], MARKER_LINE_ANIM_DUR);
-		return [groupAnim];
-	} else {
-		return [[dot, {cx: x, cy: y}, UNIT_ANIM_DUR, STD_EASING]];
-	}
-	// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
-}
-
-function animatePath(paths, newXList, newYList, zeroLine) {
-	let pathComponents = [];
-
-	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y));
-	let pathStr = pointsStr.join("L");
-
-	const animPath = [paths.path, {d:"M"+pathStr}, PATH_ANIM_DUR, STD_EASING];
-	pathComponents.push(animPath);
-
-	if(paths.region) {
-		let regStartPt = `${newXList[0]},${zeroLine}L`;
-		let regEndPt = `L${newXList.slice(-1)[0]}, ${zeroLine}`;
-
-		const animRegion = [
-			paths.region,
-			{d:"M" + regStartPt + pathStr + regEndPt},
-			PATH_ANIM_DUR,
-			STD_EASING
-		];
-		pathComponents.push(animRegion);
-	}
-
-	return pathComponents;
-}
-
-function animatePathStr(oldPath, pathStr) {
-	return [oldPath, {d: pathStr}, UNIT_ANIM_DUR, STD_EASING];
-}
-
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
+
 function $$1(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
@@ -647,6 +549,8 @@ function yLine(y, label, width, options={}) {
 		x2 = width;
 	}
 
+	// let offset = options.pos === 'left' ? -1 * options.offset : options.offset;
+
 	x1 += options.offset;
 	x2 += options.offset;
 
@@ -793,7 +697,7 @@ function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={})
 	}
 }
 
-function datasetDot(x, y, radius, color, label='', index=0, meta={}) {
+function datasetDot(x, y, radius, color, label='', index=0) {
 	let dot = createSVG('circle', {
 		style: `fill: ${color}`,
 		'data-point-index': index,
@@ -904,10 +808,10 @@ let updateOverlay = {
 		}
 		let attributes = ['x', 'y', 'width', 'height'];
 		Object.values(unit.attributes)
-		.filter(attr => attributes.includes(attr.name) && attr.specified)
-		.map(attr => {
-			overlay.setAttribute(attr.name, attr.nodeValue);
-		});
+			.filter(attr => attributes.includes(attr.name) && attr.specified)
+			.map(attr => {
+				overlay.setAttribute(attr.name, attr.nodeValue);
+			});
 
 		if(transformValue) {
 			overlay.setAttribute('transform', transformValue);
@@ -922,10 +826,10 @@ let updateOverlay = {
 		}
 		let attributes = ['cx', 'cy'];
 		Object.values(unit.attributes)
-		.filter(attr => attributes.includes(attr.name) && attr.specified)
-		.map(attr => {
-			overlay.setAttribute(attr.name, attr.nodeValue);
-		});
+			.filter(attr => attributes.includes(attr.name) && attr.specified)
+			.map(attr => {
+				overlay.setAttribute(attr.name, attr.nodeValue);
+			});
 
 		if(transformValue) {
 			overlay.setAttribute('transform', transformValue);
@@ -1025,6 +929,109 @@ function getDifferentChart(type, current_type, parent, args) {
 	args.colors = useColor ? args.colors : undefined;
 
 	return new Chart(parent, args);
+}
+
+const UNIT_ANIM_DUR = 350;
+const PATH_ANIM_DUR = 350;
+const MARKER_LINE_ANIM_DUR = UNIT_ANIM_DUR;
+const REPLACE_ALL_NEW_DUR = 250;
+
+const STD_EASING = 'easein';
+
+function translate(unit, oldCoord, newCoord, duration) {
+	let old = typeof oldCoord === 'string' ? oldCoord : oldCoord.join(', ');
+	return [
+		unit,
+		{transform: newCoord.join(', ')},
+		duration,
+		STD_EASING,
+		"translate",
+		{transform: old}
+	];
+}
+
+function translateVertLine(xLine, newX, oldX) {
+	return translate(xLine, [oldX, 0], [newX, 0], MARKER_LINE_ANIM_DUR);
+}
+
+function translateHoriLine(yLine, newY, oldY) {
+	return translate(yLine, [0, oldY], [0, newY], MARKER_LINE_ANIM_DUR);
+}
+
+function animateRegion(rectGroup, newY1, newY2, oldY2) {
+	let newHeight = newY1 - newY2;
+	let rect = rectGroup.childNodes[0];
+	let width = rect.getAttribute("width");
+	let rectAnim = [
+		rect,
+		{ height: newHeight, 'stroke-dasharray': `${width}, ${newHeight}` },
+		MARKER_LINE_ANIM_DUR,
+		STD_EASING
+	];
+
+	let groupAnim = translate(rectGroup, [0, oldY2], [0, newY2], MARKER_LINE_ANIM_DUR);
+	return [rectAnim, groupAnim];
+}
+
+function animateBar(bar, x, yTop, width, offset=0, meta={}) {
+	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
+	y -= offset;
+	if(bar.nodeName !== 'rect') {
+		let rect = bar.childNodes[0];
+		let rectAnim = [
+			rect,
+			{width: width, height: height},
+			UNIT_ANIM_DUR,
+			STD_EASING
+		];
+
+		let oldCoordStr = bar.getAttribute("transform").split("(")[1].slice(0, -1);
+		let groupAnim = translate(bar, oldCoordStr, [x, y], MARKER_LINE_ANIM_DUR);
+		return [rectAnim, groupAnim];
+	} else {
+		return [[bar, {width: width, height: height, x: x, y: y}, UNIT_ANIM_DUR, STD_EASING]];
+	}
+	// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
+}
+
+function animateDot(dot, x, y) {
+	if(dot.nodeName !== 'circle') {
+		let oldCoordStr = dot.getAttribute("transform").split("(")[1].slice(0, -1);
+		let groupAnim = translate(dot, oldCoordStr, [x, y], MARKER_LINE_ANIM_DUR);
+		return [groupAnim];
+	} else {
+		return [[dot, {cx: x, cy: y}, UNIT_ANIM_DUR, STD_EASING]];
+	}
+	// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
+}
+
+function animatePath(paths, newXList, newYList, zeroLine) {
+	let pathComponents = [];
+
+	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y));
+	let pathStr = pointsStr.join("L");
+
+	const animPath = [paths.path, {d:"M"+pathStr}, PATH_ANIM_DUR, STD_EASING];
+	pathComponents.push(animPath);
+
+	if(paths.region) {
+		let regStartPt = `${newXList[0]},${zeroLine}L`;
+		let regEndPt = `L${newXList.slice(-1)[0]}, ${zeroLine}`;
+
+		const animRegion = [
+			paths.region,
+			{d:"M" + regStartPt + pathStr + regEndPt},
+			PATH_ANIM_DUR,
+			STD_EASING
+		];
+		pathComponents.push(animRegion);
+	}
+
+	return pathComponents;
+}
+
+function animatePathStr(oldPath, pathStr) {
+	return [oldPath, {d: pathStr}, UNIT_ANIM_DUR, STD_EASING];
 }
 
 // Leveraging SMIL Animations
@@ -1178,7 +1185,7 @@ class BaseChart {
 	}
 
 	configure(args) {
-		this.setColors();
+		this.setColors(args);
 		this.setMargins();
 
 		// Bind window events
@@ -1331,8 +1338,8 @@ class BaseChart {
 	updateNav() {
 		if(this.config.isNavigable) {
 			// if(!this.overlayGuides){
-				this.makeOverlay();
-				this.bindUnits();
+			this.makeOverlay();
+			this.bindUnits();
 			// } else {
 			// 	this.updateOverlay();
 			// }
@@ -1403,18 +1410,13 @@ class BaseChart {
 	onDownArrow() {}
 	onEnterKey() {}
 
-	getDataPoint(index = 0) {}
-	setCurrentDataPoint(point) {}
+	addDataPoint() {}
+	removeDataPoint() {}
 
-	updateDataset(dataset, index) {}
-	addDataset(dataset, index) {}
-	removeDataset(index = 0) {}
+	getDataPoint() {}
+	setCurrentDataPoint() {}
 
-	updateDatasets(datasets) {}
-
-	updateDataPoint(dataPoint, index = 0) {}
-	addDataPoint(dataPoint, index = 0) {}
-	removeDataPoint(index = 0) {}
+	updateDataset() {}
 
 	getDifferentChart(type) {
 		return getDifferentChart(type, this.type, this.parent, this.rawChartArgs);
@@ -1795,8 +1797,6 @@ let componentConfigs = {
 			return this.units;
 		},
 		animateElements(newData) {
-			let c = this.constants;
-
 			let newXPos = newData.xPositions;
 			let newYPos = newData.yPositions;
 			let newOffsets = newData.offsets;
@@ -1827,7 +1827,7 @@ let componentConfigs = {
 
 			this.store.map((bar, i) => {
 				animateElements = animateElements.concat(animateBar(
-					bar, newXPos[i], newYPos[i], newData.barWidth, newOffsets[i], c.index,
+					bar, newXPos[i], newYPos[i], newData.barWidth, newOffsets[i],
 					{zeroLine: newData.zeroLine}
 				));
 			});
@@ -2305,7 +2305,7 @@ function getValueRange(orderedArray) {
 }
 
 function scale(val, yAxis) {
-	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier)
+	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier);
 }
 
 function calcDistribution(values, distributionSize) {
@@ -2602,7 +2602,7 @@ function dataPrep(data, type) {
 		}];
 	}
 
-	datasets.map((d, i)=> {
+	datasets.map(d=> {
 		// Set values
 		if(!d.values) {
 			d.values = zeroArray;
@@ -2656,7 +2656,7 @@ function zeroDataPrep(realData) {
 				name: '',
 				values: zeroArray.slice(0, -1),
 				chartType: d.chartType
-			}
+			};
 		}),
 	};
 
@@ -3140,10 +3140,10 @@ class AxisChart extends BaseChart {
 		// Render overlays
 		this.overlayGuides.map(d => {
 			let currentUnit = d.units[this.state.currentIndex];
+
 			d.overlay = makeOverlay[d.type](currentUnit);
 			this.drawArea.appendChild(d.overlay);
 		});
-
 	}
 
 	updateOverlayGuides() {
@@ -3256,6 +3256,7 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
+// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,
@@ -3289,4 +3290,4 @@ class Chart {
 	}
 }
 
-export default Chart;
+export { Chart, PercentageChart, PieChart, Heatmap, AxisChart };

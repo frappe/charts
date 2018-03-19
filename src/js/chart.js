@@ -33,8 +33,10 @@ function getChartByType(chartType = 'line', parent, options) {
 	return new chartTypes[chartType](parent, options);
 }
 
-export default class Chart {
+class Chart {
 	constructor(parent, options) {
 		return getChartByType(options.type, parent, options);
 	}
 }
+
+export { Chart, PercentageChart, PieChart, Heatmap, AxisChart };

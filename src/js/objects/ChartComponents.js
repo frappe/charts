@@ -235,8 +235,6 @@ let componentConfigs = {
 			return this.units;
 		},
 		animateElements(newData) {
-			let c = this.constants;
-
 			let newXPos = newData.xPositions;
 			let newYPos = newData.yPositions;
 			let newOffsets = newData.offsets;
@@ -267,7 +265,7 @@ let componentConfigs = {
 
 			this.store.map((bar, i) => {
 				animateElements = animateElements.concat(animateBar(
-					bar, newXPos[i], newYPos[i], newData.barWidth, newOffsets[i], c.index,
+					bar, newXPos[i], newYPos[i], newData.barWidth, newOffsets[i],
 					{zeroLine: newData.zeroLine}
 				));
 			});

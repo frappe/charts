@@ -1,4 +1,4 @@
-import Chart from './chart';
+import { Chart } from './chart';
 
 const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
 

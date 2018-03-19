@@ -197,7 +197,7 @@ export function getValueRange(orderedArray) {
 }
 
 export function scale(val, yAxis) {
-	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier)
+	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier);
 }
 
 export function calcDistribution(values, distributionSize) {

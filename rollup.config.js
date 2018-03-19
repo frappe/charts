@@ -27,7 +27,7 @@ export default [
 				format: 'iife',
 			}
 		],
-		name: 'Chart',
+		name: 'frappe',
 		plugins: [
 			postcss({
 				preprocessor: (content, id) => new Promise((resolve, reject) => {
