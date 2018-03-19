@@ -174,7 +174,7 @@ export default class AxisChart extends BaseChart {
 		if(this.data.yRegions) {
 			this.data.yRegions.map(d => {
 				allValueLists.push([d.end, d.start]);
-			})
+			});
 		}
 
 		return [].concat(...allValueLists);
@@ -439,10 +439,10 @@ export default class AxisChart extends BaseChart {
 		// Render overlays
 		this.overlayGuides.map(d => {
 			let currentUnit = d.units[this.state.currentIndex];
+
 			d.overlay = makeOverlay[d.type](currentUnit);
 			this.drawArea.appendChild(d.overlay);
 		});
-
 	}
 
 	updateOverlayGuides() {

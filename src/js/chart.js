@@ -39,4 +39,4 @@ class Chart {
 	}
 }
 
-export { Chart, PercentageChart, PieChart, Heatmap, AxisChart }
+export { Chart, PercentageChart, PieChart, Heatmap, AxisChart };

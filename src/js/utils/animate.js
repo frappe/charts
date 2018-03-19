@@ -36,13 +36,13 @@ export function animateRegion(rectGroup, newY1, newY2, oldY2) {
 		{ height: newHeight, 'stroke-dasharray': `${width}, ${newHeight}` },
 		MARKER_LINE_ANIM_DUR,
 		STD_EASING
-	]
+	];
 
 	let groupAnim = translate(rectGroup, [0, oldY2], [0, newY2], MARKER_LINE_ANIM_DUR);
 	return [rectAnim, groupAnim];
 }
 
-export function animateBar(bar, x, yTop, width, offset=0, index=0, meta={}) {
+export function animateBar(bar, x, yTop, width, offset=0, meta={}) {
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
 	y -= offset;
 	if(bar.nodeName !== 'rect') {
@@ -52,7 +52,7 @@ export function animateBar(bar, x, yTop, width, offset=0, index=0, meta={}) {
 			{width: width, height: height},
 			UNIT_ANIM_DUR,
 			STD_EASING
-		]
+		];
 
 		let oldCoordStr = bar.getAttribute("transform").split("(")[1].slice(0, -1);
 		let groupAnim = translate(bar, oldCoordStr, [x, y], MARKER_LINE_ANIM_DUR);

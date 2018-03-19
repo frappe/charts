@@ -1,4 +1,4 @@
-import { floatTwo, fillArray } from '../utils/helpers';
+import { fillArray } from '../utils/helpers';
 import { DEFAULT_AXIS_CHART_TYPE, AXIS_DATASET_CHART_TYPES, DEFAULT_CHAR_WIDTH } from '../utils/constants';
 
 export function dataPrep(data, type) {
@@ -16,7 +16,7 @@ export function dataPrep(data, type) {
 		}];
 	}
 
-	datasets.map((d, i)=> {
+	datasets.map(d=> {
 		// Set values
 		if(!d.values) {
 			d.values = zeroArray;
@@ -70,7 +70,7 @@ export function zeroDataPrep(realData) {
 				name: '',
 				values: zeroArray.slice(0, -1),
 				chartType: d.chartType
-			}
+			};
 		}),
 	};
 

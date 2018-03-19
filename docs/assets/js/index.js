@@ -456,6 +456,8 @@ new frappe.Chart("#chart-heatmap", {
 	legendColors: ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c']
 });
 
+// console.log(heatmapData, heatmap);
+
 Array.prototype.slice.call(
 	document.querySelectorAll('.heatmap-mode-buttons button')
 ).map(el => {

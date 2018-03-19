@@ -1,7 +1,6 @@
 import SvgTip from '../objects/SvgTip';
 import { $, isElementInViewport, getElementContentWidth } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup } from '../utils/draw';
-import { getStringWidth } from '../utils/helpers';
 import { VERT_SPACE_OUTSIDE_BASE_CHART, TRANSLATE_Y_BASE_CHART, LEFT_MARGIN_BASE_CHART,
 	RIGHT_MARGIN_BASE_CHART, INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT } from '../utils/constants';
 import { getColor, DEFAULT_COLORS } from '../utils/colors';
@@ -44,7 +43,7 @@ export default class BaseChart {
 	}
 
 	configure(args) {
-		this.setColors();
+		this.setColors(args);
 		this.setMargins();
 
 		// Bind window events
@@ -197,8 +196,8 @@ export default class BaseChart {
 	updateNav() {
 		if(this.config.isNavigable) {
 			// if(!this.overlayGuides){
-				this.makeOverlay();
-				this.bindUnits();
+			this.makeOverlay();
+			this.bindUnits();
 			// } else {
 			// 	this.updateOverlay();
 			// }
@@ -269,18 +268,13 @@ export default class BaseChart {
 	onDownArrow() {}
 	onEnterKey() {}
 
-	getDataPoint(index = 0) {}
-	setCurrentDataPoint(point) {}
+	addDataPoint() {}
+	removeDataPoint() {}
 
-	updateDataset(dataset, index) {}
-	addDataset(dataset, index) {}
-	removeDataset(index = 0) {}
+	getDataPoint() {}
+	setCurrentDataPoint() {}
 
-	updateDatasets(datasets) {}
-
-	updateDataPoint(dataPoint, index = 0) {}
-	addDataPoint(dataPoint, index = 0) {}
-	removeDataPoint(index = 0) {}
+	updateDataset() {}
 
 	getDifferentChart(type) {
 		return getDifferentChart(type, this.type, this.parent, this.rawChartArgs);

@@ -70,7 +70,7 @@ export function bindChange(obj, getFn, setFn) {
 			setFn();
 			return Reflect.set(target, prop, value);
 		},
-		get: function(target, prop, value) {
+		get: function(target, prop) {
 			getFn();
 			return Reflect.get(target, prop);
 		}
