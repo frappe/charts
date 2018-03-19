@@ -230,10 +230,6 @@ const DEFAULT_CHAR_WIDTH = 7;
 const ANGLE_RATIO = Math.PI / 180;
 const FULL_ANGLE = 360;
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -1409,6 +1405,14 @@ class BaseChart {
 	onUpArrow() {}
 	onDownArrow() {}
 	onEnterKey() {}
+
+	addDataPoint() {}
+	removeDataPoint() {}
+
+	getDataPoint() {}
+	setCurrentDataPoint() {}
+
+	updateDataset() {}
 
 	getDifferentChart(type) {
 		return getDifferentChart(type, this.type, this.parent, this.rawChartArgs);
@@ -3132,10 +3136,10 @@ class AxisChart extends BaseChart {
 		// Render overlays
 		this.overlayGuides.map(d => {
 			let currentUnit = d.units[this.state.currentIndex];
+
 			d.overlay = makeOverlay[d.type](currentUnit);
 			this.drawArea.appendChild(d.overlay);
 		});
-
 	}
 
 	updateOverlayGuides() {
@@ -3248,7 +3252,6 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,

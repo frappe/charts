@@ -447,7 +447,7 @@ for (var i = 0; i< 375; i++) {
 	timestamp = Math.floor(timestamp - 86400).toFixed(1);
 }
 
-new Chart("#chart-heatmap", {
+let heatmap = new Chart("#chart-heatmap", {
 	data: heatmapData,
 	type: 'heatmap',
 	legendScale: [0, 1, 2, 4, 5],
@@ -455,6 +455,8 @@ new Chart("#chart-heatmap", {
 	discreteDomains: 1,
 	legendColors: ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c']
 });
+
+// console.log(heatmapData, heatmap);
 
 Array.prototype.slice.call(
 	document.querySelectorAll('.heatmap-mode-buttons button')

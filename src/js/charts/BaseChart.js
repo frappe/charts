@@ -268,6 +268,14 @@ export default class BaseChart {
 	onDownArrow() {}
 	onEnterKey() {}
 
+	addDataPoint() {}
+	removeDataPoint() {}
+
+	getDataPoint() {}
+	setCurrentDataPoint() {}
+
+	updateDataset() {}
+
 	getDifferentChart(type) {
 		return getDifferentChart(type, this.type, this.parent, this.rawChartArgs);
 	}
