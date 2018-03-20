@@ -438,6 +438,8 @@ events_chart.parent.addEventListener('data-select', (e) => {
 // Heatmap
 // ================================================================================
 
+
+
 let heatmapData = {};
 let current_date = new Date();
 let timestamp = current_date.getTime()/1000;
@@ -447,7 +449,7 @@ for (var i = 0; i< 375; i++) {
 	timestamp = Math.floor(timestamp - 86400).toFixed(1);
 }
 
-new frappe.Chart("#chart-heatmap", {
+let heatmap = new frappe.Chart("#chart-heatmap", {
 	data: heatmapData,
 	type: 'heatmap',
 	legendScale: [0, 1, 2, 4, 5],
@@ -456,7 +458,7 @@ new frappe.Chart("#chart-heatmap", {
 	legendColors: ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c']
 });
 
-// console.log(heatmapData, heatmap);
+console.log(heatmapData, heatmap);
 
 Array.prototype.slice.call(
 	document.querySelectorAll('.heatmap-mode-buttons button')

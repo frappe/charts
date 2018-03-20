@@ -494,6 +494,25 @@ export let makeOverlay = {
 			overlay.setAttribute('transform', transformValue);
 		}
 		return overlay;
+	},
+
+	'heat_square': (unit) => {
+		let transformValue;
+		if(unit.nodeName !== 'circle') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let overlay = unit.cloneNode();
+		let radius = unit.getAttribute('r');
+		let fill = unit.getAttribute('fill');
+		overlay.setAttribute('r', parseInt(radius) + DOT_OVERLAY_SIZE_INCR);
+		overlay.setAttribute('fill', fill);
+		overlay.style.opacity = '0.6';
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+		return overlay;
 	}
 };
 
@@ -532,5 +551,23 @@ export let updateOverlay = {
 		if(transformValue) {
 			overlay.setAttribute('transform', transformValue);
 		}
-	}
+	},
+
+	'heat_square': (unit, overlay) => {
+		let transformValue;
+		if(unit.nodeName !== 'circle') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let attributes = ['cx', 'cy'];
+		Object.values(unit.attributes)
+			.filter(attr => attributes.includes(attr.name) && attr.specified)
+			.map(attr => {
+				overlay.setAttribute(attr.name, attr.nodeValue);
+			});
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+	},
 };

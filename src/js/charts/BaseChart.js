@@ -279,4 +279,9 @@ export default class BaseChart {
 	getDifferentChart(type) {
 		return getDifferentChart(type, this.type, this.parent, this.rawChartArgs);
 	}
+
+	unbindWindowEvents(){
+		window.removeEventListener('resize', () => this.draw(true));
+		window.removeEventListener('orientationchange', () => this.draw(true));
+	}
 }

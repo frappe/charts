@@ -3,15 +3,13 @@ import { makeSVGGroup, makeHeatSquare, makeText } from '../utils/draw';
 import { addDays, getDdMmYyyy, getWeeksBetween } from '../utils/date-utils';
 import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
 import { isValidColor } from '../utils/colors';
+import { HEATMAP_DISTRIBUTION_SIZE } from '../utils/constants';
 
 export default class Heatmap extends BaseChart {
 	constructor(parent, options) {
 		super(parent, options);
-
 		this.type = 'heatmap';
 
-		this.domain = options.domain || '';
-		this.subdomain = options.subdomain || '';
 		this.data = options.data || {};
 		this.discreteDomains = options.discreteDomains === 0 ? 0 : 1;
 		this.countLabel = options.countLabel || '';
@@ -23,10 +21,6 @@ export default class Heatmap extends BaseChart {
 		this.legendColors = this.validate_colors(legendColors)
 			? legendColors
 			: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
-
-		// Fixed 5-color theme,
-		// More colors are difficult to parse visually
-		this.distribution_size = 5;
 
 		this.translateX = 0;
 		this.setup();
@@ -99,7 +93,7 @@ export default class Heatmap extends BaseChart {
 	calc() {
 
 		let dataValues = Object.keys(this.data).map(key => this.data[key]);
-		this.distribution = calcDistribution(dataValues, this.distribution_size);
+		this.distribution = calcDistribution(dataValues, HEATMAP_DISTRIBUTION_SIZE);
 
 		this.monthNames = ["January", "February", "March", "April", "May", "June",
 			"July", "August", "September", "October", "November", "December"

@@ -21,3 +21,7 @@ export const DEFAULT_CHAR_WIDTH = 7;
 // Universal constants
 export const ANGLE_RATIO = Math.PI / 180;
 export const FULL_ANGLE = 360;
+
+// Fixed 5-color theme,
+// More colors are difficult to parse visually
+export const HEATMAP_DISTRIBUTION_SIZE = 5;

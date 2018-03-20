@@ -230,10 +230,10 @@ const DEFAULT_CHAR_WIDTH = 7;
 const ANGLE_RATIO = Math.PI / 180;
 const FULL_ANGLE = 360;
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
+// Fixed 5-color theme,
+// More colors are difficult to parse visually
+const HEATMAP_DISTRIBUTION_SIZE = 5;
+
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -796,6 +796,25 @@ let makeOverlay = {
 			overlay.setAttribute('transform', transformValue);
 		}
 		return overlay;
+	},
+
+	'heat_square': (unit) => {
+		let transformValue;
+		if(unit.nodeName !== 'circle') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let overlay = unit.cloneNode();
+		let radius = unit.getAttribute('r');
+		let fill = unit.getAttribute('fill');
+		overlay.setAttribute('r', parseInt(radius) + DOT_OVERLAY_SIZE_INCR);
+		overlay.setAttribute('fill', fill);
+		overlay.style.opacity = '0.6';
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+		return overlay;
 	}
 };
 
@@ -834,7 +853,25 @@ let updateOverlay = {
 		if(transformValue) {
 			overlay.setAttribute('transform', transformValue);
 		}
-	}
+	},
+
+	'heat_square': (unit, overlay) => {
+		let transformValue;
+		if(unit.nodeName !== 'circle') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let attributes = ['cx', 'cy'];
+		Object.values(unit.attributes)
+			.filter(attr => attributes.includes(attr.name) && attr.specified)
+			.map(attr => {
+				overlay.setAttribute(attr.name, attr.nodeValue);
+			});
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+	},
 };
 
 const PRESET_COLOR_MAP = {
@@ -1420,6 +1457,11 @@ class BaseChart {
 
 	getDifferentChart(type) {
 		return getDifferentChart(type, this.type, this.parent, this.rawChartArgs);
+	}
+
+	unbindWindowEvents(){
+		window.removeEventListener('resize', () => this.draw(true));
+		window.removeEventListener('orientationchange', () => this.draw(true));
 	}
 }
 
@@ -2332,11 +2374,8 @@ function getMaxCheckpoint(value, distribution) {
 class Heatmap extends BaseChart {
 	constructor(parent, options) {
 		super(parent, options);
-
 		this.type = 'heatmap';
 
-		this.domain = options.domain || '';
-		this.subdomain = options.subdomain || '';
 		this.data = options.data || {};
 		this.discreteDomains = options.discreteDomains === 0 ? 0 : 1;
 		this.countLabel = options.countLabel || '';
@@ -2348,10 +2387,6 @@ class Heatmap extends BaseChart {
 		this.legendColors = this.validate_colors(legendColors)
 			? legendColors
 			: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
-
-		// Fixed 5-color theme,
-		// More colors are difficult to parse visually
-		this.distribution_size = 5;
 
 		this.translateX = 0;
 		this.setup();
@@ -2424,7 +2459,7 @@ class Heatmap extends BaseChart {
 	calc() {
 
 		let dataValues = Object.keys(this.data).map(key => this.data[key]);
-		this.distribution = calcDistribution(dataValues, this.distribution_size);
+		this.distribution = calcDistribution(dataValues, HEATMAP_DISTRIBUTION_SIZE);
 
 		this.monthNames = ["January", "February", "March", "April", "May", "June",
 			"July", "August", "September", "October", "November", "December"
@@ -3256,7 +3291,6 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,
