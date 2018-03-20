@@ -206,6 +206,24 @@ class SvgTip {
 	}
 }
 
+const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
+
+const COMPATIBLE_CHARTS = {
+	bar: ['line', 'scatter', 'percentage', 'pie'],
+	line: ['scatter', 'bar', 'percentage', 'pie'],
+	pie: ['line', 'scatter', 'percentage', 'bar'],
+	percentage: ['bar', 'line', 'scatter', 'pie'],
+	heatmap: []
+};
+
+const DATA_COLOR_DIVISIONS = {
+	bar: 'datasets',
+	line: 'datasets',
+	pie: 'labels',
+	percentage: 'labels',
+	heatmap: HEATMAP_DISTRIBUTION_SIZE
+};
+
 const VERT_SPACE_OUTSIDE_BASE_CHART = 50;
 const TRANSLATE_Y_BASE_CHART = 20;
 const LEFT_MARGIN_BASE_CHART = 60;
@@ -233,6 +251,18 @@ const FULL_ANGLE = 360;
 // Fixed 5-color theme,
 // More colors are difficult to parse visually
 const HEATMAP_DISTRIBUTION_SIZE = 5;
+
+const HEATMAP_COLORS = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+const DEFAULT_CHART_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
+	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
+
+const DEFAULT_COLORS = {
+	bar: DEFAULT_CHART_COLORS,
+	line: DEFAULT_CHART_COLORS,
+	pie: DEFAULT_CHART_COLORS,
+	percentage: DEFAULT_CHART_COLORS,
+	heatmap: HEATMAP_COLORS
+};
 
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
@@ -891,9 +921,6 @@ const PRESET_COLOR_MAP = {
 	'dark-grey': '#b8c2cc'
 };
 
-const DEFAULT_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
-	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
-
 function limitColor(r){
 	if (r > 255) return 255;
 	else if (r < 0) return 0;
@@ -922,51 +949,6 @@ function isValidColor(string) {
 const getColor = (color) => {
 	return PRESET_COLOR_MAP[color] || color;
 };
-
-const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
-
-const COMPATIBLE_CHARTS = {
-	bar: ['line', 'scatter', 'percentage', 'pie'],
-	line: ['scatter', 'bar', 'percentage', 'pie'],
-	pie: ['line', 'scatter', 'percentage', 'bar'],
-	scatter: ['line', 'bar', 'percentage', 'pie'],
-	percentage: ['bar', 'line', 'scatter', 'pie'],
-	heatmap: []
-};
-
-// Needs structure as per only labels/datasets
-const COLOR_COMPATIBLE_CHARTS = {
-	bar: ['line', 'scatter'],
-	line: ['scatter', 'bar'],
-	pie: ['percentage'],
-	scatter: ['line', 'bar'],
-	percentage: ['pie'],
-	heatmap: []
-};
-
-function getDifferentChart(type, current_type, parent, args) {
-	if(type === current_type) return;
-
-	if(!ALL_CHART_TYPES.includes(type)) {
-		console.error(`'${type}' is not a valid chart type.`);
-	}
-
-	if(!COMPATIBLE_CHARTS[current_type].includes(type)) {
-		console.error(`'${current_type}' chart cannot be converted to a '${type}' chart.`);
-	}
-
-	// whether the new chart can use the existing colors
-	const useColor = COLOR_COMPATIBLE_CHARTS[current_type].includes(type);
-
-	// Okay, this is anticlimactic
-	// this function will need to actually be 'changeChartType(type)'
-	// that will update only the required elements, but for now ...
-
-	args.type = type;
-	args.colors = useColor ? args.colors : undefined;
-
-	return new Chart(parent, args);
-}
 
 const UNIT_ANIM_DUR = 350;
 const PATH_ANIM_DUR = 350;
@@ -1188,12 +1170,12 @@ function runSMILAnimation(parent, svgElement, elementsToAnimate) {
 
 class BaseChart {
 	constructor(parent, options) {
-		this.rawChartArgs = options;
-
 		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
 		if (!(this.parent instanceof HTMLElement)) {
 			throw new Error('No `parent` element to render on was provided.');
 		}
+
+		this.rawChartArgs = options;
 
 		this.title = options.title || '';
 		this.subtitle = options.subtitle || '';
@@ -1202,7 +1184,10 @@ class BaseChart {
 
 		this.realData = this.prepareData(options.data);
 		this.data = this.prepareFirstData(this.realData);
-		this.colors = [];
+
+		this.colors = this.validateColors(options.colors)
+			.concat(DEFAULT_COLORS[this.type]);
+
 		this.config = {
 			showTooltip: 1, // calculate
 			showLegend: options.showLegend || 1,
@@ -1221,8 +1206,7 @@ class BaseChart {
 		this.configure(options);
 	}
 
-	configure(args) {
-		this.setColors(args);
+	configure() {
 		this.setMargins();
 
 		// Bind window events
@@ -1230,21 +1214,17 @@ class BaseChart {
 		window.addEventListener('orientationchange', () => this.draw(true));
 	}
 
-	setColors() {
-		let args = this.rawChartArgs;
-
-		// Needs structure as per only labels/datasets, from config
-		const list = args.type === 'percentage' || args.type === 'pie'
-			? args.data.labels
-			: args.data.datasets;
-
-		if(!args.colors || (list && args.colors.length < list.length)) {
-			this.colors = DEFAULT_COLORS;
-		} else {
-			this.colors = args.colors;
-		}
-
-		this.colors = this.colors.map(color => getColor(color));
+	validateColors(colors = []) {
+		const validColors = [];
+		colors.forEach((string) => {
+			const color = getColor(string);
+			if(!isValidColor(color)) {
+				console.warn('"' + string + '" is not a valid color.');
+			} else {
+				validColors.push(color);
+			}
+		});
+		return validColors;
 	}
 
 	setMargins() {
@@ -1456,7 +1436,29 @@ class BaseChart {
 	updateDataset() {}
 
 	getDifferentChart(type) {
-		return getDifferentChart(type, this.type, this.parent, this.rawChartArgs);
+		const currentType = this.type;
+		let args = this.rawChartArgs;
+		if(type === currentType) return;
+
+		if(!ALL_CHART_TYPES.includes(type)) {
+			console.error(`'${type}' is not a valid chart type.`);
+		}
+
+		if(!COMPATIBLE_CHARTS[currentType].includes(type)) {
+			console.error(`'${currentType}' chart cannot be converted to a '${type}' chart.`);
+		}
+
+		// whether the new chart can use the existing colors
+		const useColor = DATA_COLOR_DIVISIONS[currentType] === DATA_COLOR_DIVISIONS[type];
+
+		// Okay, this is anticlimactic
+		// this function will need to actually be 'changeChartType(type)'
+		// that will update only the required elements, but for now ...
+
+		args.type = type;
+		args.colors = useColor ? args.colors : undefined;
+
+		return new Chart(this.parent, args);
 	}
 
 	unbindWindowEvents(){
@@ -2383,11 +2385,6 @@ class Heatmap extends BaseChart {
 		let today = new Date();
 		this.start = options.start || addDays(today, 365);
 
-		let legendColors = (options.legendColors || []).slice(0, 5);
-		this.legendColors = this.validate_colors(legendColors)
-			? legendColors
-			: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
-
 		this.translateX = 0;
 		this.setup();
 	}
@@ -2398,22 +2395,8 @@ class Heatmap extends BaseChart {
 		this.translateY = 10;
 	}
 
-	validate_colors(colors) {
-		if(colors.length < 5) return 0;
-
-		let valid = 1;
-		colors.forEach(function(string) {
-			if(!isValidColor(string)) {
-				valid = 0;
-				console.warn('"' + string + '" is not a valid color.');
-			}
-		}, this);
-
-		return valid;
-	}
-
-	configure() {
-		super.configure();
+	configure(args) {
+		super.configure(args);
 		this.today = new Date();
 
 		if(!this.start) {
@@ -2542,7 +2525,7 @@ class Heatmap extends BaseChart {
 			};
 
 			let heatSquare = makeHeatSquare('day', x, y, squareSide,
-				this.legendColors[colorIndex], dataAttr);
+				this.colors[colorIndex], dataAttr);
 
 			dataGroup.appendChild(heatSquare);
 
@@ -2758,7 +2741,7 @@ class AxisChart extends BaseChart {
 	}
 
 	configure(args) {
-		super.configure();
+		super.configure(args);
 
 		args.axisOptions = args.axisOptions || {};
 		args.tooltipOptions = args.tooltipOptions || {};

@@ -2,7 +2,6 @@ import BaseChart from './BaseChart';
 import { makeSVGGroup, makeHeatSquare, makeText } from '../utils/draw';
 import { addDays, getDdMmYyyy, getWeeksBetween } from '../utils/date-utils';
 import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
-import { isValidColor } from '../utils/colors';
 import { HEATMAP_DISTRIBUTION_SIZE } from '../utils/constants';
 
 export default class Heatmap extends BaseChart {
@@ -17,11 +16,6 @@ export default class Heatmap extends BaseChart {
 		let today = new Date();
 		this.start = options.start || addDays(today, 365);
 
-		let legendColors = (options.legendColors || []).slice(0, 5);
-		this.legendColors = this.validate_colors(legendColors)
-			? legendColors
-			: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
-
 		this.translateX = 0;
 		this.setup();
 	}
@@ -32,22 +26,8 @@ export default class Heatmap extends BaseChart {
 		this.translateY = 10;
 	}
 
-	validate_colors(colors) {
-		if(colors.length < 5) return 0;
-
-		let valid = 1;
-		colors.forEach(function(string) {
-			if(!isValidColor(string)) {
-				valid = 0;
-				console.warn('"' + string + '" is not a valid color.');
-			}
-		}, this);
-
-		return valid;
-	}
-
-	configure() {
-		super.configure();
+	configure(args) {
+		super.configure(args);
 		this.today = new Date();
 
 		if(!this.start) {
@@ -176,7 +156,7 @@ export default class Heatmap extends BaseChart {
 			};
 
 			let heatSquare = makeHeatSquare('day', x, y, squareSide,
-				this.legendColors[colorIndex], dataAttr);
+				this.colors[colorIndex], dataAttr);
 
 			dataGroup.appendChild(heatSquare);
 

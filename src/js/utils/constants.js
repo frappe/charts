@@ -1,3 +1,21 @@
+export const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
+
+export const COMPATIBLE_CHARTS = {
+	bar: ['line', 'scatter', 'percentage', 'pie'],
+	line: ['scatter', 'bar', 'percentage', 'pie'],
+	pie: ['line', 'scatter', 'percentage', 'bar'],
+	percentage: ['bar', 'line', 'scatter', 'pie'],
+	heatmap: []
+};
+
+export const DATA_COLOR_DIVISIONS = {
+	bar: 'datasets',
+	line: 'datasets',
+	pie: 'labels',
+	percentage: 'labels',
+	heatmap: HEATMAP_DISTRIBUTION_SIZE
+}
+
 export const VERT_SPACE_OUTSIDE_BASE_CHART = 50;
 export const TRANSLATE_Y_BASE_CHART = 20;
 export const LEFT_MARGIN_BASE_CHART = 60;
@@ -25,3 +43,15 @@ export const FULL_ANGLE = 360;
 // Fixed 5-color theme,
 // More colors are difficult to parse visually
 export const HEATMAP_DISTRIBUTION_SIZE = 5;
+
+const HEATMAP_COLORS = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+const DEFAULT_CHART_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
+	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
+
+export const DEFAULT_COLORS = {
+	bar: DEFAULT_CHART_COLORS,
+	line: DEFAULT_CHART_COLORS,
+	pie: DEFAULT_CHART_COLORS,
+	percentage: DEFAULT_CHART_COLORS,
+	heatmap: HEATMAP_COLORS
+}

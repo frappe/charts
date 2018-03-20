@@ -455,7 +455,7 @@ let heatmap = new frappe.Chart("#chart-heatmap", {
 	legendScale: [0, 1, 2, 4, 5],
 	height: 115,
 	discreteDomains: 1,
-	legendColors: ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c']
+	colors: ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c']
 });
 
 console.log(heatmapData, heatmap);
@@ -486,7 +486,7 @@ Array.prototype.slice.call(
 			legendScale: [0, 1, 2, 4, 5],
 			height: 115,
 			discreteDomains: discreteDomains,
-			legendColors: colors
+			colors: colors
 		});
 
 		Array.prototype.slice.call(
@@ -524,7 +524,7 @@ Array.prototype.slice.call(
 			legendScale: [0, 1, 2, 4, 5],
 			height: 115,
 			discreteDomains: discreteDomains,
-			legendColors: colors
+			colors: colors
 		});
 
 		Array.prototype.slice.call(

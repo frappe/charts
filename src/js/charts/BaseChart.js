@@ -2,19 +2,20 @@ import SvgTip from '../objects/SvgTip';
 import { $, isElementInViewport, getElementContentWidth } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup } from '../utils/draw';
 import { VERT_SPACE_OUTSIDE_BASE_CHART, TRANSLATE_Y_BASE_CHART, LEFT_MARGIN_BASE_CHART,
-	RIGHT_MARGIN_BASE_CHART, INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT } from '../utils/constants';
-import { getColor, DEFAULT_COLORS } from '../utils/colors';
-import { getDifferentChart } from '../config';
+	RIGHT_MARGIN_BASE_CHART, INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS,
+	ALL_CHART_TYPES, COMPATIBLE_CHARTS, DATA_COLOR_DIVISIONS} from '../utils/constants';
+import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
+import { Chart } from '../chart';
 
 export default class BaseChart {
 	constructor(parent, options) {
-		this.rawChartArgs = options;
-
 		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
 		if (!(this.parent instanceof HTMLElement)) {
 			throw new Error('No `parent` element to render on was provided.');
 		}
+
+		this.rawChartArgs = options;
 
 		this.title = options.title || '';
 		this.subtitle = options.subtitle || '';
@@ -23,7 +24,10 @@ export default class BaseChart {
 
 		this.realData = this.prepareData(options.data);
 		this.data = this.prepareFirstData(this.realData);
-		this.colors = [];
+
+		this.colors = this.validateColors(options.colors)
+			.concat(DEFAULT_COLORS[this.type]);
+
 		this.config = {
 			showTooltip: 1, // calculate
 			showLegend: options.showLegend || 1,
@@ -42,8 +46,7 @@ export default class BaseChart {
 		this.configure(options);
 	}
 
-	configure(args) {
-		this.setColors(args);
+	configure() {
 		this.setMargins();
 
 		// Bind window events
@@ -51,21 +54,17 @@ export default class BaseChart {
 		window.addEventListener('orientationchange', () => this.draw(true));
 	}
 
-	setColors() {
-		let args = this.rawChartArgs;
-
-		// Needs structure as per only labels/datasets, from config
-		const list = args.type === 'percentage' || args.type === 'pie'
-			? args.data.labels
-			: args.data.datasets;
-
-		if(!args.colors || (list && args.colors.length < list.length)) {
-			this.colors = DEFAULT_COLORS;
-		} else {
-			this.colors = args.colors;
-		}
-
-		this.colors = this.colors.map(color => getColor(color));
+	validateColors(colors = []) {
+		const validColors = [];
+		colors.forEach((string) => {
+			const color = getColor(string);
+			if(!isValidColor(color)) {
+				console.warn('"' + string + '" is not a valid color.');
+			} else {
+				validColors.push(color);
+			}
+		});
+		return validColors;
 	}
 
 	setMargins() {
@@ -277,7 +276,29 @@ export default class BaseChart {
 	updateDataset() {}
 
 	getDifferentChart(type) {
-		return getDifferentChart(type, this.type, this.parent, this.rawChartArgs);
+		const currentType = this.type;
+		let args = this.rawChartArgs;
+		if(type === currentType) return;
+
+		if(!ALL_CHART_TYPES.includes(type)) {
+			console.error(`'${type}' is not a valid chart type.`);
+		}
+
+		if(!COMPATIBLE_CHARTS[currentType].includes(type)) {
+			console.error(`'${currentType}' chart cannot be converted to a '${type}' chart.`);
+		}
+
+		// whether the new chart can use the existing colors
+		const useColor = DATA_COLOR_DIVISIONS[currentType] === DATA_COLOR_DIVISIONS[type];
+
+		// Okay, this is anticlimactic
+		// this function will need to actually be 'changeChartType(type)'
+		// that will update only the required elements, but for now ...
+
+		args.type = type;
+		args.colors = useColor ? args.colors : undefined;
+
+		return new Chart(this.parent, args);
 	}
 
 	unbindWindowEvents(){

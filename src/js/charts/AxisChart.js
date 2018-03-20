@@ -22,7 +22,7 @@ export default class AxisChart extends BaseChart {
 	}
 
 	configure(args) {
-		super.configure();
+		super.configure(args);
 
 		args.axisOptions = args.axisOptions || {};
 		args.tooltipOptions = args.tooltipOptions || {};
