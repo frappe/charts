@@ -267,6 +267,10 @@ const DEFAULT_COLORS = {
 	heatmap: HEATMAP_COLORS
 };
 
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -1263,25 +1267,19 @@ class BaseChart {
 	}
 
 	makeContainer() {
+
+		this.parent.innerHTML = '';
 		this.container = $.create('div', {
-			className: 'chart-container',
-			innerHTML: `<h6 class="title">${this.title}</h6>
-				<h6 class="sub-title uppercase">${this.subtitle}</h6>
-				<div class="frappe-chart graphics"></div>
-				<div class="graph-stats-container"></div>`
+			inside: this.parent,
+			className: 'chart-container'
 		});
 
-		// Chart needs a dedicated parent element
-		this.parent.innerHTML = '';
-		this.parent.appendChild(this.container);
-
-		this.chartWrapper = this.container.querySelector('.frappe-chart');
-		this.statsWrapper = this.container.querySelector('.graph-stats-container');
+		this.container = this.container;
 	}
 
 	makeTooltip() {
 		this.tip = new SvgTip({
-			parent: this.chartWrapper,
+			parent: this.container,
 			colors: this.colors
 		});
 		this.bindTooltip();
@@ -1344,7 +1342,7 @@ class BaseChart {
 			elementsToAnimate = elementsToAnimate.concat(c.update(animate));
 		});
 		if(elementsToAnimate.length > 0) {
-			runSMILAnimation(this.chartWrapper, this.svg, elementsToAnimate);
+			runSMILAnimation(this.container, this.svg, elementsToAnimate);
 			setTimeout(() => {
 				components.forEach(c => c.make());
 				this.updateNav();
@@ -1368,11 +1366,11 @@ class BaseChart {
 
 	makeChartArea() {
 		if(this.svg) {
-			this.chartWrapper.removeChild(this.svg);
+			this.container.removeChild(this.svg);
 		}
 		this.svg = makeSVGContainer(
-			this.chartWrapper,
-			'chart',
+			this.container,
+			'frappe-chart chart',
 			this.baseWidth,
 			this.baseHeight
 		);
@@ -1409,7 +1407,7 @@ class BaseChart {
 			};
 
 			document.addEventListener('keydown', (e) => {
-				if(isElementInViewport(this.chartWrapper)) {
+				if(isElementInViewport(this.container)) {
 					e = e || window.event;
 					if(this.keyActions[e.keyCode]) {
 						this.keyActions[e.keyCode]();
@@ -1517,26 +1515,26 @@ class AggregationChart extends BaseChart {
 	}
 
 	renderLegend() {
-		let s = this.state;
+		// let s = this.state;
 
-		this.statsWrapper.textContent = '';
+		// this.statsWrapper.textContent = '';
 
-		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
+		// this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
 
-		let xValues = s.labels;
-		this.legendTotals.map((d, i) => {
-			if(d) {
-				let stats = $.create('div', {
-					className: 'stats',
-					inside: this.statsWrapper
-				});
-				stats.innerHTML = `<span class="indicator">
-					<i style="background: ${this.colors[i]}"></i>
-					<span class="text-muted">${xValues[i]}:</span>
-					${d}
-				</span>`;
-			}
-		});
+		// let xValues = s.labels;
+		// this.legendTotals.map((d, i) => {
+		// 	if(d) {
+		// 		let stats = $.create('div', {
+		// 			className: 'stats',
+		// 			inside: this.statsWrapper
+		// 		});
+		// 		stats.innerHTML = `<span class="indicator">
+		// 			<i style="background: ${this.colors[i]}"></i>
+		// 			<span class="text-muted">${xValues[i]}:</span>
+		// 			${d}
+		// 		</span>`;
+		// 	}
+		// });
 	}
 }
 
@@ -1549,16 +1547,16 @@ class PercentageChart extends AggregationChart {
 	}
 
 	makeChartArea() {
-		this.chartWrapper.className += ' ' + 'graph-focus-margin';
-		this.chartWrapper.style.marginTop = '45px';
+		this.container.className += ' ' + 'graph-focus-margin';
+		this.container.style.marginTop = '45px';
 
-		this.statsWrapper.className += ' ' + 'graph-focus-margin';
-		this.statsWrapper.style.marginBottom = '30px';
-		this.statsWrapper.style.paddingTop = '0px';
+		// this.statsWrapper.className += ' ' + 'graph-focus-margin';
+		// this.statsWrapper.style.marginBottom = '30px';
+		// this.statsWrapper.style.paddingTop = '0px';
 
 		this.svg = $.create('div', {
 			className: 'div',
-			inside: this.chartWrapper
+			inside: this.container
 		});
 
 		this.chart = $.create('div', {
@@ -1593,12 +1591,12 @@ class PercentageChart extends AggregationChart {
 	bindTooltip() {
 		let s = this.state;
 
-		this.chartWrapper.addEventListener('mousemove', (e) => {
+		this.container.addEventListener('mousemove', (e) => {
 			let slice = e.target;
 			if(slice.classList.contains('progress-bar')) {
 
 				let i = slice.getAttribute('data-index');
-				let gOff = getOffset(this.chartWrapper), pOff = getOffset(slice);
+				let gOff = getOffset(this.container), pOff = getOffset(slice);
 
 				let x = pOff.left - gOff.left + slice.offsetWidth/2;
 				let y = pOff.top - gOff.top - 6;
@@ -2107,8 +2105,8 @@ class PieChart extends AggregationChart {
 	}
 
 	bindTooltip() {
-		this.chartWrapper.addEventListener('mousemove', this.mouseMove);
-		this.chartWrapper.addEventListener('mouseleave', this.mouseLeave);
+		this.container.addEventListener('mousemove', this.mouseMove);
+		this.container.addEventListener('mouseleave', this.mouseLeave);
 	}
 
 	mouseMove(e){
@@ -2389,6 +2387,7 @@ function getMaxCheckpoint(value, distribution) {
 }
 
 const COL_SIZE = HEATMAP_SQUARE_SIZE + HEATMAP_GUTTER_SIZE;
+
 class Heatmap extends BaseChart {
 	constructor(parent, options) {
 		super(parent, options);
@@ -2430,7 +2429,7 @@ class Heatmap extends BaseChart {
 	}
 
 	calcWidth() {
-		this.baseWidth = (this.no_of_cols) * COL_SIZE;
+		this.baseWidth = (this.no_of_cols + 99) * COL_SIZE;
 
 		if(this.discreteDomains) {
 			this.baseWidth += (COL_SIZE * NO_OF_YEAR_MONTHS);
@@ -2446,12 +2445,6 @@ class Heatmap extends BaseChart {
 			'data-groups',
 			`translate(0, 20)`
 		);
-
-		this.container.querySelector('.title').style.display = 'None';
-		this.container.querySelector('.sub-title').style.display = 'None';
-		this.container.querySelector('.graph-stats-container').style.display = 'None';
-		this.chartWrapper.style.marginTop = '0px';
-		this.chartWrapper.style.paddingTop = '0px';
 	}
 
 	calc() {
@@ -2591,7 +2584,7 @@ class Heatmap extends BaseChart {
 
 				let month = getMonthName(parseInt(dateParts[1])-1, true);
 
-				let gOff = this.chartWrapper.getBoundingClientRect(), pOff = e.target.getBoundingClientRect();
+				let gOff = this.container.getBoundingClientRect(), pOff = e.target.getBoundingClientRect();
 
 				let width = parseInt(e.target.getAttribute('width'));
 				let x = pOff.left - gOff.left + (width+2)/2;
@@ -3070,8 +3063,8 @@ class AxisChart extends BaseChart {
 
 	bindTooltip() {
 		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
-		this.chartWrapper.addEventListener('mousemove', (e) => {
-			let o = getOffset(this.chartWrapper);
+		this.container.addEventListener('mousemove', (e) => {
+			let o = getOffset(this.container);
 			let relX = e.pageX - o.left - this.leftMargin;
 			let relY = e.pageY - o.top - this.translateY;
 
@@ -3120,21 +3113,21 @@ class AxisChart extends BaseChart {
 	}
 
 	renderLegend() {
-		let s = this.data;
-		this.statsWrapper.textContent = '';
+		// let s = this.data;
+		// this.statsWrapper.textContent = '';
 
-		if(s.datasets.length > 1) {
-			s.datasets.map((d, i) => {
-				let stats = $.create('div', {
-					className: 'stats',
-					inside: this.statsWrapper
-				});
-				stats.innerHTML = `<span class="indicator">
-					<i style="background: ${this.colors[i]}"></i>
-					${d.name}
-				</span>`;
-			});
-		}
+		// if(s.datasets.length > 1) {
+		// 	s.datasets.map((d, i) => {
+		// 		let stats = $.create('div', {
+		// 			className: 'stats',
+		// 			inside: this.statsWrapper
+		// 		});
+		// 		stats.innerHTML = `<span class="indicator">
+		// 			<i style="background: ${this.colors[i]}"></i>
+		// 			${d.name}
+		// 		</span>`;
+		// 	});
+		// }
 	}
 
 	makeOverlay() {
@@ -3280,6 +3273,7 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
+// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,

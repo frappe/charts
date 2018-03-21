@@ -2,7 +2,7 @@ import BaseChart from './BaseChart';
 import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-utils';
 import { Y_AXIS_MARGIN } from '../utils/constants';
 import { getComponent } from '../objects/ChartComponents';
-import { $, getOffset, fire } from '../utils/dom';
+import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale } from '../utils/intervals';
 import { floatTwo } from '../utils/helpers';
 import { makeOverlay, updateOverlay } from '../utils/draw';
@@ -345,8 +345,8 @@ export default class AxisChart extends BaseChart {
 
 	bindTooltip() {
 		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
-		this.chartWrapper.addEventListener('mousemove', (e) => {
-			let o = getOffset(this.chartWrapper);
+		this.container.addEventListener('mousemove', (e) => {
+			let o = getOffset(this.container);
 			let relX = e.pageX - o.left - this.leftMargin;
 			let relY = e.pageY - o.top - this.translateY;
 
@@ -395,21 +395,21 @@ export default class AxisChart extends BaseChart {
 	}
 
 	renderLegend() {
-		let s = this.data;
-		this.statsWrapper.textContent = '';
+		// let s = this.data;
+		// this.statsWrapper.textContent = '';
 
-		if(s.datasets.length > 1) {
-			s.datasets.map((d, i) => {
-				let stats = $.create('div', {
-					className: 'stats',
-					inside: this.statsWrapper
-				});
-				stats.innerHTML = `<span class="indicator">
-					<i style="background: ${this.colors[i]}"></i>
-					${d.name}
-				</span>`;
-			});
-		}
+		// if(s.datasets.length > 1) {
+		// 	s.datasets.map((d, i) => {
+		// 		let stats = $.create('div', {
+		// 			className: 'stats',
+		// 			inside: this.statsWrapper
+		// 		});
+		// 		stats.innerHTML = `<span class="indicator">
+		// 			<i style="background: ${this.colors[i]}"></i>
+		// 			${d.name}
+		// 		</span>`;
+		// 	});
+		// }
 	}
 
 	makeOverlay() {

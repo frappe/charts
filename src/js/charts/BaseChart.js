@@ -100,25 +100,19 @@ export default class BaseChart {
 	}
 
 	makeContainer() {
+
+		this.parent.innerHTML = '';
 		this.container = $.create('div', {
-			className: 'chart-container',
-			innerHTML: `<h6 class="title">${this.title}</h6>
-				<h6 class="sub-title uppercase">${this.subtitle}</h6>
-				<div class="frappe-chart graphics"></div>
-				<div class="graph-stats-container"></div>`
+			inside: this.parent,
+			className: 'chart-container'
 		});
 
-		// Chart needs a dedicated parent element
-		this.parent.innerHTML = '';
-		this.parent.appendChild(this.container);
-
-		this.chartWrapper = this.container.querySelector('.frappe-chart');
-		this.statsWrapper = this.container.querySelector('.graph-stats-container');
+		this.container = this.container;
 	}
 
 	makeTooltip() {
 		this.tip = new SvgTip({
-			parent: this.chartWrapper,
+			parent: this.container,
 			colors: this.colors
 		});
 		this.bindTooltip();
@@ -181,7 +175,7 @@ export default class BaseChart {
 			elementsToAnimate = elementsToAnimate.concat(c.update(animate));
 		});
 		if(elementsToAnimate.length > 0) {
-			runSMILAnimation(this.chartWrapper, this.svg, elementsToAnimate);
+			runSMILAnimation(this.container, this.svg, elementsToAnimate);
 			setTimeout(() => {
 				components.forEach(c => c.make());
 				this.updateNav();
@@ -205,11 +199,11 @@ export default class BaseChart {
 
 	makeChartArea() {
 		if(this.svg) {
-			this.chartWrapper.removeChild(this.svg);
+			this.container.removeChild(this.svg);
 		}
 		this.svg = makeSVGContainer(
-			this.chartWrapper,
-			'chart',
+			this.container,
+			'frappe-chart chart',
 			this.baseWidth,
 			this.baseHeight
 		);
@@ -246,7 +240,7 @@ export default class BaseChart {
 			};
 
 			document.addEventListener('keydown', (e) => {
-				if(isElementInViewport(this.chartWrapper)) {
+				if(isElementInViewport(this.container)) {
 					e = e || window.event;
 					if(this.keyActions[e.keyCode]) {
 						this.keyActions[e.keyCode]();

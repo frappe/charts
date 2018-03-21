@@ -1,5 +1,4 @@
 import BaseChart from './BaseChart';
-import { $ } from '../utils/dom';
 
 export default class AggregationChart extends BaseChart {
 	constructor(parent, args) {
@@ -48,25 +47,25 @@ export default class AggregationChart extends BaseChart {
 	}
 
 	renderLegend() {
-		let s = this.state;
+		// let s = this.state;
 
-		this.statsWrapper.textContent = '';
+		// this.statsWrapper.textContent = '';
 
-		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
+		// this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
 
-		let xValues = s.labels;
-		this.legendTotals.map((d, i) => {
-			if(d) {
-				let stats = $.create('div', {
-					className: 'stats',
-					inside: this.statsWrapper
-				});
-				stats.innerHTML = `<span class="indicator">
-					<i style="background: ${this.colors[i]}"></i>
-					<span class="text-muted">${xValues[i]}:</span>
-					${d}
-				</span>`;
-			}
-		});
+		// let xValues = s.labels;
+		// this.legendTotals.map((d, i) => {
+		// 	if(d) {
+		// 		let stats = $.create('div', {
+		// 			className: 'stats',
+		// 			inside: this.statsWrapper
+		// 		});
+		// 		stats.innerHTML = `<span class="indicator">
+		// 			<i style="background: ${this.colors[i]}"></i>
+		// 			<span class="text-muted">${xValues[i]}:</span>
+		// 			${d}
+		// 		</span>`;
+		// 	}
+		// });
 	}
 }

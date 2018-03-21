@@ -7,7 +7,6 @@ import { HEATMAP_DISTRIBUTION_SIZE, HEATMAP_SQUARE_SIZE,
 	HEATMAP_GUTTER_SIZE } from '../utils/constants';
 
 const COL_SIZE = HEATMAP_SQUARE_SIZE + HEATMAP_GUTTER_SIZE;
-const EXTRA_COLS = 3;
 
 export default class Heatmap extends BaseChart {
 	constructor(parent, options) {
@@ -50,7 +49,7 @@ export default class Heatmap extends BaseChart {
 	}
 
 	calcWidth() {
-		this.baseWidth = (this.no_of_cols) * COL_SIZE;
+		this.baseWidth = (this.no_of_cols + 99) * COL_SIZE;
 
 		if(this.discreteDomains) {
 			this.baseWidth += (COL_SIZE * NO_OF_YEAR_MONTHS);
@@ -66,12 +65,6 @@ export default class Heatmap extends BaseChart {
 			'data-groups',
 			`translate(0, 20)`
 		);
-
-		this.container.querySelector('.title').style.display = 'None';
-		this.container.querySelector('.sub-title').style.display = 'None';
-		this.container.querySelector('.graph-stats-container').style.display = 'None';
-		this.chartWrapper.style.marginTop = '0px';
-		this.chartWrapper.style.paddingTop = '0px';
 	}
 
 	calc() {
@@ -212,7 +205,7 @@ export default class Heatmap extends BaseChart {
 
 				let month = getMonthName(parseInt(dateParts[1])-1, true);
 
-				let gOff = this.chartWrapper.getBoundingClientRect(), pOff = e.target.getBoundingClientRect();
+				let gOff = this.container.getBoundingClientRect(), pOff = e.target.getBoundingClientRect();
 
 				let width = parseInt(e.target.getAttribute('width'));
 				let x = pOff.left - gOff.left + (width+2)/2;

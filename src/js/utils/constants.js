@@ -14,7 +14,7 @@ export const DATA_COLOR_DIVISIONS = {
 	pie: 'labels',
 	percentage: 'labels',
 	heatmap: HEATMAP_DISTRIBUTION_SIZE
-}
+};
 
 export const VERT_SPACE_OUTSIDE_BASE_CHART = 50;
 export const TRANSLATE_Y_BASE_CHART = 20;
@@ -57,4 +57,4 @@ export const DEFAULT_COLORS = {
 	pie: DEFAULT_CHART_COLORS,
 	percentage: DEFAULT_CHART_COLORS,
 	heatmap: HEATMAP_COLORS
-}
+};

@@ -142,8 +142,8 @@ export default class PieChart extends AggregationChart {
 	}
 
 	bindTooltip() {
-		this.chartWrapper.addEventListener('mousemove', this.mouseMove);
-		this.chartWrapper.addEventListener('mouseleave', this.mouseLeave);
+		this.container.addEventListener('mousemove', this.mouseMove);
+		this.container.addEventListener('mouseleave', this.mouseLeave);
 	}
 
 	mouseMove(e){

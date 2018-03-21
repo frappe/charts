@@ -10,16 +10,16 @@ export default class PercentageChart extends AggregationChart {
 	}
 
 	makeChartArea() {
-		this.chartWrapper.className += ' ' + 'graph-focus-margin';
-		this.chartWrapper.style.marginTop = '45px';
+		this.container.className += ' ' + 'graph-focus-margin';
+		this.container.style.marginTop = '45px';
 
-		this.statsWrapper.className += ' ' + 'graph-focus-margin';
-		this.statsWrapper.style.marginBottom = '30px';
-		this.statsWrapper.style.paddingTop = '0px';
+		// this.statsWrapper.className += ' ' + 'graph-focus-margin';
+		// this.statsWrapper.style.marginBottom = '30px';
+		// this.statsWrapper.style.paddingTop = '0px';
 
 		this.svg = $.create('div', {
 			className: 'div',
-			inside: this.chartWrapper
+			inside: this.container
 		});
 
 		this.chart = $.create('div', {
@@ -54,12 +54,12 @@ export default class PercentageChart extends AggregationChart {
 	bindTooltip() {
 		let s = this.state;
 
-		this.chartWrapper.addEventListener('mousemove', (e) => {
+		this.container.addEventListener('mousemove', (e) => {
 			let slice = e.target;
 			if(slice.classList.contains('progress-bar')) {
 
 				let i = slice.getAttribute('data-index');
-				let gOff = getOffset(this.chartWrapper), pOff = getOffset(slice);
+				let gOff = getOffset(this.container), pOff = getOffset(slice);
 
 				let x = pOff.left - gOff.left + slice.offsetWidth/2;
 				let y = pOff.top - gOff.top - 6;
