@@ -1,5 +1,12 @@
 // Playing around with dates
 
+export const NO_OF_YEAR_MONTHS = 12;
+export const NO_OF_DAYS_IN_WEEK = 7;
+export const NO_OF_MILLIS = 1000;
+
+export const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
+	"July", "August", "September", "October", "November", "December"];
+
 // https://stackoverflow.com/a/11252167/6495043
 function treatAsUtc(dateStr) {
 	let result = new Date(dateStr);
@@ -31,9 +38,7 @@ export function addDays(date, numberOfDays) {
 	date.setDate(date.getDate() + numberOfDays);
 }
 
-export function getMonthName(i) {
-	let monthNames = ["January", "February", "March", "April", "May", "June",
-		"July", "August", "September", "October", "November", "December"
-	];
-	return monthNames[i];
+export function getMonthName(i, short=false) {
+	let monthName = MONTH_NAMES[i];
+	return short ? monthName.slice(0, 3) : monthName;
 }

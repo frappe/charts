@@ -44,6 +44,9 @@ export const FULL_ANGLE = 360;
 // More colors are difficult to parse visually
 export const HEATMAP_DISTRIBUTION_SIZE = 5;
 
+export const HEATMAP_SQUARE_SIZE = 10;
+export const HEATMAP_GUTTER_SIZE = 2;
+
 const HEATMAP_COLORS = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
 const DEFAULT_CHART_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
 	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];

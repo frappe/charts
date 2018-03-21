@@ -449,10 +449,18 @@ for (var i = 0; i< 375; i++) {
 	timestamp = Math.floor(timestamp - 86400).toFixed(1);
 }
 
+let today = new Date();
+let start = today;
+let end = '';
+start.setFullYear( start.getFullYear() - 2 );
+
 let heatmap = new frappe.Chart("#chart-heatmap", {
-	data: heatmapData,
+	data: {
+		dataPoints: heatmapData,
+		start: start,
+		end: end,
+	},
 	type: 'heatmap',
-	legendScale: [0, 1, 2, 4, 5],
 	height: 115,
 	discreteDomains: 1,
 	colors: ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c']
