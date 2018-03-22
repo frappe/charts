@@ -209,7 +209,7 @@ Array.prototype.slice.call(
 		let type = btn.getAttribute('data-type');
 		args.type = type;
 
-		let newChart = new frappe.Chart("#chart-aggr", args);;
+		let newChart = aggrChart.getDifferentChart(type);
 		if(newChart){
 			aggrChart = newChart;
 		}

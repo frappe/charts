@@ -1,6 +1,6 @@
 import BaseChart from './BaseChart';
 import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-utils';
-import { Y_AXIS_MARGIN } from '../utils/constants';
+import { Y_AXIS_LEFT_MARGIN, Y_AXIS_RIGHT_MARGIN } from '../utils/constants';
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale } from '../utils/intervals';
@@ -39,8 +39,8 @@ export default class AxisChart extends BaseChart {
 
 	setMargins() {
 		super.setMargins();
-		this.leftMargin = Y_AXIS_MARGIN;
-		this.rightMargin = Y_AXIS_MARGIN;
+		this.leftMargin = Y_AXIS_LEFT_MARGIN;
+		this.rightMargin = Y_AXIS_RIGHT_MARGIN;
 	}
 
 	prepareData(data=this.data) {
@@ -348,9 +348,9 @@ export default class AxisChart extends BaseChart {
 		this.container.addEventListener('mousemove', (e) => {
 			let o = getOffset(this.container);
 			let relX = e.pageX - o.left - this.leftMargin;
-			let relY = e.pageY - o.top - this.translateY;
+			let relY = e.pageY - o.top - this.topMargin;
 
-			if(relY < this.height + this.translateY * 2) {
+			if(relY < this.height + this.topMargin * 2) {
 				this.mapTooltipXPosition(relX);
 			} else {
 				this.tip.hideTip();
@@ -377,7 +377,7 @@ export default class AxisChart extends BaseChart {
 			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxis.positions[i-1];
 			if(relX > xVal - s.unitWidth/2) {
 				let x = xVal + this.leftMargin;
-				let y = s.yExtremes[i] + this.translateY;
+				let y = s.yExtremes[i] + this.topMargin;
 
 				let values = this.data.datasets.map((set, j) => {
 					return {

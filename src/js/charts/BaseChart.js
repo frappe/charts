@@ -1,8 +1,8 @@
 import SvgTip from '../objects/SvgTip';
 import { $, isElementInViewport, getElementContentWidth } from '../utils/dom';
-import { makeSVGContainer, makeSVGDefs, makeSVGGroup } from '../utils/draw';
-import { VERT_SPACE_OUTSIDE_BASE_CHART, TRANSLATE_Y_BASE_CHART, LEFT_MARGIN_BASE_CHART,
-	RIGHT_MARGIN_BASE_CHART, INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS,
+import { makeSVGContainer, makeSVGDefs, makeSVGGroup, makeText, AXIS_TICK_LENGTH } from '../utils/draw';
+import { BASE_CHART_TOP_MARGIN, BASE_CHART_LEFT_MARGIN,
+	BASE_CHART_RIGHT_MARGIN, INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS,
 	ALL_CHART_TYPES, COMPATIBLE_CHARTS, DATA_COLOR_DIVISIONS} from '../utils/constants';
 import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
@@ -10,7 +10,11 @@ import { Chart } from '../chart';
 
 export default class BaseChart {
 	constructor(parent, options) {
-		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
+
+		this.parent = typeof parent === 'string'
+			? document.querySelector(parent)
+			: parent;
+
 		if (!(this.parent instanceof HTMLElement)) {
 			throw new Error('No `parent` element to render on was provided.');
 		}
@@ -18,15 +22,13 @@ export default class BaseChart {
 		this.rawChartArgs = options;
 
 		this.title = options.title || '';
-		this.subtitle = options.subtitle || '';
 		this.argHeight = options.height || 240;
 		this.type = options.type || '';
 
 		this.realData = this.prepareData(options.data);
 		this.data = this.prepareFirstData(this.realData);
 
-		this.colors = this.validateColors(options.colors)
-			.concat(DEFAULT_COLORS[this.type]);
+		this.colors = this.validateColors(options.colors, this.type);
 
 		this.config = {
 			showTooltip: 1, // calculate
@@ -54,8 +56,9 @@ export default class BaseChart {
 		window.addEventListener('orientationchange', () => this.draw(true));
 	}
 
-	validateColors(colors = []) {
+	validateColors(colors, type) {
 		const validColors = [];
+		colors = (colors || []).concat(DEFAULT_COLORS[type]);
 		colors.forEach((string) => {
 			const color = getColor(string);
 			if(!isValidColor(color)) {
@@ -70,25 +73,15 @@ export default class BaseChart {
 	setMargins() {
 		let height = this.argHeight;
 		this.baseHeight = height;
-		this.height = height - VERT_SPACE_OUTSIDE_BASE_CHART;
-		this.translateY = TRANSLATE_Y_BASE_CHART;
+		this.height = height - 70;
+		this.topMargin = BASE_CHART_TOP_MARGIN;
 
 		// Horizontal margins
-		this.leftMargin = LEFT_MARGIN_BASE_CHART;
-		this.rightMargin = RIGHT_MARGIN_BASE_CHART;
-	}
-
-	validate() {
-		return true;
+		this.leftMargin = BASE_CHART_LEFT_MARGIN;
+		this.rightMargin = BASE_CHART_RIGHT_MARGIN;
 	}
 
 	setup() {
-		if(this.validate()) {
-			this._setup();
-		}
-	}
-
-	_setup() {
 		this.makeContainer();
 		this.makeTooltip();
 
@@ -100,14 +93,12 @@ export default class BaseChart {
 	}
 
 	makeContainer() {
-
+		// Chart needs a dedicated parent element
 		this.parent.innerHTML = '';
 		this.container = $.create('div', {
 			inside: this.parent,
 			className: 'chart-container'
 		});
-
-		this.container = this.container;
 	}
 
 	makeTooltip() {
@@ -201,25 +192,46 @@ export default class BaseChart {
 		if(this.svg) {
 			this.container.removeChild(this.svg);
 		}
+
+		let titleAreaHeight = 0;
+		let legendAreaHeight = 0;
+		if(this.title.length) {
+			titleAreaHeight = 30;
+		}
+		if(this.showLegend) {
+			legendAreaHeight = 30;
+		}
 		this.svg = makeSVGContainer(
 			this.container,
 			'frappe-chart chart',
 			this.baseWidth,
-			this.baseHeight
+			this.baseHeight + titleAreaHeight + legendAreaHeight
 		);
 		this.svgDefs = makeSVGDefs(this.svg);
 
-		// I WISH !!!
-		// this.svg = makeSVGGroup(
-		// 	svgContainer,
-		// 	'flipped-coord-system',
-		// 	`translate(0, ${this.baseHeight}) scale(1, -1)`
-		// );
+		if(this.title.length) {
+			this.titleEL = makeText(
+				'title',
+				this.leftMargin - AXIS_TICK_LENGTH,
+				this.topMargin,
+				this.title,
+				11
+			);
+			this.svg.appendChild(this.titleEL);
+		}
 
+		let top = this.topMargin + titleAreaHeight;
 		this.drawArea = makeSVGGroup(
 			this.svg,
 			this.type + '-chart',
-			`translate(${this.leftMargin}, ${this.translateY})`
+			`translate(${this.leftMargin}, ${top})`
+		);
+
+		top = this.baseHeight + titleAreaHeight;
+		this.legendArea = makeSVGGroup(
+			this.svg,
+			'chart-legend',
+			`translate(${this.leftMargin}, ${top})`
 		);
 	}
 

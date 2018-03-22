@@ -16,11 +16,12 @@ export const DATA_COLOR_DIVISIONS = {
 	heatmap: HEATMAP_DISTRIBUTION_SIZE
 };
 
-export const VERT_SPACE_OUTSIDE_BASE_CHART = 50;
-export const TRANSLATE_Y_BASE_CHART = 20;
-export const LEFT_MARGIN_BASE_CHART = 60;
-export const RIGHT_MARGIN_BASE_CHART = 40;
-export const Y_AXIS_MARGIN = 60;
+export const BASE_CHART_TOP_MARGIN = 30;
+export const BASE_CHART_LEFT_MARGIN = 20;
+export const BASE_CHART_RIGHT_MARGIN = 20;
+
+export const Y_AXIS_LEFT_MARGIN = 60;
+export const Y_AXIS_RIGHT_MARGIN = 40;
 
 export const INIT_CHART_UPDATE_TIMEOUT = 700;
 export const CHART_POST_ANIMATE_TIMEOUT = 400;

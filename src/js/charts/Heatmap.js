@@ -44,8 +44,8 @@ export default class Heatmap extends BaseChart {
 
 	setMargins() {
 		super.setMargins();
-		this.leftMargin = HEATMAP_SQUARE_SIZE;
-		this.translateY = HEATMAP_SQUARE_SIZE;
+		// this.leftMargin = HEATMAP_SQUARE_SIZE;
+		// this.topMargin = HEATMAP_SQUARE_SIZE;
 	}
 
 	calcWidth() {
@@ -94,7 +94,7 @@ export default class Heatmap extends BaseChart {
 			let dataGroup, monthChange = 0;
 			let day = new Date(currentWeekSunday);
 
-			[dataGroup, monthChange] = this.get_week_squares_group(day, this.weekCol);
+			[dataGroup, monthChange] = this.getWeekSquaresGroup(day, this.weekCol);
 			this.dataGroups.appendChild(dataGroup);
 			this.weekCol += 1 + parseInt(this.discreteDomains && monthChange);
 			this.monthWeeks[this.currentMonth]++;
@@ -105,10 +105,10 @@ export default class Heatmap extends BaseChart {
 			}
 			addDays(currentWeekSunday, NO_OF_DAYS_IN_WEEK);
 		}
-		this.render_month_labels();
+		this.renderMonthLabels();
 	}
 
-	get_week_squares_group(currentDate, index) {
+	getWeekSquaresGroup(currentDate, index) {
 		const step = 1;
 		const todayTime = this.today.getTime();
 
@@ -168,7 +168,7 @@ export default class Heatmap extends BaseChart {
 		return [dataGroup, monthChange];
 	}
 
-	render_month_labels() {
+	renderMonthLabels() {
 		// this.first_month_label = 1;
 		// if (this.firstWeekStart.getDate() > 8) {
 		// 	this.first_month_label = 0;

@@ -2,7 +2,7 @@ import { getBarHeightAndYAttr } from './draw-utils';
 import { getStringWidth } from './helpers';
 import { DOT_OVERLAY_SIZE_INCR } from './constants';
 
-const AXIS_TICK_LENGTH = 6;
+export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 export const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
@@ -148,13 +148,13 @@ export function makeHeatSquare(className, x, y, size, fill='none', data={}) {
 	return createSVG("rect", args);
 }
 
-export function makeText(className, x, y, content) {
+export function makeText(className, x, y, content, fontSize = FONT_SIZE) {
 	return createSVG('text', {
 		className: className,
 		x: x,
 		y: y,
-		dy: (FONT_SIZE / 2) + 'px',
-		'font-size': FONT_SIZE + 'px',
+		dy: (fontSize / 2) + 'px',
+		'font-size': fontSize + 'px',
 		innerHTML: content
 	});
 }
