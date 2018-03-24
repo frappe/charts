@@ -5,39 +5,37 @@ import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
 import { isValidColor } from '../utils/colors';
 
 export default class Heatmap extends BaseChart {
-	constructor({
-		start = '',
-		domain = '',
-		subdomain = '',
-		data = {},
-		discrete_domains = 0,
-		count_label = '',
-		legend_colors = []
-	}) {
-		super(arguments[0]);
+	constructor(parent, options) {
+		super(parent, options);
 
 		this.type = 'heatmap';
 
-		this.domain = domain;
-		this.subdomain = subdomain;
-		this.data = data;
-		this.discrete_domains = discrete_domains;
-		this.count_label = count_label;
+		this.domain = options.domain || '';
+		this.subdomain = options.subdomain || '';
+		this.data = options.data || {};
+		this.discreteDomains = options.discreteDomains === 0 ? 0 : 1;
+		this.countLabel = options.countLabel || '';
 
 		let today = new Date();
-		this.start = start || addDays(today, 365);
+		this.start = options.start || addDays(today, 365);
 
-		legend_colors = legend_colors.slice(0, 5);
-		this.legend_colors = this.validate_colors(legend_colors)
-			? legend_colors
+		let legendColors = (options.legendColors || []).slice(0, 5);
+		this.legendColors = this.validate_colors(legendColors)
+			? legendColors
 			: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
 
 		// Fixed 5-color theme,
 		// More colors are difficult to parse visually
 		this.distribution_size = 5;
 
-		this.translate_x = 0;
+		this.translateX = 0;
 		this.setup();
+	}
+
+	setMargins() {
+		super.setMargins();
+		this.leftMargin = 10;
+		this.translateY = 10;
 	}
 
 	validate_colors(colors) {
@@ -54,210 +52,212 @@ export default class Heatmap extends BaseChart {
 		return valid;
 	}
 
-	setup_base_values() {
+	configure() {
+		super.configure();
 		this.today = new Date();
 
 		if(!this.start) {
 			this.start = new Date();
 			this.start.setFullYear( this.start.getFullYear() - 1 );
 		}
-		this.first_week_start = new Date(this.start.toDateString());
-		this.last_week_start = new Date(this.today.toDateString());
-		if(this.first_week_start.getDay() !== 7) {
-			addDays(this.first_week_start, (-1) * this.first_week_start.getDay());
+		this.firstWeekStart = new Date(this.start.toDateString());
+		this.lastWeekStart = new Date(this.today.toDateString());
+		if(this.firstWeekStart.getDay() !== 7) {
+			addDays(this.firstWeekStart, (-1) * this.firstWeekStart.getDay());
 		}
-		if(this.last_week_start.getDay() !== 7) {
-			addDays(this.last_week_start, (-1) * this.last_week_start.getDay());
+		if(this.lastWeekStart.getDay() !== 7) {
+			addDays(this.lastWeekStart, (-1) * this.lastWeekStart.getDay());
 		}
-		this.no_of_cols = getWeeksBetween(this.first_week_start + '', this.last_week_start + '') + 1;
+		this.no_of_cols = getWeeksBetween(this.firstWeekStart + '', this.lastWeekStart + '') + 1;
 	}
 
-	set_width() {
-		this.base_width = (this.no_of_cols + 3) * 12 ;
+	calcWidth() {
+		this.baseWidth = (this.no_of_cols + 3) * 12 ;
 
-		if(this.discrete_domains) {
-			this.base_width += (12 * 12);
+		if(this.discreteDomains) {
+			this.baseWidth += (12 * 12);
 		}
 	}
 
-	setup_components() {
-		this.domain_label_group = this.makeDrawAreaComponent(
+	makeChartArea() {
+		super.makeChartArea();
+		this.domainLabelGroup = makeSVGGroup(this.drawArea,
 			'domain-label-group chart-label');
 
-		this.data_groups = this.makeDrawAreaComponent(
+		this.dataGroups = makeSVGGroup(this.drawArea,
 			'data-groups',
 			`translate(0, 20)`
 		);
+
+		this.container.querySelector('.title').style.display = 'None';
+		this.container.querySelector('.sub-title').style.display = 'None';
+		this.container.querySelector('.graph-stats-container').style.display = 'None';
+		this.chartWrapper.style.marginTop = '0px';
+		this.chartWrapper.style.paddingTop = '0px';
 	}
 
-	setup_values() {
-		this.domain_label_group.textContent = '';
-		this.data_groups.textContent = '';
+	calc() {
 
-		let data_values = Object.keys(this.data).map(key => this.data[key]);
-		this.distribution = calcDistribution(data_values, this.distribution_size);
+		let dataValues = Object.keys(this.data).map(key => this.data[key]);
+		this.distribution = calcDistribution(dataValues, this.distribution_size);
 
-		this.month_names = ["January", "February", "March", "April", "May", "June",
+		this.monthNames = ["January", "February", "March", "April", "May", "June",
 			"July", "August", "September", "October", "November", "December"
 		];
-
-		this.render_all_weeks_and_store_x_values(this.no_of_cols);
 	}
 
-	render_all_weeks_and_store_x_values(no_of_weeks) {
-		let current_week_sunday = new Date(this.first_week_start);
-		this.week_col = 0;
-		this.current_month = current_week_sunday.getMonth();
+	render() {
+		this.renderAllWeeksAndStoreXValues(this.no_of_cols);
+	}
 
-		this.months = [this.current_month + ''];
-		this.month_weeks = {}, this.month_start_points = [];
-		this.month_weeks[this.current_month] = 0;
-		this.month_start_points.push(13);
+	renderAllWeeksAndStoreXValues(no_of_weeks) {
+		// renderAllWeeksAndStoreXValues
+		this.domainLabelGroup.textContent = '';
+		this.dataGroups.textContent = '';
+
+		let currentWeekSunday = new Date(this.firstWeekStart);
+		this.weekCol = 0;
+		this.currentMonth = currentWeekSunday.getMonth();
+
+		this.months = [this.currentMonth + ''];
+		this.monthWeeks = {}, this.monthStartPoints = [];
+		this.monthWeeks[this.currentMonth] = 0;
+		this.monthStartPoints.push(13);
 
 		for(var i = 0; i < no_of_weeks; i++) {
-			let data_group, month_change = 0;
-			let day = new Date(current_week_sunday);
+			let dataGroup, monthChange = 0;
+			let day = new Date(currentWeekSunday);
 
-			[data_group, month_change] = this.get_week_squares_group(day, this.week_col);
-			this.data_groups.appendChild(data_group);
-			this.week_col += 1 + parseInt(this.discrete_domains && month_change);
-			this.month_weeks[this.current_month]++;
-			if(month_change) {
-				this.current_month = (this.current_month + 1) % 12;
-				this.months.push(this.current_month + '');
-				this.month_weeks[this.current_month] = 1;
+			[dataGroup, monthChange] = this.get_week_squares_group(day, this.weekCol);
+			this.dataGroups.appendChild(dataGroup);
+			this.weekCol += 1 + parseInt(this.discreteDomains && monthChange);
+			this.monthWeeks[this.currentMonth]++;
+			if(monthChange) {
+				this.currentMonth = (this.currentMonth + 1) % 12;
+				this.months.push(this.currentMonth + '');
+				this.monthWeeks[this.currentMonth] = 1;
 			}
-			addDays(current_week_sunday, 7);
+			addDays(currentWeekSunday, 7);
 		}
 		this.render_month_labels();
 	}
 
-	get_week_squares_group(current_date, index) {
-		const no_of_weekdays = 7;
-		const square_side = 10;
-		const cell_padding = 2;
+	get_week_squares_group(currentDate, index) {
+		const noOfWeekdays = 7;
+		const squareSide = 10;
+		const cellPadding = 2;
 		const step = 1;
-		const today_time = this.today.getTime();
+		const todayTime = this.today.getTime();
 
-		let month_change = 0;
-		let week_col_change = 0;
+		let monthChange = 0;
+		let weekColChange = 0;
 
-		let data_group = makeSVGGroup(this.data_groups, 'data-group');
+		let dataGroup = makeSVGGroup(this.dataGroups, 'data-group');
 
-		for(var y = 0, i = 0; i < no_of_weekdays; i += step, y += (square_side + cell_padding)) {
-			let data_value = 0;
-			let color_index = 0;
+		for(var y = 0, i = 0; i < noOfWeekdays; i += step, y += (squareSide + cellPadding)) {
+			let dataValue = 0;
+			let colorIndex = 0;
 
-			let current_timestamp = current_date.getTime()/1000;
-			let timestamp = Math.floor(current_timestamp - (current_timestamp % 86400)).toFixed(1);
+			let currentTimestamp = currentDate.getTime()/1000;
+			let timestamp = Math.floor(currentTimestamp - (currentTimestamp % 86400)).toFixed(1);
 
 			if(this.data[timestamp]) {
-				data_value = this.data[timestamp];
+				dataValue = this.data[timestamp];
 			}
 
 			if(this.data[Math.round(timestamp)]) {
-				data_value = this.data[Math.round(timestamp)];
+				dataValue = this.data[Math.round(timestamp)];
 			}
 
-			if(data_value) {
-				color_index = getMaxCheckpoint(data_value, this.distribution);
+			if(dataValue) {
+				colorIndex = getMaxCheckpoint(dataValue, this.distribution);
 			}
 
-			let x = 13 + (index + week_col_change) * 12;
+			let x = 13 + (index + weekColChange) * 12;
 
 			let dataAttr = {
-				'data-date': getDdMmYyyy(current_date),
-				'data-value': data_value,
-				'data-day': current_date.getDay()
+				'data-date': getDdMmYyyy(currentDate),
+				'data-value': dataValue,
+				'data-day': currentDate.getDay()
 			};
-			let heatSquare = makeHeatSquare('day', x, y, square_side,
-				this.legend_colors[color_index], dataAttr);
 
-			data_group.appendChild(heatSquare);
+			let heatSquare = makeHeatSquare('day', x, y, squareSide,
+				this.legendColors[colorIndex], dataAttr);
 
-			let next_date = new Date(current_date);
-			addDays(next_date, 1);
-			if(next_date.getTime() > today_time) break;
+			dataGroup.appendChild(heatSquare);
+
+			let nextDate = new Date(currentDate);
+			addDays(nextDate, 1);
+			if(nextDate.getTime() > todayTime) break;
 
 
-			if(next_date.getMonth() - current_date.getMonth()) {
-				month_change = 1;
-				if(this.discrete_domains) {
-					week_col_change = 1;
+			if(nextDate.getMonth() - currentDate.getMonth()) {
+				monthChange = 1;
+				if(this.discreteDomains) {
+					weekColChange = 1;
 				}
 
-				this.month_start_points.push(13 + (index + week_col_change) * 12);
+				this.monthStartPoints.push(13 + (index + weekColChange) * 12);
 			}
-			current_date = next_date;
+			currentDate = nextDate;
 		}
 
-		return [data_group, month_change];
+		return [dataGroup, monthChange];
 	}
 
 	render_month_labels() {
 		// this.first_month_label = 1;
-		// if (this.first_week_start.getDate() > 8) {
+		// if (this.firstWeekStart.getDate() > 8) {
 		// 	this.first_month_label = 0;
 		// }
 		// this.last_month_label = 1;
 
 		// let first_month = this.months.shift();
-		// let first_month_start = this.month_start_points.shift();
+		// let first_month_start = this.monthStartPoints.shift();
 		// render first month if
 
 		// let last_month = this.months.pop();
-		// let last_month_start = this.month_start_points.pop();
+		// let last_month_start = this.monthStartPoints.pop();
 		// render last month if
 
 		this.months.shift();
-		this.month_start_points.shift();
+		this.monthStartPoints.shift();
 		this.months.pop();
-		this.month_start_points.pop();
+		this.monthStartPoints.pop();
 
-		this.month_start_points.map((start, i) => {
-			let month_name =  this.month_names[this.months[i]].substring(0, 3);
+		this.monthStartPoints.map((start, i) => {
+			let month_name =  this.monthNames[this.months[i]].substring(0, 3);
 			let text = makeText('y-value-text', start+12, 10, month_name);
-			this.domain_label_group.appendChild(text);
+			this.domainLabelGroup.appendChild(text);
 		});
 	}
 
-	make_graph_components() {
-		Array.prototype.slice.call(
-			this.container.querySelectorAll('.graph-stats-container, .sub-title, .title')
-		).map(d => {
-			d.style.display = 'None';
-		});
-		this.chart_wrapper.style.marginTop = '0px';
-		this.chart_wrapper.style.paddingTop = '0px';
-	}
-
-	bind_tooltip() {
+	bindTooltip() {
 		Array.prototype.slice.call(
 			document.querySelectorAll(".data-group .day")
 		).map(el => {
 			el.addEventListener('mouseenter', (e) => {
 				let count = e.target.getAttribute('data-value');
-				let date_parts = e.target.getAttribute('data-date').split('-');
+				let dateParts = e.target.getAttribute('data-date').split('-');
 
-				let month = this.month_names[parseInt(date_parts[1])-1].substring(0, 3);
+				let month = this.monthNames[parseInt(dateParts[1])-1].substring(0, 3);
 
-				let g_off = this.chart_wrapper.getBoundingClientRect(), p_off = e.target.getBoundingClientRect();
+				let gOff = this.chartWrapper.getBoundingClientRect(), pOff = e.target.getBoundingClientRect();
 
 				let width = parseInt(e.target.getAttribute('width'));
-				let x = p_off.left - g_off.left + (width+2)/2;
-				let y = p_off.top - g_off.top - (width+2)/2;
-				let value = count + ' ' + this.count_label;
-				let name = ' on ' + month + ' ' + date_parts[0] + ', ' + date_parts[2];
+				let x = pOff.left - gOff.left + (width+2)/2;
+				let y = pOff.top - gOff.top - (width+2)/2;
+				let value = count + ' ' + this.countLabel;
+				let name = ' on ' + month + ' ' + dateParts[0] + ', ' + dateParts[2];
 
-				this.tip.set_values(x, y, name, value, [], 1);
-				this.tip.show_tip();
+				this.tip.setValues(x, y, {name: name, value: value, valueFirst: 1}, []);
+				this.tip.showTip();
 			});
 		});
 	}
 
 	update(data) {
-		this.data = data;
-		this.setup_values();
-		this.bind_tooltip();
+		super.update(data);
+		this.bindTooltip();
 	}
 }

@@ -28,8 +28,13 @@
 	}
 	.graph-stats-container {
 		display: flex;
-		justify-content: space-around;
-		padding-top: 10px;
+		justify-content: space-between;
+		padding: 10px;
+		&:before,
+		&:after {
+			content: '';
+			display: block;
+		}
 		.stats {
 			padding-bottom: 15px;
 		}
@@ -51,8 +56,8 @@
 		}
 	}
 	.axis, .chart-label {
-		font-size: 11px;
 		fill: #555b51;
+		// temp commented
 		line {
 			stroke: #dadada;
 		}
@@ -62,11 +67,26 @@
 			margin-bottom: 0px;
 		}
 	}
-	.data-points {
+	.dataset-units {
 		circle {
 			stroke: #fff;
 			stroke-width: 2;
 		}
+
+		// temp
+		path {
+			fill: none;
+			stroke-opacity: 1;
+			stroke-width: 2px;
+		}
+	}
+	.multiaxis-chart {
+		.line-horizontal, .y-axis-guide {
+			stroke-width: 2px;
+		}
+	}
+	.dataset-path {
+		stroke-width: 2px;
 	}
 	.path-group {
 		path {
@@ -78,17 +98,18 @@
 	line.dashed {
 		stroke-dasharray: 5,3;
 	}
-	.tick {
-		&.x-axis-label {
-			display: block;
-		}
+	.axis-line {
+		// &.x-axis-label {
+		// 	display: block;
+		// }
+		// TODO: hack dy attr to be settable via styles
 		.specific-value {
 			text-anchor: start;
 		}
-		.y-value-text {
+		.y-line {
 			text-anchor: end;
 		}
-		.x-value-text {
+		.x-line {
 			text-anchor: middle;
 		}
 	}

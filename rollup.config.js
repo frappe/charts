@@ -15,17 +15,19 @@ import pkg from './package.json';
 
 export default [
 	{
-		input: 'src/js/charts.js',
+		input: 'src/js/chart.js',
+		sourcemap: true,
 		output: [
 			{
-				file: pkg.main,
-				format: 'cjs',
+				file: 'docs/assets/js/frappe-charts.min.js',
+				format: 'iife',
 			},
 			{
-				file: pkg.module,
-				format: 'es',
+				file: pkg.browser,
+				format: 'iife',
 			}
 		],
+		name: 'Chart',
 		plugins: [
 			postcss({
 				preprocessor: (content, id) => new Promise((resolve, reject) => {
@@ -33,7 +35,6 @@ export default [
 					resolve({ code: result.css.toString() })
 				}),
 				extensions: [ '.scss' ],
-				// extract: 'dist/frappe-charts.min.css',
 				plugins: [
 					nested(),
 					cssnext({ warnForDuplicates: false }),
@@ -56,7 +57,47 @@ export default [
 		]
 	},
 	{
-		input: 'src/js/charts.js',
+		input: 'src/js/chart.js',
+		output: [
+			{
+				file: pkg.main,
+				format: 'cjs',
+			},
+			{
+				file: pkg.module,
+				format: 'es',
+			}
+		],
+		plugins: [
+			postcss({
+				preprocessor: (content, id) => new Promise((resolve, reject) => {
+					const result = sass.renderSync({ file: id })
+					resolve({ code: result.css.toString() })
+				}),
+				extensions: [ '.scss' ],
+				plugins: [
+					nested(),
+					cssnext({ warnForDuplicates: false }),
+					cssnano()
+				]
+			}),
+			eslint({
+				exclude: [
+					'src/scss/**',
+				]
+			}),
+			babel({
+				exclude: 'node_modules/**',
+			}),
+			replace({
+				exclude: 'node_modules/**',
+				ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
+			}),
+			uglify()
+		],
+	},
+	{
+		input: 'src/js/chart.js',
 		output: [
 			{
 				file: pkg.src,
@@ -86,47 +127,6 @@ export default [
 				exclude: 'node_modules/**',
 				ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
 			})
-		],
-	},
-	{
-		input: 'src/js/charts.js',
-		output: [
-			{
-				file: 'docs/assets/js/frappe-charts.min.js',
-				format: 'iife',
-			},
-			{
-				file: pkg.browser,
-				format: 'iife',
-			}
-		],
-		name: 'Chart',
-		plugins: [
-			postcss({
-				preprocessor: (content, id) => new Promise((resolve, reject) => {
-					const result = sass.renderSync({ file: id })
-					resolve({ code: result.css.toString() })
-				}),
-				extensions: [ '.scss' ],
-				plugins: [
-					nested(),
-					cssnext({ warnForDuplicates: false }),
-					cssnano()
-				]
-			}),
-			eslint({
-				exclude: [
-					'src/scss/**',
-				]
-			}),
-			babel({
-				exclude: 'node_modules/**',
-			}),
-			replace({
-				exclude: 'node_modules/**',
-				ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
-			}),
-			uglify()
 		],
 	}
 ];

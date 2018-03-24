@@ -1,5 +1,7 @@
 // Leveraging SMIL Animations
 
+import { REPLACE_ALL_NEW_DUR } from './animate';
+
 const EASING = {
 	ease: "0.25 0.1 0.25 1",
 	linear: "0 0 1 1",
@@ -9,7 +11,7 @@ const EASING = {
 	easeinout: "0.42 0 0.58 1"
 };
 
-function animateSVG(element, props, dur, easingType="linear", type=undefined, oldValues={}) {
+function animateSVGElement(element, props, dur, easingType="linear", type=undefined, oldValues={}) {
 
 	let animElement = element.cloneNode(true);
 	let newElement = element.cloneNode(true);
@@ -65,29 +67,23 @@ export function transform(element, style) { // eslint-disable-line no-unused-var
 	element.style.oTransform = style;
 }
 
-export function runSVGAnimation(svgContainer, elements) {
+function animateSVG(svgContainer, elements) {
 	let newElements = [];
 	let animElements = [];
 
 	elements.map(element => {
-		let obj = element[0];
-		let parent = obj.unit.parentNode;
+		let unit = element[0];
+		let parent = unit.parentNode;
 
 		let animElement, newElement;
 
-		element[0] = obj.unit;
-		[animElement, newElement] = animateSVG(...element);
+		element[0] = unit;
+		[animElement, newElement] = animateSVGElement(...element);
 
 		newElements.push(newElement);
 		animElements.push([animElement, parent]);
 
-		parent.replaceChild(animElement, obj.unit);
-
-		if(obj.array) {
-			obj.array[obj.index] = newElement;
-		} else {
-			obj.object[obj.key] = newElement;
-		}
+		parent.replaceChild(animElement, unit);
 	});
 
 	let animSvg = svgContainer.cloneNode(true);
@@ -98,4 +94,23 @@ export function runSVGAnimation(svgContainer, elements) {
 	});
 
 	return animSvg;
+}
+
+export function runSMILAnimation(parent, svgElement, elementsToAnimate) {
+	if(elementsToAnimate.length === 0) return;
+
+	let animSvgElement = animateSVG(svgElement, elementsToAnimate);
+	if(svgElement.parentNode == parent) {
+		parent.removeChild(svgElement);
+		parent.appendChild(animSvgElement);
+
+	}
+
+	// Replace the new svgElement (data has already been replaced)
+	setTimeout(() => {
+		if(animSvgElement.parentNode == parent) {
+			parent.removeChild(animSvgElement);
+			parent.appendChild(svgElement);
+		}
+	}, REPLACE_ALL_NEW_DUR);
 }
