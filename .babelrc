@@ -1,10 +1,4 @@
 {
-  "presets": [
-    ["latest", {
-      "es2015": {
-        "modules": false
-      }
-    }]
-  ],
+  "presets": ["env"],
   "plugins": ["external-helpers"]
 }
