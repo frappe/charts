@@ -8,8 +8,13 @@ TESTDIR									= $(SRCDIR)/test
 NODEMOD									= $(BASEDIR)/node_modules
 NODEBIN									= $(NODEMOD)/.bin
 
+build:
+	$(NODEBIN)/rollup						    \
+		--config $(BASEDIR)/rollup.config.js
+
 test:
-	$(NODEBIN)/mocha						\
-		--recursive							\
-		--compilers js:babel-core/register	\
+	NODE_ENV=test								\
+	$(NODEBIN)/mocha							\
+		--recursive								\
+		--require $(NODEMOD)/babel-register		\
 		$(TESTDIR)
