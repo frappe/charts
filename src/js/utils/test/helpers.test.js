@@ -1,6 +1,5 @@
 const assert  = require('assert')
-
-const helpers = require('../../js/utils/helpers')
+const helpers = require('../helpers')
 
 describe('utils.helpers', () => {
     it('should return a value fixed upto 2 decimals', () => {
