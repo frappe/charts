@@ -1,0 +1,4 @@
+-include .env
+
+BASEDIR								= $(realpath .)
+
