@@ -1,4 +1,4 @@
-import { MONTH_NAMES_SHORT } from '../../../src/js/utils/date-utils';
+import { DAYS_IN_YEAR, SEC_IN_DAY, MONTH_NAMES_SHORT, clone, timestampToMidnight, timestampSec } from '../../../src/js/utils/date-utils';
 
 // Composite Chart
 // ================================================================================
@@ -175,18 +175,22 @@ export const moonData = {
 // ================================================================================
 
 let today = new Date();
-let start = new Date(today.getTime());
-let end = new Date(today.getTime());
+let start = clone(today);
+let end = clone(today);
 start.setFullYear( start.getFullYear() - 2 );
-end.setFullYear( start.getFullYear() - 1 );
+end.setFullYear( end.getFullYear() - 1 );
 
 export let dataPoints = {};
-let current_date = new Date();
-let timestamp = current_date.getTime()/1000;
-timestamp = Math.floor(timestamp - (timestamp % 86400)).toFixed(1); // convert to midnight
-for (var i = 0; i< 375; i++) {
-	dataPoints[parseInt(timestamp)] = Math.floor(Math.random() * 5);
-	timestamp = Math.floor(timestamp - 86400).toFixed(1);
+
+let startTs = timestampSec(start);
+let endTs = timestampSec(end);
+
+startTs = timestampToMidnight(startTs);
+endTs = timestampToMidnight(endTs, true);
+
+while (startTs < endTs) {
+	dataPoints[parseInt(startTs)] = Math.floor(Math.random() * 5);
+	startTs += SEC_IN_DAY;
 }
 
 export const heatmapData = {

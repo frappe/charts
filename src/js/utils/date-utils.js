@@ -2,7 +2,9 @@
 
 export const NO_OF_YEAR_MONTHS = 12;
 export const NO_OF_DAYS_IN_WEEK = 7;
+export const DAYS_IN_YEAR = 375;
 export const NO_OF_MILLIS = 1000;
+export const SEC_IN_DAY = 86400;
 
 export const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
 	"July", "August", "September", "October", "November", "December"];
@@ -10,8 +12,8 @@ export const MONTH_NAMES = ["January", "February", "March", "April", "May", "Jun
 export const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 // https://stackoverflow.com/a/11252167/6495043
-function treatAsUtc(dateStr) {
-	let result = new Date(dateStr);
+function treatAsUtc(date) {
+	let result = new Date(date);
 	result.setMinutes(result.getMinutes() - result.getTimezoneOffset());
 	return result;
 }
@@ -30,21 +32,42 @@ export function clone(date) {
 	return new Date(date.getTime());
 }
 
-export function getWeeksBetween(startDateStr, endDateStr) {
-	return Math.ceil(getDaysBetween(startDateStr, endDateStr) / 7);
+export function timestampSec(date) {
+	return date.getTime()/NO_OF_MILLIS;
 }
 
-export function getDaysBetween(startDateStr, endDateStr) {
-	let millisecondsPerDay = 24 * 60 * 60 * 1000;
-	return (treatAsUtc(endDateStr) - treatAsUtc(startDateStr)) / millisecondsPerDay;
+export function timestampToMidnight(timestamp, roundAhead = false) {
+	let midnightTs = Math.floor(timestamp - (timestamp % SEC_IN_DAY));
+	if(roundAhead) {
+		return midnightTs + SEC_IN_DAY;
+	}
+	return midnightTs;
 }
 
-// mutates
-export function addDays(date, numberOfDays) {
-	date.setDate(date.getDate() + numberOfDays);
+export function getWeeksBetween(startDate, endDate) {
+	return Math.ceil(getDaysBetween(startDate, endDate) / NO_OF_DAYS_IN_WEEK);
+}
+
+export function getDaysBetween(startDate, endDate) {
+	let millisecondsPerDay = SEC_IN_DAY * NO_OF_MILLIS;
+	return (treatAsUtc(endDate) - treatAsUtc(startDate)) / millisecondsPerDay;
 }
 
 export function getMonthName(i, short=false) {
 	let monthName = MONTH_NAMES[i];
 	return short ? monthName.slice(0, 3) : monthName;
+}
+
+// mutates
+export function setDayToSunday(date) {
+	const day = date.getDay();
+	if(day !== NO_OF_DAYS_IN_WEEK) {
+		addDays(date, (-1) * day);
+	}
+	return date;
+}
+
+// mutates
+export function addDays(date, numberOfDays) {
+	date.setDate(date.getDate() + numberOfDays);
 }
