@@ -103,8 +103,8 @@ export default class BaseChart {
 	makeContainer() {
 		this.container = $.create('div', {
 			className: 'chart-container',
-			innerHTML: `<h6 class="title">${this.title}</h6>
-				<h6 class="sub-title uppercase">${this.subtitle}</h6>
+			innerHTML: `${this.title && `<h6 class="title">${this.title}</h6>`}
+				${this.subtitle && `<h6 class="sub-title uppercase">${this.subtitle}</h6>`}
 				<div class="frappe-chart graphics"></div>
 				<div class="graph-stats-container"></div>`
 		});
