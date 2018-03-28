@@ -112,7 +112,7 @@ export default class BaseChart {
 	bindTooltip() {}
 
 	draw(onlyWidthChange=false, init=false) {
-		this.calcWidth();
+		this.updateWidth();
 		this.calc(onlyWidthChange);
 		this.makeChartArea();
 		this.setupComponents();
@@ -133,7 +133,7 @@ export default class BaseChart {
 		this.setupNavigation(init);
 	}
 
-	calcWidth() {
+	updateWidth() {
 		this.baseWidth = getElementContentWidth(this.parent);
 		this.width = this.baseWidth - (this.leftMargin + this.rightMargin);
 	}
@@ -179,12 +179,8 @@ export default class BaseChart {
 
 	updateNav() {
 		if(this.config.isNavigable) {
-			// if(!this.overlayGuides){
 			this.makeOverlay();
 			this.bindUnits();
-			// } else {
-			// 	this.updateOverlay();
-			// }
 		}
 	}
 

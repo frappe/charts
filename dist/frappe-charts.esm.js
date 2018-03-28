@@ -224,7 +224,7 @@ const DATA_COLOR_DIVISIONS = {
 	heatmap: HEATMAP_DISTRIBUTION_SIZE
 };
 
-const BASE_CHART_TOP_MARGIN = 30;
+const BASE_CHART_TOP_MARGIN = 10;
 const BASE_CHART_LEFT_MARGIN = 20;
 const BASE_CHART_RIGHT_MARGIN = 20;
 
@@ -268,6 +268,10 @@ const DEFAULT_COLORS = {
 	heatmap: HEATMAP_COLORS
 };
 
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -1276,7 +1280,7 @@ class BaseChart {
 	bindTooltip() {}
 
 	draw(onlyWidthChange=false, init=false) {
-		this.calcWidth();
+		this.updateWidth();
 		this.calc(onlyWidthChange);
 		this.makeChartArea();
 		this.setupComponents();
@@ -1297,7 +1301,7 @@ class BaseChart {
 		this.setupNavigation(init);
 	}
 
-	calcWidth() {
+	updateWidth() {
 		this.baseWidth = getElementContentWidth(this.parent);
 		this.width = this.baseWidth - (this.leftMargin + this.rightMargin);
 	}
@@ -1343,12 +1347,8 @@ class BaseChart {
 
 	updateNav() {
 		if(this.config.isNavigable) {
-			// if(!this.overlayGuides){
 			this.makeOverlay();
 			this.bindUnits();
-			// } else {
-			// 	this.updateOverlay();
-			// }
 		}
 	}
 
@@ -2148,6 +2148,8 @@ const NO_OF_MILLIS = 1000;
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
 	"July", "August", "September", "October", "November", "December"];
 
+
+
 // https://stackoverflow.com/a/11252167/6495043
 function treatAsUtc(dateStr) {
 	let result = new Date(dateStr);
@@ -2164,6 +2166,8 @@ function getDdMmYyyy(date) {
 		date.getFullYear()
 	].join('-');
 }
+
+
 
 function getWeeksBetween(startDateStr, endDateStr) {
 	return Math.ceil(getDaysBetween(startDateStr, endDateStr) / 7);
@@ -2431,13 +2435,7 @@ class Heatmap extends BaseChart {
 		this.no_of_cols = getWeeksBetween(this.firstWeekStart + '', this.lastWeekStart + '') + 1;
 	}
 
-	setMargins() {
-		super.setMargins();
-		// this.leftMargin = HEATMAP_SQUARE_SIZE;
-		// this.topMargin = HEATMAP_SQUARE_SIZE;
-	}
-
-	calcWidth() {
+	updateWidth() {
 		this.baseWidth = (this.no_of_cols + 99) * COL_SIZE;
 
 		if(this.discreteDomains) {
@@ -2457,8 +2455,13 @@ class Heatmap extends BaseChart {
 	}
 
 	calc() {
-		let dataValues = Object.keys(this.dataPoints).map(key => this.dataPoints[key]);
-		this.distribution = calcDistribution(dataValues, HEATMAP_DISTRIBUTION_SIZE);
+		this.distribution = calcDistribution(
+			Object.values(this.dataPoints), HEATMAP_DISTRIBUTION_SIZE);
+	}
+
+	update(data=this.data) {
+		this.data = this.prepareData(data);
+		this.draw();
 	}
 
 	render() {
@@ -3282,6 +3285,7 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
+// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,

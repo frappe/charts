@@ -1,6 +1,6 @@
 import BaseChart from './BaseChart';
 import { makeSVGGroup, makeHeatSquare, makeText } from '../utils/draw';
-import { addDays, getDdMmYyyy, getWeeksBetween, getMonthName,
+import { addDays, getDdMmYyyy, getWeeksBetween, getMonthName, clone,
 	NO_OF_MILLIS, NO_OF_YEAR_MONTHS, NO_OF_DAYS_IN_WEEK } from '../utils/date-utils';
 import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
 import { HEATMAP_DISTRIBUTION_SIZE, HEATMAP_SQUARE_SIZE,
@@ -42,13 +42,7 @@ export default class Heatmap extends BaseChart {
 		this.no_of_cols = getWeeksBetween(this.firstWeekStart + '', this.lastWeekStart + '') + 1;
 	}
 
-	setMargins() {
-		super.setMargins();
-		// this.leftMargin = HEATMAP_SQUARE_SIZE;
-		// this.topMargin = HEATMAP_SQUARE_SIZE;
-	}
-
-	calcWidth() {
+	updateWidth() {
 		this.baseWidth = (this.no_of_cols + 99) * COL_SIZE;
 
 		if(this.discreteDomains) {
@@ -68,8 +62,13 @@ export default class Heatmap extends BaseChart {
 	}
 
 	calc() {
-		let dataValues = Object.keys(this.dataPoints).map(key => this.dataPoints[key]);
-		this.distribution = calcDistribution(dataValues, HEATMAP_DISTRIBUTION_SIZE);
+		this.distribution = calcDistribution(
+			Object.values(this.dataPoints), HEATMAP_DISTRIBUTION_SIZE);
+	}
+
+	update(data=this.data) {
+		this.data = this.prepareData(data);
+		this.draw();
 	}
 
 	render() {

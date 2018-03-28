@@ -7,6 +7,8 @@ export const NO_OF_MILLIS = 1000;
 export const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
 	"July", "August", "September", "October", "November", "December"];
 
+export const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 // https://stackoverflow.com/a/11252167/6495043
 function treatAsUtc(dateStr) {
 	let result = new Date(dateStr);
@@ -22,6 +24,10 @@ export function getDdMmYyyy(date) {
 		(mm>9 ? '' : '0') + mm,
 		date.getFullYear()
 	].join('-');
+}
+
+export function clone(date) {
+	return new Date(date.getTime());
 }
 
 export function getWeeksBetween(startDateStr, endDateStr) {

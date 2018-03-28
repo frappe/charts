@@ -16,7 +16,7 @@ export const DATA_COLOR_DIVISIONS = {
 	heatmap: HEATMAP_DISTRIBUTION_SIZE
 };
 
-export const BASE_CHART_TOP_MARGIN = 30;
+export const BASE_CHART_TOP_MARGIN = 10;
 export const BASE_CHART_LEFT_MARGIN = 20;
 export const BASE_CHART_RIGHT_MARGIN = 20;
 
