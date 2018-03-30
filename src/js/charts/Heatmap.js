@@ -50,16 +50,16 @@ export default class Heatmap extends BaseChart {
 			data.start.setFullYear( data.start.getFullYear() - 1 );
 		}
 		if(!data.end) { data.end = new Date(); }
-
 		data.dataPoints = data.dataPoints || {};
 
-		let points = {};
-		Object.keys(data.dataPoints).forEach(timestampSec => {
-			let date = new Date(timestampSec * NO_OF_MILLIS);
-			points[getDdMmYyyy(date)] = data.dataPoints[timestampSec];
-		});
-
-		data.dataPoints = points;
+		if(parseInt(Object.keys(data.dataPoints)[0]) > 100000) {
+			let points = {};
+			Object.keys(data.dataPoints).forEach(timestampSec => {
+				let date = new Date(timestampSec * NO_OF_MILLIS);
+				points[getDdMmYyyy(date)] = data.dataPoints[timestampSec];
+			});
+			data.dataPoints = points;
+		}
 
 		return data;
 	}
@@ -76,7 +76,10 @@ export default class Heatmap extends BaseChart {
 			Object.values(this.data.dataPoints), HEATMAP_DISTRIBUTION_SIZE);
 	}
 
-	update(data=this.data) {
+	update(data) {
+		if(!data) {
+			console.error('No data to update.');
+		}
 		this.data = this.prepareData(data);
 		this.draw();
 		this.bindTooltip();

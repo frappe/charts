@@ -270,7 +270,7 @@ let heatmap = new Chart("#chart-heatmap", {
 	colors: ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c']
 });
 
-console.log(heatmapData, heatmap);
+console.log('heatmapData', Object.assign({}, heatmapData), heatmap);
 
 Array.prototype.slice.call(
 	document.querySelectorAll('.heatmap-mode-buttons button')

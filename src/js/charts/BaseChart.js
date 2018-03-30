@@ -123,7 +123,7 @@ export default class BaseChart {
 
 		if(init) {
 			this.data = this.realData;
-			setTimeout(() => {this.update();}, this.initTimeout);
+			setTimeout(() => {this.update(this.data);}, this.initTimeout);
 		}
 
 		if(!onlyWidthChange) {
@@ -138,7 +138,10 @@ export default class BaseChart {
 		this.width = this.baseWidth - (this.leftMargin + this.rightMargin);
 	}
 
-	update(data=this.data) {
+	update(data) {
+		if(!data) {
+			console.error('No data to update.');
+		}
 		this.data = this.prepareData(data);
 		this.calc(); // builds state
 		this.render();

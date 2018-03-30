@@ -1287,7 +1287,7 @@ class BaseChart {
 
 		if(init) {
 			this.data = this.realData;
-			setTimeout(() => {this.update();}, this.initTimeout);
+			setTimeout(() => {this.update(this.data);}, this.initTimeout);
 		}
 
 		if(!onlyWidthChange) {
@@ -1302,7 +1302,10 @@ class BaseChart {
 		this.width = this.baseWidth - (this.leftMargin + this.rightMargin);
 	}
 
-	update(data=this.data) {
+	update(data) {
+		if(!data) {
+			console.error('No data to update.');
+		}
 		this.data = this.prepareData(data);
 		this.calc(); // builds state
 		this.render();
@@ -2456,16 +2459,16 @@ class Heatmap extends BaseChart {
 			data.start.setFullYear( data.start.getFullYear() - 1 );
 		}
 		if(!data.end) { data.end = new Date(); }
-
 		data.dataPoints = data.dataPoints || {};
 
-		let points = {};
-		Object.keys(data.dataPoints).forEach(timestampSec$$1 => {
-			let date = new Date(timestampSec$$1 * NO_OF_MILLIS);
-			points[getDdMmYyyy(date)] = data.dataPoints[timestampSec$$1];
-		});
-
-		data.dataPoints = points;
+		if(parseInt(Object.keys(data.dataPoints)[0]) > 100000) {
+			let points = {};
+			Object.keys(data.dataPoints).forEach(timestampSec$$1 => {
+				let date = new Date(timestampSec$$1 * NO_OF_MILLIS);
+				points[getDdMmYyyy(date)] = data.dataPoints[timestampSec$$1];
+			});
+			data.dataPoints = points;
+		}
 
 		return data;
 	}
@@ -2482,7 +2485,10 @@ class Heatmap extends BaseChart {
 			Object.values(this.data.dataPoints), HEATMAP_DISTRIBUTION_SIZE);
 	}
 
-	update(data=this.data) {
+	update(data) {
+		if(!data) {
+			console.error('No data to update.');
+		}
 		this.data = this.prepareData(data);
 		this.draw();
 		this.bindTooltip();
