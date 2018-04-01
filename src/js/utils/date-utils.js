@@ -18,13 +18,13 @@ function treatAsUtc(date) {
 	return result;
 }
 
-export function getDdMmYyyy(date) {
+export function getYyyyMmDd(date) {
 	let dd = date.getDate();
 	let mm = date.getMonth() + 1; // getMonth() is zero-based
 	return [
-		(dd>9 ? '' : '0') + dd,
+		date.getFullYear(),
 		(mm>9 ? '' : '0') + mm,
-		date.getFullYear()
+		(dd>9 ? '' : '0') + dd
 	].join('-');
 }
 
@@ -44,8 +44,11 @@ export function timestampToMidnight(timestamp, roundAhead = false) {
 	return midnightTs;
 }
 
+export function getMonthsBetween(startDate, endDate) {}
+
 export function getWeeksBetween(startDate, endDate) {
-	return Math.ceil(getDaysBetween(startDate, endDate) / NO_OF_DAYS_IN_WEEK);
+	let weekStartDate = setDayToSunday(startDate);
+	return Math.ceil(getDaysBetween(weekStartDate, endDate) / NO_OF_DAYS_IN_WEEK);
 }
 
 export function getDaysBetween(startDate, endDate) {
@@ -53,18 +56,28 @@ export function getDaysBetween(startDate, endDate) {
 	return (treatAsUtc(endDate) - treatAsUtc(startDate)) / millisecondsPerDay;
 }
 
+export function areInSameMonth(startDate, endDate) {
+	return startDate.getMonth() === endDate.getMonth()
+		&& startDate.getFullYear() === endDate.getFullYear();
+}
+
 export function getMonthName(i, short=false) {
 	let monthName = MONTH_NAMES[i];
 	return short ? monthName.slice(0, 3) : monthName;
 }
 
+export function getLastDateInMonth (month, year) {
+	return new Date(year, month + 1, 0); // 0: last day in previous month
+}
+
 // mutates
 export function setDayToSunday(date) {
-	const day = date.getDay();
-	if(day !== NO_OF_DAYS_IN_WEEK) {
-		addDays(date, (-1) * day);
+	let newDate = clone(date);
+	const day = newDate.getDay();
+	if(day !== 0) {
+		addDays(newDate, (-1) * day);
 	}
-	return date;
+	return newDate;
 }
 
 // mutates

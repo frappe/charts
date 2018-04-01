@@ -131,7 +131,7 @@ export function makeGradient(svgDefElem, color, lighter = false) {
 	return gradientId;
 }
 
-export function makeHeatSquare(className, x, y, size, fill='none', data={}) {
+export function heatSquare(className, x, y, size, fill='none', data={}) {
 	let args = {
 		className: className,
 		x: x,

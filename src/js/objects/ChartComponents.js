@@ -1,5 +1,5 @@
 import { makeSVGGroup } from '../utils/draw';
-import { makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, getPaths } from '../utils/draw';
+import { makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, getPaths, heatSquare } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import { translateHoriLine, translateVertLine, animateRegion, animateBar,
 	animateDot, animatePath, animatePathStr } from '../utils/animate';
@@ -78,6 +78,22 @@ let componentConfigs = {
 			return this.store.map((slice, i) =>
 				animatePathStr(slice, newData.sliceStrings[i])
 			);
+		}
+	},
+	percentageBars: {
+		layerClass: 'percentage-bars',
+		makeElements(data) {
+			// return data.sliceStrings.map((s, i) =>{
+			// 	let slice = makePath(s, 'pie-path', 'none', data.colors[i]);
+			// 	slice.style.transition = 'transform .3s;';
+			// 	return slice;
+			// });
+		},
+
+		animateElements(newData) {
+			// return this.store.map((slice, i) =>
+			// 	animatePathStr(slice, newData.sliceStrings[i])
+			// );
 		}
 	},
 	yAxis: {
@@ -208,6 +224,39 @@ let componentConfigs = {
 			});
 
 			return animateElements;
+		}
+	},
+
+	heatDomain: {
+		layerClass: function() { return 'heat-domain domain-' + this.constants.index; },
+		makeElements(data) {
+			let {colWidth, rowHeight, squareSize, xTranslate} = this.constants;
+			let x = xTranslate, y = 0;
+
+			this.serializedSubDomains = [];
+
+			data.cols.map(week => {
+				week.map((day, i) => {
+					let data = {
+						'data-date': day.YyyyMmDd,
+						'data-value': day.dataValue,
+						'data-day': i
+					};
+					let square = heatSquare('day', x, y, squareSize, day.fill, data);
+					this.serializedSubDomains.push(square);
+					y += rowHeight;
+				})
+				y = 0;
+				x += colWidth;
+			})
+
+			return this.serializedSubDomains;
+		},
+
+		animateElements(newData) {
+			// return this.store.map((slice, i) =>
+			// 	animatePathStr(slice, newData.sliceStrings[i])
+			// );
 		}
 	},
 
