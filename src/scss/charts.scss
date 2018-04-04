@@ -1,0 +1,225 @@
+.chart-container {
+	// https://www.smashingmagazine.com/2015/11/using-system-ui-fonts-practical-guide/
+	font-family: -apple-system, BlinkMacSystemFont,
+		"Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
+		"Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+
+	.graph-focus-margin {
+		margin: 0px 5%;
+	}
+	&>.title {
+		margin-top: 25px;
+		margin-left: 25px;
+		text-align: left;
+		font-weight: normal;
+		font-size: 12px;
+		color: #6c7680;
+	}
+	.graphics {
+		margin-top: 10px;
+		padding-top: 10px;
+		padding-bottom: 10px;
+		position: relative;
+	}
+	.graph-stats-group {
+		display: flex;
+		justify-content: space-around;
+		flex: 1;
+	}
+	.graph-stats-container {
+		display: flex;
+		justify-content: space-between;
+		padding: 10px;
+		&:before,
+		&:after {
+			content: '';
+			display: block;
+		}
+		.stats {
+			padding-bottom: 15px;
+		}
+		.stats-title {
+			color: #8D99A6;
+		}
+		.stats-value {
+			font-size: 20px;
+			font-weight: 300;
+		}
+		.stats-description {
+			font-size: 12px;
+			color: #8D99A6;
+		}
+		.graph-data {
+			.stats-value {
+				color: #98d85b;
+			}
+		}
+	}
+	.axis, .chart-label {
+		fill: #555b51;
+		// temp commented
+		line {
+			stroke: #dadada;
+		}
+	}
+	.percentage-graph {
+		.progress {
+			margin-bottom: 0px;
+		}
+	}
+	.dataset-units {
+		circle {
+			stroke: #fff;
+			stroke-width: 2;
+		}
+
+		// temp
+		path {
+			fill: none;
+			stroke-opacity: 1;
+			stroke-width: 2px;
+		}
+	}
+	.multiaxis-chart {
+		.line-horizontal, .y-axis-guide {
+			stroke-width: 2px;
+		}
+	}
+	.dataset-path {
+		stroke-width: 2px;
+	}
+	.path-group {
+		path {
+			fill: none;
+			stroke-opacity: 1;
+			stroke-width: 2px;
+		}
+	}
+	line.dashed {
+		stroke-dasharray: 5,3;
+	}
+	.axis-line {
+		// &.x-axis-label {
+		// 	display: block;
+		// }
+		// TODO: hack dy attr to be settable via styles
+		.specific-value {
+			text-anchor: start;
+		}
+		.y-line {
+			text-anchor: end;
+		}
+		.x-line {
+			text-anchor: middle;
+		}
+	}
+	.progress {
+		height: 20px;
+		margin-bottom: 20px;
+		overflow: hidden;
+		background-color: #f5f5f5;
+		border-radius: 4px;
+		-webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, .1);
+		box-shadow: inset 0 1px 2px rgba(0, 0, 0, .1);
+	}
+	.progress-bar {
+		float: left;
+		width: 0;
+		height: 100%;
+		font-size: 12px;
+		line-height: 20px;
+		color: #fff;
+		text-align: center;
+		background-color: #36414c;
+		-webkit-box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .15);
+		box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .15);
+		-webkit-transition: width .6s ease;
+		-o-transition: width .6s ease;
+		transition: width .6s ease;
+	}
+
+	.graph-svg-tip {
+		position: absolute;
+		z-index: 99999;
+		padding: 10px;
+		font-size: 12px;
+		color: #959da5;
+		text-align: center;
+		background: rgba(0, 0, 0, 0.8);
+		border-radius: 3px;
+		ul {
+			padding-left: 0;
+			display: flex;
+		}
+		ol {
+			padding-left: 0;
+			display: flex;
+		}
+		ul.data-point-list {
+			li {
+				min-width: 90px;
+				flex: 1;
+				font-weight: 600;
+			}
+		}
+		strong {
+			color: #dfe2e5;
+			font-weight: 600;
+		}
+		.svg-pointer {
+			position: absolute;
+			height: 5px;
+			margin: 0 0 0 -5px;
+			content: " ";
+			border: 5px solid transparent;
+			border-top-color: rgba(0, 0, 0, 0.8);
+		}
+		&.comparison {
+			padding: 0;
+			text-align: left;
+			pointer-events: none;
+			.title {
+				display: block;
+				padding: 10px;
+				margin: 0;
+				font-weight: 600;
+				line-height: 1;
+				pointer-events: none;
+			}
+			ul {
+				margin: 0;
+				white-space: nowrap;
+				list-style: none;
+			}
+			li {
+				display: inline-block;
+				padding: 5px 10px;
+			}
+		}
+	}
+
+	/*Indicators*/
+	.indicator,
+	.indicator-right {
+		background: none;
+		font-size: 12px;
+		vertical-align: middle;
+		font-weight: bold;
+		color: #6c7680;
+	}
+	.indicator i {
+		content: '';
+		display: inline-block;
+		height: 8px;
+		width: 8px;
+		border-radius: 8px;
+	}
+	.indicator::before,.indicator i {
+		margin: 0 4px 0 0px;
+	}
+	.indicator-right::after {
+		margin: 0 0 0 4px;
+	}
+}
+
+

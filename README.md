@@ -1,6 +1,6 @@
 <div align="center">
-    <img src="https://github.com/frappe/design/blob/master/logos/frappe-charts-symbol.svg" height="128">
-    <h2>Frappé Charts</h2>
+    <img src="https://github.com/frappe/design/blob/master/logos/charts-logo.svg" height="128">
+    <h2>Frappe Charts</h2>
     <p align="center">
         <p>GitHub-inspired modern, intuitive and responsive charts with zero dependencies</p>
         <a href="https://frappe.github.io/charts">
@@ -24,6 +24,7 @@
 ### Contents
 * [Installation](#installation)
 * [Usage](#usage)
+* [Updates](#updates)
 * [License](#license)
 
 #### Installation
@@ -41,7 +42,9 @@
 * ...or include within your HTML
 
   ```html
-    <script src="https://unpkg.com/frappe-charts@0.0.4/dist/frappe-charts.min.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.0.0/dist/frappe-charts.min.iife.js"></script>
+    <!-- or -->
+    <script src="https://unpkg.com/frappe-charts@1.0.0/dist/frappe-charts.min.iife.js"></script>
   ```
 
 #### Usage
@@ -52,24 +55,22 @@ const data = {
     ],
     datasets: [
         {
-            title: "Some Data",
-            color: "light-blue",
+            title: "Some Data", type: "bar",
             values: [25, 40, 30, 35, 8, 52, 17, -4]
         },
         {
-            title: "Another Set",
-            color: "violet",
+            title: "Another Set", type: "line",
             values: [25, 50, -10, 15, 18, 32, 27, 14]
         }
     ]
 }
 
-const chart = new Chart({
-    parent: '#chart',
+const chart = new Chart("#chart", { // or a DOM element
     title: "My Awesome Chart",
     data: data,
-    type: 'bar', // or 'line', 'scatter', 'pie', 'percentage'
-    height: 250
+    type: 'axis-mixed', // or 'bar', 'line', 'scatter', 'pie', 'percentage'
+    height: 250,
+    colors: ['#7cd6fd', '#743ee2']
 })
 ```
 
@@ -82,9 +83,44 @@ If you want to contribute:
 3. `npm install`
 4. `npm run dev`
 
+#### Updates
+
+##### v1.0.0
+- Major rewrite out. Some new features include:
+    - Mixed type axis datasets
+    - Stacked bar charts
+    - Value over data points
+    - Y Markers and regions
+    - Dot size, Bar space size, and other options
+    - Legend for axis charts
+- We would be looking to incorporate existing PRs and issues in the meantime.
+
+##### Please read [#93](https://github.com/frappe/charts/issues/93) for v0.1.0 updates on rework and development.
+
+##### v0.0.7
+- [Custom color values](https://github.com/frappe/charts/pull/71) for charts as hex codes. The API now takes an array of colors for all charts instead of a color for each dataset.
+- [@iamkdev's](https://github.com/iamkdev) blog on [usage with Angular](https://medium.com/@iamkdev/frappé-charts-with-angular-c9c5dd075d9f).
+
+##### v0.0.5
+- More [flexible Y values](https://github.com/frappe/charts/commit/3de049c451194dcd8e61ff91ceeb998ce131c709): independent from exponent, minimum Y axis point for line graphs.
+- Customisable [Heatmap colors](https://github.com/frappe/charts/pull/53); check out the Halloween demo on the [website](https://frappe.github.io/charts) :D
+- Tooltip values can be [formatted](https://github.com/frappe/charts/commit/e3d9ed0eae14b65044dca0542cdd4d12af3f2b44).
+
+##### v0.0.4
+- Build update: [Shipped](https://github.com/frappe/charts/pull/35) an ES6 module, along with the browser friendly IIFE.
+
+##### v0.0.2
+- We have an animated [Pie Chart](https://github.com/frappe/charts/issues/29)! Thanks [@sheweichun](https://github.com/sheweichun).
+- [@tobiaslins](https://github.com/tobiaslins) contributed tweaks for his quest to make these easy to use with React. Check out his [repo](https://github.com/tobiaslins/frappe-charts-react-example) and updates at [#24](https://github.com/frappe/charts/issues/24) to learn more :)
+- A new logo.
+
+##### v0.0.1
+- The very first version out, with animatable bars and lines, a percentage chart and a heatmap. GitHub-style.
+
 #### License
 This repository has been released under the [MIT License](LICENSE)
 
 ------------------
-Made with ♥ by [pratu16x7](https://github.com/pratu16x7). Awesome logo by [raghukamath](https://github.com/raghukamath).
-Project maintained by [frappe](https://github.com/frappe).
+Project maintained by [Frappe](https://frappe.io).
+Used in [ERPNext](https://erpnext.com). Read the [blog post](https://medium.com/@pratu16x7/so-we-decided-to-create-our-own-charts-a95cb5032c97).
+
