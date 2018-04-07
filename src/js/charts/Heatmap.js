@@ -16,9 +16,6 @@ export default class Heatmap extends BaseChart {
 		this.discreteDomains = options.discreteDomains === 0 ? 0 : 1;
 		this.countLabel = options.countLabel || '';
 
-		let today = new Date();
-		this.start = options.start || addDays(today, 365);
-
 		let legendColors = (options.legendColors || []).slice(0, 5);
 		this.legendColors = this.validate_colors(legendColors)
 			? legendColors
@@ -52,9 +49,10 @@ export default class Heatmap extends BaseChart {
 		return valid;
 	}
 
-	configure() {
+	configure(options) {
 		super.configure();
 		this.today = new Date();
+		this.start = options.start;
 
 		if(!this.start) {
 			this.start = new Date();
