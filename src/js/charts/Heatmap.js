@@ -44,7 +44,6 @@ export default class Heatmap extends BaseChart {
 			data.start = new Date();
 			data.start.setFullYear( data.start.getFullYear() - 1 );
 		}
-		console.log(data.start);
 		if(!data.end) { data.end = new Date(); }
 		data.dataPoints = data.dataPoints || {};
 
@@ -77,8 +76,6 @@ export default class Heatmap extends BaseChart {
 	setupComponents() {
 		let s = this.state;
 
-		console.log(s.domainConfigs);
-
 		let componentConfigs = s.domainConfigs.map((config, i) => [
 			'heatDomain',
 			{
@@ -88,19 +85,22 @@ export default class Heatmap extends BaseChart {
 				squareSize: HEATMAP_SQUARE_SIZE,
 				xTranslate: s.domainConfigs
 					.filter((config, j) => j < i)
-					.map(config => config.cols.length)
+					.map(config => config.cols.length - 1)
 					.reduce((a, b) => a + b, 0)
 					* COL_WIDTH
 			},
 			function() {
 				return s.domainConfigs[i];
 			}.bind(this)
+
 		])
 
+		// console.log(s.domainConfigs)
+
 		this.components = new Map(componentConfigs
-			.map(args => {
+			.map((args, i) => {
 				let component = getComponent(...args);
-				return [args[0], component];
+				return [args[0] + '-' + i, component];
 			}));
 	}
 
@@ -180,12 +180,13 @@ export default class Heatmap extends BaseChart {
 			const col = this.getCol(startOfWeek, month);
 			cols.push(col);
 
-			startOfWeek = new Date(col[NO_OF_DAYS_IN_WEEK - 1].dateStr);
+			startOfWeek = new Date(col[NO_OF_DAYS_IN_WEEK - 1].yyyyMmDd);
 			addDays(startOfWeek, 1);
 		}
 
 		if(startOfWeek.getDay() === this.startSubDomainIndex) {
-			cols.push(new Array(NO_OF_DAYS_IN_WEEK).fill(0));
+			addDays(startOfWeek, 1);
+			cols.push(this.getCol(startOfWeek, month, true));
 		}
 
 		domainConfig.cols = cols;
@@ -193,14 +194,16 @@ export default class Heatmap extends BaseChart {
 		return domainConfig;
 	}
 
-	getCol(startDate, month) {
+	getCol(startDate, month, empty = false) {
 		// startDate is the start of week
 		let currentDate = clone(startDate);
 		let col = [];
 
 		for(var i = 0; i < NO_OF_DAYS_IN_WEEK; i++, addDays(currentDate, 1)) {
-			let config = 0;
-			if(currentDate.getMonth() === month) {
+			let config = {};
+			if(empty || currentDate.getMonth() !== month) {
+				config.yyyyMmDd = getYyyyMmDd(currentDate);
+			} else {
 				config = this.getSubDomainConfig(currentDate);
 			}
 			col.push(config);
@@ -210,10 +213,10 @@ export default class Heatmap extends BaseChart {
 	}
 
 	getSubDomainConfig(date) {
-		let YyyyMmDd = getYyyyMmDd(date);
-		let dataValue = this.data.dataPoints[YyyyMmDd];
+		let yyyyMmDd = getYyyyMmDd(date);
+		let dataValue = this.data.dataPoints[yyyyMmDd];
 		let config = {
-			YyyyMmDd: YyyyMmDd,
+			yyyyMmDd: yyyyMmDd,
 			dataValue: dataValue || 0,
 			fill: this.colors[getMaxCheckpoint(dataValue, this.state.distribution)]
 		}

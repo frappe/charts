@@ -237,18 +237,20 @@ let componentConfigs = {
 
 			data.cols.map(week => {
 				week.map((day, i) => {
-					let data = {
-						'data-date': day.YyyyMmDd,
-						'data-value': day.dataValue,
-						'data-day': i
-					};
-					let square = heatSquare('day', x, y, squareSize, day.fill, data);
-					this.serializedSubDomains.push(square);
+					if(day.fill) {
+						let data = {
+							'data-date': day.yyyyMmDd,
+							'data-value': day.dataValue,
+							'data-day': i
+						};
+						let square = heatSquare('day', x, y, squareSize, day.fill, data);
+						this.serializedSubDomains.push(square);
+					}
 					y += rowHeight;
 				})
 				y = 0;
 				x += colWidth;
-			})
+			});
 
 			return this.serializedSubDomains;
 		},
