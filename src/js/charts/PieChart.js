@@ -12,6 +12,7 @@ export default class PieChart extends AggregationChart {
 		super(parent, args);
 		this.type = 'pie';
 		this.initTimeout = 0;
+		this.init = 1;
 
 		this.setup();
 	}
@@ -25,11 +26,6 @@ export default class PieChart extends AggregationChart {
 		this.config.startAngle = args.startAngle || 0;
 
 		this.clockWise = args.clockWise || false;
-	}
-
-	prepareFirstData(data=this.data) {
-		this.init = 1;
-		return data;
 	}
 
 	calc() {

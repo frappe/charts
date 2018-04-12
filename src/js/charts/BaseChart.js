@@ -83,6 +83,7 @@ export default class BaseChart {
 
 	setup() {
 		this.makeContainer();
+		this.updateWidth();
 		this.makeTooltip();
 
 		this.draw(false, true);
@@ -206,7 +207,7 @@ export default class BaseChart {
 		);
 		this.svgDefs = makeSVGDefs(this.svg);
 
-		console.log(this.baseHeight, titleAreaHeight, legendAreaHeight);
+		// console.log(this.baseHeight, titleAreaHeight, legendAreaHeight);
 
 		if(this.title.length) {
 			this.titleEL = makeText(

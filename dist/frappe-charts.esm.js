@@ -1281,6 +1281,7 @@ class BaseChart {
 
 	setup() {
 		this.makeContainer();
+		this.updateWidth();
 		this.makeTooltip();
 
 		this.draw(false, true);
@@ -1404,7 +1405,7 @@ class BaseChart {
 		);
 		this.svgDefs = makeSVGDefs(this.svg);
 
-		console.log(this.baseHeight, titleAreaHeight, legendAreaHeight);
+		// console.log(this.baseHeight, titleAreaHeight, legendAreaHeight);
 
 		if(this.title.length) {
 			this.titleEL = makeText(
@@ -2068,6 +2069,7 @@ class PieChart extends AggregationChart {
 		super(parent, args);
 		this.type = 'pie';
 		this.initTimeout = 0;
+		this.init = 1;
 
 		this.setup();
 	}
@@ -2081,11 +2083,6 @@ class PieChart extends AggregationChart {
 		this.config.startAngle = args.startAngle || 0;
 
 		this.clockWise = args.clockWise || false;
-	}
-
-	prepareFirstData(data=this.data) {
-		this.init = 1;
-		return data;
 	}
 
 	calc() {
