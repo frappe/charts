@@ -37,11 +37,7 @@ export const MIN_BAR_PERCENT_HEIGHT = 0.01;
 export const LINE_CHART_DOT_SIZE = 4;
 export const DOT_OVERLAY_SIZE_INCR = 4;
 
-export const DEFAULT_CHAR_WIDTH = 7;
-
-// Universal constants
-export const ANGLE_RATIO = Math.PI / 180;
-export const FULL_ANGLE = 360;
+export const PERCENTAGE_BAR_DEFAULT_HEIGHT = 20;
 
 // Fixed 5-color theme,
 // More colors are difficult to parse visually
@@ -49,6 +45,8 @@ export const HEATMAP_DISTRIBUTION_SIZE = 5;
 
 export const HEATMAP_SQUARE_SIZE = 10;
 export const HEATMAP_GUTTER_SIZE = 2;
+
+export const DEFAULT_CHAR_WIDTH = 7;
 
 const HEATMAP_COLORS = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
 const DEFAULT_CHART_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
@@ -61,3 +59,7 @@ export const DEFAULT_COLORS = {
 	percentage: DEFAULT_CHART_COLORS,
 	heatmap: HEATMAP_COLORS
 };
+
+// Universal constants
+export const ANGLE_RATIO = Math.PI / 180;
+export const FULL_ANGLE = 360;

@@ -1,53 +1,59 @@
 import AggregationChart from './AggregationChart';
 import { $, getOffset } from '../utils/dom';
+import { getComponent } from '../objects/ChartComponents';
+import { PERCENTAGE_BAR_DEFAULT_HEIGHT } from '../utils/constants';
 
 export default class PercentageChart extends AggregationChart {
 	constructor(parent, args) {
 		super(parent, args);
 		this.type = 'percentage';
 
+		this.barOptions = args.barOptions || {};
+		this.barOptions.height = this.barOptions.height
+			|| PERCENTAGE_BAR_DEFAULT_HEIGHT;
+
 		this.setup();
 	}
 
-	makeChartArea() {
-		this.container.className += ' ' + 'graph-focus-margin';
-		this.container.style.marginTop = '45px';
+	setupComponents() {
+		let s = this.state;
 
-		// this.statsWrapper.className += ' ' + 'graph-focus-margin';
-		// this.statsWrapper.style.marginBottom = '30px';
-		// this.statsWrapper.style.paddingTop = '0px';
+		let componentConfigs = [
+			[
+				'percentageBars',
+				{
+					barHeight: this.barOptions.height
+				},
+				function() {
+					return {
+						xPositions: s.xPositions,
+						widths: s.widths,
+						colors: this.colors
+					};
+				}.bind(this)
+			]
+		];
 
-		this.svg = $.create('div', {
-			className: 'div',
-			inside: this.container
-		});
-
-		this.chart = $.create('div', {
-			className: 'progress-chart',
-			inside: this.svg
-		});
-
-		this.percentageBar = $.create('div', {
-			className: 'progress',
-			inside: this.chart
-		});
+		this.components = new Map(componentConfigs
+			.map(args => {
+				let component = getComponent(...args);
+				return [args[0], component];
+			}));
 	}
 
-	render() {
+	calc() {
+		super.calc();
 		let s = this.state;
-		this.grandTotal = s.sliceTotals.reduce((a, b) => a + b, 0);
-		s.slices = [];
-		s.sliceTotals.map((total, i) => {
-			let slice = $.create('div', {
-				className: `progress-bar`,
-				'data-index': i,
-				inside: this.percentageBar,
-				styles: {
-					background: this.colors[i],
-					width: total*100/this.grandTotal + "%"
-				}
-			});
-			s.slices.push(slice);
+
+		s.xPositions = [];
+		s.widths = [];
+
+		let xPos = 0;
+		s.sliceTotals.map((value, i) => {
+			let width = this.width * value / s.grandTotal;
+			s.widths.push(width);
+			s.xPositions.push(xPos);
+			xPos += width;
 		});
 	}
 

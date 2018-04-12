@@ -38,8 +38,6 @@ export default class PieChart extends AggregationChart {
 		};
 		this.radius = (this.height > this.width ? this.center.x : this.center.y);
 
-		s.grandTotal = s.sliceTotals.reduce((a, b) => a + b, 0);
-
 		this.calcSlices();
 	}
 

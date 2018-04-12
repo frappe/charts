@@ -44,6 +44,8 @@ export default class AggregationChart extends BaseChart {
 			s.sliceTotals.push(d[0]);
 			s.labels.push(d[1]);
 		});
+
+		s.grandTotal = s.sliceTotals.reduce((a, b) => a + b, 0);
 	}
 
 	renderLegend() {
@@ -67,5 +69,7 @@ export default class AggregationChart extends BaseChart {
 		// 		</span>`;
 		// 	}
 		// });
+
+		//
 	}
 }

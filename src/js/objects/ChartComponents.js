@@ -1,5 +1,5 @@
 import { makeSVGGroup } from '../utils/draw';
-import { makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, getPaths, heatSquare } from '../utils/draw';
+import { makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import { translateHoriLine, translateVertLine, animateRegion, animateBar,
 	animateDot, animatePath, animatePathStr } from '../utils/animate';
@@ -57,7 +57,7 @@ class ChartComponent {
 		this.refresh();
 		let animateElements = [];
 		if(animate) {
-			animateElements = this.animateElements(this.data);
+			animateElements = this.animateElements(this.data) || [];
 		}
 		return animateElements;
 	}
@@ -83,18 +83,15 @@ let componentConfigs = {
 	percentageBars: {
 		layerClass: 'percentage-bars',
 		makeElements(data) {
-			// return data.sliceStrings.map((s, i) =>{
-			// 	let slice = makePath(s, 'pie-path', 'none', data.colors[i]);
-			// 	slice.style.transition = 'transform .3s;';
-			// 	return slice;
-			// });
+			return data.xPositions.map((x, i) =>{
+				let y = 0;
+				let bar = percentageBar(x, y, data.widths[i],
+					this.constants.barHeight, data.colors[i]);
+				return bar;
+			});
 		},
 
-		animateElements(newData) {
-			// return this.store.map((slice, i) =>
-			// 	animatePathStr(slice, newData.sliceStrings[i])
-			// );
-		}
+		animateElements(newData) { }
 	},
 	yAxis: {
 		layerClass: 'y axis',
@@ -255,11 +252,7 @@ let componentConfigs = {
 			return this.serializedSubDomains;
 		},
 
-		animateElements(newData) {
-			// return this.store.map((slice, i) =>
-			// 	animatePathStr(slice, newData.sliceStrings[i])
-			// );
-		}
+		animateElements(newData) { }
 	},
 
 	barGraph: {

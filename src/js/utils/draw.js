@@ -132,6 +132,19 @@ export function makeGradient(svgDefElem, color, lighter = false) {
 	return gradientId;
 }
 
+export function percentageBar(x, y, width, height, fill='none') {
+	let args = {
+		className: 'percentage-bar',
+		x: x,
+		y: y,
+		width: width,
+		height: height,
+		fill: fill
+	};
+
+	return createSVG("rect", args);
+}
+
 export function heatSquare(className, x, y, size, fill='none', data={}) {
 	let args = {
 		className: className,
