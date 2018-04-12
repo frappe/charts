@@ -2501,6 +2501,18 @@ function scale(val, yAxis) {
 	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier);
 }
 
+
+
+
+
+function getClosestInArray(goal, arr, index = false) {
+	let closest = arr.reduce(function(prev, curr) {
+		return (Math.abs(curr - goal) < Math.abs(prev - goal) ? curr : prev);
+	});
+
+	return index ? arr.indexOf(closest) : closest;
+}
+
 function calcDistribution(values, distributionSize) {
 	// Assume non-negative values,
 	// implying distribution minimum at zero
@@ -2905,6 +2917,7 @@ class AxisChart extends BaseChart {
 		this.calcXPositions();
 		if(onlyWidthChange) return;
 		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+		this.makeDataByIndex();
 	}
 
 	calcXPositions() {
@@ -3208,10 +3221,34 @@ class AxisChart extends BaseChart {
 		});
 	}
 
+	makeDataByIndex() {
+		this.dataByIndex = {};
+	}
+
 	mapTooltipXPosition(relX) {
+		// console.log(relX);
 		let s = this.state;
 		if(!s.yExtremes) return;
 
+		let index = getClosestInArray(relX, s.xAxis.positions, true);
+		this.tip.setValues(
+			s.xAxis.positions[index],
+			s.yExtremes[index],
+			{name: s.xAxis.labels[index], value: ''},
+			this.data.datasets.map((set, i) => {
+				return {
+					title: set.name,
+					value: set.values[index],
+					color: this.colors[i],
+				};
+			}),
+			index
+		);
+
+		this.tip.showTip();
+	}
+
+	getTooltipValues() {
 		let formatY = this.config.formatTooltipY;
 		let formatX = this.config.formatTooltipX;
 
@@ -3222,26 +3259,7 @@ class AxisChart extends BaseChart {
 
 		formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
 
-		for(var i=s.datasetLength - 1; i >= 0 ; i--) {
-			let xVal = s.xAxis.positions[i];
-			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxis.positions[i-1];
-			if(relX > xVal - s.unitWidth/2) {
-				let x = xVal + this.leftMargin;
-				let y = s.yExtremes[i] + this.topMargin;
-
-				let values = this.data.datasets.map((set, j) => {
-					return {
-						title: set.name,
-						value: formatY ? formatY(set.values[i]) : set.values[i],
-						color: this.colors[j],
-					};
-				});
-
-				this.tip.setValues(x, y, {name: titles[i], value: ''}, values, i);
-				this.tip.showTip();
-				break;
-			}
-		}
+		yVal = formatY ? formatY(set.values[i]) : set.values[i];
 	}
 
 	renderLegend() {
@@ -3265,6 +3283,9 @@ class AxisChart extends BaseChart {
 		}
 	}
 
+
+
+	// Overlay
 	makeOverlay() {
 		if(this.init) {
 			this.init = 0;
@@ -3364,6 +3385,8 @@ class AxisChart extends BaseChart {
 		s.currentIndex = index;
 		fire(this.parent, "data-select", this.getDataPoint());
 	}
+
+
 
 	// API
 	addDataPoint(label, datasetValues, index=this.state.datasetLength) {

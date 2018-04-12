@@ -3,7 +3,7 @@ import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-
 import { Y_AXIS_LEFT_MARGIN, Y_AXIS_RIGHT_MARGIN, AXIS_LEGEND_BAR_SIZE } from '../utils/constants';
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
-import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale } from '../utils/intervals';
+import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
 import { floatTwo } from '../utils/helpers';
 import { makeOverlay, updateOverlay, legendBar } from '../utils/draw';
 import { MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO, LINE_CHART_DOT_SIZE } from '../utils/constants';
@@ -55,6 +55,7 @@ export default class AxisChart extends BaseChart {
 		this.calcXPositions();
 		if(onlyWidthChange) return;
 		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+		this.makeDataByIndex();
 	}
 
 	calcXPositions() {
@@ -358,10 +359,34 @@ export default class AxisChart extends BaseChart {
 		});
 	}
 
+	makeDataByIndex() {
+		this.dataByIndex = {};
+	}
+
 	mapTooltipXPosition(relX) {
-		let s = this.state;
+		// console.log(relX);
+		let s = this.state, d = this.data;
 		if(!s.yExtremes) return;
 
+		let index = getClosestInArray(relX, s.xAxis.positions, true);
+		this.tip.setValues(
+			s.xAxis.positions[index],
+			s.yExtremes[index],
+			{name: s.xAxis.labels[index], value: ''},
+			this.data.datasets.map((set, i) => {
+				return {
+					title: set.name,
+					value: set.values[index],
+					color: this.colors[i],
+				};
+			}),
+			index
+		);
+
+		this.tip.showTip();
+	}
+
+	getTooltipValues() {
 		let formatY = this.config.formatTooltipY;
 		let formatX = this.config.formatTooltipX;
 
@@ -372,26 +397,7 @@ export default class AxisChart extends BaseChart {
 
 		formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
 
-		for(var i=s.datasetLength - 1; i >= 0 ; i--) {
-			let xVal = s.xAxis.positions[i];
-			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxis.positions[i-1];
-			if(relX > xVal - s.unitWidth/2) {
-				let x = xVal + this.leftMargin;
-				let y = s.yExtremes[i] + this.topMargin;
-
-				let values = this.data.datasets.map((set, j) => {
-					return {
-						title: set.name,
-						value: formatY ? formatY(set.values[i]) : set.values[i],
-						color: this.colors[j],
-					};
-				});
-
-				this.tip.setValues(x, y, {name: titles[i], value: ''}, values, i);
-				this.tip.showTip();
-				break;
-			}
-		}
+		yVal = formatY ? formatY(set.values[i]) : set.values[i]
 	}
 
 	renderLegend() {
@@ -415,6 +421,9 @@ export default class AxisChart extends BaseChart {
 		}
 	}
 
+
+
+	// Overlay
 	makeOverlay() {
 		if(this.init) {
 			this.init = 0;
@@ -514,6 +523,8 @@ export default class AxisChart extends BaseChart {
 		s.currentIndex = index;
 		fire(this.parent, "data-select", this.getDataPoint());
 	}
+
+
 
 	// API
 	addDataPoint(label, datasetValues, index=this.state.datasetLength) {
