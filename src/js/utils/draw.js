@@ -6,6 +6,7 @@ export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 export const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
+const FONT_FILL = '#555b51';
 
 function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
@@ -146,6 +147,35 @@ export function heatSquare(className, x, y, size, fill='none', data={}) {
 	});
 
 	return createSVG("rect", args);
+}
+
+export function legendBar(x, y, size, fill='none', label) {
+	let args = {
+		className: 'legend-bar',
+		x: 0,
+		y: 0,
+		width: size,
+		height: '2px',
+		fill: fill
+	};
+	let text = createSVG('text', {
+		className: 'legend-dataset-text',
+		x: 0,
+		y: 0,
+		dy: (FONT_SIZE * 2) + 'px',
+		'font-size': (FONT_SIZE * 1.2) + 'px',
+		'text-anchor': 'start',
+		fill: FONT_FILL,
+		innerHTML: label
+	});
+
+	let group = createSVG('g', {
+		transform: `translate(${x}, ${y})`
+	});
+	group.appendChild(createSVG("rect", args));
+	group.appendChild(text);
+
+	return group;
 }
 
 export function makeText(className, x, y, content, fontSize = FONT_SIZE) {

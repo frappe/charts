@@ -3,68 +3,11 @@
 	font-family: -apple-system, BlinkMacSystemFont,
 		"Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
 		"Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-
-	.graph-focus-margin {
-		margin: 0px 5%;
-	}
-	&>.title {
-		margin-top: 25px;
-		margin-left: 25px;
-		text-align: left;
-		font-weight: normal;
-		font-size: 12px;
-		color: #6c7680;
-	}
-	.graphics {
-		margin-top: 10px;
-		padding-top: 10px;
-		padding-bottom: 10px;
-		position: relative;
-	}
-	.graph-stats-group {
-		display: flex;
-		justify-content: space-around;
-		flex: 1;
-	}
-	.graph-stats-container {
-		display: flex;
-		justify-content: space-between;
-		padding: 10px;
-		&:before,
-		&:after {
-			content: '';
-			display: block;
-		}
-		.stats {
-			padding-bottom: 15px;
-		}
-		.stats-title {
-			color: #8D99A6;
-		}
-		.stats-value {
-			font-size: 20px;
-			font-weight: 300;
-		}
-		.stats-description {
-			font-size: 12px;
-			color: #8D99A6;
-		}
-		.graph-data {
-			.stats-value {
-				color: #98d85b;
-			}
-		}
-	}
 	.axis, .chart-label {
 		fill: #555b51;
 		// temp commented
 		line {
 			stroke: #dadada;
-		}
-	}
-	.percentage-graph {
-		.progress {
-			margin-bottom: 0px;
 		}
 	}
 	.dataset-units {
@@ -191,29 +134,6 @@
 				padding: 5px 10px;
 			}
 		}
-	}
-
-	/*Indicators*/
-	.indicator,
-	.indicator-right {
-		background: none;
-		font-size: 12px;
-		vertical-align: middle;
-		font-weight: bold;
-		color: #6c7680;
-	}
-	.indicator i {
-		content: '';
-		display: inline-block;
-		height: 8px;
-		width: 8px;
-		border-radius: 8px;
-	}
-	.indicator::before,.indicator i {
-		margin: 0 4px 0 0px;
-	}
-	.indicator-right::after {
-		margin: 0 0 0 4px;
 	}
 }
 

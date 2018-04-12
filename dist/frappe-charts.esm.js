@@ -239,6 +239,8 @@ const CHART_POST_ANIMATE_TIMEOUT = 400;
 const DEFAULT_AXIS_CHART_TYPE = 'line';
 const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
 
+const AXIS_LEGEND_BAR_SIZE = 100;
+
 const BAR_CHART_SPACE_RATIO = 0.5;
 const MIN_BAR_PERCENT_HEIGHT = 0.01;
 
@@ -350,6 +352,7 @@ const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
+const FONT_FILL = '#555b51';
 
 function $$1(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
@@ -484,6 +487,35 @@ function heatSquare(className, x, y, size, fill='none', data={}) {
 	});
 
 	return createSVG("rect", args);
+}
+
+function legendBar(x, y, size, fill='none', label) {
+	let args = {
+		className: 'legend-bar',
+		x: 0,
+		y: 0,
+		width: size,
+		height: '2px',
+		fill: fill
+	};
+	let text = createSVG('text', {
+		className: 'legend-dataset-text',
+		x: 0,
+		y: 0,
+		dy: (FONT_SIZE * 2) + 'px',
+		'font-size': (FONT_SIZE * 1.2) + 'px',
+		'text-anchor': 'start',
+		fill: FONT_FILL,
+		innerHTML: label
+	});
+
+	let group = createSVG('g', {
+		transform: `translate(${x}, ${y})`
+	});
+	group.appendChild(createSVG("rect", args));
+	group.appendChild(text);
+
+	return group;
 }
 
 function makeText(className, x, y, content, fontSize = FONT_SIZE) {
@@ -1292,9 +1324,7 @@ class BaseChart {
 			setTimeout(() => {this.update(this.data);}, this.initTimeout);
 		}
 
-		if(!onlyWidthChange) {
-			this.renderLegend();
-		}
+		this.renderLegend();
 
 		this.setupNavigation(init);
 	}
@@ -1363,7 +1393,7 @@ class BaseChart {
 		if(this.title.length) {
 			titleAreaHeight = 30;
 		}
-		if(this.showLegend) {
+		if(this.config.showLegend) {
 			legendAreaHeight = 30;
 		}
 		this.svg = makeSVGContainer(
@@ -1373,6 +1403,8 @@ class BaseChart {
 			this.baseHeight + titleAreaHeight + legendAreaHeight
 		);
 		this.svgDefs = makeSVGDefs(this.svg);
+
+		console.log(this.baseHeight, titleAreaHeight, legendAreaHeight);
 
 		if(this.title.length) {
 			this.titleEL = makeText(
@@ -1392,7 +1424,7 @@ class BaseChart {
 			`translate(${this.leftMargin}, ${top})`
 		);
 
-		top = this.baseHeight + titleAreaHeight;
+		top = this.baseHeight - titleAreaHeight;
 		this.legendArea = makeSVGGroup(
 			this.svg,
 			'chart-legend',
@@ -3204,21 +3236,24 @@ class AxisChart extends BaseChart {
 	}
 
 	renderLegend() {
-		// let s = this.data;
-		// this.statsWrapper.textContent = '';
+		let s = this.data;
+		this.legendArea.textContent = '';
 
-		// if(s.datasets.length > 1) {
-		// 	s.datasets.map((d, i) => {
-		// 		let stats = $.create('div', {
-		// 			className: 'stats',
-		// 			inside: this.statsWrapper
-		// 		});
-		// 		stats.innerHTML = `<span class="indicator">
-		// 			<i style="background: ${this.colors[i]}"></i>
-		// 			${d.name}
-		// 		</span>`;
-		// 	});
-		// }
+		if(s.datasets.length > 1) {
+			s.datasets.map((d, i) => {
+				let barWidth = AXIS_LEGEND_BAR_SIZE;
+				// let rightEndPoint = this.baseWidth - this.leftMargin - this.rightMargin;
+				// let multiplier = s.datasets.length - i;
+				let rect = legendBar(
+					// rightEndPoint - multiplier * barWidth,	// To right align
+					barWidth * i,
+					'0',
+					barWidth,
+					this.colors[i],
+					d.name);
+				this.legendArea.appendChild(rect);
+			});
+		}
 	}
 
 	makeOverlay() {

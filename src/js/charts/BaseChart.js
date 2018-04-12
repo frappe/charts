@@ -126,9 +126,7 @@ export default class BaseChart {
 			setTimeout(() => {this.update(this.data);}, this.initTimeout);
 		}
 
-		if(!onlyWidthChange) {
-			this.renderLegend();
-		}
+		this.renderLegend();
 
 		this.setupNavigation(init);
 	}
@@ -197,7 +195,7 @@ export default class BaseChart {
 		if(this.title.length) {
 			titleAreaHeight = 30;
 		}
-		if(this.showLegend) {
+		if(this.config.showLegend) {
 			legendAreaHeight = 30;
 		}
 		this.svg = makeSVGContainer(
@@ -207,6 +205,8 @@ export default class BaseChart {
 			this.baseHeight + titleAreaHeight + legendAreaHeight
 		);
 		this.svgDefs = makeSVGDefs(this.svg);
+
+		console.log(this.baseHeight, titleAreaHeight, legendAreaHeight);
 
 		if(this.title.length) {
 			this.titleEL = makeText(
@@ -226,7 +226,7 @@ export default class BaseChart {
 			`translate(${this.leftMargin}, ${top})`
 		);
 
-		top = this.baseHeight + titleAreaHeight;
+		top = this.baseHeight - titleAreaHeight;
 		this.legendArea = makeSVGGroup(
 			this.svg,
 			'chart-legend',

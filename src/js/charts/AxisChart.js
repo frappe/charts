@@ -1,11 +1,11 @@
 import BaseChart from './BaseChart';
 import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-utils';
-import { Y_AXIS_LEFT_MARGIN, Y_AXIS_RIGHT_MARGIN } from '../utils/constants';
+import { Y_AXIS_LEFT_MARGIN, Y_AXIS_RIGHT_MARGIN, AXIS_LEGEND_BAR_SIZE } from '../utils/constants';
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale } from '../utils/intervals';
 import { floatTwo } from '../utils/helpers';
-import { makeOverlay, updateOverlay } from '../utils/draw';
+import { makeOverlay, updateOverlay, legendBar } from '../utils/draw';
 import { MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO, LINE_CHART_DOT_SIZE } from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
@@ -395,21 +395,24 @@ export default class AxisChart extends BaseChart {
 	}
 
 	renderLegend() {
-		// let s = this.data;
-		// this.statsWrapper.textContent = '';
+		let s = this.data;
+		this.legendArea.textContent = '';
 
-		// if(s.datasets.length > 1) {
-		// 	s.datasets.map((d, i) => {
-		// 		let stats = $.create('div', {
-		// 			className: 'stats',
-		// 			inside: this.statsWrapper
-		// 		});
-		// 		stats.innerHTML = `<span class="indicator">
-		// 			<i style="background: ${this.colors[i]}"></i>
-		// 			${d.name}
-		// 		</span>`;
-		// 	});
-		// }
+		if(s.datasets.length > 1) {
+			s.datasets.map((d, i) => {
+				let barWidth = AXIS_LEGEND_BAR_SIZE;
+				// let rightEndPoint = this.baseWidth - this.leftMargin - this.rightMargin;
+				// let multiplier = s.datasets.length - i;
+				let rect = legendBar(
+					// rightEndPoint - multiplier * barWidth,	// To right align
+					barWidth * i,
+					'0',
+					barWidth,
+					this.colors[i],
+					d.name);
+				this.legendArea.appendChild(rect);
+			});
+		}
 	}
 
 	makeOverlay() {
