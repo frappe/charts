@@ -10,6 +10,10 @@ export default class PercentageChart extends AggregationChart {
 	}
 
 	makeChartArea() {
+		if (this.svg) {
+			this.container.removeChild(this.svg);
+		}
+
 		this.container.className += ' ' + 'graph-focus-margin';
 		this.container.style.marginTop = '45px';
 
