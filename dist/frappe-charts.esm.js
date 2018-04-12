@@ -270,6 +270,10 @@ const DEFAULT_COLORS = {
 	heatmap: HEATMAP_COLORS
 };
 
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -1557,6 +1561,10 @@ class PercentageChart extends AggregationChart {
 	}
 
 	makeChartArea() {
+		if (this.svg) {
+			this.container.removeChild(this.svg);
+		}
+
 		this.container.className += ' ' + 'graph-focus-margin';
 		this.container.style.marginTop = '45px';
 
@@ -3364,6 +3372,7 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
+// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,
