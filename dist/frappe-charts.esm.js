@@ -535,7 +535,7 @@ function percentageBar(x, y, width, height,
 		fill: fill,
 		styles: {
 			'stroke': lightenDarkenColor(fill, -25),
-			// Diabollically good: https://stackoverflow.com/a/9000859
+			// Diabolically good: https://stackoverflow.com/a/9000859
 			// https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-dasharray
 			'stroke-dasharray': `0, ${height + width}, ${width}, ${height}`,
 			'stroke-width': depth
@@ -2082,23 +2082,25 @@ class PercentageChart extends AggregationChart {
 		});
 	}
 
+	makeDataByIndex() { }
+
 	bindTooltip() {
 		let s = this.state;
-
 		this.container.addEventListener('mousemove', (e) => {
-			let slice = e.target;
-			if(slice.classList.contains('progress-bar')) {
+			let bars = this.components.get('percentageBars').store;
+			let bar = e.target;
+			if(bars.includes(bar)) {
 
-				let i = slice.getAttribute('data-index');
-				let gOff = getOffset(this.container), pOff = getOffset(slice);
+				let i = bars.indexOf(bar);
+				let gOff = getOffset(this.container), pOff = getOffset(bar);
 
-				let x = pOff.left - gOff.left + slice.offsetWidth/2;
-				let y = pOff.top - gOff.top - 6;
+				let x = pOff.left - gOff.left + parseInt(bar.getAttribute('width'))/2;
+				let y = pOff.top - gOff.top;
 				let title = (this.formattedLabels && this.formattedLabels.length>0
 					? this.formattedLabels[i] : this.state.labels[i]) + ': ';
-				let percent = (s.sliceTotals[i]*100/this.grandTotal).toFixed(1);
+				let fraction = s.sliceTotals[i]/s.grandTotal;
 
-				this.tip.setValues(x, y, {name: title, value: percent + "%"});
+				this.tip.setValues(x, y, {name: title, value: (fraction*100).toFixed(1) + "%"});
 				this.tip.showTip();
 			}
 		});
