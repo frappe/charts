@@ -38,6 +38,7 @@ export const LINE_CHART_DOT_SIZE = 4;
 export const DOT_OVERLAY_SIZE_INCR = 4;
 
 export const PERCENTAGE_BAR_DEFAULT_HEIGHT = 20;
+export const PERCENTAGE_BAR_DEFAULT_DEPTH = 2;
 
 // Fixed 5-color theme,
 // More colors are difficult to parse visually

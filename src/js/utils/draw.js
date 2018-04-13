@@ -1,6 +1,7 @@
 import { getBarHeightAndYAttr } from './draw-utils';
 import { getStringWidth } from './helpers';
-import { DOT_OVERLAY_SIZE_INCR } from './constants';
+import { DOT_OVERLAY_SIZE_INCR, PERCENTAGE_BAR_DEFAULT_DEPTH } from './constants';
+import { lightenDarkenColor } from './colors';
 
 export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
@@ -132,14 +133,23 @@ export function makeGradient(svgDefElem, color, lighter = false) {
 	return gradientId;
 }
 
-export function percentageBar(x, y, width, height, fill='none') {
+export function percentageBar(x, y, width, height,
+		depth=PERCENTAGE_BAR_DEFAULT_DEPTH, fill='none') {
+
 	let args = {
 		className: 'percentage-bar',
 		x: x,
 		y: y,
 		width: width,
 		height: height,
-		fill: fill
+		fill: fill,
+		styles: {
+			'stroke': lightenDarkenColor(fill, -25),
+			// Diabolically good: https://stackoverflow.com/a/9000859
+			// https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-dasharray
+			'stroke-dasharray': `0, ${height + width}, ${width}, ${height}`,
+			'stroke-width': depth
+		},
 	};
 
 	return createSVG("rect", args);

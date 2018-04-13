@@ -86,7 +86,7 @@ let componentConfigs = {
 			return data.xPositions.map((x, i) =>{
 				let y = 0;
 				let bar = percentageBar(x, y, data.widths[i],
-					this.constants.barHeight, data.colors[i]);
+					this.constants.barHeight, this.constants.barDepth, data.colors[i]);
 				return bar;
 			});
 		},

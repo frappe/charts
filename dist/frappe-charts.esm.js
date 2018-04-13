@@ -124,6 +124,7 @@ const LINE_CHART_DOT_SIZE = 4;
 const DOT_OVERLAY_SIZE_INCR = 4;
 
 const PERCENTAGE_BAR_DEFAULT_HEIGHT = 20;
+const PERCENTAGE_BAR_DEFAULT_DEPTH = 2;
 
 // Fixed 5-color theme,
 // More colors are difficult to parse visually
@@ -352,6 +353,52 @@ function equilizeNoOfElements(array1, array2,
 	return [array1, array2];
 }
 
+const PRESET_COLOR_MAP = {
+	'light-blue': '#7cd6fd',
+	'blue': '#5e64ff',
+	'violet': '#743ee2',
+	'red': '#ff5858',
+	'orange': '#ffa00a',
+	'yellow': '#feef72',
+	'green': '#28a745',
+	'light-green': '#98d85b',
+	'purple': '#b554ff',
+	'magenta': '#ffa3ef',
+	'black': '#36114C',
+	'grey': '#bdd3e6',
+	'light-grey': '#f0f4f7',
+	'dark-grey': '#b8c2cc'
+};
+
+function limitColor(r){
+	if (r > 255) return 255;
+	else if (r < 0) return 0;
+	return r;
+}
+
+function lightenDarkenColor(color, amt) {
+	let col = getColor(color);
+	let usePound = false;
+	if (col[0] == "#") {
+		col = col.slice(1);
+		usePound = true;
+	}
+	let num = parseInt(col,16);
+	let r = limitColor((num >> 16) + amt);
+	let b = limitColor(((num >> 8) & 0x00FF) + amt);
+	let g = limitColor((num & 0x0000FF) + amt);
+	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
+}
+
+function isValidColor(string) {
+	// https://stackoverflow.com/a/8027444/6495043
+	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
+}
+
+const getColor = (color) => {
+	return PRESET_COLOR_MAP[color] || color;
+};
+
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 const FONT_SIZE = 10;
@@ -476,14 +523,23 @@ function makeGradient(svgDefElem, color, lighter = false) {
 	return gradientId;
 }
 
-function percentageBar(x, y, width, height, fill='none') {
+function percentageBar(x, y, width, height,
+		depth=PERCENTAGE_BAR_DEFAULT_DEPTH, fill='none') {
+
 	let args = {
 		className: 'percentage-bar',
 		x: x,
 		y: y,
 		width: width,
 		height: height,
-		fill: fill
+		fill: fill,
+		styles: {
+			'stroke': lightenDarkenColor(fill, -25),
+			// Diabollically good: https://stackoverflow.com/a/9000859
+			// https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-dasharray
+			'stroke-dasharray': `0, ${height + width}, ${width}, ${height}`,
+			'stroke-width': depth
+		},
 	};
 
 	return createSVG("rect", args);
@@ -957,52 +1013,6 @@ let updateOverlay = {
 			overlay.setAttribute('transform', transformValue);
 		}
 	},
-};
-
-const PRESET_COLOR_MAP = {
-	'light-blue': '#7cd6fd',
-	'blue': '#5e64ff',
-	'violet': '#743ee2',
-	'red': '#ff5858',
-	'orange': '#ffa00a',
-	'yellow': '#feef72',
-	'green': '#28a745',
-	'light-green': '#98d85b',
-	'purple': '#b554ff',
-	'magenta': '#ffa3ef',
-	'black': '#36114C',
-	'grey': '#bdd3e6',
-	'light-grey': '#f0f4f7',
-	'dark-grey': '#b8c2cc'
-};
-
-function limitColor(r){
-	if (r > 255) return 255;
-	else if (r < 0) return 0;
-	return r;
-}
-
-function lightenDarkenColor(color, amt) {
-	let col = getColor(color);
-	let usePound = false;
-	if (col[0] == "#") {
-		col = col.slice(1);
-		usePound = true;
-	}
-	let num = parseInt(col,16);
-	let r = limitColor((num >> 16) + amt);
-	let b = limitColor(((num >> 8) & 0x00FF) + amt);
-	let g = limitColor((num & 0x0000FF) + amt);
-	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
-}
-
-function isValidColor(string) {
-	// https://stackoverflow.com/a/8027444/6495043
-	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
-}
-
-const getColor = (color) => {
-	return PRESET_COLOR_MAP[color] || color;
 };
 
 const UNIT_ANIM_DUR = 350;
@@ -1694,7 +1704,7 @@ let componentConfigs = {
 			return data.xPositions.map((x, i) =>{
 				let y = 0;
 				let bar = percentageBar(x, y, data.widths[i],
-					this.constants.barHeight, data.colors[i]);
+					this.constants.barHeight, this.constants.barDepth, data.colors[i]);
 				return bar;
 			});
 		},
@@ -2023,6 +2033,8 @@ class PercentageChart extends AggregationChart {
 		this.barOptions = args.barOptions || {};
 		this.barOptions.height = this.barOptions.height
 			|| PERCENTAGE_BAR_DEFAULT_HEIGHT;
+		this.barOptions.depth = this.barOptions.depth
+			|| PERCENTAGE_BAR_DEFAULT_DEPTH;
 
 		this.setup();
 	}
@@ -2034,7 +2046,8 @@ class PercentageChart extends AggregationChart {
 			[
 				'percentageBars',
 				{
-					barHeight: this.barOptions.height
+					barHeight: this.barOptions.height,
+					barDepth: this.barOptions.depth,
 				},
 				function() {
 					return {

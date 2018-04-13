@@ -1,7 +1,7 @@
 import AggregationChart from './AggregationChart';
 import { $, getOffset } from '../utils/dom';
 import { getComponent } from '../objects/ChartComponents';
-import { PERCENTAGE_BAR_DEFAULT_HEIGHT } from '../utils/constants';
+import { PERCENTAGE_BAR_DEFAULT_HEIGHT, PERCENTAGE_BAR_DEFAULT_DEPTH } from '../utils/constants';
 
 export default class PercentageChart extends AggregationChart {
 	constructor(parent, args) {
@@ -11,6 +11,8 @@ export default class PercentageChart extends AggregationChart {
 		this.barOptions = args.barOptions || {};
 		this.barOptions.height = this.barOptions.height
 			|| PERCENTAGE_BAR_DEFAULT_HEIGHT;
+		this.barOptions.depth = this.barOptions.depth
+			|| PERCENTAGE_BAR_DEFAULT_DEPTH;
 
 		this.setup();
 	}
@@ -22,7 +24,8 @@ export default class PercentageChart extends AggregationChart {
 			[
 				'percentageBars',
 				{
-					barHeight: this.barOptions.height
+					barHeight: this.barOptions.height,
+					barDepth: this.barOptions.depth,
 				},
 				function() {
 					return {
