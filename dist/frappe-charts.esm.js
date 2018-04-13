@@ -84,6 +84,74 @@ function fire(target, type, properties) {
 
 // https://css-tricks.com/snippets/javascript/loop-queryselectorall-matches/
 
+const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
+
+const COMPATIBLE_CHARTS = {
+	bar: ['line', 'scatter', 'percentage', 'pie'],
+	line: ['scatter', 'bar', 'percentage', 'pie'],
+	pie: ['line', 'scatter', 'percentage', 'bar'],
+	percentage: ['bar', 'line', 'scatter', 'pie'],
+	heatmap: []
+};
+
+const DATA_COLOR_DIVISIONS = {
+	bar: 'datasets',
+	line: 'datasets',
+	pie: 'labels',
+	percentage: 'labels',
+	heatmap: HEATMAP_DISTRIBUTION_SIZE
+};
+
+const BASE_CHART_TOP_MARGIN = 10;
+const BASE_CHART_LEFT_MARGIN = 20;
+const BASE_CHART_RIGHT_MARGIN = 20;
+
+const Y_AXIS_LEFT_MARGIN = 60;
+const Y_AXIS_RIGHT_MARGIN = 40;
+
+const INIT_CHART_UPDATE_TIMEOUT = 700;
+const CHART_POST_ANIMATE_TIMEOUT = 400;
+
+const DEFAULT_AXIS_CHART_TYPE = 'line';
+const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
+
+const AXIS_LEGEND_BAR_SIZE = 100;
+
+const BAR_CHART_SPACE_RATIO = 0.5;
+const MIN_BAR_PERCENT_HEIGHT = 0.01;
+
+const LINE_CHART_DOT_SIZE = 4;
+const DOT_OVERLAY_SIZE_INCR = 4;
+
+const PERCENTAGE_BAR_DEFAULT_HEIGHT = 20;
+
+// Fixed 5-color theme,
+// More colors are difficult to parse visually
+const HEATMAP_DISTRIBUTION_SIZE = 5;
+
+const HEATMAP_SQUARE_SIZE = 10;
+const HEATMAP_GUTTER_SIZE = 2;
+
+const DEFAULT_CHAR_WIDTH = 7;
+
+const TOOLTIP_POINTER_TRIANGLE_HEIGHT = 5;
+
+const HEATMAP_COLORS = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+const DEFAULT_CHART_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
+	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
+
+const DEFAULT_COLORS = {
+	bar: DEFAULT_CHART_COLORS,
+	line: DEFAULT_CHART_COLORS,
+	pie: DEFAULT_CHART_COLORS,
+	percentage: DEFAULT_CHART_COLORS,
+	heatmap: HEATMAP_COLORS
+};
+
+// Universal constants
+const ANGLE_RATIO = Math.PI / 180;
+const FULL_ANGLE = 360;
+
 class SvgTip {
 	constructor({
 		parent = null,
@@ -112,7 +180,6 @@ class SvgTip {
 	refresh() {
 		this.fill();
 		this.calcPosition();
-		// this.showTip();
 	}
 
 	makeTooltip() {
@@ -164,7 +231,8 @@ class SvgTip {
 	calcPosition() {
 		let width = this.container.offsetWidth;
 
-		this.top = this.y - this.container.offsetHeight;
+		this.top = this.y - this.container.offsetHeight
+			- TOOLTIP_POINTER_TRIANGLE_HEIGHT;
 		this.left = this.x - width/2;
 		let maxLeft = this.parent.offsetWidth - width;
 
@@ -207,72 +275,6 @@ class SvgTip {
 		this.container.style.opacity = '1';
 	}
 }
-
-const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
-
-const COMPATIBLE_CHARTS = {
-	bar: ['line', 'scatter', 'percentage', 'pie'],
-	line: ['scatter', 'bar', 'percentage', 'pie'],
-	pie: ['line', 'scatter', 'percentage', 'bar'],
-	percentage: ['bar', 'line', 'scatter', 'pie'],
-	heatmap: []
-};
-
-const DATA_COLOR_DIVISIONS = {
-	bar: 'datasets',
-	line: 'datasets',
-	pie: 'labels',
-	percentage: 'labels',
-	heatmap: HEATMAP_DISTRIBUTION_SIZE
-};
-
-const BASE_CHART_TOP_MARGIN = 10;
-const BASE_CHART_LEFT_MARGIN = 20;
-const BASE_CHART_RIGHT_MARGIN = 20;
-
-const Y_AXIS_LEFT_MARGIN = 60;
-const Y_AXIS_RIGHT_MARGIN = 40;
-
-const INIT_CHART_UPDATE_TIMEOUT = 700;
-const CHART_POST_ANIMATE_TIMEOUT = 400;
-
-const DEFAULT_AXIS_CHART_TYPE = 'line';
-const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
-
-const AXIS_LEGEND_BAR_SIZE = 100;
-
-const BAR_CHART_SPACE_RATIO = 0.5;
-const MIN_BAR_PERCENT_HEIGHT = 0.01;
-
-const LINE_CHART_DOT_SIZE = 4;
-const DOT_OVERLAY_SIZE_INCR = 4;
-
-const PERCENTAGE_BAR_DEFAULT_HEIGHT = 20;
-
-// Fixed 5-color theme,
-// More colors are difficult to parse visually
-const HEATMAP_DISTRIBUTION_SIZE = 5;
-
-const HEATMAP_SQUARE_SIZE = 10;
-const HEATMAP_GUTTER_SIZE = 2;
-
-const DEFAULT_CHAR_WIDTH = 7;
-
-const HEATMAP_COLORS = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
-const DEFAULT_CHART_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
-	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
-
-const DEFAULT_COLORS = {
-	bar: DEFAULT_CHART_COLORS,
-	line: DEFAULT_CHART_COLORS,
-	pie: DEFAULT_CHART_COLORS,
-	percentage: DEFAULT_CHART_COLORS,
-	heatmap: HEATMAP_COLORS
-};
-
-// Universal constants
-const ANGLE_RATIO = Math.PI / 180;
-const FULL_ANGLE = 360;
 
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
@@ -1412,6 +1414,7 @@ class BaseChart {
 		if(this.config.showLegend) {
 			legendAreaHeight = 30;
 		}
+
 		this.svg = makeSVGContainer(
 			this.container,
 			'frappe-chart chart',
@@ -1446,6 +1449,15 @@ class BaseChart {
 			'chart-legend',
 			`translate(${this.leftMargin}, ${top})`
 		);
+
+		this.updateTipOffset(this.leftMargin, this.topMargin + titleAreaHeight);
+	}
+
+	updateTipOffset(x, y) {
+		this.tip.offset = {
+			x: x,
+			y: y
+		};
 	}
 
 	renderLegend() {}
@@ -3206,6 +3218,24 @@ class AxisChart extends BaseChart {
 			}));
 	}
 
+	makeDataByIndex() {
+		this.dataByIndex = {};
+
+		let s = this.state;
+
+		let formatY = this.config.formatTooltipY;
+		let formatX = this.config.formatTooltipX;
+
+		let titles = s.xAxis.labels;
+		if(formatX && formatX(titles[0])) {
+			titles = titles.map(d=>formatX(d));
+		}
+
+		formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
+
+		// yVal = formatY ? formatY(set.values[i]) : set.values[i]
+	}
+
 	bindTooltip() {
 		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
 		this.container.addEventListener('mousemove', (e) => {
@@ -3221,19 +3251,15 @@ class AxisChart extends BaseChart {
 		});
 	}
 
-	makeDataByIndex() {
-		this.dataByIndex = {};
-	}
-
 	mapTooltipXPosition(relX) {
-		// console.log(relX);
 		let s = this.state;
 		if(!s.yExtremes) return;
 
 		let index = getClosestInArray(relX, s.xAxis.positions, true);
+
 		this.tip.setValues(
-			s.xAxis.positions[index],
-			s.yExtremes[index],
+			s.xAxis.positions[index] + this.tip.offset.x,
+			s.yExtremes[index] + this.tip.offset.y,
 			{name: s.xAxis.labels[index], value: ''},
 			this.data.datasets.map((set, i) => {
 				return {
@@ -3246,20 +3272,6 @@ class AxisChart extends BaseChart {
 		);
 
 		this.tip.showTip();
-	}
-
-	getTooltipValues() {
-		let formatY = this.config.formatTooltipY;
-		let formatX = this.config.formatTooltipX;
-
-		let titles = s.xAxis.labels;
-		if(formatX && formatX(titles[0])) {
-			titles = titles.map(d=>formatX(d));
-		}
-
-		formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
-
-		yVal = formatY ? formatY(set.values[i]) : set.values[i];
 	}
 
 	renderLegend() {

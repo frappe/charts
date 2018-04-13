@@ -199,6 +199,7 @@ export default class BaseChart {
 		if(this.config.showLegend) {
 			legendAreaHeight = 30;
 		}
+
 		this.svg = makeSVGContainer(
 			this.container,
 			'frappe-chart chart',
@@ -233,6 +234,15 @@ export default class BaseChart {
 			'chart-legend',
 			`translate(${this.leftMargin}, ${top})`
 		);
+
+		this.updateTipOffset(this.leftMargin, this.topMargin + titleAreaHeight);
+	}
+
+	updateTipOffset(x, y) {
+		this.tip.offset = {
+			x: x,
+			y: y
+		}
 	}
 
 	renderLegend() {}

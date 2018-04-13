@@ -344,6 +344,24 @@ export default class AxisChart extends BaseChart {
 			}));
 	}
 
+	makeDataByIndex() {
+		this.dataByIndex = {};
+
+		let s = this.state;
+
+		let formatY = this.config.formatTooltipY;
+		let formatX = this.config.formatTooltipX;
+
+		let titles = s.xAxis.labels;
+		if(formatX && formatX(titles[0])) {
+			titles = titles.map(d=>formatX(d));
+		}
+
+		formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
+
+		// yVal = formatY ? formatY(set.values[i]) : set.values[i]
+	}
+
 	bindTooltip() {
 		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
 		this.container.addEventListener('mousemove', (e) => {
@@ -359,19 +377,15 @@ export default class AxisChart extends BaseChart {
 		});
 	}
 
-	makeDataByIndex() {
-		this.dataByIndex = {};
-	}
-
 	mapTooltipXPosition(relX) {
-		// console.log(relX);
 		let s = this.state, d = this.data;
 		if(!s.yExtremes) return;
 
 		let index = getClosestInArray(relX, s.xAxis.positions, true);
+
 		this.tip.setValues(
-			s.xAxis.positions[index],
-			s.yExtremes[index],
+			s.xAxis.positions[index] + this.tip.offset.x,
+			s.yExtremes[index] + this.tip.offset.y,
 			{name: s.xAxis.labels[index], value: ''},
 			this.data.datasets.map((set, i) => {
 				return {
@@ -384,20 +398,6 @@ export default class AxisChart extends BaseChart {
 		);
 
 		this.tip.showTip();
-	}
-
-	getTooltipValues() {
-		let formatY = this.config.formatTooltipY;
-		let formatX = this.config.formatTooltipX;
-
-		let titles = s.xAxis.labels;
-		if(formatX && formatX(titles[0])) {
-			titles = titles.map(d=>formatX(d));
-		}
-
-		formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
-
-		yVal = formatY ? formatY(set.values[i]) : set.values[i]
 	}
 
 	renderLegend() {
