@@ -237,6 +237,7 @@ export function makeText(className, x, y, content, fontSize = FONT_SIZE) {
 		y: y,
 		dy: (fontSize / 2) + 'px',
 		'font-size': fontSize + 'px',
+		fill: FONT_FILL,
 		innerHTML: content
 	});
 }

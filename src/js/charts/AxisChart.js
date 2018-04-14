@@ -156,7 +156,6 @@ export default class AxisChart extends BaseChart {
 	}
 
 	getAllYValues() {
-		// TODO: yMarkers, regions, sums, every Y value ever
 		let key = 'values';
 
 		if(this.barOptions.stacked) {

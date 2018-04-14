@@ -1,5 +1,4 @@
 import BaseChart from './BaseChart';
-import { makeSVGGroup, makeText } from '../utils/draw';
 import { getComponent } from '../objects/ChartComponents';
 import { addDays, areInSameMonth, getLastDateInMonth, setDayToSunday, getYyyyMmDd, getWeeksBetween, getMonthName, clone,
 	NO_OF_MILLIS, NO_OF_YEAR_MONTHS, NO_OF_DAYS_IN_WEEK } from '../utils/date-utils';
@@ -9,7 +8,7 @@ import { HEATMAP_DISTRIBUTION_SIZE, HEATMAP_SQUARE_SIZE,
 
 const COL_WIDTH = HEATMAP_SQUARE_SIZE + HEATMAP_GUTTER_SIZE;
 const ROW_HEIGHT = COL_WIDTH;
-const DAY_INCR = 1;
+// const DAY_INCR = 1;
 
 export default class Heatmap extends BaseChart {
 	constructor(parent, options) {
@@ -62,8 +61,8 @@ export default class Heatmap extends BaseChart {
 	calc() {
 		let s = this.state;
 
-		s.start = this.data.start;
-		s.end = this.data.end;
+		s.start = clone(this.data.start);
+		s.end = clone(this.data.end);
 
 		s.firstWeekStart = setDayToSunday(s.start);
 		s.noOfWeeks = getWeeksBetween(s.start, s.end);
@@ -76,16 +75,18 @@ export default class Heatmap extends BaseChart {
 	setupComponents() {
 		let s = this.state;
 
+		let lessCol = this.discreteDomains ? 0 : 1;
+
 		let componentConfigs = s.domainConfigs.map((config, i) => [
 			'heatDomain',
 			{
-				index: i,
+				index: config.index,
 				colWidth: COL_WIDTH,
 				rowHeight: ROW_HEIGHT,
 				squareSize: HEATMAP_SQUARE_SIZE,
 				xTranslate: s.domainConfigs
 					.filter((config, j) => j < i)
-					.map(config => config.cols.length - 1)
+					.map(config => config.cols.length - lessCol)
 					.reduce((a, b) => a + b, 0)
 					* COL_WIDTH
 			},
@@ -93,9 +94,7 @@ export default class Heatmap extends BaseChart {
 				return s.domainConfigs[i];
 			}.bind(this)
 
-		])
-
-		// console.log(s.domainConfigs)
+		]);
 
 		this.components = new Map(componentConfigs
 			.map((args, i) => {
@@ -108,31 +107,35 @@ export default class Heatmap extends BaseChart {
 		if(!data) {
 			console.error('No data to update.');
 		}
+
 		this.data = this.prepareData(data);
 		this.draw();
 		this.bindTooltip();
 	}
 
 	bindTooltip() {
-		Array.prototype.slice.call(
-			document.querySelectorAll(".data-group .day")
-		).map(el => {
-			el.addEventListener('mouseenter', (e) => {
-				let count = e.target.getAttribute('data-value');
-				let dateParts = e.target.getAttribute('data-date').split('-');
+		this.container.addEventListener('mousemove', (e) => {
+			this.components.forEach(comp => {
+				let daySquares = comp.store;
+				let daySquare = e.target;
+				if(daySquares.includes(daySquare)) {
 
-				let month = getMonthName(parseInt(dateParts[1])-1, true);
+					let count = daySquare.getAttribute('data-value');
+					let dateParts = daySquare.getAttribute('data-date').split('-');
 
-				let gOff = this.container.getBoundingClientRect(), pOff = e.target.getBoundingClientRect();
+					let month = getMonthName(parseInt(dateParts[1])-1, true);
 
-				let width = parseInt(e.target.getAttribute('width'));
-				let x = pOff.left - gOff.left + (width+2)/2;
-				let y = pOff.top - gOff.top - (width+2)/2;
-				let value = count + ' ' + this.countLabel;
-				let name = ' on ' + month + ' ' + dateParts[0] + ', ' + dateParts[2];
+					let gOff = this.container.getBoundingClientRect(), pOff = daySquare.getBoundingClientRect();
 
-				this.tip.setValues(x, y, {name: name, value: value, valueFirst: 1}, []);
-				this.tip.showTip();
+					let width = parseInt(e.target.getAttribute('width'));
+					let x = pOff.left - gOff.left + (width+2)/2;
+					let y = pOff.top - gOff.top - (width+2)/2;
+					let value = count + ' ' + this.countLabel;
+					let name = ' on ' + month + ' ' + dateParts[0] + ', ' + dateParts[2];
+
+					this.tip.setValues(x, y, {name: name, value: value, valueFirst: 1}, []);
+					this.tip.showTip();
+				}
 			});
 		});
 	}
@@ -164,27 +167,27 @@ export default class Heatmap extends BaseChart {
 
 	getDomainConfig(startDate, endDate='') {
 		let [month, year] = [startDate.getMonth(), startDate.getFullYear()];
-		let startOfWeek = setDayToSunday(startDate);
+		let startOfWeek = setDayToSunday(startDate); // TODO: Monday as well
 		endDate = clone(endDate) || getLastDateInMonth(month, year);
 
-		let s = this.state;
 		let domainConfig = {
 			index: month,
 			cols: []
 		};
 
+		addDays(endDate, 1);
 		let noOfMonthWeeks = getWeeksBetween(startOfWeek, endDate);
 
-		let cols = [];
+		let cols = [], col;
 		for(var i = 0; i < noOfMonthWeeks; i++) {
-			const col = this.getCol(startOfWeek, month);
+			col = this.getCol(startOfWeek, month);
 			cols.push(col);
 
 			startOfWeek = new Date(col[NO_OF_DAYS_IN_WEEK - 1].yyyyMmDd);
 			addDays(startOfWeek, 1);
 		}
 
-		if(startOfWeek.getDay() === this.startSubDomainIndex) {
+		if(col[NO_OF_DAYS_IN_WEEK - 1].dataValue) {
 			addDays(startOfWeek, 1);
 			cols.push(this.getCol(startOfWeek, month, true));
 		}
@@ -219,7 +222,7 @@ export default class Heatmap extends BaseChart {
 			yyyyMmDd: yyyyMmDd,
 			dataValue: dataValue || 0,
 			fill: this.colors[getMaxCheckpoint(dataValue, this.state.distribution)]
-		}
+		};
 		return config;
 	}
 }

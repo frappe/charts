@@ -1,8 +1,9 @@
 import { makeSVGGroup } from '../utils/draw';
-import { makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
+import { makeText, makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import { translateHoriLine, translateVertLine, animateRegion, animateBar,
 	animateDot, animatePath, animatePathStr } from '../utils/animate';
+import { getMonthName } from '../utils/date-utils';
 
 class ChartComponent {
 	constructor({
@@ -23,6 +24,7 @@ class ChartComponent {
 		this.animateElements = animateElements;
 
 		this.store = [];
+		this.labels = [];
 
 		this.layerClass = layerClass;
 		this.layerClass = typeof(this.layerClass) === 'function'
@@ -49,6 +51,9 @@ class ChartComponent {
 
 		this.layer.textContent = '';
 		this.store.forEach(element => {
+			this.layer.appendChild(element);
+		});
+		this.labels.forEach(element => {
 			this.layer.appendChild(element);
 		});
 	}
@@ -227,12 +232,18 @@ let componentConfigs = {
 	heatDomain: {
 		layerClass: function() { return 'heat-domain domain-' + this.constants.index; },
 		makeElements(data) {
-			let {colWidth, rowHeight, squareSize, xTranslate} = this.constants;
-			let x = xTranslate, y = 0;
+			let {index, colWidth, rowHeight, squareSize, xTranslate, discreteDomains} = this.constants;
+			let monthNameHeight = 12;
+			let x = xTranslate, y = monthNameHeight;
 
 			this.serializedSubDomains = [];
 
-			data.cols.map(week => {
+			data.cols.map((week, weekNo) => {
+				if(weekNo === 1) {
+					this.labels.push(
+						makeText('domain-name', x, 0, getMonthName(index, true), 11)
+					);
+				}
 				week.map((day, i) => {
 					if(day.fill) {
 						let data = {
@@ -245,7 +256,7 @@ let componentConfigs = {
 					}
 					y += rowHeight;
 				})
-				y = 0;
+				y = monthNameHeight;
 				x += colWidth;
 			});
 
