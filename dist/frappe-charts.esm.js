@@ -591,6 +591,35 @@ function legendBar(x, y, size, fill='none', label) {
 	return group;
 }
 
+function legendDot(x, y, size, fill='none', label) {
+	let args = {
+		className: 'legend-dot',
+		cx: 0,
+		cy: 0,
+		r: size,
+		fill: fill
+	};
+	let text = createSVG('text', {
+		className: 'legend-dataset-text',
+		x: 0,
+		y: 0,
+		dx: (FONT_SIZE) + 'px',
+		dy: (FONT_SIZE/3) + 'px',
+		'font-size': (FONT_SIZE * 1.2) + 'px',
+		'text-anchor': 'start',
+		fill: FONT_FILL,
+		innerHTML: label
+	});
+
+	let group = createSVG('g', {
+		transform: `translate(${x}, ${y})`
+	});
+	group.appendChild(createSVG("circle", args));
+	group.appendChild(text);
+
+	return group;
+}
+
 function makeText(className, x, y, content, fontSize = FONT_SIZE) {
 	return createSVG('text', {
 		className: className,
@@ -1594,31 +1623,30 @@ class AggregationChart extends BaseChart {
 		});
 
 		s.grandTotal = s.sliceTotals.reduce((a, b) => a + b, 0);
+
+		this.center = {
+			x: this.width / 2,
+			y: this.height / 2
+		};
 	}
 
 	renderLegend() {
-		// let s = this.state;
+		let s = this.state;
+		this.legendArea.textContent = '';
 
-		// this.statsWrapper.textContent = '';
+		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
 
-		// this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
-
-		// let xValues = s.labels;
-		// this.legendTotals.map((d, i) => {
-		// 	if(d) {
-		// 		let stats = $.create('div', {
-		// 			className: 'stats',
-		// 			inside: this.statsWrapper
-		// 		});
-		// 		stats.innerHTML = `<span class="indicator">
-		// 			<i style="background: ${this.colors[i]}"></i>
-		// 			<span class="text-muted">${xValues[i]}:</span>
-		// 			${d}
-		// 		</span>`;
-		// 	}
-		// });
-
-		//
+		this.legendTotals.map((d, i) => {
+			let barWidth = 110;
+			let rect = legendDot(
+				barWidth * i + 5,
+				'0',
+				5,
+				this.colors[i],
+				`${s.labels[i]}: ${d}`
+			);
+			this.legendArea.appendChild(rect);
+		});
 	}
 }
 
@@ -2130,17 +2158,9 @@ class PieChart extends AggregationChart {
 
 	calc() {
 		super.calc();
-		this.center = {
-			x: this.width / 2,
-			y: this.height / 2
-		};
+		let s = this.state;
 		this.radius = (this.height > this.width ? this.center.x : this.center.y);
 
-		this.calcSlices();
-	}
-
-	calcSlices() {
-		let s = this.state;
 		const { radius, clockWise } = this;
 
 		const prevSlicesProperties = s.slicesProperties || [];

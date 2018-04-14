@@ -50,6 +50,7 @@ lineCompositeChart.parent.addEventListener('data-select', (e) => {
 // ================================================================================
 
 let args = {
+	title: "My Awesome Chart",
 	data: typeData,
 	type: 'axis-mixed',
 	height: 250,

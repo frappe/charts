@@ -1,4 +1,5 @@
 import BaseChart from './BaseChart';
+import { legendDot } from '../utils/draw';
 
 export default class AggregationChart extends BaseChart {
 	constructor(parent, args) {
@@ -46,30 +47,29 @@ export default class AggregationChart extends BaseChart {
 		});
 
 		s.grandTotal = s.sliceTotals.reduce((a, b) => a + b, 0);
+
+		this.center = {
+			x: this.width / 2,
+			y: this.height / 2
+		};
 	}
 
 	renderLegend() {
-		// let s = this.state;
+		let s = this.state;
+		this.legendArea.textContent = '';
 
-		// this.statsWrapper.textContent = '';
+		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
 
-		// this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
-
-		// let xValues = s.labels;
-		// this.legendTotals.map((d, i) => {
-		// 	if(d) {
-		// 		let stats = $.create('div', {
-		// 			className: 'stats',
-		// 			inside: this.statsWrapper
-		// 		});
-		// 		stats.innerHTML = `<span class="indicator">
-		// 			<i style="background: ${this.colors[i]}"></i>
-		// 			<span class="text-muted">${xValues[i]}:</span>
-		// 			${d}
-		// 		</span>`;
-		// 	}
-		// });
-
-		//
+		this.legendTotals.map((d, i) => {
+			let barWidth = 110;
+			let rect = legendDot(
+				barWidth * i + 5,
+				'0',
+				5,
+				this.colors[i],
+				`${s.labels[i]}: ${d}`
+			);
+			this.legendArea.appendChild(rect);
+		});
 	}
 }

@@ -201,6 +201,35 @@ export function legendBar(x, y, size, fill='none', label) {
 	return group;
 }
 
+export function legendDot(x, y, size, fill='none', label) {
+	let args = {
+		className: 'legend-dot',
+		cx: 0,
+		cy: 0,
+		r: size,
+		fill: fill
+	};
+	let text = createSVG('text', {
+		className: 'legend-dataset-text',
+		x: 0,
+		y: 0,
+		dx: (FONT_SIZE) + 'px',
+		dy: (FONT_SIZE/3) + 'px',
+		'font-size': (FONT_SIZE * 1.2) + 'px',
+		'text-anchor': 'start',
+		fill: FONT_FILL,
+		innerHTML: label
+	});
+
+	let group = createSVG('g', {
+		transform: `translate(${x}, ${y})`
+	});
+	group.appendChild(createSVG("circle", args));
+	group.appendChild(text);
+
+	return group;
+}
+
 export function makeText(className, x, y, content, fontSize = FONT_SIZE) {
 	return createSVG('text', {
 		className: className,

@@ -31,18 +31,8 @@ export default class PieChart extends AggregationChart {
 	calc() {
 		super.calc();
 		let s = this.state;
-
-		this.center = {
-			x: this.width / 2,
-			y: this.height / 2
-		};
 		this.radius = (this.height > this.width ? this.center.x : this.center.y);
 
-		this.calcSlices();
-	}
-
-	calcSlices() {
-		let s = this.state;
 		const { radius, clockWise } = this;
 
 		const prevSlicesProperties = s.slicesProperties || [];
