@@ -124,7 +124,7 @@ export function activate($parent, $child, commonClass, activeClass='active', ind
 	forEachNode($children, (node, i) => {
 		if(index >= 0 && i <= index) return;
 		node.classList.remove(activeClass);
-	})
+	});
 
 	$child.classList.add(activeClass);
 }

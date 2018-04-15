@@ -1,5 +1,5 @@
 import AggregationChart from './AggregationChart';
-import { $, getOffset } from '../utils/dom';
+import { getOffset } from '../utils/dom';
 import { getComponent } from '../objects/ChartComponents';
 import { PERCENTAGE_BAR_DEFAULT_HEIGHT, PERCENTAGE_BAR_DEFAULT_DEPTH } from '../utils/constants';
 
@@ -52,7 +52,7 @@ export default class PercentageChart extends AggregationChart {
 		s.widths = [];
 
 		let xPos = 0;
-		s.sliceTotals.map((value, i) => {
+		s.sliceTotals.map((value) => {
 			let width = this.width * value / s.grandTotal;
 			s.widths.push(width);
 			s.xPositions.push(xPos);

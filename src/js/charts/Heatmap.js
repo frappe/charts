@@ -1,9 +1,10 @@
 import BaseChart from './BaseChart';
 import { getComponent } from '../objects/ChartComponents';
-import { addDays, areInSameMonth, getLastDateInMonth, setDayToSunday, getYyyyMmDd, getWeeksBetween, getMonthName, clone,
+import { makeText, heatSquare } from '../utils/draw';
+import { DAY_NAMES_SHORT, addDays, areInSameMonth, getLastDateInMonth, setDayToSunday, getYyyyMmDd, getWeeksBetween, getMonthName, clone,
 	NO_OF_MILLIS, NO_OF_YEAR_MONTHS, NO_OF_DAYS_IN_WEEK } from '../utils/date-utils';
 import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
-import { HEATMAP_DISTRIBUTION_SIZE, HEATMAP_SQUARE_SIZE,
+import { HEATMAP_TOP_MARGIN, HEATMAP_LEFT_MARGIN, HEATMAP_DISTRIBUTION_SIZE, HEATMAP_SQUARE_SIZE,
 	HEATMAP_GUTTER_SIZE } from '../utils/constants';
 
 const COL_WIDTH = HEATMAP_SQUARE_SIZE + HEATMAP_GUTTER_SIZE;
@@ -24,6 +25,12 @@ export default class Heatmap extends BaseChart {
 		this.startSubDomainIndex = validStarts.indexOf(startSubDomain);
 
 		this.setup();
+	}
+
+	setMargins() {
+		super.setMargins();
+		this.leftMargin = HEATMAP_LEFT_MARGIN;
+		this.topMargin = HEATMAP_TOP_MARGIN;
 	}
 
 	updateWidth() {
@@ -101,6 +108,21 @@ export default class Heatmap extends BaseChart {
 				let component = getComponent(...args);
 				return [args[0] + '-' + i, component];
 			}));
+
+		let y = 0;
+		DAY_NAMES_SHORT.forEach((dayName, i) => {
+			if([1, 3, 5].includes(i)) {
+				let dayText = makeText('subdomain-name', -COL_WIDTH/2, y, dayName,
+					{
+						fontSize: HEATMAP_SQUARE_SIZE,
+						dy: 8,
+						textAnchor: 'end'
+					}
+				);
+				this.drawArea.appendChild(dayText);
+			}
+			y += ROW_HEIGHT;
+		});
 	}
 
 	update(data) {
@@ -128,8 +150,8 @@ export default class Heatmap extends BaseChart {
 					let gOff = this.container.getBoundingClientRect(), pOff = daySquare.getBoundingClientRect();
 
 					let width = parseInt(e.target.getAttribute('width'));
-					let x = pOff.left - gOff.left + (width+2)/2;
-					let y = pOff.top - gOff.top - (width+2)/2;
+					let x = pOff.left - gOff.left + width/2;
+					let y = pOff.top - gOff.top;
 					let value = count + ' ' + this.countLabel;
 					let name = ' on ' + month + ' ' + dateParts[0] + ', ' + dateParts[2];
 
@@ -138,6 +160,36 @@ export default class Heatmap extends BaseChart {
 				}
 			});
 		});
+	}
+
+	renderLegend() {
+		this.legendArea.textContent = '';
+		let x = 0;
+		let y = ROW_HEIGHT;
+
+		let lessText = makeText('subdomain-name', x, y, 'Less',
+			{
+				fontSize: HEATMAP_SQUARE_SIZE + 1,
+				dy: 9
+			}
+		);
+		x = (COL_WIDTH * 2) + COL_WIDTH/2;
+		this.legendArea.appendChild(lessText);
+
+		this.colors.slice(0, HEATMAP_DISTRIBUTION_SIZE).map((color, i) => {
+			const square = heatSquare('heatmap-legend-unit', x + (COL_WIDTH + 3) * i,
+				y, HEATMAP_SQUARE_SIZE, color);
+			this.legendArea.appendChild(square);
+		});
+
+		let moreTextX = x + HEATMAP_DISTRIBUTION_SIZE * (COL_WIDTH + 3) + COL_WIDTH/4;
+		let moreText = makeText('subdomain-name', moreTextX, y, 'More',
+			{
+				fontSize: HEATMAP_SQUARE_SIZE + 1,
+				dy: 9
+			}
+		);
+		this.legendArea.appendChild(moreText);
 	}
 
 	getDomains() {

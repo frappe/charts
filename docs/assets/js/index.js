@@ -1,4 +1,5 @@
 import { shuffle } from '../../../src/js/utils/helpers';
+import { HEATMAP_COLORS_YELLOW, HEATMAP_COLORS_BLUE } from '../../../src/js/utils/constants';
 import { fireballOver25, fireball_2_5, fireball_5_25, lineCompositeData,
 	barCompositeData, typeData, trendsData, moonData, heatmapData } from './data';
 
@@ -263,15 +264,16 @@ eventsChart.parent.addEventListener('data-select', (e) => {
 // Heatmap
 // ================================================================================
 
-let heatmap = new Chart("#chart-heatmap", {
+let heatmapArgs = {
+	title: "Monthly Distribution",
 	data: heatmapData,
 	type: 'heatmap',
 	height: 115,
 	discreteDomains: 1,
-	colors: ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c']
-});
-
-console.log('heatmapData', Object.assign({}, heatmapData));
+	colors: HEATMAP_COLORS_BLUE,
+	legendScale: [0, 1, 2, 4, 5]
+};
+new Chart("#chart-heatmap", heatmapArgs);
 
 Array.prototype.slice.call(
 	document.querySelectorAll('.heatmap-mode-buttons button')
@@ -290,17 +292,14 @@ Array.prototype.slice.call(
 			.querySelector('.heatmap-color-buttons .active')
 			.getAttribute('data-color');
 		if(colors_mode === 'halloween') {
-			colors = ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'];
+			colors = HEATMAP_COLORS_YELLOW;
+		} else if (colors_mode === 'blue') {
+			colors = HEATMAP_COLORS_BLUE;
 		}
 
-		new Chart("#chart-heatmap", {
-			data: heatmapData,
-			type: 'heatmap',
-			legendScale: [0, 1, 2, 4, 5],
-			height: 115,
-			discreteDomains: discreteDomains,
-			colors: colors
-		});
+		heatmapArgs.discreteDomains = discreteDomains;
+		heatmapArgs.colors = colors;
+		new Chart("#chart-heatmap", heatmapArgs);
 
 		Array.prototype.slice.call(
 			btn.parentNode.querySelectorAll('button')).map(el => {
@@ -319,7 +318,9 @@ Array.prototype.slice.call(
 		let colors = [];
 
 		if(colors_mode === 'halloween') {
-			colors = ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'];
+			colors = HEATMAP_COLORS_YELLOW;
+		} else if (colors_mode === 'blue') {
+			colors = HEATMAP_COLORS_BLUE;
 		}
 
 		let discreteDomains = 1;
@@ -331,14 +332,9 @@ Array.prototype.slice.call(
 			discreteDomains = 0;
 		}
 
-		new Chart("#chart-heatmap", {
-			data: heatmapData,
-			type: 'heatmap',
-			legendScale: [0, 1, 2, 4, 5],
-			height: 115,
-			discreteDomains: discreteDomains,
-			colors: colors
-		});
+		heatmapArgs.discreteDomains = discreteDomains;
+		heatmapArgs.colors = colors;
+		new Chart("#chart-heatmap", heatmapArgs);
 
 		Array.prototype.slice.call(
 			btn.parentNode.querySelectorAll('button')).map(el => {

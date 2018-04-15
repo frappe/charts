@@ -11,6 +11,9 @@ export const MONTH_NAMES = ["January", "February", "March", "April", "May", "Jun
 
 export const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+export const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+export const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 // https://stackoverflow.com/a/11252167/6495043
 function treatAsUtc(date) {
 	let result = new Date(date);
@@ -44,7 +47,7 @@ export function timestampToMidnight(timestamp, roundAhead = false) {
 	return midnightTs;
 }
 
-export function getMonthsBetween(startDate, endDate) {}
+// export function getMonthsBetween(startDate, endDate) {}
 
 export function getWeeksBetween(startDate, endDate) {
 	let weekStartDate = setDayToSunday(startDate);

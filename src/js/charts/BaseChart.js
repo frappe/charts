@@ -194,7 +194,7 @@ export default class BaseChart {
 		let titleAreaHeight = 0;
 		let legendAreaHeight = 0;
 		if(this.title.length) {
-			titleAreaHeight = 30;
+			titleAreaHeight = 40;
 		}
 		if(this.config.showLegend) {
 			legendAreaHeight = 30;
@@ -213,10 +213,13 @@ export default class BaseChart {
 		if(this.title.length) {
 			this.titleEL = makeText(
 				'title',
-				this.leftMargin - AXIS_TICK_LENGTH,
+				this.leftMargin - AXIS_TICK_LENGTH * 6,
 				this.topMargin,
 				this.title,
-				11
+				{
+					fontSize: 12,
+					fill: '#666666'
+				}
 			);
 			this.svg.appendChild(this.titleEL);
 		}
@@ -242,7 +245,7 @@ export default class BaseChart {
 		this.tip.offset = {
 			x: x,
 			y: y
-		}
+		};
 	}
 
 	renderLegend() {}

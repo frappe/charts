@@ -96,7 +96,9 @@ let componentConfigs = {
 			});
 		},
 
-		animateElements(newData) { }
+		animateElements(newData) {
+			if(newData) return [];
+		}
 	},
 	yAxis: {
 		layerClass: 'y axis',
@@ -232,16 +234,20 @@ let componentConfigs = {
 	heatDomain: {
 		layerClass: function() { return 'heat-domain domain-' + this.constants.index; },
 		makeElements(data) {
-			let {index, colWidth, rowHeight, squareSize, xTranslate, discreteDomains} = this.constants;
-			let monthNameHeight = 12;
-			let x = xTranslate, y = monthNameHeight;
+			let {index, colWidth, rowHeight, squareSize, xTranslate} = this.constants;
+			let monthNameHeight = -12;
+			let x = xTranslate, y = 0;
 
 			this.serializedSubDomains = [];
 
 			data.cols.map((week, weekNo) => {
 				if(weekNo === 1) {
 					this.labels.push(
-						makeText('domain-name', x, 0, getMonthName(index, true), 11)
+						makeText('domain-name', x, monthNameHeight, getMonthName(index, true),
+							{
+								fontSize: 11
+							}
+						)
 					);
 				}
 				week.map((day, i) => {
@@ -255,15 +261,17 @@ let componentConfigs = {
 						this.serializedSubDomains.push(square);
 					}
 					y += rowHeight;
-				})
-				y = monthNameHeight;
+				});
+				y = 0;
 				x += colWidth;
 			});
 
 			return this.serializedSubDomains;
 		},
 
-		animateElements(newData) { }
+		animateElements(newData) {
+			if(newData) return [];
+		}
 	},
 
 	barGraph: {

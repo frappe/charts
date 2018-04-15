@@ -130,6 +130,9 @@ const PERCENTAGE_BAR_DEFAULT_DEPTH = 2;
 // More colors are difficult to parse visually
 const HEATMAP_DISTRIBUTION_SIZE = 5;
 
+const HEATMAP_LEFT_MARGIN = 50;
+const HEATMAP_TOP_MARGIN = 25;
+
 const HEATMAP_SQUARE_SIZE = 10;
 const HEATMAP_GUTTER_SIZE = 2;
 
@@ -137,16 +140,18 @@ const DEFAULT_CHAR_WIDTH = 7;
 
 const TOOLTIP_POINTER_TRIANGLE_HEIGHT = 5;
 
-const HEATMAP_COLORS = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
 const DEFAULT_CHART_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
 	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
+const HEATMAP_COLORS_GREEN = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+
+
 
 const DEFAULT_COLORS = {
 	bar: DEFAULT_CHART_COLORS,
 	line: DEFAULT_CHART_COLORS,
 	pie: DEFAULT_CHART_COLORS,
 	percentage: DEFAULT_CHART_COLORS,
-	heatmap: HEATMAP_COLORS
+	heatmap: HEATMAP_COLORS_GREEN
 };
 
 // Universal constants
@@ -277,6 +282,10 @@ class SvgTip {
 	}
 }
 
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -321,10 +330,13 @@ function getStringWidth(string, charWidth) {
 
 
 
+// https://stackoverflow.com/a/29325222
+
+
 function getPositionByAngle(angle, radius) {
 	return {
-		x:Math.sin(angle * ANGLE_RATIO) * radius,
-		y:Math.cos(angle * ANGLE_RATIO) * radius,
+		x: Math.sin(angle * ANGLE_RATIO) * radius,
+		y: Math.cos(angle * ANGLE_RATIO) * radius,
 	};
 }
 
@@ -524,7 +536,7 @@ function makeGradient(svgDefElem, color, lighter = false) {
 }
 
 function percentageBar(x, y, width, height,
-		depth=PERCENTAGE_BAR_DEFAULT_DEPTH, fill='none') {
+	depth=PERCENTAGE_BAR_DEFAULT_DEPTH, fill='none') {
 
 	let args = {
 		className: 'percentage-bar',
@@ -620,14 +632,19 @@ function legendDot(x, y, size, fill='none', label) {
 	return group;
 }
 
-function makeText(className, x, y, content, fontSize = FONT_SIZE) {
+function makeText(className, x, y, content, options = {}) {
+	let fontSize = options.fontSize || FONT_SIZE;
+	let dy = options.dy !== undefined ? options.dy : (fontSize / 2);
+	let fill = options.fill || FONT_FILL;
+	let textAnchor = options.textAnchor || 'start';
 	return createSVG('text', {
 		className: className,
 		x: x,
 		y: y,
-		dy: (fontSize / 2) + 'px',
+		dy: dy + 'px',
 		'font-size': fontSize + 'px',
-		fill: FONT_FILL,
+		fill: fill,
+		'text-anchor': textAnchor,
 		innerHTML: content
 	});
 }
@@ -1449,7 +1466,7 @@ class BaseChart {
 		let titleAreaHeight = 0;
 		let legendAreaHeight = 0;
 		if(this.title.length) {
-			titleAreaHeight = 30;
+			titleAreaHeight = 40;
 		}
 		if(this.config.showLegend) {
 			legendAreaHeight = 30;
@@ -1468,10 +1485,13 @@ class BaseChart {
 		if(this.title.length) {
 			this.titleEL = makeText(
 				'title',
-				this.leftMargin - AXIS_TICK_LENGTH,
+				this.leftMargin - AXIS_TICK_LENGTH * 6,
 				this.topMargin,
 				this.title,
-				11
+				{
+					fontSize: 12,
+					fill: '#666666'
+				}
 			);
 			this.svg.appendChild(this.titleEL);
 		}
@@ -1664,6 +1684,9 @@ const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
 
 
 
+
+const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 // https://stackoverflow.com/a/11252167/6495043
 function treatAsUtc(date) {
 	let result = new Date(date);
@@ -1689,7 +1712,7 @@ function clone(date) {
 
 
 
-
+// export function getMonthsBetween(startDate, endDate) {}
 
 function getWeeksBetween(startDate, endDate) {
 	let weekStartDate = setDayToSunday(startDate);
@@ -1821,7 +1844,9 @@ let componentConfigs = {
 			});
 		},
 
-		animateElements(newData) { }
+		animateElements(newData) {
+			if(newData) return [];
+		}
 	},
 	yAxis: {
 		layerClass: 'y axis',
@@ -1957,16 +1982,20 @@ let componentConfigs = {
 	heatDomain: {
 		layerClass: function() { return 'heat-domain domain-' + this.constants.index; },
 		makeElements(data) {
-			let {index, colWidth, rowHeight, squareSize, xTranslate, discreteDomains} = this.constants;
-			let monthNameHeight = 12;
-			let x = xTranslate, y = monthNameHeight;
+			let {index, colWidth, rowHeight, squareSize, xTranslate} = this.constants;
+			let monthNameHeight = -12;
+			let x = xTranslate, y = 0;
 
 			this.serializedSubDomains = [];
 
 			data.cols.map((week, weekNo) => {
 				if(weekNo === 1) {
 					this.labels.push(
-						makeText('domain-name', x, 0, getMonthName(index, true), 11)
+						makeText('domain-name', x, monthNameHeight, getMonthName(index, true),
+							{
+								fontSize: 11
+							}
+						)
 					);
 				}
 				week.map((day, i) => {
@@ -1981,14 +2010,16 @@ let componentConfigs = {
 					}
 					y += rowHeight;
 				});
-				y = monthNameHeight;
+				y = 0;
 				x += colWidth;
 			});
 
 			return this.serializedSubDomains;
 		},
 
-		animateElements(newData) { }
+		animateElements(newData) {
+			if(newData) return [];
+		}
 	},
 
 	barGraph: {
@@ -2192,7 +2223,7 @@ class PercentageChart extends AggregationChart {
 		s.widths = [];
 
 		let xPos = 0;
-		s.sliceTotals.map((value, i) => {
+		s.sliceTotals.map((value) => {
 			let width = this.width * value / s.grandTotal;
 			s.widths.push(width);
 			s.xPositions.push(xPos);
@@ -2612,6 +2643,12 @@ class Heatmap extends BaseChart {
 		this.setup();
 	}
 
+	setMargins() {
+		super.setMargins();
+		this.leftMargin = HEATMAP_LEFT_MARGIN;
+		this.topMargin = HEATMAP_TOP_MARGIN;
+	}
+
 	updateWidth() {
 		this.baseWidth = (this.state.noOfWeeks + 99) * COL_WIDTH;
 
@@ -2687,6 +2724,21 @@ class Heatmap extends BaseChart {
 				let component = getComponent(...args);
 				return [args[0] + '-' + i, component];
 			}));
+
+		let y = 0;
+		DAY_NAMES_SHORT.forEach((dayName, i) => {
+			if([1, 3, 5].includes(i)) {
+				let dayText = makeText('subdomain-name', -COL_WIDTH/2, y, dayName,
+					{
+						fontSize: HEATMAP_SQUARE_SIZE,
+						dy: 8,
+						textAnchor: 'end'
+					}
+				);
+				this.drawArea.appendChild(dayText);
+			}
+			y += ROW_HEIGHT;
+		});
 	}
 
 	update(data) {
@@ -2714,8 +2766,8 @@ class Heatmap extends BaseChart {
 					let gOff = this.container.getBoundingClientRect(), pOff = daySquare.getBoundingClientRect();
 
 					let width = parseInt(e.target.getAttribute('width'));
-					let x = pOff.left - gOff.left + (width+2)/2;
-					let y = pOff.top - gOff.top - (width+2)/2;
+					let x = pOff.left - gOff.left + width/2;
+					let y = pOff.top - gOff.top;
 					let value = count + ' ' + this.countLabel;
 					let name = ' on ' + month + ' ' + dateParts[0] + ', ' + dateParts[2];
 
@@ -2724,6 +2776,36 @@ class Heatmap extends BaseChart {
 				}
 			});
 		});
+	}
+
+	renderLegend() {
+		this.legendArea.textContent = '';
+		let x = 0;
+		let y = ROW_HEIGHT;
+
+		let lessText = makeText('subdomain-name', x, y, 'Less',
+			{
+				fontSize: HEATMAP_SQUARE_SIZE + 1,
+				dy: 9
+			}
+		);
+		x = (COL_WIDTH * 2) + COL_WIDTH/2;
+		this.legendArea.appendChild(lessText);
+
+		this.colors.slice(0, HEATMAP_DISTRIBUTION_SIZE).map((color, i) => {
+			const square = heatSquare('heatmap-legend-unit', x + (COL_WIDTH + 3) * i,
+				y, HEATMAP_SQUARE_SIZE, color);
+			this.legendArea.appendChild(square);
+		});
+
+		let moreTextX = x + HEATMAP_DISTRIBUTION_SIZE * (COL_WIDTH + 3) + COL_WIDTH/4;
+		let moreText = makeText('subdomain-name', moreTextX, y, 'More',
+			{
+				fontSize: HEATMAP_SQUARE_SIZE + 1,
+				dy: 9
+			}
+		);
+		this.legendArea.appendChild(moreText);
 	}
 
 	getDomains() {
@@ -3275,7 +3357,7 @@ class AxisChart extends BaseChart {
 
 		let s = this.state;
 
-		let formatY = this.config.formatTooltipY;
+		// let formatY = this.config.formatTooltipY;
 		let formatX = this.config.formatTooltipX;
 
 		let titles = s.xAxis.labels;
@@ -3283,7 +3365,7 @@ class AxisChart extends BaseChart {
 			titles = titles.map(d=>formatX(d));
 		}
 
-		formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
+		// formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
 
 		// yVal = formatY ? formatY(set.values[i]) : set.values[i]
 	}
@@ -3495,6 +3577,7 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
+// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,

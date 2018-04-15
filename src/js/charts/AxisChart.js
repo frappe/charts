@@ -348,7 +348,7 @@ export default class AxisChart extends BaseChart {
 
 		let s = this.state;
 
-		let formatY = this.config.formatTooltipY;
+		// let formatY = this.config.formatTooltipY;
 		let formatX = this.config.formatTooltipX;
 
 		let titles = s.xAxis.labels;
@@ -356,7 +356,7 @@ export default class AxisChart extends BaseChart {
 			titles = titles.map(d=>formatX(d));
 		}
 
-		formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
+		// formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
 
 		// yVal = formatY ? formatY(set.values[i]) : set.values[i]
 	}
@@ -377,7 +377,7 @@ export default class AxisChart extends BaseChart {
 	}
 
 	mapTooltipXPosition(relX) {
-		let s = this.state, d = this.data;
+		let s = this.state;
 		if(!s.yExtremes) return;
 
 		let index = getClosestInArray(relX, s.xAxis.positions, true);

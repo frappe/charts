@@ -134,7 +134,7 @@ export function makeGradient(svgDefElem, color, lighter = false) {
 }
 
 export function percentageBar(x, y, width, height,
-		depth=PERCENTAGE_BAR_DEFAULT_DEPTH, fill='none') {
+	depth=PERCENTAGE_BAR_DEFAULT_DEPTH, fill='none') {
 
 	let args = {
 		className: 'percentage-bar',
@@ -230,14 +230,19 @@ export function legendDot(x, y, size, fill='none', label) {
 	return group;
 }
 
-export function makeText(className, x, y, content, fontSize = FONT_SIZE) {
+export function makeText(className, x, y, content, options = {}) {
+	let fontSize = options.fontSize || FONT_SIZE;
+	let dy = options.dy !== undefined ? options.dy : (fontSize / 2);
+	let fill = options.fill || FONT_FILL;
+	let textAnchor = options.textAnchor || 'start';
 	return createSVG('text', {
 		className: className,
 		x: x,
 		y: y,
-		dy: (fontSize / 2) + 'px',
+		dy: dy + 'px',
 		'font-size': fontSize + 'px',
-		fill: FONT_FILL,
+		fill: fill,
+		'text-anchor': textAnchor,
 		innerHTML: content
 	});
 }

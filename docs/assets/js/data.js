@@ -1,4 +1,5 @@
-import { DAYS_IN_YEAR, SEC_IN_DAY, MONTH_NAMES_SHORT, clone, timestampToMidnight, timestampSec, addDays } from '../../../src/js/utils/date-utils';
+import { SEC_IN_DAY, MONTH_NAMES_SHORT, clone, timestampToMidnight, timestampSec, addDays } from '../../../src/js/utils/date-utils';
+import { getRandomBias } from '../../../src/js/utils/helpers';
 
 // Composite Chart
 // ================================================================================
@@ -176,8 +177,8 @@ export const moonData = {
 
 let today = new Date();
 let start = clone(today);
-addDays(start, 1);
-let end = clone(today);
+addDays(start, 5);
+let end = clone(start);
 start.setFullYear( start.getFullYear() - 2 );
 end.setFullYear( end.getFullYear() - 1 );
 
@@ -190,7 +191,7 @@ startTs = timestampToMidnight(startTs);
 endTs = timestampToMidnight(endTs, true);
 
 while (startTs < endTs) {
-	dataPoints[parseInt(startTs)] = Math.floor(Math.random() * 17);
+	dataPoints[parseInt(startTs)] = Math.floor(getRandomBias(0, 5, 0.2, 1));
 	startTs += SEC_IN_DAY;
 }
 
