@@ -96,10 +96,17 @@ export default class BaseChart {
 	makeContainer() {
 		// Chart needs a dedicated parent element
 		this.parent.innerHTML = '';
-		this.container = $.create('div', {
+
+		let args = {
 			inside: this.parent,
 			className: 'chart-container'
-		});
+		};
+
+		if(this.independentWidth) {
+			args.styles = { width: this.independentWidth + 'px' };
+		}
+
+		this.container = $.create('div', args);
 	}
 
 	makeTooltip() {

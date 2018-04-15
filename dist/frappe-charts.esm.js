@@ -1364,10 +1364,17 @@ class BaseChart {
 	makeContainer() {
 		// Chart needs a dedicated parent element
 		this.parent.innerHTML = '';
-		this.container = $.create('div', {
+
+		let args = {
 			inside: this.parent,
 			className: 'chart-container'
-		});
+		};
+
+		if(this.independentWidth) {
+			args.styles = { width: this.independentWidth + 'px' };
+		}
+
+		this.container = $.create('div', args);
 	}
 
 	makeTooltip() {
@@ -2628,7 +2635,6 @@ class Heatmap extends BaseChart {
 		super(parent, options);
 		this.type = 'heatmap';
 
-		this.discreteDomains = options.discreteDomains === 0 ? 0 : 1;
 		this.countLabel = options.countLabel || '';
 
 		let validStarts = ['Sunday', 'Monday'];
@@ -2639,18 +2645,26 @@ class Heatmap extends BaseChart {
 		this.setup();
 	}
 
+	configure(options) {
+		this.discreteDomains = options.discreteDomains === 0 ? 0 : 1;
+		super.configure(options);
+	}
+
 	setMargins() {
 		super.setMargins();
 		this.leftMargin = HEATMAP_LEFT_MARGIN;
 		this.topMargin = HEATMAP_TOP_MARGIN;
+
+		let d = this.data;
+		let spacing = this.discreteDomains ? NO_OF_YEAR_MONTHS : 0;
+		this.independentWidth = (getWeeksBetween(d.start, d.end)
+			+ spacing) * COL_WIDTH + this.rightMargin + this.leftMargin;
 	}
 
 	updateWidth() {
-		this.baseWidth = (this.state.noOfWeeks + 99) * COL_WIDTH;
-
-		if(this.discreteDomains) {
-			this.baseWidth += (COL_WIDTH * NO_OF_YEAR_MONTHS);
-		}
+		let spacing = this.discreteDomains ? NO_OF_YEAR_MONTHS : 0;
+		this.baseWidth = (this.state.noOfWeeks + spacing) * COL_WIDTH
+			+ this.rightMargin + this.leftMargin;
 	}
 
 	prepareData(data=this.data) {
@@ -2693,7 +2707,6 @@ class Heatmap extends BaseChart {
 
 	setupComponents() {
 		let s = this.state;
-
 		let lessCol = this.discreteDomains ? 0 : 1;
 
 		let componentConfigs = s.domainConfigs.map((config, i) => [
@@ -2719,7 +2732,8 @@ class Heatmap extends BaseChart {
 			.map((args, i) => {
 				let component = getComponent(...args);
 				return [args[0] + '-' + i, component];
-			}));
+			})
+		);
 
 		let y = 0;
 		DAY_NAMES_SHORT.forEach((dayName, i) => {
