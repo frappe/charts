@@ -71,7 +71,7 @@ export default class Heatmap extends BaseChart {
 		s.start = clone(this.data.start);
 		s.end = clone(this.data.end);
 
-		s.firstWeekStart = setDayToSunday(s.start);
+		s.firstWeekStart = clone(s.start);
 		s.noOfWeeks = getWeeksBetween(s.start, s.end);
 		s.distribution = calcDistribution(
 			Object.values(this.data.dataPoints), HEATMAP_DISTRIBUTION_SIZE);
@@ -250,13 +250,19 @@ export default class Heatmap extends BaseChart {
 	}
 
 	getCol(startDate, month, empty = false) {
+		let s = this.state;
+
 		// startDate is the start of week
 		let currentDate = clone(startDate);
 		let col = [];
 
 		for(var i = 0; i < NO_OF_DAYS_IN_WEEK; i++, addDays(currentDate, 1)) {
 			let config = {};
-			if(empty || currentDate.getMonth() !== month) {
+
+			// Non-generic adjustment for entire heatmap, needs state
+			let currentDateWithinData = currentDate >= s.start && currentDate <= s.end;
+
+			if(empty || currentDate.getMonth() !== month || !currentDateWithinData) {
 				config.yyyyMmDd = getYyyyMmDd(currentDate);
 			} else {
 				config = this.getSubDomainConfig(currentDate);
