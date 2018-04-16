@@ -88,6 +88,8 @@ Array.prototype.slice.call(
 	});
 });
 
+aggrChart.export();
+
 // Update values chart
 // ================================================================================
 let updateDataAllLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue",
@@ -105,7 +107,7 @@ let getUpdateData = (source_array, length=10) => {
 	return indices.map((index) => source_array[index]);
 };
 
-let update_data = {
+let updateData = {
 	labels: getUpdateData(updateDataAllLabels),
 	datasets: [{
 		"values": getUpdateData(updateDataAllValues)
@@ -126,8 +128,8 @@ let update_data = {
 	],
 };
 
-let update_chart = new Chart("#chart-update", {
-	data: update_data,
+let updateChart = new Chart("#chart-update", {
+	data: updateData,
 	type: 'line',
 	height: 250,
 	colors: ['#ff6c03'],
@@ -137,9 +139,9 @@ let update_chart = new Chart("#chart-update", {
 	},
 });
 
-let chart_update_buttons = document.querySelector('.chart-update-buttons');
+let chartUpdateButtons = document.querySelector('.chart-update-buttons');
 
-chart_update_buttons.querySelector('[data-update="random"]').addEventListener("click", () => {
+chartUpdateButtons.querySelector('[data-update="random"]').addEventListener("click", () => {
 	shuffle(updateDataAllIndices);
 	let value = getRandom();
 	let start = getRandom();
@@ -162,19 +164,19 @@ chart_update_buttons.querySelector('[data-update="random"]').addEventListener("c
 			},
 		],
 	};
-	update_chart.update(data);
+	updateChart.update(data);
 });
 
-chart_update_buttons.querySelector('[data-update="add"]').addEventListener("click", () => {
-	let index = update_chart.state.datasetLength; // last index to add
+chartUpdateButtons.querySelector('[data-update="add"]').addEventListener("click", () => {
+	let index = updateChart.state.datasetLength; // last index to add
 	if(index >= updateDataAllIndices.length) return;
-	update_chart.addDataPoint(
+	updateChart.addDataPoint(
 		updateDataAllLabels[index], [updateDataAllValues[index]]
 	);
 });
 
-chart_update_buttons.querySelector('[data-update="remove"]').addEventListener("click", () => {
-	update_chart.removeDataPoint();
+chartUpdateButtons.querySelector('[data-update="remove"]').addEventListener("click", () => {
+	updateChart.removeDataPoint();
 });
 
 // Trends Chart

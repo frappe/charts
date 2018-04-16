@@ -7,6 +7,7 @@ import { BASE_CHART_TOP_MARGIN, BASE_CHART_LEFT_MARGIN,
 import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
 import { Chart } from '../chart';
+import { CSSTEXT } from '../../css/chartsCss';
 
 export default class BaseChart {
 	constructor(parent, options) {
@@ -330,5 +331,41 @@ export default class BaseChart {
 	unbindWindowEvents(){
 		window.removeEventListener('resize', () => this.draw(true));
 		window.removeEventListener('orientationchange', () => this.draw(true));
+	}
+
+	export() {
+		let chartSvg = this.prepareForExport();
+		this.downloadFile(this.title || 'Chart', [chartSvg]);
+	}
+
+	downloadFile(filename, data) {
+		var a = document.createElement('a');
+		a.style = "display: none";
+		var blob = new Blob(data, {type: "image/svg+xml; charset=utf-8"});
+		var url = window.URL.createObjectURL(blob);
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		setTimeout(function(){
+			document.body.removeChild(a);
+			window.URL.revokeObjectURL(url);
+		}, 300);
+	}
+
+	prepareForExport() {
+		let clone = this.svg.cloneNode(true);
+		clone.classList.add('chart-container');
+		clone.setAttribute('xmlns', "http://www.w3.org/2000/svg");
+		clone.setAttribute('xmlns:xlink', "http://www.w3.org/1999/xlink");
+		let styleEl = $.create('style', {
+			'innerHTML': CSSTEXT
+		});
+		clone.insertBefore(styleEl, clone.firstChild);
+
+		let container = $.create('div');
+		container.appendChild(clone);
+
+		return container.innerHTML;
 	}
 }

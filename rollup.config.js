@@ -1,17 +1,42 @@
+import pkg from './package.json';
+
 // Rollup plugins
 import babel from 'rollup-plugin-babel';
 import eslint from 'rollup-plugin-eslint';
 import replace from 'rollup-plugin-replace';
 import uglify from 'rollup-plugin-uglify-es';
 import sass from 'node-sass';
-import postcss from 'rollup-plugin-postcss';
 
 // PostCSS plugins
+import postcssPlugin from 'rollup-plugin-postcss';
 import nested from 'postcss-nested';
 import cssnext from 'postcss-cssnext';
 import cssnano from 'cssnano';
 
-import pkg from './package.json';
+import postcss from 'postcss';
+import precss from 'precss';
+import CleanCSS from 'clean-css';
+import autoprefixer from 'autoprefixer';
+import fs from 'fs';
+import { HEATMAP_LEFT_MARGIN } from './src/js/utils/constants';
+
+fs.readFile('src/css/charts.scss', (err, css) => {
+    postcss([precss, autoprefixer])
+        .process(css, { from: 'src/css/charts.scss', to: 'src/css/charts.css' })
+        .then(result => {
+			let options = {
+				level: {
+					1: {
+						removeQuotes: false,
+					}
+				}
+			}
+			let output = new CleanCSS(options).minify(result.css);
+			let res = JSON.stringify(output.styles).replace(/"/g, "'");
+			let js = `export const CSSTEXT = "${res.slice(1, -1)}";`;
+            fs.writeFile('src/css/chartsCss.js', js);
+        });
+});
 
 export default [
 	{
@@ -29,7 +54,7 @@ export default [
 		],
 		name: 'frappe',
 		plugins: [
-			postcss({
+			postcssPlugin({
 				preprocessor: (content, id) => new Promise((resolve, reject) => {
 					const result = sass.renderSync({ file: id })
 					resolve({ code: result.css.toString() })
@@ -43,7 +68,7 @@ export default [
 			}),
 			eslint({
 				exclude: [
-					'src/scss/**'
+					'src/css/**'
 				]
 			}),
 			babel({
@@ -67,7 +92,7 @@ export default [
 		],
 		name: 'frappe',
 		plugins: [
-			postcss({
+			postcssPlugin({
 				preprocessor: (content, id) => new Promise((resolve, reject) => {
 					const result = sass.renderSync({ file: id })
 					resolve({ code: result.css.toString() })
@@ -81,7 +106,7 @@ export default [
 			}),
 			eslint({
 				exclude: [
-					'src/scss/**'
+					'src/css/**'
 				]
 			}),
 			babel({
@@ -106,7 +131,7 @@ export default [
 			}
 		],
 		plugins: [
-			postcss({
+			postcssPlugin({
 				preprocessor: (content, id) => new Promise((resolve, reject) => {
 					const result = sass.renderSync({ file: id })
 					resolve({ code: result.css.toString() })
@@ -120,7 +145,7 @@ export default [
 			}),
 			eslint({
 				exclude: [
-					'src/scss/**',
+					'src/css/**',
 				]
 			}),
 			babel({
@@ -142,7 +167,7 @@ export default [
 			}
 		],
 		plugins: [
-			postcss({
+			postcssPlugin({
 				preprocessor: (content, id) => new Promise((resolve, reject) => {
 					const result = sass.renderSync({ file: id })
 					resolve({ code: result.css.toString() })
@@ -157,7 +182,7 @@ export default [
 			}),
 			eslint({
 				exclude: [
-					'src/scss/**',
+					'src/css/**',
 				]
 			}),
 			replace({

@@ -1,10 +1,10 @@
 .chart-container {
-	// https://www.smashingmagazine.com/2015/11/using-system-ui-fonts-practical-guide/
-	font-family: -apple-system, BlinkMacSystemFont,
-		"Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
-		"Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+	position: relative; /* for absolutely positioned tooltip */
 
-	position: relative;
+	/* https://www.smashingmagazine.com/2015/11/using-system-ui-fonts-practical-guide/ */
+	font-family: -apple-system, BlinkMacSystemFont,
+		'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+		'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 
 	.axis, .chart-label {
 		fill: #555b51;
@@ -36,13 +36,9 @@
 		}
 	}
 	line.dashed {
-		stroke-dasharray: 5,3;
+		stroke-dasharray: 5, 3;
 	}
 	.axis-line {
-		// &.x-axis-label {
-		// 	display: block;
-		// }
-		// TODO: hack dy attr to be settable via styles
 		.specific-value {
 			text-anchor: start;
 		}
@@ -87,7 +83,7 @@
 		position: absolute;
 		height: 5px;
 		margin: 0 0 0 -5px;
-		content: " ";
+		content: ' ';
 		border: 5px solid transparent;
 		border-top-color: rgba(0, 0, 0, 0.8);
 	}

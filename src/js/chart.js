@@ -1,4 +1,4 @@
-import '../scss/charts.scss';
+import '../css/charts.scss';
 
 // import MultiAxisChart from './charts/MultiAxisChart';
 import PercentageChart from './charts/PercentageChart';
@@ -7,6 +7,8 @@ import Heatmap from './charts/Heatmap';
 import AxisChart from './charts/AxisChart';
 
 const chartTypes = {
+	bar: AxisChart,
+	line: AxisChart,
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,
 	heatmap: Heatmap,
@@ -14,13 +16,7 @@ const chartTypes = {
 };
 
 function getChartByType(chartType = 'line', parent, options) {
-	if(chartType === 'line') {
-		options.type = 'line';
-		return new AxisChart(parent, options);
-	} else if (chartType === 'bar') {
-		options.type = 'bar';
-		return new AxisChart(parent, options);
-	} else if (chartType === 'axis-mixed') {
+	if (chartType === 'axis-mixed') {
 		options.type = 'line';
 		return new AxisChart(parent, options);
 	}
