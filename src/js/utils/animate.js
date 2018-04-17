@@ -102,4 +102,3 @@ export function animatePath(paths, newXList, newYList, zeroLine) {
 export function animatePathStr(oldPath, pathStr) {
 	return [oldPath, {d: pathStr}, UNIT_ANIM_DUR, STD_EASING];
 }
-

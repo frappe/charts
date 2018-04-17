@@ -88,7 +88,7 @@ Array.prototype.slice.call(
 	});
 });
 
-document.querySelector('.export-aggr').addEventListener('click', (e) => {
+document.querySelector('.export-aggr').addEventListener('click', () => {
 	aggrChart.export();
 });
 
@@ -181,7 +181,7 @@ chartUpdateButtons.querySelector('[data-update="remove"]').addEventListener("cli
 	updateChart.removeDataPoint();
 });
 
-document.querySelector('.export-update').addEventListener('click', (e) => {
+document.querySelector('.export-update').addEventListener('click', () => {
 	updateChart.export();
 });
 
@@ -233,7 +233,7 @@ Array.prototype.slice.call(
 	});
 });
 
-document.querySelector('.export-trends').addEventListener('click', (e) => {
+document.querySelector('.export-trends').addEventListener('click', () => {
 	trendsChart.export();
 });
 
@@ -356,6 +356,6 @@ Array.prototype.slice.call(
 	});
 });
 
-document.querySelector('.export-heatmap').addEventListener('click', (e) => {
+document.querySelector('.export-heatmap').addEventListener('click', () => {
 	heatmapChart.export();
 });

@@ -56,15 +56,15 @@
 
       datasets: [
         {
-          label: "Some Data", type: 'bar',
+          label: "Some Data", chartType: 'bar',
           values: [25, 40, 30, 35, 8, 52, 17, -4]
         },
         {
-          label: "Another Set", type: 'bar',
+          label: "Another Set", chartType: 'bar',
           values: [25, 50, -10, 15, 18, 32, 27, 14]
         },
         {
-          label: "Yet Another", type: 'line',
+          label: "Yet Another", chartType: 'line',
           values: [15, 20, -3, -15, 58, 12, -17, 37]
         }
       ],
@@ -77,7 +77,10 @@
     type: 'axis-mixed', // or 'bar', 'line', 'pie', 'percentage'
     height: 250,
     colors: ['purple', '#ffa3ef', 'red']
-  });</code></pre>
+  });
+
+  chart.export();
+</code></pre>
               <!-- <div id="chart-types" class="border" style="margin-bottom: 15px"></div> -->
               <!-- <div >
                 <div class="btn-group x-axis-buttons margin-vertical-px" role="group">
@@ -100,7 +103,9 @@
                 <button type="button" class="btn btn-sm btn-secondary" data-type='pie'>Pie Chart</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-type='percentage'>Percentage Chart</button>
               </div>
-              <button type="button" class="btn btn-sm btn-tertiary export-aggr">Export</button>
+              <div class="btn-group export-buttons margin-vertical-px mx-auto" role="group">
+                <button type="button" class="btn btn-sm btn-secondary export-aggr">Export ...</button>
+              </div>
               <!-- <p class="text-muted">
                 <a target="_blank" href="http://www.storytellingwithdata.com/blog/2011/07/death-to-pie-charts">Why Percentage?</a>
               </p> -->
@@ -117,7 +122,7 @@
                 <button type="button" class="btn btn-sm btn-secondary" data-update="random">Random Data</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-update="add">Add Value</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-update="remove">Remove Value</button>
-                <button type="button" class="btn btn-sm btn-tertiary export-update">Export</button>
+                <button type="button" class="btn btn-sm btn-secondary export-update">Export ...</button>
               </div>
             </div>
           </div>
@@ -134,7 +139,9 @@
                 <button type="button" class="btn btn-sm btn-secondary active" data-type="heatline">HeatLine</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-type="regionFill">Region</button>
               </div>
-              <button type="button" class="btn btn-sm btn-tertiary export-trends">Export</button>
+              <div class="btn-group export-buttons mt-1 mx-auto" role="group">
+                <button type="button" class="btn btn-sm btn-secondary export-trends">Export ...</button>
+              </div>
               <!-- <pre><code class="hljs javascript margin-vertical-px">  ...
     lineOptions: 'line',   // Line Chart specific properties:
 
@@ -194,7 +201,9 @@
                 <button type="button" class="btn btn-sm btn-secondary active" data-color="blue">Blue</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-color="halloween">GitHub's Halloween</button>
               </div>
-              <button type="button" class="btn btn-sm btn-tertiary export-heatmap">Export</button>
+              <div class="btn-group export-buttons mt-1 mx-auto" role="group">
+                <button type="button" class="btn btn-sm btn-secondary export-heatmap">Export ...</button>
+              </div>
               <pre><code class="hljs javascript margin-vertical-px">  let heatmap = new Chart("#heatmap", {
     type: 'heatmap',
     height: 115,

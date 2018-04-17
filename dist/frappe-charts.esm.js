@@ -282,6 +282,10 @@ class SvgTip {
 	}
 }
 
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -1724,13 +1728,12 @@ const NO_OF_DAYS_IN_WEEK = 7;
 const NO_OF_MILLIS = 1000;
 const SEC_IN_DAY = 86400;
 
-const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
-	"July", "August", "September", "October", "November", "December"];
-
-
+const MONTH_NAMES = ["January", "February", "March", "April", "May",
+	"June", "July", "August", "September", "October", "November", "December"];
 
 
 const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 
 // https://stackoverflow.com/a/11252167/6495043
 function treatAsUtc(date) {
@@ -3635,6 +3638,7 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
+// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,
