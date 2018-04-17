@@ -55,10 +55,13 @@ export default class PieChart extends AggregationChart {
 		s.sliceStrings = [];
 		s.slicesProperties = [];
 		let curAngle = 180 - this.config.startAngle;
-
 		s.sliceTotals.map((total, i) => {
 			const startAngle = curAngle;
 			const originDiffAngle = (total / s.grandTotal) * FULL_ANGLE;
+			let largeArc = 0;
+			if(originDiffAngle > 180){
+				largeArc = 1;
+			}
 			const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
 			const endAngle = curAngle = curAngle + diffAngle;
 			const startPosition = getPositionByAngle(startAngle, radius);
@@ -74,8 +77,7 @@ export default class PieChart extends AggregationChart {
 				curStart = startPosition;
 				curEnd = endPosition;
 			}
-			const curPath = makeArcPathStr(curStart, curEnd, this.center, this.radius, this.clockWise);
-
+			const curPath = makeArcPathStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc);
 			s.sliceStrings.push(curPath);
 			s.slicesProperties.push({
 				startPosition,
