@@ -1278,6 +1278,37 @@ function runSMILAnimation(parent, svgElement, elementsToAnimate) {
 
 const CSSTEXT = ".chart-container{position:relative;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif}.chart-container .axis,.chart-container .chart-label{fill:#555b51}.chart-container .axis line,.chart-container .chart-label line{stroke:#dadada}.chart-container .dataset-units circle{stroke:#fff;stroke-width:2}.chart-container .dataset-units path{fill:none;stroke-opacity:1;stroke-width:2px}.chart-container .dataset-path{stroke-width:2px}.chart-container .path-group path{fill:none;stroke-opacity:1;stroke-width:2px}.chart-container line.dashed{stroke-dasharray:5,3}.chart-container .axis-line .specific-value{text-anchor:start}.chart-container .axis-line .y-line{text-anchor:end}.chart-container .axis-line .x-line{text-anchor:middle}.graph-svg-tip{position:absolute;z-index:99999;padding:10px;font-size:12px;color:#959da5;text-align:center;background:rgba(0,0,0,.8);border-radius:3px}.graph-svg-tip ul{padding-left:0;display:flex}.graph-svg-tip ol{padding-left:0;display:flex}.graph-svg-tip ul.data-point-list li{min-width:90px;flex:1;font-weight:600}.graph-svg-tip strong{color:#dfe2e5;font-weight:600}.graph-svg-tip .svg-pointer{position:absolute;height:5px;margin:0 0 0 -5px;content:' ';border:5px solid transparent;border-top-color:rgba(0,0,0,.8)}.graph-svg-tip.comparison{padding:0;text-align:left;pointer-events:none}.graph-svg-tip.comparison .title{display:block;padding:10px;margin:0;font-weight:600;line-height:1;pointer-events:none}.graph-svg-tip.comparison ul{margin:0;white-space:nowrap;list-style:none}.graph-svg-tip.comparison li{display:inline-block;padding:5px 10px}";
 
+function downloadFile(filename, data) {
+	var a = document.createElement('a');
+	a.style = "display: none";
+	var blob = new Blob(data, {type: "image/svg+xml; charset=utf-8"});
+	var url = window.URL.createObjectURL(blob);
+	a.href = url;
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+	setTimeout(function(){
+		document.body.removeChild(a);
+		window.URL.revokeObjectURL(url);
+	}, 300);
+}
+
+function prepareForExport(svg) {
+	let clone = svg.cloneNode(true);
+	clone.classList.add('chart-container');
+	clone.setAttribute('xmlns', "http://www.w3.org/2000/svg");
+	clone.setAttribute('xmlns:xlink', "http://www.w3.org/1999/xlink");
+	let styleEl = $.create('style', {
+		'innerHTML': CSSTEXT
+	});
+	clone.insertBefore(styleEl, clone.firstChild);
+
+	let container = $.create('div');
+	container.appendChild(clone);
+
+	return container.innerHTML;
+}
+
 class BaseChart {
 	constructor(parent, options) {
 
@@ -1322,8 +1353,8 @@ class BaseChart {
 		this.setMargins();
 
 		// Bind window events
-		window.addEventListener('resize', () => this.draw(true));
-		window.addEventListener('orientationchange', () => this.draw(true));
+		window.addEventListener('resize', () => this.boundDrawFn);
+		window.addEventListener('orientationchange', () => this.boundDrawFn);
 	}
 
 	validateColors(colors, type) {
@@ -1597,45 +1628,18 @@ class BaseChart {
 		return new Chart(this.parent, args);
 	}
 
+	boundDrawFn() {
+		this.draw(true);
+	}
+
 	unbindWindowEvents(){
-		window.removeEventListener('resize', () => this.draw(true));
-		window.removeEventListener('orientationchange', () => this.draw(true));
+		window.removeEventListener('resize', () => this.boundDrawFn);
+		window.removeEventListener('orientationchange', () => this.boundDrawFn);
 	}
 
 	export() {
-		let chartSvg = this.prepareForExport();
-		this.downloadFile(this.title || 'Chart', [chartSvg]);
-	}
-
-	downloadFile(filename, data) {
-		var a = document.createElement('a');
-		a.style = "display: none";
-		var blob = new Blob(data, {type: "image/svg+xml; charset=utf-8"});
-		var url = window.URL.createObjectURL(blob);
-		a.href = url;
-		a.download = filename;
-		document.body.appendChild(a);
-		a.click();
-		setTimeout(function(){
-			document.body.removeChild(a);
-			window.URL.revokeObjectURL(url);
-		}, 300);
-	}
-
-	prepareForExport() {
-		let clone = this.svg.cloneNode(true);
-		clone.classList.add('chart-container');
-		clone.setAttribute('xmlns', "http://www.w3.org/2000/svg");
-		clone.setAttribute('xmlns:xlink', "http://www.w3.org/1999/xlink");
-		let styleEl = $.create('style', {
-			'innerHTML': CSSTEXT
-		});
-		clone.insertBefore(styleEl, clone.firstChild);
-
-		let container = $.create('div');
-		container.appendChild(clone);
-
-		return container.innerHTML;
+		let chartSvg = prepareForExport(this.svg);
+		downloadFile(this.title || 'Chart', [chartSvg]);
 	}
 }
 

@@ -6,8 +6,8 @@ import { BASE_CHART_TOP_MARGIN, BASE_CHART_LEFT_MARGIN,
 	ALL_CHART_TYPES, COMPATIBLE_CHARTS, DATA_COLOR_DIVISIONS} from '../utils/constants';
 import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
+import { downloadFile, prepareForExport } from '../utils/export';
 import { Chart } from '../chart';
-import { CSSTEXT } from '../../css/chartsCss';
 
 export default class BaseChart {
 	constructor(parent, options) {
@@ -53,8 +53,8 @@ export default class BaseChart {
 		this.setMargins();
 
 		// Bind window events
-		window.addEventListener('resize', () => this.draw(true));
-		window.addEventListener('orientationchange', () => this.draw(true));
+		window.addEventListener('resize', () => this.boundDrawFn);
+		window.addEventListener('orientationchange', () => this.boundDrawFn);
 	}
 
 	validateColors(colors, type) {
@@ -328,44 +328,17 @@ export default class BaseChart {
 		return new Chart(this.parent, args);
 	}
 
+	boundDrawFn() {
+		this.draw(true);
+	}
+
 	unbindWindowEvents(){
-		window.removeEventListener('resize', () => this.draw(true));
-		window.removeEventListener('orientationchange', () => this.draw(true));
+		window.removeEventListener('resize', () => this.boundDrawFn);
+		window.removeEventListener('orientationchange', () => this.boundDrawFn);
 	}
 
 	export() {
-		let chartSvg = this.prepareForExport();
-		this.downloadFile(this.title || 'Chart', [chartSvg]);
-	}
-
-	downloadFile(filename, data) {
-		var a = document.createElement('a');
-		a.style = "display: none";
-		var blob = new Blob(data, {type: "image/svg+xml; charset=utf-8"});
-		var url = window.URL.createObjectURL(blob);
-		a.href = url;
-		a.download = filename;
-		document.body.appendChild(a);
-		a.click();
-		setTimeout(function(){
-			document.body.removeChild(a);
-			window.URL.revokeObjectURL(url);
-		}, 300);
-	}
-
-	prepareForExport() {
-		let clone = this.svg.cloneNode(true);
-		clone.classList.add('chart-container');
-		clone.setAttribute('xmlns', "http://www.w3.org/2000/svg");
-		clone.setAttribute('xmlns:xlink', "http://www.w3.org/1999/xlink");
-		let styleEl = $.create('style', {
-			'innerHTML': CSSTEXT
-		});
-		clone.insertBefore(styleEl, clone.firstChild);
-
-		let container = $.create('div');
-		container.appendChild(clone);
-
-		return container.innerHTML;
+		let chartSvg = prepareForExport(this.svg);
+		downloadFile(this.title || 'Chart', [chartSvg]);
 	}
 }

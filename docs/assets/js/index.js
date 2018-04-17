@@ -88,7 +88,9 @@ Array.prototype.slice.call(
 	});
 });
 
-aggrChart.export();
+document.querySelector('.export-aggr').addEventListener('click', (e) => {
+	aggrChart.export();
+});
 
 // Update values chart
 // ================================================================================
@@ -179,6 +181,10 @@ chartUpdateButtons.querySelector('[data-update="remove"]').addEventListener("cli
 	updateChart.removeDataPoint();
 });
 
+document.querySelector('.export-update').addEventListener('click', (e) => {
+	updateChart.export();
+});
+
 // Trends Chart
 // ================================================================================
 
@@ -199,7 +205,7 @@ let plotChartArgs = {
 	}
 };
 
-new Chart("#chart-trends", plotChartArgs);
+let trendsChart = new Chart("#chart-trends", plotChartArgs);
 
 Array.prototype.slice.call(
 	document.querySelectorAll('.chart-plot-buttons button')
@@ -225,6 +231,10 @@ Array.prototype.slice.call(
 		});
 		btn.classList.add('active');
 	});
+});
+
+document.querySelector('.export-trends').addEventListener('click', (e) => {
+	trendsChart.export();
 });
 
 
@@ -275,7 +285,7 @@ let heatmapArgs = {
 	colors: HEATMAP_COLORS_BLUE,
 	legendScale: [0, 1, 2, 4, 5]
 };
-new Chart("#chart-heatmap", heatmapArgs);
+let heatmapChart = new Chart("#chart-heatmap", heatmapArgs);
 
 Array.prototype.slice.call(
 	document.querySelectorAll('.heatmap-mode-buttons button')
@@ -344,4 +354,8 @@ Array.prototype.slice.call(
 		});
 		btn.classList.add('active');
 	});
+});
+
+document.querySelector('.export-heatmap').addEventListener('click', (e) => {
+	heatmapChart.export();
 });
