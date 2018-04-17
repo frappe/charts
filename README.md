@@ -13,6 +13,9 @@
     <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.iife.js">
         <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.iife.js.svg?compression=gzip">
     </a>
+    <a href="https://travis-ci.org/frappe/charts">
+        <img src="https://img.shields.io/travis/frappe/charts.svg?style=flat-square">
+    </a>
 </p>
 
 <p align="center">

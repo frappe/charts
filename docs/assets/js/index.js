@@ -50,12 +50,13 @@ lineCompositeChart.parent.addEventListener('data-select', (e) => {
 
 // ================================================================================
 
-let args = {
+let customColors = ['purple', 'magenta', 'light-blue'];
+let typeChartArgs = {
 	title: "My Awesome Chart",
 	data: typeData,
 	type: 'axis-mixed',
 	height: 250,
-	colors: ['purple', 'magenta', 'light-blue'],
+	colors: customColors,
 
 	maxLegendPoints: 6,
 	maxSlices: 10,
@@ -66,7 +67,7 @@ let args = {
 	}
 };
 
-let aggrChart = new Chart("#chart-aggr", args);
+let aggrChart = new Chart("#chart-aggr", typeChartArgs);
 
 Array.prototype.slice.call(
 	document.querySelectorAll('.aggr-type-buttons button')
@@ -74,9 +75,14 @@ Array.prototype.slice.call(
 	el.addEventListener('click', (e) => {
 		let btn = e.target;
 		let type = btn.getAttribute('data-type');
-		args.type = type;
+		typeChartArgs.type = type;
+		if(type !== 'axis-mixed') {
+			typeChartArgs.colors = undefined;
+		} else {
+			typeChartArgs.colors = customColors;
+		}
 
-		let newChart = aggrChart.getDifferentChart(type);
+		let newChart = new Chart("#chart-aggr", typeChartArgs);
 		if(newChart){
 			aggrChart = newChart;
 		}
