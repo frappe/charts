@@ -40,7 +40,7 @@ fs.readFile('src/css/charts.scss', (err, css) => {
 
 export default [
 	{
-		input: 'src/js/chart.js',
+		input: 'src/js/index.js',
 		sourcemap: true,
 		output: [
 			{
