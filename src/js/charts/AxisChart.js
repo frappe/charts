@@ -22,7 +22,7 @@ export default class AxisChart extends BaseChart {
 		this.setup();
 	}
 
-	setMeasures(options) {
+	setMeasures() {
 		if(this.data.datasets.length <= 1) {
 			this.config.showLegend = 0;
 			this.measures.paddings.bottom = 30;
@@ -142,6 +142,7 @@ export default class AxisChart extends BaseChart {
 		if(this.data.yMarkers) {
 			this.state.yMarkers = this.data.yMarkers.map(d => {
 				d.position = scale(d.value, s.yAxis);
+				if(!d.options) d.options = {};
 				// if(!d.label.includes(':')) {
 				// 	d.label += ': ' + d.value;
 				// }
@@ -152,6 +153,7 @@ export default class AxisChart extends BaseChart {
 			this.state.yRegions = this.data.yRegions.map(d => {
 				d.startPos = scale(d.start, s.yAxis);
 				d.endPos = scale(d.end, s.yAxis);
+				if(!d.options) d.options = {};
 				return d;
 			});
 		}

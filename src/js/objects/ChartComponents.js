@@ -165,9 +165,9 @@ let componentConfigs = {
 	yMarkers: {
 		layerClass: 'y-markers',
 		makeElements(data) {
-			return data.map(marker =>
-				yMarker(marker.position, marker.label, this.constants.width,
-					{pos:'right', mode: 'span', lineType: 'dashed'})
+			return data.map(m =>
+				yMarker(m.position, m.label, this.constants.width,
+					{labelPos: m.options.labelPos, mode: 'span', lineType: 'dashed'})
 			);
 		},
 		animateElements(newData) {
@@ -175,13 +175,15 @@ let componentConfigs = {
 
 			let newPos = newData.map(d => d.position);
 			let newLabels = newData.map(d => d.label);
+			let newOptions = newData.map(d => d.options);
 
 			let oldPos = this.oldData.map(d => d.position);
 
 			this.render(oldPos.map((pos, i) => {
 				return {
 					position: oldPos[i],
-					label: newLabels[i]
+					label: newLabels[i],
+					options: newOptions[i]
 				};
 			}));
 
@@ -196,9 +198,9 @@ let componentConfigs = {
 	yRegions: {
 		layerClass: 'y-regions',
 		makeElements(data) {
-			return data.map(region =>
-				yRegion(region.startPos, region.endPos, this.constants.width,
-					region.label)
+			return data.map(r =>
+				yRegion(r.startPos, r.endPos, this.constants.width,
+					r.label, {labelPos: r.options.labelPos})
 			);
 		},
 		animateElements(newData) {
@@ -207,6 +209,7 @@ let componentConfigs = {
 			let newPos = newData.map(d => d.endPos);
 			let newLabels = newData.map(d => d.label);
 			let newStarts = newData.map(d => d.startPos);
+			let newOptions = newData.map(d => d.options);
 
 			let oldPos = this.oldData.map(d => d.endPos);
 			let oldStarts = this.oldData.map(d => d.startPos);
@@ -215,7 +218,8 @@ let componentConfigs = {
 				return {
 					startPos: oldStarts[i],
 					endPos: oldPos[i],
-					label: newLabels[i]
+					label: newLabels[i],
+					options: newOptions[i]
 				};
 			}));
 

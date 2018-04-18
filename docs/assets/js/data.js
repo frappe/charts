@@ -93,6 +93,7 @@ export const typeData = {
 		{
 			label: "Marker",
 			value: 43,
+			options: { labelPos: 'left' }
 			// type: 'dashed'
 		}
 	],
@@ -101,7 +102,8 @@ export const typeData = {
 		{
 			label: "Region",
 			start: -10,
-			end: 50
+			end: 50,
+			options: { labelPos: 'right' }
 		},
 	],
 

@@ -383,9 +383,13 @@ export function xLine(x, label, height, options={}) {
 }
 
 export function yMarker(y, label, width, options={}) {
+	if(!options.labelPos) options.labelPos = 'right';
+	let x = options.labelPos === 'left' ? LABEL_MARGIN
+		: width - getStringWidth(label, 5) - LABEL_MARGIN;
+
 	let labelSvg = createSVG('text', {
 		className: 'chart-label',
-		x: width - getStringWidth(label, 5) - LABEL_MARGIN,
+		x: x,
 		y: 0,
 		dy: (FONT_SIZE / -2) + 'px',
 		'font-size': FONT_SIZE + 'px',
@@ -404,7 +408,7 @@ export function yMarker(y, label, width, options={}) {
 	return line;
 }
 
-export function yRegion(y1, y2, width, label) {
+export function yRegion(y1, y2, width, label, options={}) {
 	// return a group
 	let height = y1 - y2;
 
@@ -422,9 +426,13 @@ export function yRegion(y1, y2, width, label) {
 		height: height
 	});
 
+	if(!options.labelPos) options.labelPos = 'right';
+	let x = options.labelPos === 'left' ? LABEL_MARGIN
+		: width - getStringWidth(label+"", 4.5) - LABEL_MARGIN;
+
 	let labelSvg = createSVG('text', {
 		className: 'chart-label',
-		x: width - getStringWidth(label+"", 4.5) - LABEL_MARGIN,
+		x: x,
 		y: 0,
 		dy: (FONT_SIZE / -2) + 'px',
 		'font-size': FONT_SIZE + 'px',

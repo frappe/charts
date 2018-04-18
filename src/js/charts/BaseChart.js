@@ -1,6 +1,6 @@
 import SvgTip from '../objects/SvgTip';
 import { $, isElementInViewport, getElementContentWidth } from '../utils/dom';
-import { makeSVGContainer, makeSVGDefs, makeSVGGroup, makeText, yLine } from '../utils/draw';
+import { makeSVGContainer, makeSVGDefs, makeSVGGroup, makeText } from '../utils/draw';
 import { BASE_MEASURES, getExtraHeight, getExtraWidth, getTopOffset, getLeftOffset,
 	INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS} from '../utils/constants';
 import { getColor, isValidColor } from '../utils/colors';

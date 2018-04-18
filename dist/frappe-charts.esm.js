@@ -297,6 +297,10 @@ class SvgTip {
 	}
 }
 
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -796,9 +800,13 @@ function xLine(x, label, height, options={}) {
 }
 
 function yMarker(y, label, width, options={}) {
+	if(!options.labelPos) options.labelPos = 'right';
+	let x = options.labelPos === 'left' ? LABEL_MARGIN
+		: width - getStringWidth(label, 5) - LABEL_MARGIN;
+
 	let labelSvg = createSVG('text', {
 		className: 'chart-label',
-		x: width - getStringWidth(label, 5) - LABEL_MARGIN,
+		x: x,
 		y: 0,
 		dy: (FONT_SIZE / -2) + 'px',
 		'font-size': FONT_SIZE + 'px',
@@ -817,7 +825,7 @@ function yMarker(y, label, width, options={}) {
 	return line;
 }
 
-function yRegion(y1, y2, width, label) {
+function yRegion(y1, y2, width, label, options={}) {
 	// return a group
 	let height = y1 - y2;
 
@@ -835,9 +843,13 @@ function yRegion(y1, y2, width, label) {
 		height: height
 	});
 
+	if(!options.labelPos) options.labelPos = 'right';
+	let x = options.labelPos === 'left' ? LABEL_MARGIN
+		: width - getStringWidth(label+"", 4.5) - LABEL_MARGIN;
+
 	let labelSvg = createSVG('text', {
 		className: 'chart-label',
-		x: width - getStringWidth(label+"", 4.5) - LABEL_MARGIN,
+		x: x,
 		y: 0,
 		dy: (FONT_SIZE / -2) + 'px',
 		'font-size': FONT_SIZE + 'px',
@@ -1292,7 +1304,7 @@ function runSMILAnimation(parent, svgElement, elementsToAnimate) {
 	}, REPLACE_ALL_NEW_DUR);
 }
 
-const CSSTEXT = ".chart-container{position:relative;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif}.chart-container .axis,.chart-container .chart-label{fill:#555b51}.chart-container .axis line,.chart-container .chart-label line{stroke:#dadada}.chart-container .dataset-units circle{stroke:#fff;stroke-width:2}.chart-container .dataset-units path{fill:none;stroke-opacity:1;stroke-width:2px}.chart-container .dataset-path{stroke-width:2px}.chart-container .path-group path{fill:none;stroke-opacity:1;stroke-width:2px}.chart-container line.dashed{stroke-dasharray:5,3}.chart-container .axis-line .specific-value{text-anchor:start}.chart-container .axis-line .y-line{text-anchor:end}.chart-container .axis-line .x-line{text-anchor:middle}.graph-svg-tip{position:absolute;z-index:99999;padding:10px;font-size:12px;color:#959da5;text-align:center;background:rgba(0,0,0,.8);border-radius:3px}.graph-svg-tip ul{padding-left:0;display:flex}.graph-svg-tip ol{padding-left:0;display:flex}.graph-svg-tip ul.data-point-list li{min-width:90px;flex:1;font-weight:600}.graph-svg-tip strong{color:#dfe2e5;font-weight:600}.graph-svg-tip .svg-pointer{position:absolute;height:5px;margin:0 0 0 -5px;content:' ';border:5px solid transparent;border-top-color:rgba(0,0,0,.8)}.graph-svg-tip.comparison{padding:0;text-align:left;pointer-events:none}.graph-svg-tip.comparison .title{display:block;padding:10px;margin:0;font-weight:600;line-height:1;pointer-events:none}.graph-svg-tip.comparison ul{margin:0;white-space:nowrap;list-style:none}.graph-svg-tip.comparison li{display:inline-block;padding:5px 10px}";
+const CSSTEXT = ".chart-container{position:relative;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif}.chart-container .axis,.chart-container .chart-label{fill:#555b51}.chart-container .axis line,.chart-container .chart-label line{stroke:#dadada}.chart-container .dataset-units circle{stroke:#fff;stroke-width:2}.chart-container .dataset-units path{fill:none;stroke-opacity:1;stroke-width:2px}.chart-container .dataset-path{stroke-width:2px}.chart-container .path-group path{fill:none;stroke-opacity:1;stroke-width:2px}.chart-container line.dashed{stroke-dasharray:5,3}.chart-container .axis-line .specific-value{text-anchor:start}.chart-container .axis-line .y-line{text-anchor:end}.chart-container .axis-line .x-line{text-anchor:middle}.chart-container .legend-dataset-text{fill:#6c7680;font-weight:600}.graph-svg-tip{position:absolute;z-index:99999;padding:10px;font-size:12px;color:#959da5;text-align:center;background:rgba(0,0,0,.8);border-radius:3px}.graph-svg-tip ul{padding-left:0;display:flex}.graph-svg-tip ol{padding-left:0;display:flex}.graph-svg-tip ul.data-point-list li{min-width:90px;flex:1;font-weight:600}.graph-svg-tip strong{color:#dfe2e5;font-weight:600}.graph-svg-tip .svg-pointer{position:absolute;height:5px;margin:0 0 0 -5px;content:' ';border:5px solid transparent;border-top-color:rgba(0,0,0,.8)}.graph-svg-tip.comparison{padding:0;text-align:left;pointer-events:none}.graph-svg-tip.comparison .title{display:block;padding:10px;margin:0;font-weight:600;line-height:1;pointer-events:none}.graph-svg-tip.comparison ul{margin:0;white-space:nowrap;list-style:none}.graph-svg-tip.comparison li{display:inline-block;padding:5px 10px}";
 
 function downloadFile(filename, data) {
 	var a = document.createElement('a');
@@ -1943,9 +1955,9 @@ let componentConfigs = {
 	yMarkers: {
 		layerClass: 'y-markers',
 		makeElements(data) {
-			return data.map(marker =>
-				yMarker(marker.position, marker.label, this.constants.width,
-					{pos:'right', mode: 'span', lineType: 'dashed'})
+			return data.map(m =>
+				yMarker(m.position, m.label, this.constants.width,
+					{labelPos: m.options.labelPos, mode: 'span', lineType: 'dashed'})
 			);
 		},
 		animateElements(newData) {
@@ -1953,13 +1965,15 @@ let componentConfigs = {
 
 			let newPos = newData.map(d => d.position);
 			let newLabels = newData.map(d => d.label);
+			let newOptions = newData.map(d => d.options);
 
 			let oldPos = this.oldData.map(d => d.position);
 
 			this.render(oldPos.map((pos, i) => {
 				return {
 					position: oldPos[i],
-					label: newLabels[i]
+					label: newLabels[i],
+					options: newOptions[i]
 				};
 			}));
 
@@ -1974,9 +1988,9 @@ let componentConfigs = {
 	yRegions: {
 		layerClass: 'y-regions',
 		makeElements(data) {
-			return data.map(region =>
-				yRegion(region.startPos, region.endPos, this.constants.width,
-					region.label)
+			return data.map(r =>
+				yRegion(r.startPos, r.endPos, this.constants.width,
+					r.label, {labelPos: r.options.labelPos})
 			);
 		},
 		animateElements(newData) {
@@ -1985,6 +1999,7 @@ let componentConfigs = {
 			let newPos = newData.map(d => d.endPos);
 			let newLabels = newData.map(d => d.label);
 			let newStarts = newData.map(d => d.startPos);
+			let newOptions = newData.map(d => d.options);
 
 			let oldPos = this.oldData.map(d => d.endPos);
 			let oldStarts = this.oldData.map(d => d.startPos);
@@ -1993,7 +2008,8 @@ let componentConfigs = {
 				return {
 					startPos: oldStarts[i],
 					endPos: oldPos[i],
-					label: newLabels[i]
+					label: newLabels[i],
+					options: newOptions[i]
 				};
 			}));
 
@@ -3073,7 +3089,7 @@ class AxisChart extends BaseChart {
 		this.setup();
 	}
 
-	setMeasures(options) {
+	setMeasures() {
 		if(this.data.datasets.length <= 1) {
 			this.config.showLegend = 0;
 			this.measures.paddings.bottom = 30;
@@ -3193,6 +3209,7 @@ class AxisChart extends BaseChart {
 		if(this.data.yMarkers) {
 			this.state.yMarkers = this.data.yMarkers.map(d => {
 				d.position = scale(d.value, s.yAxis);
+				if(!d.options) d.options = {};
 				// if(!d.label.includes(':')) {
 				// 	d.label += ': ' + d.value;
 				// }
@@ -3203,6 +3220,7 @@ class AxisChart extends BaseChart {
 			this.state.yRegions = this.data.yRegions.map(d => {
 				d.startPos = scale(d.start, s.yAxis);
 				d.endPos = scale(d.end, s.yAxis);
+				if(!d.options) d.options = {};
 				return d;
 			});
 		}
@@ -3624,6 +3642,7 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
+// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,
