@@ -454,6 +454,11 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
 	y -= offset;
 
+	if(height === 0) {
+		height = meta.minHeight;
+		y -= meta.minHeight;
+	}
+
 	let rect = createSVG('rect', {
 		className: `bar mini`,
 		style: `fill: ${color}`,
@@ -461,7 +466,7 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 		x: x,
 		y: y,
 		width: width,
-		height: height || meta.minHeight // TODO: correct y for positive min height
+		height: height
 	});
 
 	label += "";
@@ -549,7 +554,6 @@ export function getPaths(xList, yList, color, options={}, meta={}) {
 	if(options.regionFill) {
 		let gradient_id_region = makeGradient(meta.svgDefs, color, true);
 
-		// TODO: use zeroLine OR minimum
 		let pathStr = "M" + `${xList[0]},${meta.zeroLine}L` + pointsStr + `L${xList.slice(-1)[0]},${meta.zeroLine}`;
 		paths.region = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`);
 	}

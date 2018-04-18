@@ -297,10 +297,6 @@ class SvgTip {
 	}
 }
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -871,6 +867,11 @@ function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={})
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
 	y -= offset;
 
+	if(height === 0) {
+		height = meta.minHeight;
+		y -= meta.minHeight;
+	}
+
 	let rect = createSVG('rect', {
 		className: `bar mini`,
 		style: `fill: ${color}`,
@@ -878,7 +879,7 @@ function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={})
 		x: x,
 		y: y,
 		width: width,
-		height: height || meta.minHeight // TODO: correct y for positive min height
+		height: height
 	});
 
 	label += "";
@@ -966,7 +967,6 @@ function getPaths(xList, yList, color, options={}, meta={}) {
 	if(options.regionFill) {
 		let gradient_id_region = makeGradient(meta.svgDefs, color, true);
 
-		// TODO: use zeroLine OR minimum
 		let pathStr = "M" + `${xList[0]},${meta.zeroLine}L` + pointsStr + `L${xList.slice(-1)[0]},${meta.zeroLine}`;
 		paths.region = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`);
 	}
@@ -3642,7 +3642,6 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,
