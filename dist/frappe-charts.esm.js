@@ -84,30 +84,40 @@ function fire(target, type, properties) {
 
 // https://css-tricks.com/snippets/javascript/loop-queryselectorall-matches/
 
-const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
+const BASE_MEASURES = {
+	margins: {
+		top: 10,
+		bottom: 10,
+		left: 20,
+		right: 20
+	},
+	paddings: {
+		top: 20,
+		bottom: 40,
+		left: 30,
+		right: 10
+	},
 
-const COMPATIBLE_CHARTS = {
-	bar: ['line', 'scatter', 'percentage', 'pie'],
-	line: ['scatter', 'bar', 'percentage', 'pie'],
-	pie: ['line', 'scatter', 'percentage', 'bar'],
-	percentage: ['bar', 'line', 'scatter', 'pie'],
-	heatmap: []
+	baseHeight: 240,
+	titleHeight: 20,
+	legendHeight: 30,
+
+	titleFontSize: 12,
 };
 
-const DATA_COLOR_DIVISIONS = {
-	bar: 'datasets',
-	line: 'datasets',
-	pie: 'labels',
-	percentage: 'labels',
-	heatmap: HEATMAP_DISTRIBUTION_SIZE
-};
+function getExtraHeight(m) {
+	let totalExtraHeight = m.margins.top + m.margins.bottom
+		+ m.paddings.top + m.paddings.bottom
+		+ m.titleHeight + m.legendHeight;
+	return totalExtraHeight;
+}
 
-const BASE_CHART_TOP_MARGIN = 10;
-const BASE_CHART_LEFT_MARGIN = 20;
-const BASE_CHART_RIGHT_MARGIN = 20;
+function getExtraWidth(m) {
+	let totalExtraWidth = m.margins.left + m.margins.right
+		+ m.paddings.left + m.paddings.right;
 
-const Y_AXIS_LEFT_MARGIN = 60;
-const Y_AXIS_RIGHT_MARGIN = 40;
+	return totalExtraWidth;
+}
 
 const INIT_CHART_UPDATE_TIMEOUT = 700;
 const CHART_POST_ANIMATE_TIMEOUT = 400;
@@ -129,9 +139,6 @@ const PERCENTAGE_BAR_DEFAULT_DEPTH = 2;
 // Fixed 5-color theme,
 // More colors are difficult to parse visually
 const HEATMAP_DISTRIBUTION_SIZE = 5;
-
-const HEATMAP_LEFT_MARGIN = 50;
-const HEATMAP_TOP_MARGIN = 25;
 
 const HEATMAP_SQUARE_SIZE = 10;
 const HEATMAP_GUTTER_SIZE = 2;
@@ -282,10 +289,6 @@ class SvgTip {
 	}
 }
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -489,12 +492,13 @@ function makeSVGDefs(svgContainer) {
 	});
 }
 
-function makeSVGGroup(parent, className, transform='') {
-	return createSVG('g', {
+function makeSVGGroup(className, transform='', parent=undefined) {
+	let args = {
 		className: className,
-		inside: parent,
 		transform: transform
-	});
+	};
+	if(parent) args.inside = parent;
+	return createSVG('g', args);
 }
 
 
@@ -1327,7 +1331,6 @@ class BaseChart {
 		this.rawChartArgs = options;
 
 		this.title = options.title || '';
-		this.argHeight = options.height || 240;
 		this.type = options.type || '';
 
 		this.realData = this.prepareData(options.data);
@@ -1337,10 +1340,18 @@ class BaseChart {
 
 		this.config = {
 			showTooltip: 1, // calculate
-			showLegend: options.showLegend || 1,
+			showLegend: 1, // calculate
 			isNavigable: options.isNavigable || 0,
 			animate: 1
 		};
+
+		this.measures = JSON.parse(JSON.stringify(BASE_MEASURES));
+		let m = this.measures;
+		this.setMeasures(options);
+		if(!this.title.length) { m.titleHeight = 0; }
+		if(!this.config.showLegend) m.legendHeight = 0;
+		this.argHeight = options.height || m.baseHeight;
+
 		this.state = {};
 		this.options = {};
 
@@ -1353,12 +1364,12 @@ class BaseChart {
 		this.configure(options);
 	}
 
-	configure() {
-		this.setMargins();
+	prepareData(data) {
+		return data;
+	}
 
-		// Bind window events
-		window.addEventListener('resize', () => this.boundDrawFn);
-		window.addEventListener('orientationchange', () => this.boundDrawFn);
+	prepareFirstData(data) {
+		return data;
 	}
 
 	validateColors(colors, type) {
@@ -1375,27 +1386,28 @@ class BaseChart {
 		return validColors;
 	}
 
-	setMargins() {
-		let height = this.argHeight;
-		this.baseHeight = height;
-		this.height = height - 70;
-		this.topMargin = BASE_CHART_TOP_MARGIN;
-
-		// Horizontal margins
-		this.leftMargin = BASE_CHART_LEFT_MARGIN;
-		this.rightMargin = BASE_CHART_RIGHT_MARGIN;
+	setMeasures() {
+		// Override measures, including those for title and legend
+		// set config for legend and title
 	}
 
+	configure() {
+		let height = this.argHeight;
+		this.baseHeight = height;
+		this.height = height - getExtraHeight(this.measures);
+
+		// Bind window events
+		window.addEventListener('resize', () => this.draw(true));
+		window.addEventListener('orientationchange', () => this.draw(true));
+	}
+
+	// Has to be called manually
 	setup() {
 		this.makeContainer();
 		this.updateWidth();
 		this.makeTooltip();
 
 		this.draw(false, true);
-	}
-
-	setupComponents() {
-		this.components = new Map();
 	}
 
 	makeContainer() {
@@ -1444,10 +1456,70 @@ class BaseChart {
 		this.setupNavigation(init);
 	}
 
+	calc() {} // builds state
+
 	updateWidth() {
 		this.baseWidth = getElementContentWidth(this.parent);
-		this.width = this.baseWidth - (this.leftMargin + this.rightMargin);
+		this.width = this.baseWidth - getExtraWidth(this.measures);
 	}
+
+	makeChartArea() {
+		if(this.svg) {
+			this.container.removeChild(this.svg);
+		}
+		let m = this.measures;
+
+		this.svg = makeSVGContainer(
+			this.container,
+			'frappe-chart chart',
+			this.baseWidth,
+			this.baseHeight
+		);
+		this.svgDefs = makeSVGDefs(this.svg);
+
+		if(this.title.length) {
+			this.titleEL = makeText(
+				'title',
+				m.margins.left,
+				m.margins.top,
+				this.title,
+				{
+					fontSize: m.titleFontSize,
+					fill: '#666666',
+					dy: m.titleFontSize
+				}
+			);
+		}
+
+		let top = m.margins.top + m.titleHeight + m.paddings.top;
+		this.drawArea = makeSVGGroup(
+			this.type + '-chart chart-draw-area',
+			`translate(${m.margins.left + m.paddings.left}, ${top})`
+		);
+
+		if(this.config.showLegend) {
+			top += this.height + m.paddings.bottom;
+			this.legendArea = makeSVGGroup(
+				'chart-legend',
+				`translate(${m.margins.left + m.paddings.left}, ${top})`
+			);
+		}
+
+		if(this.title.length) { this.svg.appendChild(this.titleEL); }
+		this.svg.appendChild(this.drawArea);
+		if(this.config.showLegend) { this.svg.appendChild(this.legendArea); }
+
+		this.updateTipOffset(m.margins.left + m.paddings.left, m.margins.top + m.paddings.top + m.titleHeight);
+	}
+
+	updateTipOffset(x, y) {
+		this.tip.offset = {
+			x: x,
+			y: y
+		};
+	}
+
+	setupComponents() { this.components = new Map(); }
 
 	update(data) {
 		if(!data) {
@@ -1457,16 +1529,6 @@ class BaseChart {
 		this.calc(); // builds state
 		this.render();
 	}
-
-	prepareData(data=this.data) {
-		return data;
-	}
-
-	prepareFirstData(data=this.data) {
-		return data;
-	}
-
-	calc() {} // builds state
 
 	render(components=this.components, animate=true) {
 		if(this.config.isNavigable) {
@@ -1496,68 +1558,6 @@ class BaseChart {
 			this.makeOverlay();
 			this.bindUnits();
 		}
-	}
-
-	makeChartArea() {
-		if(this.svg) {
-			this.container.removeChild(this.svg);
-		}
-
-		let titleAreaHeight = 0;
-		let legendAreaHeight = 0;
-		if(this.title.length) {
-			titleAreaHeight = 40;
-		}
-		if(this.config.showLegend) {
-			legendAreaHeight = 30;
-		}
-
-		this.svg = makeSVGContainer(
-			this.container,
-			'frappe-chart chart',
-			this.baseWidth,
-			this.baseHeight + titleAreaHeight + legendAreaHeight
-		);
-		this.svgDefs = makeSVGDefs(this.svg);
-
-		// console.log(this.baseHeight, titleAreaHeight, legendAreaHeight);
-
-		if(this.title.length) {
-			this.titleEL = makeText(
-				'title',
-				this.leftMargin - AXIS_TICK_LENGTH * 6,
-				this.topMargin,
-				this.title,
-				{
-					fontSize: 12,
-					fill: '#666666'
-				}
-			);
-			this.svg.appendChild(this.titleEL);
-		}
-
-		let top = this.topMargin + titleAreaHeight;
-		this.drawArea = makeSVGGroup(
-			this.svg,
-			this.type + '-chart',
-			`translate(${this.leftMargin}, ${top})`
-		);
-
-		top = this.baseHeight - titleAreaHeight;
-		this.legendArea = makeSVGGroup(
-			this.svg,
-			'chart-legend',
-			`translate(${this.leftMargin}, ${top})`
-		);
-
-		this.updateTipOffset(this.leftMargin, this.topMargin + titleAreaHeight);
-	}
-
-	updateTipOffset(x, y) {
-		this.tip.offset = {
-			x: x,
-			y: y
-		};
 	}
 
 	renderLegend() {}
@@ -1606,39 +1606,13 @@ class BaseChart {
 
 	updateDataset() {}
 
-	getDifferentChart(type) {
-		const currentType = this.type;
-		let args = this.rawChartArgs;
-		if(type === currentType) return;
-
-		if(!ALL_CHART_TYPES.includes(type)) {
-			console.error(`'${type}' is not a valid chart type.`);
-		}
-
-		if(!COMPATIBLE_CHARTS[currentType].includes(type)) {
-			console.error(`'${currentType}' chart cannot be converted to a '${type}' chart.`);
-		}
-
-		// whether the new chart can use the existing colors
-		const useColor = DATA_COLOR_DIVISIONS[currentType] === DATA_COLOR_DIVISIONS[type];
-
-		// Okay, this is anticlimactic
-		// this function will need to actually be 'changeChartType(type)'
-		// that will update only the required elements, but for now ...
-
-		args.type = type;
-		args.colors = useColor ? args.colors : undefined;
-
-		return new Chart(this.parent, args);
-	}
-
 	boundDrawFn() {
 		this.draw(true);
 	}
 
 	unbindWindowEvents(){
-		window.removeEventListener('resize', () => this.boundDrawFn);
-		window.removeEventListener('orientationchange', () => this.boundDrawFn);
+		window.removeEventListener('resize', () => this.boundDrawFn.bind(this));
+		window.removeEventListener('orientationchange', () => this.boundDrawFn.bind(this));
 	}
 
 	export() {
@@ -1834,7 +1808,7 @@ class ChartComponent {
 	}
 
 	setup(parent) {
-		this.layer = makeSVGGroup(parent, this.layerClass, this.layerTransform);
+		this.layer = makeSVGGroup(this.layerClass, this.layerTransform, parent);
 	}
 
 	make() {
@@ -2039,9 +2013,9 @@ let componentConfigs = {
 			data.cols.map((week, weekNo) => {
 				if(weekNo === 1) {
 					this.labels.push(
-						makeText('domain-name', x, monthNameHeight, getMonthName(index, true),
+						makeText('domain-name', x, monthNameHeight, getMonthName(index, true).toUpperCase(),
 							{
-								fontSize: 11
+								fontSize: 9
 							}
 						)
 					);
@@ -2690,26 +2664,26 @@ class Heatmap extends BaseChart {
 		this.setup();
 	}
 
-	configure(options) {
+	setMeasures(options) {
+		let m = this.measures;
 		this.discreteDomains = options.discreteDomains === 0 ? 0 : 1;
-		super.configure(options);
-	}
 
-	setMargins() {
-		super.setMargins();
-		this.leftMargin = HEATMAP_LEFT_MARGIN;
-		this.topMargin = HEATMAP_TOP_MARGIN;
+		m.paddings.top = ROW_HEIGHT * 3;
+		m.paddings.bottom = 0;
+		m.legendHeight = ROW_HEIGHT * 2;
+		m.baseHeight = ROW_HEIGHT * NO_OF_DAYS_IN_WEEK
+			+ getExtraHeight(m);
 
 		let d = this.data;
 		let spacing = this.discreteDomains ? NO_OF_YEAR_MONTHS : 0;
 		this.independentWidth = (getWeeksBetween(d.start, d.end)
-			+ spacing) * COL_WIDTH + this.rightMargin + this.leftMargin;
+			+ spacing) * COL_WIDTH + m.margins.right + m.margins.left;
 	}
 
 	updateWidth() {
 		let spacing = this.discreteDomains ? NO_OF_YEAR_MONTHS : 0;
 		this.baseWidth = (this.state.noOfWeeks + spacing) * COL_WIDTH
-			+ this.rightMargin + this.leftMargin;
+			+ getExtraWidth(this.measures);
 	}
 
 	prepareData(data=this.data) {
@@ -2910,7 +2884,7 @@ class Heatmap extends BaseChart {
 			addDays(startOfWeek, 1);
 		}
 
-		if(col[NO_OF_DAYS_IN_WEEK - 1].dataValue) {
+		if(col[NO_OF_DAYS_IN_WEEK - 1].dataValue !== undefined) {
 			addDays(startOfWeek, 1);
 			cols.push(this.getCol(startOfWeek, month, true));
 		}
@@ -3091,26 +3065,27 @@ class AxisChart extends BaseChart {
 		this.setup();
 	}
 
-	configure(args) {
-		super.configure(args);
-
-		args.axisOptions = args.axisOptions || {};
-		args.tooltipOptions = args.tooltipOptions || {};
-
-		this.config.xAxisMode = args.axisOptions.xAxisMode || 'span';
-		this.config.yAxisMode = args.axisOptions.yAxisMode || 'span';
-		this.config.xIsSeries = args.axisOptions.xIsSeries || 0;
-
-		this.config.formatTooltipX = args.tooltipOptions.formatTooltipX;
-		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
-
-		this.config.valuesOverPoints = args.valuesOverPoints;
+	setMeasures(options) {
+		if(this.data.datasets.length <= 1) {
+			this.config.showLegend = 0;
+			this.measures.paddings.bottom = 30;
+		}
 	}
 
-	setMargins() {
-		super.setMargins();
-		this.leftMargin = Y_AXIS_LEFT_MARGIN;
-		this.rightMargin = Y_AXIS_RIGHT_MARGIN;
+	configure(options) {
+		super.configure(options);
+
+		options.axisOptions = options.axisOptions || {};
+		options.tooltipOptions = options.tooltipOptions || {};
+
+		this.config.xAxisMode = options.axisOptions.xAxisMode || 'span';
+		this.config.yAxisMode = options.axisOptions.yAxisMode || 'span';
+		this.config.xIsSeries = options.axisOptions.xIsSeries || 0;
+
+		this.config.formatTooltipX = options.tooltipOptions.formatTooltipX;
+		this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
+
+		this.config.valuesOverPoints = options.valuesOverPoints;
 	}
 
 	prepareData(data=this.data) {
@@ -3434,11 +3409,13 @@ class AxisChart extends BaseChart {
 	bindTooltip() {
 		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
 		this.container.addEventListener('mousemove', (e) => {
+			let m = this.measures;
 			let o = getOffset(this.container);
-			let relX = e.pageX - o.left - this.leftMargin;
-			let relY = e.pageY - o.top - this.topMargin;
+			let relX = e.pageX - o.left - m.margins.left - m.paddings.left;
+			let relY = e.pageY - o.top;
 
-			if(relY < this.height + this.topMargin * 2) {
+			if(relY < this.height + m.titleHeight + m.margins.top + m.paddings.top
+				&& relY >  m.titleHeight + m.margins.top + m.paddings.top) {
 				this.mapTooltipXPosition(relX);
 			} else {
 				this.tip.hideTip();
@@ -3452,6 +3429,7 @@ class AxisChart extends BaseChart {
 
 		let index = getClosestInArray(relX, s.xAxis.positions, true);
 
+		console.log(relX, s.xAxis.positions[index], s.xAxis.positions, this.tip.offset.x);
 		this.tip.setValues(
 			s.xAxis.positions[index] + this.tip.offset.x,
 			s.yExtremes[index] + this.tip.offset.y,
@@ -3471,12 +3449,11 @@ class AxisChart extends BaseChart {
 
 	renderLegend() {
 		let s = this.data;
-		this.legendArea.textContent = '';
-
 		if(s.datasets.length > 1) {
+			this.legendArea.textContent = '';
 			s.datasets.map((d, i) => {
 				let barWidth = AXIS_LEGEND_BAR_SIZE;
-				// let rightEndPoint = this.baseWidth - this.leftMargin - this.rightMargin;
+				// let rightEndPoint = this.baseWidth - this.measures.margins.left - this.measures.margins.right;
 				// let multiplier = s.datasets.length - i;
 				let rect = legendBar(
 					// rightEndPoint - multiplier * barWidth,	// To right align
@@ -3638,7 +3615,6 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,

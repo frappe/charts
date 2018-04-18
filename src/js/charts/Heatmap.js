@@ -4,7 +4,7 @@ import { makeText, heatSquare } from '../utils/draw';
 import { DAY_NAMES_SHORT, addDays, areInSameMonth, getLastDateInMonth, setDayToSunday, getYyyyMmDd, getWeeksBetween, getMonthName, clone,
 	NO_OF_MILLIS, NO_OF_YEAR_MONTHS, NO_OF_DAYS_IN_WEEK } from '../utils/date-utils';
 import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
-import { HEATMAP_TOP_MARGIN, HEATMAP_LEFT_MARGIN, HEATMAP_DISTRIBUTION_SIZE, HEATMAP_SQUARE_SIZE,
+import { getExtraHeight, getExtraWidth, HEATMAP_DISTRIBUTION_SIZE, HEATMAP_SQUARE_SIZE,
 	HEATMAP_GUTTER_SIZE } from '../utils/constants';
 
 const COL_WIDTH = HEATMAP_SQUARE_SIZE + HEATMAP_GUTTER_SIZE;
@@ -26,26 +26,26 @@ export default class Heatmap extends BaseChart {
 		this.setup();
 	}
 
-	configure(options) {
+	setMeasures(options) {
+		let m = this.measures;
 		this.discreteDomains = options.discreteDomains === 0 ? 0 : 1;
-		super.configure(options);
-	}
 
-	setMargins() {
-		super.setMargins();
-		this.leftMargin = HEATMAP_LEFT_MARGIN;
-		this.topMargin = HEATMAP_TOP_MARGIN;
+		m.paddings.top = ROW_HEIGHT * 3;
+		m.paddings.bottom = 0;
+		m.legendHeight = ROW_HEIGHT * 2;
+		m.baseHeight = ROW_HEIGHT * NO_OF_DAYS_IN_WEEK
+			+ getExtraHeight(m);
 
 		let d = this.data;
 		let spacing = this.discreteDomains ? NO_OF_YEAR_MONTHS : 0;
 		this.independentWidth = (getWeeksBetween(d.start, d.end)
-			+ spacing) * COL_WIDTH + this.rightMargin + this.leftMargin;
+			+ spacing) * COL_WIDTH + m.margins.right + m.margins.left;
 	}
 
 	updateWidth() {
 		let spacing = this.discreteDomains ? NO_OF_YEAR_MONTHS : 0;
 		this.baseWidth = (this.state.noOfWeeks + spacing) * COL_WIDTH
-			+ this.rightMargin + this.leftMargin;
+			+ getExtraWidth(this.measures);
 	}
 
 	prepareData(data=this.data) {
@@ -246,7 +246,7 @@ export default class Heatmap extends BaseChart {
 			addDays(startOfWeek, 1);
 		}
 
-		if(col[NO_OF_DAYS_IN_WEEK - 1].dataValue) {
+		if(col[NO_OF_DAYS_IN_WEEK - 1].dataValue !== undefined) {
 			addDays(startOfWeek, 1);
 			cols.push(this.getCol(startOfWeek, month, true));
 		}

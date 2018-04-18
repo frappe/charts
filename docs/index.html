@@ -27,7 +27,7 @@
       <div class="row hero" style="padding-top: 30px; padding-bottom: 0px;">
         <div class="jumbotron" style="background: transparent;">
           <h1>Frappe Charts</h1>
-          <p class="mt-2">GitHub-inspired simple and modern charts for the web</p>
+          <p class="mt-2">GitHub-inspired simple and modern SVG charts for the web</p>
           <p class="mt-2">with zero dependencies.</p>
         </div>
 
@@ -75,7 +75,7 @@
 
     title: "My Awesome Chart",
     type: 'axis-mixed', // or 'bar', 'line', 'pie', 'percentage'
-    height: 250,
+    height: 300,
     colors: ['purple', '#ffa3ef', 'red']
   });
 
@@ -206,21 +206,19 @@
               </div>
               <pre><code class="hljs javascript margin-vertical-px">  let heatmap = new Chart("#heatmap", {
     type: 'heatmap',
-    height: 115,
-    data: heatmapData,  // object with date/timestamp-value pairs
-
-    discreteDomains: 1  // default: 0
-
-    start: startDate,
-                  // A Date object;
-                  // default: today's date in past year
-                  //          for an annual heatmap
-
+    title: "Monthly Distribution",
+    data: {
+      dataPoints: {'1524064033': 8, /* ... */},
+                        // object with timestamp-value pairs
+      start: startDate
+      end: endDate      // Date objects
+    },
+    countLabel: 'Level',
+    discreteDomains: 0  // default: 1
     colors: ['#ebedf0', '#c0ddf9', '#73b3f3', '#3886e1', '#17459e'],
                   // Set of five incremental colors,
-                  // beginning with a low-saturation color for zero data;
-                  // default: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127']
-
+                  // preferably with a low-saturation color for zero data;
+                  // def: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127']
   });</code></pre>
             </div>
           </div>

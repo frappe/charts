@@ -16,12 +16,40 @@ export const DATA_COLOR_DIVISIONS = {
 	heatmap: HEATMAP_DISTRIBUTION_SIZE
 };
 
-export const BASE_CHART_TOP_MARGIN = 10;
-export const BASE_CHART_LEFT_MARGIN = 20;
-export const BASE_CHART_RIGHT_MARGIN = 20;
+export const BASE_MEASURES = {
+	margins: {
+		top: 10,
+		bottom: 10,
+		left: 20,
+		right: 20
+	},
+	paddings: {
+		top: 20,
+		bottom: 40,
+		left: 30,
+		right: 10
+	},
 
-export const Y_AXIS_LEFT_MARGIN = 60;
-export const Y_AXIS_RIGHT_MARGIN = 40;
+	baseHeight: 240,
+	titleHeight: 20,
+	legendHeight: 30,
+
+	titleFontSize: 12,
+};
+
+export function getExtraHeight(m) {
+	let totalExtraHeight = m.margins.top + m.margins.bottom
+		+ m.paddings.top + m.paddings.bottom
+		+ m.titleHeight + m.legendHeight;
+	return totalExtraHeight;
+}
+
+export function getExtraWidth(m) {
+	let totalExtraWidth = m.margins.left + m.margins.right
+		+ m.paddings.left + m.paddings.right;
+
+	return totalExtraWidth;
+}
 
 export const INIT_CHART_UPDATE_TIMEOUT = 700;
 export const CHART_POST_ANIMATE_TIMEOUT = 400;
@@ -43,9 +71,6 @@ export const PERCENTAGE_BAR_DEFAULT_DEPTH = 2;
 // Fixed 5-color theme,
 // More colors are difficult to parse visually
 export const HEATMAP_DISTRIBUTION_SIZE = 5;
-
-export const HEATMAP_LEFT_MARGIN = 50;
-export const HEATMAP_TOP_MARGIN = 25;
 
 export const HEATMAP_SQUARE_SIZE = 10;
 export const HEATMAP_GUTTER_SIZE = 2;

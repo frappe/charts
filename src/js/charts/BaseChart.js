@@ -1,13 +1,11 @@
 import SvgTip from '../objects/SvgTip';
 import { $, isElementInViewport, getElementContentWidth } from '../utils/dom';
-import { makeSVGContainer, makeSVGDefs, makeSVGGroup, makeText, AXIS_TICK_LENGTH } from '../utils/draw';
-import { BASE_CHART_TOP_MARGIN, BASE_CHART_LEFT_MARGIN,
-	BASE_CHART_RIGHT_MARGIN, INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS,
-	ALL_CHART_TYPES, COMPATIBLE_CHARTS, DATA_COLOR_DIVISIONS} from '../utils/constants';
+import { makeSVGContainer, makeSVGDefs, makeSVGGroup, makeText, yLine } from '../utils/draw';
+import { BASE_MEASURES, getExtraHeight, getExtraWidth, INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT,
+	DEFAULT_COLORS} from '../utils/constants';
 import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
 import { downloadFile, prepareForExport } from '../utils/export';
-import { Chart } from '../chart';
 
 export default class BaseChart {
 	constructor(parent, options) {
@@ -23,7 +21,6 @@ export default class BaseChart {
 		this.rawChartArgs = options;
 
 		this.title = options.title || '';
-		this.argHeight = options.height || 240;
 		this.type = options.type || '';
 
 		this.realData = this.prepareData(options.data);
@@ -33,10 +30,18 @@ export default class BaseChart {
 
 		this.config = {
 			showTooltip: 1, // calculate
-			showLegend: options.showLegend || 1,
+			showLegend: 1, // calculate
 			isNavigable: options.isNavigable || 0,
 			animate: 1
 		};
+
+		this.measures = JSON.parse(JSON.stringify(BASE_MEASURES));
+		let m = this.measures;
+		this.setMeasures(options);
+		if(!this.title.length) { m.titleHeight = 0; }
+		if(!this.config.showLegend) m.legendHeight = 0;
+		this.argHeight = options.height || m.baseHeight;
+
 		this.state = {};
 		this.options = {};
 
@@ -49,12 +54,12 @@ export default class BaseChart {
 		this.configure(options);
 	}
 
-	configure() {
-		this.setMargins();
+	prepareData(data) {
+		return data;
+	}
 
-		// Bind window events
-		window.addEventListener('resize', () => this.boundDrawFn);
-		window.addEventListener('orientationchange', () => this.boundDrawFn);
+	prepareFirstData(data) {
+		return data;
 	}
 
 	validateColors(colors, type) {
@@ -71,27 +76,28 @@ export default class BaseChart {
 		return validColors;
 	}
 
-	setMargins() {
-		let height = this.argHeight;
-		this.baseHeight = height;
-		this.height = height - 70;
-		this.topMargin = BASE_CHART_TOP_MARGIN;
-
-		// Horizontal margins
-		this.leftMargin = BASE_CHART_LEFT_MARGIN;
-		this.rightMargin = BASE_CHART_RIGHT_MARGIN;
+	setMeasures() {
+		// Override measures, including those for title and legend
+		// set config for legend and title
 	}
 
+	configure() {
+		let height = this.argHeight;
+		this.baseHeight = height;
+		this.height = height - getExtraHeight(this.measures);
+
+		// Bind window events
+		window.addEventListener('resize', () => this.draw(true));
+		window.addEventListener('orientationchange', () => this.draw(true));
+	}
+
+	// Has to be called manually
 	setup() {
 		this.makeContainer();
 		this.updateWidth();
 		this.makeTooltip();
 
 		this.draw(false, true);
-	}
-
-	setupComponents() {
-		this.components = new Map();
 	}
 
 	makeContainer() {
@@ -140,10 +146,70 @@ export default class BaseChart {
 		this.setupNavigation(init);
 	}
 
+	calc() {} // builds state
+
 	updateWidth() {
 		this.baseWidth = getElementContentWidth(this.parent);
-		this.width = this.baseWidth - (this.leftMargin + this.rightMargin);
+		this.width = this.baseWidth - getExtraWidth(this.measures);
 	}
+
+	makeChartArea() {
+		if(this.svg) {
+			this.container.removeChild(this.svg);
+		}
+		let m = this.measures;
+
+		this.svg = makeSVGContainer(
+			this.container,
+			'frappe-chart chart',
+			this.baseWidth,
+			this.baseHeight
+		);
+		this.svgDefs = makeSVGDefs(this.svg);
+
+		if(this.title.length) {
+			this.titleEL = makeText(
+				'title',
+				m.margins.left,
+				m.margins.top,
+				this.title,
+				{
+					fontSize: m.titleFontSize,
+					fill: '#666666',
+					dy: m.titleFontSize
+				}
+			);
+		}
+
+		let top = m.margins.top + m.titleHeight + m.paddings.top;
+		this.drawArea = makeSVGGroup(
+			this.type + '-chart chart-draw-area',
+			`translate(${m.margins.left + m.paddings.left}, ${top})`
+		);
+
+		if(this.config.showLegend) {
+			top += this.height + m.paddings.bottom;
+			this.legendArea = makeSVGGroup(
+				'chart-legend',
+				`translate(${m.margins.left + m.paddings.left}, ${top})`
+			);
+		}
+
+		if(this.title.length) { this.svg.appendChild(this.titleEL); }
+		this.svg.appendChild(this.drawArea);
+		if(this.config.showLegend) { this.svg.appendChild(this.legendArea); }
+
+		this.updateTipOffset(m.margins.left + m.paddings.left, m.margins.top + m.paddings.top + m.titleHeight);
+	}
+
+	updateTipOffset(x, y) {
+		this.tip.offset = {
+			x: x,
+			y: y
+		};
+	}
+
+	setupComponents() { this.components = new Map(); }
 
 	update(data) {
 		if(!data) {
@@ -153,16 +219,6 @@ export default class BaseChart {
 		this.calc(); // builds state
 		this.render();
 	}
-
-	prepareData(data=this.data) {
-		return data;
-	}
-
-	prepareFirstData(data=this.data) {
-		return data;
-	}
-
-	calc() {} // builds state
 
 	render(components=this.components, animate=true) {
 		if(this.config.isNavigable) {
@@ -192,68 +248,6 @@ export default class BaseChart {
 			this.makeOverlay();
 			this.bindUnits();
 		}
-	}
-
-	makeChartArea() {
-		if(this.svg) {
-			this.container.removeChild(this.svg);
-		}
-
-		let titleAreaHeight = 0;
-		let legendAreaHeight = 0;
-		if(this.title.length) {
-			titleAreaHeight = 40;
-		}
-		if(this.config.showLegend) {
-			legendAreaHeight = 30;
-		}
-
-		this.svg = makeSVGContainer(
-			this.container,
-			'frappe-chart chart',
-			this.baseWidth,
-			this.baseHeight + titleAreaHeight + legendAreaHeight
-		);
-		this.svgDefs = makeSVGDefs(this.svg);
-
-		// console.log(this.baseHeight, titleAreaHeight, legendAreaHeight);
-
-		if(this.title.length) {
-			this.titleEL = makeText(
-				'title',
-				this.leftMargin - AXIS_TICK_LENGTH * 6,
-				this.topMargin,
-				this.title,
-				{
-					fontSize: 12,
-					fill: '#666666'
-				}
-			);
-			this.svg.appendChild(this.titleEL);
-		}
-
-		let top = this.topMargin + titleAreaHeight;
-		this.drawArea = makeSVGGroup(
-			this.svg,
-			this.type + '-chart',
-			`translate(${this.leftMargin}, ${top})`
-		);
-
-		top = this.baseHeight - titleAreaHeight;
-		this.legendArea = makeSVGGroup(
-			this.svg,
-			'chart-legend',
-			`translate(${this.leftMargin}, ${top})`
-		);
-
-		this.updateTipOffset(this.leftMargin, this.topMargin + titleAreaHeight);
-	}
-
-	updateTipOffset(x, y) {
-		this.tip.offset = {
-			x: x,
-			y: y
-		};
 	}
 
 	renderLegend() {}
@@ -302,39 +296,13 @@ export default class BaseChart {
 
 	updateDataset() {}
 
-	getDifferentChart(type) {
-		const currentType = this.type;
-		let args = this.rawChartArgs;
-		if(type === currentType) return;
-
-		if(!ALL_CHART_TYPES.includes(type)) {
-			console.error(`'${type}' is not a valid chart type.`);
-		}
-
-		if(!COMPATIBLE_CHARTS[currentType].includes(type)) {
-			console.error(`'${currentType}' chart cannot be converted to a '${type}' chart.`);
-		}
-
-		// whether the new chart can use the existing colors
-		const useColor = DATA_COLOR_DIVISIONS[currentType] === DATA_COLOR_DIVISIONS[type];
-
-		// Okay, this is anticlimactic
-		// this function will need to actually be 'changeChartType(type)'
-		// that will update only the required elements, but for now ...
-
-		args.type = type;
-		args.colors = useColor ? args.colors : undefined;
-
-		return new Chart(this.parent, args);
-	}
-
 	boundDrawFn() {
 		this.draw(true);
 	}
 
 	unbindWindowEvents(){
-		window.removeEventListener('resize', () => this.boundDrawFn);
-		window.removeEventListener('orientationchange', () => this.boundDrawFn);
+		window.removeEventListener('resize', () => this.boundDrawFn.bind(this));
+		window.removeEventListener('orientationchange', () => this.boundDrawFn.bind(this));
 	}
 
 	export() {

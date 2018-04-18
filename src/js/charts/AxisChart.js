@@ -1,6 +1,6 @@
 import BaseChart from './BaseChart';
 import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-utils';
-import { Y_AXIS_LEFT_MARGIN, Y_AXIS_RIGHT_MARGIN, AXIS_LEGEND_BAR_SIZE } from '../utils/constants';
+import { AXIS_LEGEND_BAR_SIZE } from '../utils/constants';
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
@@ -21,26 +21,27 @@ export default class AxisChart extends BaseChart {
 		this.setup();
 	}
 
-	configure(args) {
-		super.configure(args);
-
-		args.axisOptions = args.axisOptions || {};
-		args.tooltipOptions = args.tooltipOptions || {};
-
-		this.config.xAxisMode = args.axisOptions.xAxisMode || 'span';
-		this.config.yAxisMode = args.axisOptions.yAxisMode || 'span';
-		this.config.xIsSeries = args.axisOptions.xIsSeries || 0;
-
-		this.config.formatTooltipX = args.tooltipOptions.formatTooltipX;
-		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
-
-		this.config.valuesOverPoints = args.valuesOverPoints;
+	setMeasures(options) {
+		if(this.data.datasets.length <= 1) {
+			this.config.showLegend = 0;
+			this.measures.paddings.bottom = 30;
+		}
 	}
 
-	setMargins() {
-		super.setMargins();
-		this.leftMargin = Y_AXIS_LEFT_MARGIN;
-		this.rightMargin = Y_AXIS_RIGHT_MARGIN;
+	configure(options) {
+		super.configure(options);
+
+		options.axisOptions = options.axisOptions || {};
+		options.tooltipOptions = options.tooltipOptions || {};
+
+		this.config.xAxisMode = options.axisOptions.xAxisMode || 'span';
+		this.config.yAxisMode = options.axisOptions.yAxisMode || 'span';
+		this.config.xIsSeries = options.axisOptions.xIsSeries || 0;
+
+		this.config.formatTooltipX = options.tooltipOptions.formatTooltipX;
+		this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
+
+		this.config.valuesOverPoints = options.valuesOverPoints;
 	}
 
 	prepareData(data=this.data) {
@@ -364,11 +365,13 @@ export default class AxisChart extends BaseChart {
 	bindTooltip() {
 		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
 		this.container.addEventListener('mousemove', (e) => {
+			let m = this.measures;
 			let o = getOffset(this.container);
-			let relX = e.pageX - o.left - this.leftMargin;
-			let relY = e.pageY - o.top - this.topMargin;
+			let relX = e.pageX - o.left - m.margins.left - m.paddings.left;
+			let relY = e.pageY - o.top;
 
-			if(relY < this.height + this.topMargin * 2) {
+			if(relY < this.height + m.titleHeight + m.margins.top + m.paddings.top
+				&& relY >  m.titleHeight + m.margins.top + m.paddings.top) {
 				this.mapTooltipXPosition(relX);
 			} else {
 				this.tip.hideTip();
@@ -382,6 +385,7 @@ export default class AxisChart extends BaseChart {
 
 		let index = getClosestInArray(relX, s.xAxis.positions, true);
 
+		console.log(relX, s.xAxis.positions[index], s.xAxis.positions, this.tip.offset.x);
 		this.tip.setValues(
 			s.xAxis.positions[index] + this.tip.offset.x,
 			s.yExtremes[index] + this.tip.offset.y,
@@ -401,12 +405,11 @@ export default class AxisChart extends BaseChart {
 
 	renderLegend() {
 		let s = this.data;
-		this.legendArea.textContent = '';
-
 		if(s.datasets.length > 1) {
+			this.legendArea.textContent = '';
 			s.datasets.map((d, i) => {
 				let barWidth = AXIS_LEGEND_BAR_SIZE;
-				// let rightEndPoint = this.baseWidth - this.leftMargin - this.rightMargin;
+				// let rightEndPoint = this.baseWidth - this.measures.margins.left - this.measures.margins.right;
 				// let multiplier = s.datasets.length - i;
 				let rect = legendBar(
 					// rightEndPoint - multiplier * barWidth,	// To right align

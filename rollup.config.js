@@ -18,7 +18,6 @@ import precss from 'precss';
 import CleanCSS from 'clean-css';
 import autoprefixer from 'autoprefixer';
 import fs from 'fs';
-import { HEATMAP_LEFT_MARGIN } from './src/js/utils/constants';
 
 fs.readFile('src/css/charts.scss', (err, css) => {
     postcss([precss, autoprefixer])

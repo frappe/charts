@@ -29,7 +29,7 @@ let lineCompositeChart = new Chart (c1, {
 let barCompositeChart = new Chart (c2, {
 	data: barCompositeData,
 	type: 'bar',
-	height: 190,
+	height: 210,
 	colors: ['violet', 'light-blue', '#46a9f9'],
 	valuesOverPoints: 1,
 	axisOptions: {
@@ -55,7 +55,7 @@ let typeChartArgs = {
 	title: "My Awesome Chart",
 	data: typeData,
 	type: 'axis-mixed',
-	height: 250,
+	height: 300,
 	colors: customColors,
 
 	maxLegendPoints: 6,
@@ -139,7 +139,7 @@ let updateData = {
 let updateChart = new Chart("#chart-update", {
 	data: updateData,
 	type: 'line',
-	height: 250,
+	height: 300,
 	colors: ['#ff6c03'],
 	lineOptions: {
 		// hideLine: 1,
@@ -198,7 +198,7 @@ let plotChartArgs = {
 	title: "Mean Total Sunspot Count - Yearly",
 	data: trendsData,
 	type: 'line',
-	height: 250,
+	height: 300,
 	colors: ['#238e38'],
 	lineOptions: {
 		hideDots: 1,
@@ -263,7 +263,7 @@ let eventsChart = new Chart("#chart-events", {
 	title: "Jupiter's Moons: Semi-major Axis (1000 km)",
 	data: eventsData,
 	type: 'bar',
-	height: 250,
+	height: 330,
 	colors: ['grey'],
 	isNavigable: 1,
 });
@@ -286,8 +286,8 @@ let heatmapArgs = {
 	title: "Monthly Distribution",
 	data: heatmapData,
 	type: 'heatmap',
-	height: 115,
 	discreteDomains: 1,
+	countLabel: 'Level',
 	colors: HEATMAP_COLORS_BLUE,
 	legendScale: [0, 1, 2, 4, 5]
 };

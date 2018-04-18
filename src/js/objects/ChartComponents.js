@@ -38,7 +38,7 @@ class ChartComponent {
 	}
 
 	setup(parent) {
-		this.layer = makeSVGGroup(parent, this.layerClass, this.layerTransform);
+		this.layer = makeSVGGroup(this.layerClass, this.layerTransform, parent);
 	}
 
 	make() {
@@ -243,9 +243,9 @@ let componentConfigs = {
 			data.cols.map((week, weekNo) => {
 				if(weekNo === 1) {
 					this.labels.push(
-						makeText('domain-name', x, monthNameHeight, getMonthName(index, true),
+						makeText('domain-name', x, monthNameHeight, getMonthName(index, true).toUpperCase(),
 							{
-								fontSize: 11
+								fontSize: 9
 							}
 						)
 					);

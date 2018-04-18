@@ -81,12 +81,13 @@ export function makeSVGDefs(svgContainer) {
 	});
 }
 
-export function makeSVGGroup(parent, className, transform='') {
-	return createSVG('g', {
+export function makeSVGGroup(className, transform='', parent=undefined) {
+	let args = {
 		className: className,
-		inside: parent,
 		transform: transform
-	});
+	};
+	if(parent) args.inside = parent;
+	return createSVG('g', args);
 }
 
 export function wrapInSVGGroup(elements, className='') {
