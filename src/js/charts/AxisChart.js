@@ -6,7 +6,8 @@ import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
 import { floatTwo } from '../utils/helpers';
 import { makeOverlay, updateOverlay, legendBar } from '../utils/draw';
-import { MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO, LINE_CHART_DOT_SIZE } from '../utils/constants';
+import { getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
+	LINE_CHART_DOT_SIZE } from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
 	constructor(parent, args) {
@@ -367,11 +368,11 @@ export default class AxisChart extends BaseChart {
 		this.container.addEventListener('mousemove', (e) => {
 			let m = this.measures;
 			let o = getOffset(this.container);
-			let relX = e.pageX - o.left - m.margins.left - m.paddings.left;
+			let relX = e.pageX - o.left - getLeftOffset(m);
 			let relY = e.pageY - o.top;
 
-			if(relY < this.height + m.titleHeight + m.margins.top + m.paddings.top
-				&& relY >  m.titleHeight + m.margins.top + m.paddings.top) {
+			if(relY < this.height + getTopOffset(m)
+				&& relY >  getTopOffset(m)) {
 				this.mapTooltipXPosition(relX);
 			} else {
 				this.tip.hideTip();
@@ -385,7 +386,6 @@ export default class AxisChart extends BaseChart {
 
 		let index = getClosestInArray(relX, s.xAxis.positions, true);
 
-		console.log(relX, s.xAxis.positions[index], s.xAxis.positions, this.tip.offset.x);
 		this.tip.setValues(
 			s.xAxis.positions[index] + this.tip.offset.x,
 			s.yExtremes[index] + this.tip.offset.y,

@@ -37,6 +37,14 @@ export const BASE_MEASURES = {
 	titleFontSize: 12,
 };
 
+export function getTopOffset(m) {
+	return m.titleHeight + m.margins.top + m.paddings.top;
+}
+
+export function getLeftOffset(m) {
+	return m.margins.left + m.paddings.left;
+}
+
 export function getExtraHeight(m) {
 	let totalExtraHeight = m.margins.top + m.margins.bottom
 		+ m.paddings.top + m.paddings.bottom

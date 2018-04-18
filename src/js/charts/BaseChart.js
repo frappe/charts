@@ -1,8 +1,8 @@
 import SvgTip from '../objects/SvgTip';
 import { $, isElementInViewport, getElementContentWidth } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup, makeText, yLine } from '../utils/draw';
-import { BASE_MEASURES, getExtraHeight, getExtraWidth, INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT,
-	DEFAULT_COLORS} from '../utils/constants';
+import { BASE_MEASURES, getExtraHeight, getExtraWidth, getTopOffset, getLeftOffset,
+	INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS} from '../utils/constants';
 import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
 import { downloadFile, prepareForExport } from '../utils/export';
@@ -181,17 +181,17 @@ export default class BaseChart {
 			);
 		}
 
-		let top = m.margins.top + m.titleHeight + m.paddings.top;
+		let top = getTopOffset(m);
 		this.drawArea = makeSVGGroup(
 			this.type + '-chart chart-draw-area',
-			`translate(${m.margins.left + m.paddings.left}, ${top})`
+			`translate(${getLeftOffset(m)}, ${top})`
 		);
 
 		if(this.config.showLegend) {
 			top += this.height + m.paddings.bottom;
 			this.legendArea = makeSVGGroup(
 				'chart-legend',
-				`translate(${m.margins.left + m.paddings.left}, ${top})`
+				`translate(${getLeftOffset(m)}, ${top})`
 			);
 		}
 
@@ -199,7 +199,7 @@ export default class BaseChart {
 		this.svg.appendChild(this.drawArea);
 		if(this.config.showLegend) { this.svg.appendChild(this.legendArea); }
 
-		this.updateTipOffset(m.margins.left + m.paddings.left, m.margins.top + m.paddings.top + m.titleHeight);
+		this.updateTipOffset(getLeftOffset(m), getTopOffset(m));
 	}
 
 	updateTipOffset(x, y) {

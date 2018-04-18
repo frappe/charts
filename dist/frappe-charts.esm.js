@@ -105,6 +105,14 @@ const BASE_MEASURES = {
 	titleFontSize: 12,
 };
 
+function getTopOffset(m) {
+	return m.titleHeight + m.margins.top + m.paddings.top;
+}
+
+function getLeftOffset(m) {
+	return m.margins.left + m.paddings.left;
+}
+
 function getExtraHeight(m) {
 	let totalExtraHeight = m.margins.top + m.margins.bottom
 		+ m.paddings.top + m.paddings.bottom
@@ -1491,17 +1499,17 @@ class BaseChart {
 			);
 		}
 
-		let top = m.margins.top + m.titleHeight + m.paddings.top;
+		let top = getTopOffset(m);
 		this.drawArea = makeSVGGroup(
 			this.type + '-chart chart-draw-area',
-			`translate(${m.margins.left + m.paddings.left}, ${top})`
+			`translate(${getLeftOffset(m)}, ${top})`
 		);
 
 		if(this.config.showLegend) {
 			top += this.height + m.paddings.bottom;
 			this.legendArea = makeSVGGroup(
 				'chart-legend',
-				`translate(${m.margins.left + m.paddings.left}, ${top})`
+				`translate(${getLeftOffset(m)}, ${top})`
 			);
 		}
 
@@ -1509,7 +1517,7 @@ class BaseChart {
 		this.svg.appendChild(this.drawArea);
 		if(this.config.showLegend) { this.svg.appendChild(this.legendArea); }
 
-		this.updateTipOffset(m.margins.left + m.paddings.left, m.margins.top + m.paddings.top + m.titleHeight);
+		this.updateTipOffset(getLeftOffset(m), getTopOffset(m));
 	}
 
 	updateTipOffset(x, y) {
@@ -3411,11 +3419,11 @@ class AxisChart extends BaseChart {
 		this.container.addEventListener('mousemove', (e) => {
 			let m = this.measures;
 			let o = getOffset(this.container);
-			let relX = e.pageX - o.left - m.margins.left - m.paddings.left;
+			let relX = e.pageX - o.left - getLeftOffset(m);
 			let relY = e.pageY - o.top;
 
-			if(relY < this.height + m.titleHeight + m.margins.top + m.paddings.top
-				&& relY >  m.titleHeight + m.margins.top + m.paddings.top) {
+			if(relY < this.height + getTopOffset(m)
+				&& relY >  getTopOffset(m)) {
 				this.mapTooltipXPosition(relX);
 			} else {
 				this.tip.hideTip();
@@ -3429,7 +3437,6 @@ class AxisChart extends BaseChart {
 
 		let index = getClosestInArray(relX, s.xAxis.positions, true);
 
-		console.log(relX, s.xAxis.positions[index], s.xAxis.positions, this.tip.offset.x);
 		this.tip.setValues(
 			s.xAxis.positions[index] + this.tip.offset.x,
 			s.yExtremes[index] + this.tip.offset.y,

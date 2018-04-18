@@ -1,4 +1,4 @@
-import { shuffle } from '../../../src/js/utils/helpers';
+import { shuffle, getRandomBias } from '../../../src/js/utils/helpers';
 import { HEATMAP_COLORS_YELLOW, HEATMAP_COLORS_BLUE } from '../../../src/js/utils/constants';
 import { fireballOver25, fireball_2_5, fireball_5_25, lineCompositeData,
 	barCompositeData, typeData, trendsData, moonData, heatmapData } from './data';
@@ -104,7 +104,7 @@ let updateDataAllLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun
 	"Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri",
 	"Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon"];
 
-let getRandom = () => Math.floor(Math.random() * 75 - 15);
+let getRandom = () => Math.floor(getRandomBias(-40, 60, 0.8, 1));
 let updateDataAllValues = Array.from({length: 30}, getRandom);
 
 // We're gonna be shuffling this
