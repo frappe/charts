@@ -302,6 +302,8 @@ export default class AxisChart extends BaseChart {
 				function() {
 					let s = this.state;
 					let d = s.datasets[index];
+					let minLine = s.yAxis.positions[0] < s.yAxis.zeroLine
+						? s.yAxis.positions[0] : s.yAxis.zeroLine;
 
 					return {
 						xPositions: s.xAxis.positions,
@@ -309,7 +311,7 @@ export default class AxisChart extends BaseChart {
 
 						values: d.values,
 
-						zeroLine: s.yAxis.zeroLine,
+						zeroLine: minLine,
 						radius: this.lineOptions.dotSize || LINE_CHART_DOT_SIZE,
 					};
 				}.bind(this)
