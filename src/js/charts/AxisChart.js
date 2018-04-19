@@ -375,7 +375,7 @@ export default class AxisChart extends BaseChart {
 				xPos: s.xAxis.positions[index],
 				values: values,
 				yExtreme: s.yExtremes[index],
-			}
+			};
 		});
 	}
 
