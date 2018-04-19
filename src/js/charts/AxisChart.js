@@ -353,18 +353,30 @@ export default class AxisChart extends BaseChart {
 		this.dataByIndex = {};
 
 		let s = this.state;
-
-		// let formatY = this.config.formatTooltipY;
 		let formatX = this.config.formatTooltipX;
-
+		let formatY = this.config.formatTooltipY;
 		let titles = s.xAxis.labels;
-		if(formatX && formatX(titles[0])) {
-			titles = titles.map(d=>formatX(d));
-		}
 
-		// formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
+		titles.map((label, index) => {
+			let values = this.state.datasets.map((set, i) => {
+				let value = set.values[index];
+				return {
+					title: set.name,
+					value: value,
+					yPos: set.yPositions[index],
+					color: this.colors[i],
+					formatted: formatY ? formatY(value) : value,
+				};
+			});
 
-		// yVal = formatY ? formatY(set.values[i]) : set.values[i]
+			this.dataByIndex[index] = {
+				label: label,
+				formattedLabel: formatX ? formatX(label) : label,
+				xPos: s.xAxis.positions[index],
+				values: values,
+				yExtreme: s.yExtremes[index],
+			}
+		});
 	}
 
 	bindTooltip() {
@@ -389,18 +401,13 @@ export default class AxisChart extends BaseChart {
 		if(!s.yExtremes) return;
 
 		let index = getClosestInArray(relX, s.xAxis.positions, true);
+		let dbi = this.dataByIndex[index];
 
 		this.tip.setValues(
-			s.xAxis.positions[index] + this.tip.offset.x,
-			s.yExtremes[index] + this.tip.offset.y,
-			{name: s.xAxis.labels[index], value: ''},
-			this.data.datasets.map((set, i) => {
-				return {
-					title: set.name,
-					value: set.values[index],
-					color: this.colors[i],
-				};
-			}),
+			dbi.xPos + this.tip.offset.x,
+			dbi.yExtreme + this.tip.offset.y,
+			{name: dbi.formattedLabel, value: ''},
+			dbi.values,
 			index
 		);
 

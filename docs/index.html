@@ -78,7 +78,12 @@
     title: "My Awesome Chart",
     type: 'axis-mixed', // or 'bar', 'line', 'pie', 'percentage'
     height: 300,
-    colors: ['purple', '#ffa3ef', 'red']
+    colors: ['purple', '#ffa3ef', 'red'],
+
+    tooltipOptions: {
+      formatTooltipX: d => (d + '').toUpperCase(),
+      formatTooltipY: d => d + ' pts',
+    }
   });
 
   chart.export();
