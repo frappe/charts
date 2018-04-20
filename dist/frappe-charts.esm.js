@@ -298,6 +298,10 @@ class SvgTip {
 	}
 }
 
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -1458,8 +1462,9 @@ class BaseChart {
 	bindTooltip() {}
 
 	draw(onlyWidthChange=false, init=false) {
-		this.calc(onlyWidthChange);
 		this.updateWidth();
+
+		this.calc(onlyWidthChange);
 		this.makeChartArea();
 		this.setupComponents();
 
@@ -2718,12 +2723,13 @@ class Heatmap extends BaseChart {
 		let d = this.data;
 		let spacing = this.discreteDomains ? NO_OF_YEAR_MONTHS : 0;
 		this.independentWidth = (getWeeksBetween(d.start, d.end)
-			+ spacing) * COL_WIDTH + m.margins.right + m.margins.left;
+			+ spacing) * COL_WIDTH + getExtraWidth(m);
 	}
 
 	updateWidth() {
 		let spacing = this.discreteDomains ? NO_OF_YEAR_MONTHS : 0;
-		this.baseWidth = (this.state.noOfWeeks + spacing) * COL_WIDTH
+		let noOfWeeks = this.state.noOfWeeks ? this.state.noOfWeeks : 52;
+		this.baseWidth = (noOfWeeks + spacing) * COL_WIDTH
 			+ getExtraWidth(this.measures);
 	}
 
@@ -3139,8 +3145,9 @@ class AxisChart extends BaseChart {
 
 	calc(onlyWidthChange = false) {
 		this.calcXPositions();
-		if(onlyWidthChange) return;
-		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+		if(!onlyWidthChange) {
+			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+		}
 		this.makeDataByIndex();
 	}
 
@@ -3666,6 +3673,7 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
+// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,

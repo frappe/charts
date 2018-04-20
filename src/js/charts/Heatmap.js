@@ -39,12 +39,13 @@ export default class Heatmap extends BaseChart {
 		let d = this.data;
 		let spacing = this.discreteDomains ? NO_OF_YEAR_MONTHS : 0;
 		this.independentWidth = (getWeeksBetween(d.start, d.end)
-			+ spacing) * COL_WIDTH + m.margins.right + m.margins.left;
+			+ spacing) * COL_WIDTH + getExtraWidth(m);
 	}
 
 	updateWidth() {
 		let spacing = this.discreteDomains ? NO_OF_YEAR_MONTHS : 0;
-		this.baseWidth = (this.state.noOfWeeks + spacing) * COL_WIDTH
+		let noOfWeeks = this.state.noOfWeeks ? this.state.noOfWeeks : 52;
+		this.baseWidth = (noOfWeeks + spacing) * COL_WIDTH
 			+ getExtraWidth(this.measures);
 	}
 

@@ -127,8 +127,9 @@ export default class BaseChart {
 	bindTooltip() {}
 
 	draw(onlyWidthChange=false, init=false) {
-		this.calc(onlyWidthChange);
 		this.updateWidth();
+
+		this.calc(onlyWidthChange);
 		this.makeChartArea();
 		this.setupComponents();
 

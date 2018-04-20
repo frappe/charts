@@ -55,8 +55,9 @@ export default class AxisChart extends BaseChart {
 
 	calc(onlyWidthChange = false) {
 		this.calcXPositions();
-		if(onlyWidthChange) return;
-		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+		if(!onlyWidthChange) {
+			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+		}
 		this.makeDataByIndex();
 	}
 
