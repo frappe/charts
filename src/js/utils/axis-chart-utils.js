@@ -98,6 +98,7 @@ export function zeroDataPrep(realData) {
 
 export function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
 	let allowedSpace = chartWidth / labels.length;
+	if(allowedSpace <= 0) allowedSpace = 1;
 	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
 
 	let calcLabels = labels.map((label, i) => {

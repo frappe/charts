@@ -1,6 +1,8 @@
 <div align="center">
     <img src="https://github.com/frappe/design/blob/master/logos/charts-logo.svg" height="128">
-    <h2>Frappe Charts</h2>
+    <a href="https://frappe.github.io/charts">
+        <h2>Frappe Charts</h2>
+    </a>
     <p align="center">
         <p>GitHub-inspired modern, intuitive and responsive charts with zero dependencies</p>
         <a href="https://frappe.github.io/charts">
@@ -10,8 +12,14 @@
 </div>
 
 <p align="center">
+    <a href="https://travis-ci.org/frappe/charts">
+        <img src="https://img.shields.io/travis/frappe/charts.svg?style=flat-square">
+    </a>
     <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.iife.js">
         <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.iife.js.svg?compression=gzip">
+    </a>
+    <a href="https://travis-ci.org/frappe/charts">
+        <img src="https://img.shields.io/travis/frappe/charts.svg?style=flat-square">
     </a>
 </p>
 
@@ -42,9 +50,9 @@
 * ...or include within your HTML
 
   ```html
-    <script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.0.0/dist/frappe-charts.min.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.1.0/dist/frappe-charts.min.iife.js"></script>
     <!-- or -->
-    <script src="https://unpkg.com/frappe-charts@1.0.0/dist/frappe-charts.min.iife.js"></script>
+    <script src="https://unpkg.com/frappe-charts@1.1.0/dist/frappe-charts.min.iife.js"></script>
   ```
 
 #### Usage

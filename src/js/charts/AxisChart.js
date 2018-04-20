@@ -1,12 +1,13 @@
 import BaseChart from './BaseChart';
 import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-utils';
-import { Y_AXIS_MARGIN } from '../utils/constants';
+import { AXIS_LEGEND_BAR_SIZE } from '../utils/constants';
 import { getComponent } from '../objects/ChartComponents';
-import { $, getOffset, fire } from '../utils/dom';
-import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale } from '../utils/intervals';
+import { getOffset, fire } from '../utils/dom';
+import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
 import { floatTwo } from '../utils/helpers';
-import { makeOverlay, updateOverlay } from '../utils/draw';
-import { MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO, LINE_CHART_DOT_SIZE } from '../utils/constants';
+import { makeOverlay, updateOverlay, legendBar } from '../utils/draw';
+import { getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
+	LINE_CHART_DOT_SIZE } from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
 	constructor(parent, args) {
@@ -21,26 +22,27 @@ export default class AxisChart extends BaseChart {
 		this.setup();
 	}
 
-	configure(args) {
-		super.configure();
-
-		args.axisOptions = args.axisOptions || {};
-		args.tooltipOptions = args.tooltipOptions || {};
-
-		this.config.xAxisMode = args.axisOptions.xAxisMode || 'span';
-		this.config.yAxisMode = args.axisOptions.yAxisMode || 'span';
-		this.config.xIsSeries = args.axisOptions.xIsSeries || 0;
-
-		this.config.formatTooltipX = args.tooltipOptions.formatTooltipX;
-		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
-
-		this.config.valuesOverPoints = args.valuesOverPoints;
+	setMeasures() {
+		if(this.data.datasets.length <= 1) {
+			this.config.showLegend = 0;
+			this.measures.paddings.bottom = 30;
+		}
 	}
 
-	setMargins() {
-		super.setMargins();
-		this.leftMargin = Y_AXIS_MARGIN;
-		this.rightMargin = Y_AXIS_MARGIN;
+	configure(options) {
+		super.configure(options);
+
+		options.axisOptions = options.axisOptions || {};
+		options.tooltipOptions = options.tooltipOptions || {};
+
+		this.config.xAxisMode = options.axisOptions.xAxisMode || 'span';
+		this.config.yAxisMode = options.axisOptions.yAxisMode || 'span';
+		this.config.xIsSeries = options.axisOptions.xIsSeries || 0;
+
+		this.config.formatTooltipX = options.tooltipOptions.formatTooltipX;
+		this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
+
+		this.config.valuesOverPoints = options.valuesOverPoints;
 	}
 
 	prepareData(data=this.data) {
@@ -53,8 +55,10 @@ export default class AxisChart extends BaseChart {
 
 	calc(onlyWidthChange = false) {
 		this.calcXPositions();
-		if(onlyWidthChange) return;
-		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+		if(!onlyWidthChange) {
+			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+		}
+		this.makeDataByIndex();
 	}
 
 	calcXPositions() {
@@ -139,6 +143,7 @@ export default class AxisChart extends BaseChart {
 		if(this.data.yMarkers) {
 			this.state.yMarkers = this.data.yMarkers.map(d => {
 				d.position = scale(d.value, s.yAxis);
+				if(!d.options) d.options = {};
 				// if(!d.label.includes(':')) {
 				// 	d.label += ': ' + d.value;
 				// }
@@ -149,13 +154,13 @@ export default class AxisChart extends BaseChart {
 			this.state.yRegions = this.data.yRegions.map(d => {
 				d.startPos = scale(d.start, s.yAxis);
 				d.endPos = scale(d.end, s.yAxis);
+				if(!d.options) d.options = {};
 				return d;
 			});
 		}
 	}
 
 	getAllYValues() {
-		// TODO: yMarkers, regions, sums, every Y value ever
 		let key = 'values';
 
 		if(this.barOptions.stacked) {
@@ -300,6 +305,8 @@ export default class AxisChart extends BaseChart {
 				function() {
 					let s = this.state;
 					let d = s.datasets[index];
+					let minLine = s.yAxis.positions[0] < s.yAxis.zeroLine
+						? s.yAxis.positions[0] : s.yAxis.zeroLine;
 
 					return {
 						xPositions: s.xAxis.positions,
@@ -307,7 +314,7 @@ export default class AxisChart extends BaseChart {
 
 						values: d.values,
 
-						zeroLine: s.yAxis.zeroLine,
+						zeroLine: minLine,
 						radius: this.lineOptions.dotSize || LINE_CHART_DOT_SIZE,
 					};
 				}.bind(this)
@@ -343,14 +350,46 @@ export default class AxisChart extends BaseChart {
 			}));
 	}
 
+	makeDataByIndex() {
+		this.dataByIndex = {};
+
+		let s = this.state;
+		let formatX = this.config.formatTooltipX;
+		let formatY = this.config.formatTooltipY;
+		let titles = s.xAxis.labels;
+
+		titles.map((label, index) => {
+			let values = this.state.datasets.map((set, i) => {
+				let value = set.values[index];
+				return {
+					title: set.name,
+					value: value,
+					yPos: set.yPositions[index],
+					color: this.colors[i],
+					formatted: formatY ? formatY(value) : value,
+				};
+			});
+
+			this.dataByIndex[index] = {
+				label: label,
+				formattedLabel: formatX ? formatX(label) : label,
+				xPos: s.xAxis.positions[index],
+				values: values,
+				yExtreme: s.yExtremes[index],
+			};
+		});
+	}
+
 	bindTooltip() {
 		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
-		this.chartWrapper.addEventListener('mousemove', (e) => {
-			let o = getOffset(this.chartWrapper);
-			let relX = e.pageX - o.left - this.leftMargin;
-			let relY = e.pageY - o.top - this.translateY;
+		this.container.addEventListener('mousemove', (e) => {
+			let m = this.measures;
+			let o = getOffset(this.container);
+			let relX = e.pageX - o.left - getLeftOffset(m);
+			let relY = e.pageY - o.top;
 
-			if(relY < this.height + this.translateY * 2) {
+			if(relY < this.height + getTopOffset(m)
+				&& relY >  getTopOffset(m)) {
 				this.mapTooltipXPosition(relX);
 			} else {
 				this.tip.hideTip();
@@ -362,56 +401,43 @@ export default class AxisChart extends BaseChart {
 		let s = this.state;
 		if(!s.yExtremes) return;
 
-		let formatY = this.config.formatTooltipY;
-		let formatX = this.config.formatTooltipX;
+		let index = getClosestInArray(relX, s.xAxis.positions, true);
+		let dbi = this.dataByIndex[index];
 
-		let titles = s.xAxis.labels;
-		if(formatX && formatX(titles[0])) {
-			titles = titles.map(d=>formatX(d));
-		}
+		this.tip.setValues(
+			dbi.xPos + this.tip.offset.x,
+			dbi.yExtreme + this.tip.offset.y,
+			{name: dbi.formattedLabel, value: ''},
+			dbi.values,
+			index
+		);
 
-		formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
-
-		for(var i=s.datasetLength - 1; i >= 0 ; i--) {
-			let xVal = s.xAxis.positions[i];
-			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxis.positions[i-1];
-			if(relX > xVal - s.unitWidth/2) {
-				let x = xVal + this.leftMargin;
-				let y = s.yExtremes[i] + this.translateY;
-
-				let values = this.data.datasets.map((set, j) => {
-					return {
-						title: set.name,
-						value: formatY ? formatY(set.values[i]) : set.values[i],
-						color: this.colors[j],
-					};
-				});
-
-				this.tip.setValues(x, y, {name: titles[i], value: ''}, values, i);
-				this.tip.showTip();
-				break;
-			}
-		}
+		this.tip.showTip();
 	}
 
 	renderLegend() {
 		let s = this.data;
-		this.statsWrapper.textContent = '';
-
 		if(s.datasets.length > 1) {
+			this.legendArea.textContent = '';
 			s.datasets.map((d, i) => {
-				let stats = $.create('div', {
-					className: 'stats',
-					inside: this.statsWrapper
-				});
-				stats.innerHTML = `<span class="indicator">
-					<i style="background: ${this.colors[i]}"></i>
-					${d.name}
-				</span>`;
+				let barWidth = AXIS_LEGEND_BAR_SIZE;
+				// let rightEndPoint = this.baseWidth - this.measures.margins.left - this.measures.margins.right;
+				// let multiplier = s.datasets.length - i;
+				let rect = legendBar(
+					// rightEndPoint - multiplier * barWidth,	// To right align
+					barWidth * i,
+					'0',
+					barWidth,
+					this.colors[i],
+					d.name);
+				this.legendArea.appendChild(rect);
 			});
 		}
 	}
 
+
+
+	// Overlay
 	makeOverlay() {
 		if(this.init) {
 			this.init = 0;
@@ -511,6 +537,8 @@ export default class AxisChart extends BaseChart {
 		s.currentIndex = index;
 		fire(this.parent, "data-select", this.getDataPoint());
 	}
+
+
 
 	// API
 	addDataPoint(label, datasetValues, index=this.state.datasetLength) {

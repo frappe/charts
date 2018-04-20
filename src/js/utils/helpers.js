@@ -77,9 +77,18 @@ export function bindChange(obj, getFn, setFn) {
 	});
 }
 
+// https://stackoverflow.com/a/29325222
+export function getRandomBias(min, max, bias, influence) {
+	const range = max - min;
+	const biasValue = range * bias + min;
+	var rnd = Math.random() * range + min,		// random in range
+		mix = Math.random() * influence;		// random mixer
+	return rnd * (1 - mix) + biasValue * mix;	// mix full range and bias
+}
+
 export function getPositionByAngle(angle, radius) {
 	return {
-		x:Math.sin(angle * ANGLE_RATIO) * radius,
-		y:Math.cos(angle * ANGLE_RATIO) * radius,
+		x: Math.sin(angle * ANGLE_RATIO) * radius,
+		y: Math.cos(angle * ANGLE_RATIO) * radius,
 	};
 }
