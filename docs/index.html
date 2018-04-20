@@ -49,7 +49,7 @@
               <pre><code class="hljs html">  &lt!--HTML--&gt;
   &lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
               <pre><code class="hljs javascript">  // Javascript
-  let chart = new Chart( "#chart", { // or DOM element
+  let chart = new frappe.Chart( "#chart", { // or DOM element
     data: {
       labels: ["12am-3am", "3am-6am", "6am-9am", "9am-12pm",
       "12pm-3pm", "3pm-6pm", "6pm-9pm", "9pm-12am"],
@@ -211,7 +211,7 @@
               <div class="btn-group export-buttons mt-1 mx-auto" role="group">
                 <button type="button" class="btn btn-sm btn-secondary export-heatmap">Export ...</button>
               </div>
-              <pre><code class="hljs javascript margin-vertical-px">  let heatmap = new Chart("#heatmap", {
+              <pre><code class="hljs javascript margin-vertical-px">  let heatmap = new frappe.Chart("#heatmap", {
     type: 'heatmap',
     title: "Monthly Distribution",
     data: {
@@ -316,6 +316,10 @@
               <pre><code class="hljs javascript">  import { Chart } from "frappe-charts"</code></pre>
               <p class="step-explain">... or include it directly in your HTML</p>
               <pre><code class="hljs html">  &lt;script src="https://unpkg.com/frappe-charts@1.1.0"&gt;&lt;/script&gt;</code></pre>
+              <p class="step-explain">Use as:</p>
+              <pre><code class="hljs javascript">  new Chart();          // ES6 module
+                        // or
+  new frappe.Chart();   // Browser</code></pre>
 
             </div>
           </div>
