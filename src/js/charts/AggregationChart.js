@@ -25,7 +25,7 @@ export default class AggregationChart extends BaseChart {
 				total += e.values[i];
 			});
 			return [total, label];
-		}).filter(d => { return d[0] > 0; }); // keep only positive results
+		}).filter(d => { return d[0] >= 0; }); // keep only positive results
 
 		let totals = allTotals;
 		if(allTotals.length > maxSlices) {

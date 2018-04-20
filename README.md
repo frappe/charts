@@ -50,9 +50,9 @@
 * ...or include within your HTML
 
   ```html
-    <script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.0.0/dist/frappe-charts.min.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.1.0/dist/frappe-charts.min.iife.js"></script>
     <!-- or -->
-    <script src="https://unpkg.com/frappe-charts@1.0.0/dist/frappe-charts.min.iife.js"></script>
+    <script src="https://unpkg.com/frappe-charts@1.1.0/dist/frappe-charts.min.iife.js"></script>
   ```
 
 #### Usage

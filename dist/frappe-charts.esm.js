@@ -298,6 +298,10 @@ class SvgTip {
 	}
 }
 
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -1669,7 +1673,7 @@ class AggregationChart extends BaseChart {
 				total += e.values[i];
 			});
 			return [total, label];
-		}).filter(d => { return d[0] > 0; }); // keep only positive results
+		}).filter(d => { return d[0] >= 0; }); // keep only positive results
 
 		let totals = allTotals;
 		if(allTotals.length > maxSlices) {
@@ -3073,6 +3077,7 @@ function zeroDataPrep(realData) {
 
 function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
 	let allowedSpace = chartWidth / labels.length;
+	if(allowedSpace <= 0) allowedSpace = 1;
 	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
 
 	let calcLabels = labels.map((label, i) => {
@@ -3672,6 +3677,7 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
+// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,

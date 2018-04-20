@@ -120,6 +120,7 @@ export default [
 	},
 	{
 		input: 'src/js/chart.js',
+		sourcemap: true,
 		output: [
 			{
 				file: pkg.main,
