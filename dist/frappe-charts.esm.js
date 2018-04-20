@@ -1698,19 +1698,29 @@ class AggregationChart extends BaseChart {
 	renderLegend() {
 		let s = this.state;
 		this.legendArea.textContent = '';
-
 		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
 
+		let count = 0;
+		let y = 0;
 		this.legendTotals.map((d, i) => {
 			let barWidth = 110;
-			let rect = legendDot(
-				barWidth * i + 5,
-				'0',
+			let divisor = Math.floor(
+				(this.width - getExtraWidth(this.measures))/barWidth
+			);
+			if(count > divisor) {
+				count = 0;
+				y += 20;
+			}
+			let x = barWidth * count + 5;
+			let dot = legendDot(
+				x,
+				y,
 				5,
 				this.colors[i],
 				`${s.labels[i]}: ${d}`
 			);
-			this.legendArea.appendChild(rect);
+			this.legendArea.appendChild(dot);
+			count++;
 		});
 	}
 }
@@ -2225,14 +2235,20 @@ class PercentageChart extends AggregationChart {
 	constructor(parent, args) {
 		super(parent, args);
 		this.type = 'percentage';
-
-		this.barOptions = args.barOptions || {};
-		this.barOptions.height = this.barOptions.height
-			|| PERCENTAGE_BAR_DEFAULT_HEIGHT;
-		this.barOptions.depth = this.barOptions.depth
-			|| PERCENTAGE_BAR_DEFAULT_DEPTH;
-
 		this.setup();
+	}
+
+	setMeasures(options) {
+		let m = this.measures;
+		this.barOptions = options.barOptions || {};
+
+		let b = this.barOptions;
+		b.height = b.height || PERCENTAGE_BAR_DEFAULT_HEIGHT;
+		b.depth = b.depth || PERCENTAGE_BAR_DEFAULT_DEPTH;
+
+		m.paddings.right = 30;
+		m.legendHeight = 80;
+		m.baseHeight = b.height * 10 + b.depth * 0.5;
 	}
 
 	setupComponents() {

@@ -7,14 +7,20 @@ export default class PercentageChart extends AggregationChart {
 	constructor(parent, args) {
 		super(parent, args);
 		this.type = 'percentage';
-
-		this.barOptions = args.barOptions || {};
-		this.barOptions.height = this.barOptions.height
-			|| PERCENTAGE_BAR_DEFAULT_HEIGHT;
-		this.barOptions.depth = this.barOptions.depth
-			|| PERCENTAGE_BAR_DEFAULT_DEPTH;
-
 		this.setup();
+	}
+
+	setMeasures(options) {
+		let m = this.measures;
+		this.barOptions = options.barOptions || {};
+
+		let b = this.barOptions;
+		b.height = b.height || PERCENTAGE_BAR_DEFAULT_HEIGHT;
+		b.depth = b.depth || PERCENTAGE_BAR_DEFAULT_DEPTH;
+
+		m.paddings.right = 30;
+		m.legendHeight = 80;
+		m.baseHeight = b.height * 10 + b.depth * 0.5;
 	}
 
 	setupComponents() {

@@ -58,7 +58,7 @@ let typeChartArgs = {
 	height: 300,
 	colors: customColors,
 
-	maxLegendPoints: 6,
+	// maxLegendPoints: 6,
 	maxSlices: 10,
 
 	tooltipOptions: {
@@ -80,6 +80,12 @@ Array.prototype.slice.call(
 			typeChartArgs.colors = undefined;
 		} else {
 			typeChartArgs.colors = customColors;
+		}
+
+		if(type !== 'percentage') {
+			typeChartArgs.height = 300;
+		} else {
+			typeChartArgs.height = undefined;
 		}
 
 		let newChart = new Chart("#chart-aggr", typeChartArgs);

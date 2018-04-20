@@ -1,5 +1,6 @@
 import BaseChart from './BaseChart';
 import { legendDot } from '../utils/draw';
+import { getExtraWidth } from '../utils/constants';
 
 export default class AggregationChart extends BaseChart {
 	constructor(parent, args) {
@@ -57,19 +58,29 @@ export default class AggregationChart extends BaseChart {
 	renderLegend() {
 		let s = this.state;
 		this.legendArea.textContent = '';
-
 		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
 
+		let count = 0;
+		let y = 0;
 		this.legendTotals.map((d, i) => {
 			let barWidth = 110;
-			let rect = legendDot(
-				barWidth * i + 5,
-				'0',
+			let divisor = Math.floor(
+				(this.width - getExtraWidth(this.measures))/barWidth
+			);
+			if(count > divisor) {
+				count = 0;
+				y += 20;
+			}
+			let x = barWidth * count + 5;
+			let dot = legendDot(
+				x,
+				y,
 				5,
 				this.colors[i],
 				`${s.labels[i]}: ${d}`
 			);
-			this.legendArea.appendChild(rect);
+			this.legendArea.appendChild(dot);
+			count++;
 		});
 	}
 }
