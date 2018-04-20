@@ -20,7 +20,7 @@ export default class PercentageChart extends AggregationChart {
 
 		m.paddings.right = 30;
 		m.legendHeight = 80;
-		m.baseHeight = b.height * 10 + b.depth * 0.5;
+		m.baseHeight = (b.height + b.depth * 0.5) * 8;
 	}
 
 	setupComponents() {

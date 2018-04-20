@@ -7,6 +7,8 @@ import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
 import { downloadFile, prepareForExport } from '../utils/export';
 
+let BOUND_DRAW_FN;
+
 export default class BaseChart {
 	constructor(parent, options) {
 
@@ -87,8 +89,18 @@ export default class BaseChart {
 		this.height = height - getExtraHeight(this.measures);
 
 		// Bind window events
-		window.addEventListener('resize', () => this.draw(true));
-		window.addEventListener('orientationchange', () => this.draw(true));
+		BOUND_DRAW_FN = this.boundDrawFn.bind(this);
+		window.addEventListener('resize', BOUND_DRAW_FN);
+		window.addEventListener('orientationchange', this.boundDrawFn.bind(this));
+	}
+
+	boundDrawFn() {
+		this.draw(true);
+	}
+
+	unbindWindowEvents() {
+		window.removeEventListener('resize', BOUND_DRAW_FN);
+		window.removeEventListener('orientationchange', this.boundDrawFn.bind(this));
 	}
 
 	// Has to be called manually
@@ -296,15 +308,6 @@ export default class BaseChart {
 	setCurrentDataPoint() {}
 
 	updateDataset() {}
-
-	boundDrawFn() {
-		this.draw(true);
-	}
-
-	unbindWindowEvents(){
-		window.removeEventListener('resize', () => this.boundDrawFn.bind(this));
-		window.removeEventListener('orientationchange', () => this.boundDrawFn.bind(this));
-	}
 
 	export() {
 		let chartSvg = prepareForExport(this.svg);

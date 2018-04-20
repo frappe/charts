@@ -298,10 +298,6 @@ class SvgTip {
 	}
 }
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -1342,6 +1338,8 @@ function prepareForExport(svg) {
 	return container.innerHTML;
 }
 
+let BOUND_DRAW_FN;
+
 class BaseChart {
 	constructor(parent, options) {
 
@@ -1422,8 +1420,18 @@ class BaseChart {
 		this.height = height - getExtraHeight(this.measures);
 
 		// Bind window events
-		window.addEventListener('resize', () => this.draw(true));
-		window.addEventListener('orientationchange', () => this.draw(true));
+		BOUND_DRAW_FN = this.boundDrawFn.bind(this);
+		window.addEventListener('resize', BOUND_DRAW_FN);
+		window.addEventListener('orientationchange', this.boundDrawFn.bind(this));
+	}
+
+	boundDrawFn() {
+		this.draw(true);
+	}
+
+	unbindWindowEvents() {
+		window.removeEventListener('resize', BOUND_DRAW_FN);
+		window.removeEventListener('orientationchange', this.boundDrawFn.bind(this));
 	}
 
 	// Has to be called manually
@@ -1631,15 +1639,6 @@ class BaseChart {
 	setCurrentDataPoint() {}
 
 	updateDataset() {}
-
-	boundDrawFn() {
-		this.draw(true);
-	}
-
-	unbindWindowEvents(){
-		window.removeEventListener('resize', () => this.boundDrawFn.bind(this));
-		window.removeEventListener('orientationchange', () => this.boundDrawFn.bind(this));
-	}
 
 	export() {
 		let chartSvg = prepareForExport(this.svg);
@@ -2253,7 +2252,7 @@ class PercentageChart extends AggregationChart {
 
 		m.paddings.right = 30;
 		m.legendHeight = 80;
-		m.baseHeight = b.height * 10 + b.depth * 0.5;
+		m.baseHeight = (b.height + b.depth * 0.5) * 8;
 	}
 
 	setupComponents() {
@@ -3673,7 +3672,6 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,

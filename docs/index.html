@@ -255,6 +255,7 @@
     isNavigable: 1,        // default: 0
     valuesOverPoints: 1,   // default: 0
     barOptions: {
+      spaceRatio: 1        // default: 0.5
       stacked: 1           // default: 0
     }
 
@@ -274,15 +275,17 @@
     },
 
     // Pie/Percentage charts
-
     maxLegendPoints: 6,    // default: 20
     maxSlices: 10,         // default: 20
 
-    // Heatmap
+    // Percentage chart
+    barOptions: {
+      height: 15           // default: 20
+      depth: 5             // default: 2
+    }
 
+    // Heatmap
     discreteDomains: 1,    // default: 1
-    start: startDate,      // Date object
-    colors: []
   }
   ...
 
@@ -296,6 +299,9 @@
 
     // Exporting
     chart.export();
+
+    // Unbind window-resize events
+    chart.unbindWindowEvents();
 
   </code></pre>
               </div>

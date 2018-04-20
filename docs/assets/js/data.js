@@ -14,6 +14,7 @@ export const lineCompositeData = {
 		{
 			label: "Average 100 reports/month",
 			value: 1200,
+			options: { labelPos: 'left' }
 		}
 	],
 
