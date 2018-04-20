@@ -44,7 +44,7 @@
 
   and include in your project:
   ```js
-  import Chart from "frappe-charts/dist/frappe-charts.min.esm"
+  import Chart from "frappe-charts"
   ```
 
 * ...or include within your HTML
