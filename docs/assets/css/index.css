@@ -1,3 +1,112 @@
+body {
+	font-family: "proxima-nova", sans-serif;
+	font-size: 15px;
+	color: #6c7680;
+	text-rendering: optimizeLegibility !important;
+	line-height: 1.5em;
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.lead,
+.page-sidebar,
+.breadcrumb,
+.label,
+.h6,
+.sans,
+blockquote {
+	font-family: "proxima-nova", sans-serif;
+	color: #36414C;
+}
+
+h1, h6 {
+	font-weight: 700;
+}
+h1 {
+	font-size: 2.13em;
+}
+.blue.button {
+	color: #fff;
+	background: #7575ff;
+	border: 0px;
+	border-bottom: 3px solid rgba(0, 0, 0, 0.2);
+}
+.blue.button:hover {
+	background: #5b5be5;
+}
+.large.button {
+	font-size: 1.33em;
+	padding: 12px 24px 10px;
+	border-bottom: 3px solid rgba(0, 0, 0, 0.2);
+}
+.row.section,
+section {
+  padding: 70px 0 70px;
+}
+.row.section p,
+section p {
+  color: #6c7680;
+}
+.hero {
+	padding: 70px 0;
+	font-size: 1.6em;
+	font-weight: 300;
+	text-align: center;
+}
+
+a {
+	color: #5E64FF;
+  }
+  a,
+  a:focus,
+  a:hover {
+	transition: color 0.3s, border 0.3s, background-color 0.3s;
+}
+.group, .border-bottom {
+    border-bottom: 1px solid #d1d8dd;
+}
+.container, .navbar, footer {
+    max-width: 900px;
+    margin: auto;
+}
+/* frappe-theme end */
+
+
+/*buttons*/
+/*
+.active {
+    background-color: #fff;
+    color: #000;
+    }
+
+.btn {
+    padding: .5em 1.25em;
+    border-radius:.25em;
+    cursor: pointer;
+    transition: all 0.3s ease 0s;
+    border-bottom: 3px solid #00000030;
+}
+
+.btn-secondary {
+    padding: 0.5em 1.25em;
+    border-right: 1px solid #e2e2ec;
+    border-left: 1px solid #e2e2ec;
+    border-top: 1px solid #e2e2ec;
+    background-color: #fafafe;
+}
+
+.btn-secondary:hover{
+   background: rgb(255, 255, 255);
+   color: #36414c;
+} */
+
+/* custom */
 .page-header {
 	width: 100%;
 	text-align: center;
@@ -47,19 +156,11 @@ pre.highlight {
 	background: #f7f7f7;
 	border-radius: 3px;
 }
-
 .btn {
 	outline: none !important;
 }
 .dashboard-section h1 {
 	margin-left: -2px;
-}
-
-.hero .gantt-container {
-	text-align: left;
-}
-.hero {
-	/*font-size: 1.4rem;*/
 }
 .data-container {
 	padding: 20px;
@@ -87,4 +188,8 @@ pre.highlight {
 .border {
 	border: 1px solid #ddd;
 	border-radius: 3px;
+}
+
+.text-center {
+	text-align: center;
 }
