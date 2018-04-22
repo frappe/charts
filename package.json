@@ -65,6 +65,5 @@
     "rollup-plugin-uglify-es": "0.0.1",
     "rollup-watch": "^4.3.1"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }

@@ -298,10 +298,6 @@ class SvgTip {
 	}
 }
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -1755,6 +1751,12 @@ function treatAsUtc(date) {
 	return result;
 }
 
+function toMidnightUTC(date) {
+	let result = new Date(date);
+	result.setUTCHours(0, result.getTimezoneOffset(), 0, 0);
+	return result;
+}
+
 function getYyyyMmDd(date) {
 	let dd = date.getDate();
 	let mm = date.getMonth() + 1; // getMonth() is zero-based
@@ -2745,7 +2747,13 @@ class Heatmap extends BaseChart {
 			data.start = new Date();
 			data.start.setFullYear( data.start.getFullYear() - 1 );
 		}
-		if(!data.end) { data.end = new Date(); }
+		data.start = toMidnightUTC(data.start);
+
+		if(!data.end) {
+			data.end = new Date();
+		}
+		data.end = toMidnightUTC(data.end);
+
 		data.dataPoints = data.dataPoints || {};
 
 		if(parseInt(Object.keys(data.dataPoints)[0]) > 100000) {
@@ -2914,8 +2922,8 @@ class Heatmap extends BaseChart {
 
 	getDomainConfig(startDate, endDate='') {
 		let [month, year] = [startDate.getMonth(), startDate.getFullYear()];
-		let startOfWeek = setDayToSunday(startDate); // TODO: Monday as well
-		endDate = clone(endDate) || getLastDateInMonth(month, year);
+		let startOfWeek = toMidnightUTC(setDayToSunday(startDate)); // TODO: Monday as well
+		endDate = toMidnightUTC(clone(endDate) || getLastDateInMonth(month, year));
 
 		let domainConfig = {
 			index: month,
@@ -2930,7 +2938,7 @@ class Heatmap extends BaseChart {
 			col = this.getCol(startOfWeek, month);
 			cols.push(col);
 
-			startOfWeek = new Date(col[NO_OF_DAYS_IN_WEEK - 1].yyyyMmDd);
+			startOfWeek = toMidnightUTC(new Date(col[NO_OF_DAYS_IN_WEEK - 1].yyyyMmDd));
 			addDays(startOfWeek, 1);
 		}
 
@@ -2948,7 +2956,7 @@ class Heatmap extends BaseChart {
 		let s = this.state;
 
 		// startDate is the start of week
-		let currentDate = clone(startDate);
+		let currentDate = clone(toMidnightUTC(startDate));
 		let col = [];
 
 		for(var i = 0; i < NO_OF_DAYS_IN_WEEK; i++, addDays(currentDate, 1)) {
@@ -3677,7 +3685,6 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,
