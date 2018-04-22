@@ -2,8 +2,6 @@ function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
-
-
 $.create = (tag, o) => {
 	var element = document.createElement(tag);
 
@@ -66,10 +64,6 @@ function getElementContentWidth(element) {
 	return element.clientWidth - padding;
 }
 
-
-
-
-
 function fire(target, type, properties) {
 	var evt = document.createEvent("HTMLEvents");
 
@@ -81,8 +75,6 @@ function fire(target, type, properties) {
 
 	return target.dispatchEvent(evt);
 }
-
-// https://css-tricks.com/snippets/javascript/loop-queryselectorall-matches/
 
 const BASE_MEASURES = {
 	margins: {
@@ -130,9 +122,6 @@ function getExtraWidth(m) {
 const INIT_CHART_UPDATE_TIMEOUT = 700;
 const CHART_POST_ANIMATE_TIMEOUT = 400;
 
-const DEFAULT_AXIS_CHART_TYPE = 'line';
-const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
-
 const AXIS_LEGEND_BAR_SIZE = 100;
 
 const BAR_CHART_SPACE_RATIO = 0.5;
@@ -158,8 +147,6 @@ const TOOLTIP_POINTER_TRIANGLE_HEIGHT = 5;
 const DEFAULT_CHART_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
 	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
 const HEATMAP_COLORS_GREEN = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
-
-
 
 const DEFAULT_COLORS = {
 	bar: DEFAULT_CHART_COLORS,
@@ -303,19 +290,6 @@ function floatTwo(d) {
 }
 
 /**
- * Returns whether or not two given arrays are equal.
- * @param {Array} arr1 First array
- * @param {Array} arr2 Second array
- */
-
-
-/**
- * Shuffles array in place. ES6 version
- * @param {Array} array An array containing the items.
- */
-
-
-/**
  * Fill an array with extra points
  * @param {Array} array Array
  * @param {Number} count number of filler elements
@@ -339,11 +313,6 @@ function fillArray(array, count, element, start=false) {
 function getStringWidth(string, charWidth) {
 	return (string+"").length * charWidth;
 }
-
-
-
-// https://stackoverflow.com/a/29325222
-
 
 function getPositionByAngle(angle, radius) {
 	return {
@@ -509,8 +478,6 @@ function makeSVGGroup(className, transform='', parent=undefined) {
 	if(parent) args.inside = parent;
 	return createSVG('g', args);
 }
-
-
 
 function makePath(pathStr, className='', stroke='none', fill='none') {
 	return createSVG('path', {
@@ -1733,16 +1700,13 @@ class AggregationChart extends BaseChart {
 
 const NO_OF_YEAR_MONTHS = 12;
 const NO_OF_DAYS_IN_WEEK = 7;
-
 const NO_OF_MILLIS = 1000;
 const SEC_IN_DAY = 86400;
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May",
 	"June", "July", "August", "September", "October", "November", "December"];
 
-
 const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 
 // https://stackoverflow.com/a/11252167/6495043
 function treatAsUtc(date) {
@@ -1770,10 +1734,6 @@ function getYyyyMmDd(date) {
 function clone(date) {
 	return new Date(date.getTime());
 }
-
-
-
-
 
 // export function getMonthsBetween(startDate, endDate) {}
 
@@ -2649,8 +2609,6 @@ function getZeroIndex(yPts) {
 	return zeroIndex;
 }
 
-
-
 function getIntervalSize(orderedArray) {
 	return orderedArray[1] - orderedArray[0];
 }
@@ -2662,10 +2620,6 @@ function getValueRange(orderedArray) {
 function scale(val, yAxis) {
 	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier);
 }
-
-
-
-
 
 function getClosestInArray(goal, arr, index = false) {
 	let closest = arr.reduce(function(prev, curr) {
@@ -3025,7 +2979,6 @@ function dataPrep(data, type) {
 
 		// Set type
 		if(!d.chartType ) {
-			if(!AXIS_DATASET_CHART_TYPES.includes(type)) type === DEFAULT_AXIS_CHART_TYPE;
 			d.chartType = type;
 		}
 
