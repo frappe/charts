@@ -45,10 +45,6 @@ export default [
 			{
 				file: 'docs/assets/js/frappe-charts.min.js',
 				format: 'iife',
-			},
-			{
-				file: pkg.browser,
-				format: 'iife',
 			}
 		],
 		name: 'frappe',

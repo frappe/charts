@@ -5,7 +5,6 @@
   "main": "dist/frappe-charts.min.cjs.js",
   "module": "dist/frappe-charts.min.esm.js",
   "src": "dist/frappe-charts.esm.js",
-  "browser": "dist/frappe-charts.min.iife.js",
   "directories": {
     "doc": "docs"
   },
