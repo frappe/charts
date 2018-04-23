@@ -122,6 +122,9 @@ function getExtraWidth(m) {
 const INIT_CHART_UPDATE_TIMEOUT = 700;
 const CHART_POST_ANIMATE_TIMEOUT = 400;
 
+const DEFAULT_AXIS_CHART_TYPE = 'line';
+const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
+
 const AXIS_LEGEND_BAR_SIZE = 100;
 
 const BAR_CHART_SPACE_RATIO = 0.5;
@@ -2971,6 +2974,7 @@ function dataPrep(data, type) {
 
 		// Set type
 		if(!d.chartType ) {
+			if(!AXIS_DATASET_CHART_TYPES.includes(type)) type = DEFAULT_AXIS_CHART_TYPE;
 			d.chartType = type;
 		}
 
