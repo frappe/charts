@@ -1312,8 +1312,6 @@ function prepareForExport(svg) {
 	return container.innerHTML;
 }
 
-let BOUND_DRAW_FN;
-
 class BaseChart {
 	constructor(parent, options) {
 
@@ -1394,18 +1392,15 @@ class BaseChart {
 		this.height = height - getExtraHeight(this.measures);
 
 		// Bind window events
-		BOUND_DRAW_FN = this.boundDrawFn.bind(this);
-		window.addEventListener('resize', BOUND_DRAW_FN);
-		window.addEventListener('orientationchange', this.boundDrawFn.bind(this));
+		this.boundDrawFn = () => this.draw(true);
+		window.addEventListener('resize', this.boundDrawFn);
+		window.addEventListener('orientationchange', this.boundDrawFn);
 	}
 
-	boundDrawFn() {
-		this.draw(true);
-	}
-
-	unbindWindowEvents() {
-		window.removeEventListener('resize', BOUND_DRAW_FN);
-		window.removeEventListener('orientationchange', this.boundDrawFn.bind(this));
+	destroy() {
+		// Unbind window events
+		window.removeEventListener('resize', this.boundDrawFn);
+		window.removeEventListener('orientationchange', this.boundDrawFn);
 	}
 
 	// Has to be called manually
