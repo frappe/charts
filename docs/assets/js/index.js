@@ -295,6 +295,7 @@ let heatmapArgs = {
 	discreteDomains: 1,
 	countLabel: 'Level',
 	colors: HEATMAP_COLORS_BLUE,
+	dateFormat: { month: 'numeric', day: '2-digit' },
 	legendScale: [0, 1, 2, 4, 5]
 };
 let heatmapChart = new Chart("#chart-heatmap", heatmapArgs);

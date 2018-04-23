@@ -288,10 +288,6 @@ class SvgTip {
 	}
 }
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -2656,6 +2652,7 @@ class Heatmap extends BaseChart {
 		this.type = 'heatmap';
 
 		this.countLabel = options.countLabel || '';
+		this.dateFormat = options.dateFormat || { year: 'numeric', month: 'short', day: 'numeric' };
 
 		let validStarts = ['Sunday', 'Monday'];
 		let startSubDomain = validStarts.includes(options.startSubDomain)
@@ -2790,9 +2787,7 @@ class Heatmap extends BaseChart {
 				if(daySquares.includes(daySquare)) {
 
 					let count = daySquare.getAttribute('data-value');
-					let dateParts = daySquare.getAttribute('data-date').split('-');
-
-					let month = getMonthName(parseInt(dateParts[1])-1, true);
+					let date = new Date(daySquare.getAttribute('data-date'));
 
 					let gOff = this.container.getBoundingClientRect(), pOff = daySquare.getBoundingClientRect();
 
@@ -2800,7 +2795,10 @@ class Heatmap extends BaseChart {
 					let x = pOff.left - gOff.left + width/2;
 					let y = pOff.top - gOff.top;
 					let value = count + ' ' + this.countLabel;
-					let name = ' on ' + month + ' ' + dateParts[0] + ', ' + dateParts[2];
+					let name = ' on ' + date.toLocaleDateString(
+						window.navigator.location || 'en-US',
+						this.dateFormat
+					);
 
 					this.tip.setValues(x, y, {name: name, value: value, valueFirst: 1}, []);
 					this.tip.showTip();

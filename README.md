@@ -44,7 +44,7 @@
 
   and include in your project:
   ```js
-  import Chart from "frappe-charts/dist/frappe-charts.min.esm"
+  import Chart from "frappe-charts"
   ```
 
 * ...or include within your HTML
@@ -63,11 +63,11 @@ const data = {
     ],
     datasets: [
         {
-            title: "Some Data", type: "bar",
+            name: "Some Data", type: "bar",
             values: [25, 40, 30, 35, 8, 52, 17, -4]
         },
         {
-            title: "Another Set", type: "line",
+            name: "Another Set", type: "line",
             values: [25, 50, -10, 15, 18, 32, 27, 14]
         }
     ]

@@ -221,6 +221,11 @@
       end: endDate      // Date objects
     },
     countLabel: 'Level',
+    dateFormat: { month: '2-digit', day: '2-digit' },
+                  // Formats date in tooltip based on the end user's browser language and locale
+                  // This value is used as the options parameter in Date.prototype.toLocaleDateString() 
+                  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString
+                  // default: { year: 'numeric', month: 'short', day: 'numeric' }
     discreteDomains: 0  // default: 1
     colors: ['#ebedf0', '#c0ddf9', '#73b3f3', '#3886e1', '#17459e'],
                   // Set of five incremental colors,
@@ -315,7 +320,7 @@
               <p class="step-explain">And include it in your project</p>
               <pre><code class="hljs javascript">  import { Chart } from "frappe-charts"</code></pre>
               <p class="step-explain">... or include it directly in your HTML</p>
-              <pre><code class="hljs html">  &lt;script src="https://unpkg.com/frappe-charts@1.0.0"&gt;&lt;/script&gt;</code></pre>
+              <pre><code class="hljs html">  &lt;script src="https://unpkg.com/frappe-charts@1.1.0"&gt;&lt;/script&gt;</code></pre>
 
             </div>
           </div>
