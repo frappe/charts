@@ -150,7 +150,7 @@ export const moonData = {
 	names: ["Ganymede", "Callisto", "Io", "Europa"],
 	masses: [14819000, 10759000, 8931900, 4800000],
 	distances: [1070.412, 1882.709, 421.700, 671.034],
-	diameters: [5262.4, 4820.6, 3637.4, 3121.6],
+	diameters: [5262.4, 4820.6, 3637.4, 3121.6],
 };
 
 // const jupiterMoons = {
