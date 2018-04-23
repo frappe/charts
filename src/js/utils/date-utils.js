@@ -22,6 +22,12 @@ function treatAsUtc(date) {
 	return result;
 }
 
+export function toMidnightUTC(date) {
+	let result = new Date(date);
+	result.setUTCHours(0, result.getTimezoneOffset(), 0, 0);
+	return result;
+}
+
 export function getYyyyMmDd(date) {
 	let dd = date.getDate();
 	let mm = date.getMonth() + 1; // getMonth() is zero-based

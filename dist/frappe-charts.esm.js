@@ -2,8 +2,6 @@ function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
 }
 
-
-
 $.create = (tag, o) => {
 	var element = document.createElement(tag);
 
@@ -66,10 +64,6 @@ function getElementContentWidth(element) {
 	return element.clientWidth - padding;
 }
 
-
-
-
-
 function fire(target, type, properties) {
 	var evt = document.createEvent("HTMLEvents");
 
@@ -81,8 +75,6 @@ function fire(target, type, properties) {
 
 	return target.dispatchEvent(evt);
 }
-
-// https://css-tricks.com/snippets/javascript/loop-queryselectorall-matches/
 
 const BASE_MEASURES = {
 	margins: {
@@ -158,8 +150,6 @@ const TOOLTIP_POINTER_TRIANGLE_HEIGHT = 5;
 const DEFAULT_CHART_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
 	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
 const HEATMAP_COLORS_GREEN = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
-
-
 
 const DEFAULT_COLORS = {
 	bar: DEFAULT_CHART_COLORS,
@@ -298,26 +288,9 @@ class SvgTip {
 	}
 }
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
-
-/**
- * Returns whether or not two given arrays are equal.
- * @param {Array} arr1 First array
- * @param {Array} arr2 Second array
- */
-
-
-/**
- * Shuffles array in place. ES6 version
- * @param {Array} array An array containing the items.
- */
-
 
 /**
  * Fill an array with extra points
@@ -343,11 +316,6 @@ function fillArray(array, count, element, start=false) {
 function getStringWidth(string, charWidth) {
 	return (string+"").length * charWidth;
 }
-
-
-
-// https://stackoverflow.com/a/29325222
-
 
 function getPositionByAngle(angle, radius) {
 	return {
@@ -513,8 +481,6 @@ function makeSVGGroup(className, transform='', parent=undefined) {
 	if(parent) args.inside = parent;
 	return createSVG('g', args);
 }
-
-
 
 function makePath(pathStr, className='', stroke='none', fill='none') {
 	return createSVG('path', {
@@ -1737,21 +1703,24 @@ class AggregationChart extends BaseChart {
 
 const NO_OF_YEAR_MONTHS = 12;
 const NO_OF_DAYS_IN_WEEK = 7;
-
 const NO_OF_MILLIS = 1000;
 const SEC_IN_DAY = 86400;
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May",
 	"June", "July", "August", "September", "October", "November", "December"];
 
-
 const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 
 // https://stackoverflow.com/a/11252167/6495043
 function treatAsUtc(date) {
 	let result = new Date(date);
 	result.setMinutes(result.getMinutes() - result.getTimezoneOffset());
+	return result;
+}
+
+function toMidnightUTC(date) {
+	let result = new Date(date);
+	result.setUTCHours(0, result.getTimezoneOffset(), 0, 0);
 	return result;
 }
 
@@ -1768,10 +1737,6 @@ function getYyyyMmDd(date) {
 function clone(date) {
 	return new Date(date.getTime());
 }
-
-
-
-
 
 // export function getMonthsBetween(startDate, endDate) {}
 
@@ -2623,7 +2588,7 @@ function calcChartIntervals(values, withMinimum=false) {
 		intervals = intervals.reverse().map(d => d * (-1));
 	}
 
-	return intervals;
+	return intervals.sort((a, b) => (a - b));
 }
 
 function getZeroIndex(yPts) {
@@ -2647,8 +2612,6 @@ function getZeroIndex(yPts) {
 	return zeroIndex;
 }
 
-
-
 function getIntervalSize(orderedArray) {
 	return orderedArray[1] - orderedArray[0];
 }
@@ -2660,10 +2623,6 @@ function getValueRange(orderedArray) {
 function scale(val, yAxis) {
 	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier);
 }
-
-
-
-
 
 function getClosestInArray(goal, arr, index = false) {
 	let closest = arr.reduce(function(prev, curr) {
@@ -2745,7 +2704,13 @@ class Heatmap extends BaseChart {
 			data.start = new Date();
 			data.start.setFullYear( data.start.getFullYear() - 1 );
 		}
-		if(!data.end) { data.end = new Date(); }
+		data.start = toMidnightUTC(data.start);
+
+		if(!data.end) {
+			data.end = new Date();
+		}
+		data.end = toMidnightUTC(data.end);
+
 		data.dataPoints = data.dataPoints || {};
 
 		if(parseInt(Object.keys(data.dataPoints)[0]) > 100000) {
@@ -2914,8 +2879,8 @@ class Heatmap extends BaseChart {
 
 	getDomainConfig(startDate, endDate='') {
 		let [month, year] = [startDate.getMonth(), startDate.getFullYear()];
-		let startOfWeek = setDayToSunday(startDate); // TODO: Monday as well
-		endDate = clone(endDate) || getLastDateInMonth(month, year);
+		let startOfWeek = toMidnightUTC(setDayToSunday(startDate)); // TODO: Monday as well
+		endDate = toMidnightUTC(clone(endDate) || getLastDateInMonth(month, year));
 
 		let domainConfig = {
 			index: month,
@@ -2930,7 +2895,7 @@ class Heatmap extends BaseChart {
 			col = this.getCol(startOfWeek, month);
 			cols.push(col);
 
-			startOfWeek = new Date(col[NO_OF_DAYS_IN_WEEK - 1].yyyyMmDd);
+			startOfWeek = toMidnightUTC(new Date(col[NO_OF_DAYS_IN_WEEK - 1].yyyyMmDd));
 			addDays(startOfWeek, 1);
 		}
 
@@ -2948,7 +2913,7 @@ class Heatmap extends BaseChart {
 		let s = this.state;
 
 		// startDate is the start of week
-		let currentDate = clone(startDate);
+		let currentDate = clone(toMidnightUTC(startDate));
 		let col = [];
 
 		for(var i = 0; i < NO_OF_DAYS_IN_WEEK; i++, addDays(currentDate, 1)) {
@@ -3017,7 +2982,7 @@ function dataPrep(data, type) {
 
 		// Set type
 		if(!d.chartType ) {
-			if(!AXIS_DATASET_CHART_TYPES.includes(type)) type === DEFAULT_AXIS_CHART_TYPE;
+			if(!AXIS_DATASET_CHART_TYPES.includes(type)) type = DEFAULT_AXIS_CHART_TYPE;
 			d.chartType = type;
 		}
 
@@ -3677,7 +3642,6 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,
