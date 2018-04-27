@@ -1,5 +1,4 @@
-import { SEC_IN_DAY, MONTH_NAMES_SHORT, clone, timestampToMidnight, timestampSec, addDays } from '../../../src/js/utils/date-utils';
-import { getRandomBias } from '../../../src/js/utils/helpers';
+import { MONTH_NAMES_SHORT } from '../../../src/js/utils/date-utils';
 
 // Composite Chart
 // ================================================================================
@@ -178,28 +177,3 @@ export const moonData = {
 
 // ================================================================================
 
-let today = new Date();
-let start = clone(today);
-addDays(start, 4);
-let end = clone(start);
-start.setFullYear( start.getFullYear() - 2 );
-end.setFullYear( end.getFullYear() - 1 );
-
-export let dataPoints = {};
-
-let startTs = timestampSec(start);
-let endTs = timestampSec(end);
-
-startTs = timestampToMidnight(startTs);
-endTs = timestampToMidnight(endTs, true);
-
-while (startTs < endTs) {
-	dataPoints[parseInt(startTs)] = Math.floor(getRandomBias(0, 5, 0.2, 1));
-	startTs += SEC_IN_DAY;
-}
-
-export const heatmapData = {
-	dataPoints: dataPoints,
-	start: start,
-	end: end
-};

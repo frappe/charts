@@ -1,45 +1,19 @@
 import { shuffle, getRandomBias } from '../../../src/js/utils/helpers';
 import { HEATMAP_COLORS_YELLOW, HEATMAP_COLORS_BLUE } from '../../../src/js/utils/constants';
+import { SEC_IN_DAY, clone, timestampToMidnight, timestampSec, addDays } from '../../../src/js/utils/date-utils';
 import { fireballOver25, fireball_2_5, fireball_5_25, lineCompositeData,
-	barCompositeData, typeData, trendsData, moonData, heatmapData } from './data';
-
+	barCompositeData, typeData, trendsData, moonData } from './data';
+import demoConfig from './demoConfig';
+// import { lineComposite, barComposite } from './demoConfig';
 // ================================================================================
-
-let c1 = document.querySelector("#chart-composite-1");
-let c2 = document.querySelector("#chart-composite-2");
 
 let Chart = frappe.Chart; // eslint-disable-line no-undef
 
-let lineCompositeChart = new Chart (c1, {
-	title: "Fireball/Bolide Events - Yearly (reported)",
-	data: lineCompositeData,
-	type: 'line',
-	height: 190,
-	colors: ['green'],
-	isNavigable: 1,
-	valuesOverPoints: 1,
+let lc = demoConfig.lineComposite;
+let lineCompositeChart = new Chart (lc.elementID, lc.options);
 
-	lineOptions: {
-		dotSize: 8
-	},
-	// yAxisMode: 'tick'
-	// regionFill: 1
-});
-
-let barCompositeChart = new Chart (c2, {
-	data: barCompositeData,
-	type: 'bar',
-	height: 210,
-	colors: ['violet', 'light-blue', '#46a9f9'],
-	valuesOverPoints: 1,
-	axisOptions: {
-		xAxisMode: 'tick'
-	},
-	barOptions: {
-		stacked: 1
-	},
-
-});
+let bc = demoConfig.barComposite;
+let barCompositeChart = new Chart (bc.elementID, bc.options);
 
 lineCompositeChart.parent.addEventListener('data-select', (e) => {
 	let i = e.index;
@@ -287,6 +261,32 @@ eventsChart.parent.addEventListener('data-select', (e) => {
 
 // Heatmap
 // ================================================================================
+
+let today = new Date();
+let start = clone(today);
+addDays(start, 4);
+let end = clone(start);
+start.setFullYear( start.getFullYear() - 2 );
+end.setFullYear( end.getFullYear() - 1 );
+
+let dataPoints = {};
+
+let startTs = timestampSec(start);
+let endTs = timestampSec(end);
+
+startTs = timestampToMidnight(startTs);
+endTs = timestampToMidnight(endTs, true);
+
+while (startTs < endTs) {
+	dataPoints[parseInt(startTs)] = Math.floor(getRandomBias(0, 5, 0.2, 1));
+	startTs += SEC_IN_DAY;
+}
+
+const heatmapData = {
+	dataPoints: dataPoints,
+	start: start,
+	end: end
+};
 
 let heatmapArgs = {
 	title: "Monthly Distribution",
