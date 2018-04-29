@@ -46,6 +46,14 @@ header .lead-text {
 section {
 	margin: 4em 0;   /* SAME 1 */
 }
+section figure {
+	border: 1px solid #ddd; /* SAME 3 */
+	border-radius: 3px;
+	overflow: auto;
+}
+section code {
+	margin-top: 1rem;   /* SAME 2 */
+}
 h1 {
 	font-size: 3.5rem;
     margin-bottom: 1.5rem;
@@ -79,15 +87,18 @@ a, a:focus, a:hover {
 
 
 /* BaseCSS */
-.margin-top {
+.mt1 {
 	margin-top: 1rem; /* SAME 2 */
 }
 .mv1 {
 	margin: 2em 0 1em 0;
 }
 .border {
-	border: 1px solid #ddd;
+	border: 1px solid #ddd;  /* SAME 3 */
 	border-radius: 3px;
+}
+.text-center {
+	text-align: center;
 }
 
 
@@ -102,9 +113,4 @@ a, a:focus, a:hover {
 .content-data p {
 	margin-bottom: 5px;
 	font-size: 12px;
-}
-
-
-.text-center {
-	text-align: center;
 }

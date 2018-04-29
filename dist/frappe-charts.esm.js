@@ -18,6 +18,9 @@ $.create = (tag, o) => {
 			ref.parentNode.insertBefore(element, ref);
 			element.appendChild(ref);
 
+		} else if (i === "onClick" ) {
+			element.addEventListener('click', val);
+
 		} else if (i === "styles") {
 			if(typeof val === "object") {
 				Object.keys(val).map(prop => {
@@ -298,10 +301,6 @@ class SvgTip {
 	}
 }
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -3677,7 +3676,6 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,

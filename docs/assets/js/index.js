@@ -1,23 +1,19 @@
+import { $ } from '../../../src/js/utils/dom';
 import { shuffle, getRandomBias } from '../../../src/js/utils/helpers';
-import { HEATMAP_COLORS_YELLOW, HEATMAP_COLORS_BLUE } from '../../../src/js/utils/constants';
-import { SEC_IN_DAY, clone, timestampToMidnight, timestampSec, addDays } from '../../../src/js/utils/date-utils';
 import { fireballOver25, fireball_2_5, fireball_5_25, lineCompositeData,
 	barCompositeData, typeData, trendsData, moonData } from './data';
-import demoConfig from './demoConfig';
-// import { lineComposite, barComposite } from './demoConfig';
-// ================================================================================
+import dc from './demoConfig';
+import { docSectionBuilder } from './docSectionBuilder';
 
 let Chart = frappe.Chart; // eslint-disable-line no-undef
+let dcb = new docSectionBuilder(Chart);
 
-let lc = demoConfig.lineComposite;
-let lineCompositeChart = new Chart (lc.elementID, lc.options);
+let lineComposite = new Chart("#line-composite-1", dc.lineComposite.config);
+let barComposite = new Chart("#bar-composite-1", dc.barComposite.config);
 
-let bc = demoConfig.barComposite;
-let barCompositeChart = new Chart (bc.elementID, bc.options);
-
-lineCompositeChart.parent.addEventListener('data-select', (e) => {
+lineComposite.parent.addEventListener('data-select', (e) => {
 	let i = e.index;
-	barCompositeChart.updateDatasets([
+	barComposite.updateDatasets([
 		fireballOver25[i], fireball_5_25[i], fireball_2_5[i]
 	]);
 });
@@ -31,6 +27,7 @@ let typeChartArgs = {
 	type: 'axis-mixed',
 	height: 300,
 	colors: customColors,
+	valuesOverPoints: 1,
 
 	// maxLegendPoints: 6,
 	maxSlices: 10,
@@ -174,59 +171,10 @@ document.querySelector('.export-update').addEventListener('click', () => {
 // Trends Chart
 // ================================================================================
 
-let plotChartArgs = {
-	title: "Mean Total Sunspot Count - Yearly",
-	data: trendsData,
-	type: 'line',
-	height: 300,
-	colors: ['#238e38'],
-	lineOptions: {
-		hideDots: 1,
-		heatline: 1,
-	},
-	axisOptions: {
-		xAxisMode: 'tick',
-		yAxisMode: 'span',
-		xIsSeries: 1
-	}
-};
-
-let trendsChart = new Chart("#chart-trends", plotChartArgs);
-
-Array.prototype.slice.call(
-	document.querySelectorAll('.chart-plot-buttons button')
-).map(el => {
-	el.addEventListener('click', (e) => {
-		let btn = e.target;
-		let type = btn.getAttribute('data-type');
-		let config = {};
-		config[type] = 1;
-
-		if(['regionFill', 'heatline'].includes(type)) {
-			config.hideDots = 1;
-		}
-
-		// plotChartArgs.init = false;
-		plotChartArgs.lineOptions = config;
-
-		new Chart("#chart-trends", plotChartArgs);
-
-		Array.prototype.slice.call(
-			btn.parentNode.querySelectorAll('button')).map(el => {
-			el.classList.remove('active');
-		});
-		btn.classList.add('active');
-	});
-});
-
-document.querySelector('.export-trends').addEventListener('click', () => {
-	trendsChart.export();
-});
-
-
-// Event chart
-// ================================================================================
-
+let section = document.querySelector('.trends-plot');
+dcb.setParent(section);
+dcb.setSys(dc.trendsPlot);
+dcb.make();
 
 
 let eventsData = {
@@ -262,112 +210,7 @@ eventsChart.parent.addEventListener('data-select', (e) => {
 // Heatmap
 // ================================================================================
 
-let today = new Date();
-let start = clone(today);
-addDays(start, 4);
-let end = clone(start);
-start.setFullYear( start.getFullYear() - 2 );
-end.setFullYear( end.getFullYear() - 1 );
-
-let dataPoints = {};
-
-let startTs = timestampSec(start);
-let endTs = timestampSec(end);
-
-startTs = timestampToMidnight(startTs);
-endTs = timestampToMidnight(endTs, true);
-
-while (startTs < endTs) {
-	dataPoints[parseInt(startTs)] = Math.floor(getRandomBias(0, 5, 0.2, 1));
-	startTs += SEC_IN_DAY;
-}
-
-const heatmapData = {
-	dataPoints: dataPoints,
-	start: start,
-	end: end
-};
-
-let heatmapArgs = {
-	title: "Monthly Distribution",
-	data: heatmapData,
-	type: 'heatmap',
-	discreteDomains: 1,
-	countLabel: 'Level',
-	colors: HEATMAP_COLORS_BLUE,
-	legendScale: [0, 1, 2, 4, 5]
-};
-let heatmapChart = new Chart("#chart-heatmap", heatmapArgs);
-
-Array.prototype.slice.call(
-	document.querySelectorAll('.heatmap-mode-buttons button')
-).map(el => {
-	el.addEventListener('click', (e) => {
-		let btn = e.target;
-		let mode = btn.getAttribute('data-mode');
-		let discreteDomains = 0;
-
-		if(mode === 'discrete') {
-			discreteDomains = 1;
-		}
-
-		let colors = [];
-		let colors_mode = document
-			.querySelector('.heatmap-color-buttons .active')
-			.getAttribute('data-color');
-		if(colors_mode === 'halloween') {
-			colors = HEATMAP_COLORS_YELLOW;
-		} else if (colors_mode === 'blue') {
-			colors = HEATMAP_COLORS_BLUE;
-		}
-
-		heatmapArgs.discreteDomains = discreteDomains;
-		heatmapArgs.colors = colors;
-		new Chart("#chart-heatmap", heatmapArgs);
-
-		Array.prototype.slice.call(
-			btn.parentNode.querySelectorAll('button')).map(el => {
-			el.classList.remove('active');
-		});
-		btn.classList.add('active');
-	});
-});
-
-Array.prototype.slice.call(
-	document.querySelectorAll('.heatmap-color-buttons button')
-).map(el => {
-	el.addEventListener('click', (e) => {
-		let btn = e.target;
-		let colors_mode = btn.getAttribute('data-color');
-		let colors = [];
-
-		if(colors_mode === 'halloween') {
-			colors = HEATMAP_COLORS_YELLOW;
-		} else if (colors_mode === 'blue') {
-			colors = HEATMAP_COLORS_BLUE;
-		}
-
-		let discreteDomains = 1;
-
-		let view_mode = document
-			.querySelector('.heatmap-mode-buttons .active')
-			.getAttribute('data-mode');
-		if(view_mode === 'continuous') {
-			discreteDomains = 0;
-		}
-
-		heatmapArgs.discreteDomains = discreteDomains;
-		heatmapArgs.colors = colors;
-		new Chart("#chart-heatmap", heatmapArgs);
-
-		Array.prototype.slice.call(
-			btn.parentNode.querySelectorAll('button')).map(el => {
-			el.classList.remove('active');
-		});
-		btn.classList.add('active');
-	});
-});
-
-document.querySelector('.export-heatmap').addEventListener('click', () => {
-	heatmapChart.export();
-});
+section = document.querySelector('.heatmap');
+dcb.setParent(section);
+dcb.setSys(dc.heatmap);
+dcb.make();

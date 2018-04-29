@@ -26,6 +26,9 @@ $.create = (tag, o) => {
 			ref.parentNode.insertBefore(element, ref);
 			element.appendChild(ref);
 
+		} else if (i === "onClick" ) {
+			element.addEventListener('click', val);
+
 		} else if (i === "styles") {
 			if(typeof val === "object") {
 				Object.keys(val).map(prop => {
@@ -118,13 +121,17 @@ export function forEachNode(nodeList, callback, scope) {
 	}
 }
 
-export function activate($parent, $child, commonClass, activeClass='active', index = -1) {
-	let $children = $parent.querySelectorAll(`.${commonClass}.${activeClass}`);
+export function activate($parent, $child, commonSelector, activeClass='active', index = -1) {
+	let $children = $parent.querySelectorAll(`${commonSelector}.${activeClass}`);
 
-	forEachNode($children, (node, i) => {
+	if (typeof $child === 'string') {
+		$child = $parent.querySelector($child);
+	}
+
+	this.forEachNode($children, (node, i) => {
 		if(index >= 0 && i <= index) return;
 		node.classList.remove(activeClass);
-	});
+	})
 
 	$child.classList.add(activeClass);
 }
