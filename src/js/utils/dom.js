@@ -135,3 +135,7 @@ export function activate($parent, $child, commonSelector, activeClass='active', 
 
 	$child.classList.add(activeClass);
 }
+
+export function insertAfter(newNode, referenceNode) {
+    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+}

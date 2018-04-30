@@ -54,7 +54,7 @@ section figure {
 .btn, .btn-group {
 	margin-bottom: 1rem;
 }
-.btn-group {
+.btn-group, .btn-action {
 	margin-right: 0.5rem;
 }
 h1 {

@@ -130,6 +130,69 @@ export const typeData = {
 	]
 };
 
+let updateDataAllLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue",
+	"Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri",
+	"Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon"];
+
+const baseLength = 10;
+const fullLength = 30;
+
+let getRandom = () => Math.floor(getRandomBias(-40, 60, 0.8, 1));
+let updateDataAllValues = Array.from({length: fullLength}, getRandom);
+
+// We're gonna be shuffling this
+let updateDataAllIndices = updateDataAllLabels.map((d,i) => i);
+
+let getUpdateArray = (sourceArray, length=10) => {
+	let indices = updateDataAllIndices.slice(0, length);
+	return indices.map((index) => sourceArray[index]);
+};
+
+let currentLastIndex = baseLength;
+
+export function getUpdateData() {
+	shuffle(updateDataAllIndices);
+	let value = getRandom();
+	let start = getRandom();
+	let end = getRandom();
+	currentLastIndex = baseLength;
+
+	return {
+		labels: updateDataAllLabels.slice(0, baseLength),
+		datasets: [{
+			values: getUpdateArray(updateDataAllValues)
+		}],
+		yMarkers: [
+			{
+				label: "Altitude",
+				value: value,
+				type: 'dashed'
+			}
+		],
+		yRegions: [
+			{
+				label: "Range",
+				start: start,
+				end: end
+			},
+		],
+	};
+}
+
+export function getAddUpdateData() {
+	if(currentLastIndex >= fullLength) return;
+
+	// TODO: Fix update on removal
+	currentLastIndex++;
+	let c = currentLastIndex -1;
+
+	return [updateDataAllLabels[c], [updateDataAllValues[c]]];
+
+	// updateChart.addDataPoint(
+	// 	updateDataAllLabels[index], [updateDataAllValues[index]]
+	// );
+}
+
 export const trendsData = {
 	labels: [1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976,
 		1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986,
@@ -152,6 +215,16 @@ export const moonData = {
 	masses: [14819000, 10759000, 8931900, 4800000],
 	distances: [1070.412, 1882.709, 421.700, 671.034],
 	diameters: [5262.4, 4820.6, 3637.4, 3121.6],
+};
+
+export const eventsData = {
+	labels: ["Ganymede", "Callisto", "Io", "Europa"],
+	datasets: [
+		{
+			"values": moonData.distances,
+			"formatted": moonData.distances.map(d => d*1000 + " km")
+		}
+	]
 };
 
 // const jupiterMoons = {

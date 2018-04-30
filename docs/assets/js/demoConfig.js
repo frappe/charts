@@ -1,41 +1,43 @@
-import { lineCompositeData, barCompositeData, typeData, trendsData, heatmapData } from './data';
+import { lineCompositeData, barCompositeData, typeData, getUpdateData,
+    getAddUpdateData, trendsData, eventsData, moonData, heatmapData } from './data';
 import { HEATMAP_COLORS_YELLOW, HEATMAP_COLORS_BLUE } from '../../../src/js/utils/constants';
 
-export default {
-	lineComposite: {
-		config: {
-			title: "Fireball/Bolide Events - Yearly (reported)",
-			data: lineCompositeData,
-			type: "line",
-			height: 190,
-			colors: ["green"],
-			isNavigable: 1,
-			valuesOverPoints: 1,
+export const lineComposite = {
+    config: {
+        title: "Fireball/Bolide Events - Yearly (reported)",
+        data: lineCompositeData,
+        type: "line",
+        height: 190,
+        colors: ["green"],
+        isNavigable: 1,
+        valuesOverPoints: 1,
 
-			lineOptions: {
-				dotSize: 8
-			}
-		}
-	},
+        lineOptions: {
+            dotSize: 8
+        }
+    }
+}
 
-	barComposite: {
-		config: {
-			data: barCompositeData,
-			type: "bar",
-			height: 210,
-			colors: ["violet", "light-blue", "#46a9f9"],
-			valuesOverPoints: 1,
-			axisOptions: {
-				xAxisMode: "tick"
-			},
-			barOptions: {
-				stacked: 1
-			}
-		}
-	},
+export const barComposite = {
+    config: {
+        data: barCompositeData,
+        type: "bar",
+        height: 210,
+        colors: ["violet", "light-blue", "#46a9f9"],
+        valuesOverPoints: 1,
+        axisOptions: {
+            xAxisMode: "tick"
+        },
+        barOptions: {
+            stacked: 1
+        }
+    }
+}
 
-    demoMain: {
+export const demoSections = [
+    {
         title: "Create a Chart",
+        name: "demo-main",
         contentBlocks: [
             {
                 type: "code",
@@ -121,10 +123,50 @@ export default {
         ]
     },
 
-    updateValues: { },
+    {
+        title: "Update Values",
+        name: "updates-chart",
+        contentBlocks: [
+            {
+                type: "demo",
+                config: {
+                    data: getUpdateData(),
+                    type: 'line',
+                    height: 300,
+                    colors: ['#ff6c03'],
+                    lineOptions: {
+                        regionFill: 1
+                    }
+                },
+                actions: [
+                    {
+                        name: "Random Data",
+                        fn: "update",
+                        args: [getUpdateData()]
+                    },
+                    {
+                        name: "Add Value",
+                        fn: "addDataPoint",
+                        args: getAddUpdateData()
+                    },
+                    {
+                        name: "Remove Value",
+                        fn: "removeDataPoint",
+                        args: []
+                    },
+                    {
+                        name: "Export ...",
+                        fn: "export",
+                        args: []
+                    }
+                ]
+            }
+        ]
+    },
 
-	trendsPlot: {
+	{
         title: "Plot Trends",
+        name: "trends-plot",
         contentBlocks: [
             {
                 type: "demo",
@@ -161,10 +203,58 @@ export default {
 
     },
 
-    stateChange: {},
+    {
+        title: "Listen to state change",
+        name: "state-change",
+        contentBlocks: [
+            {
+                type: "demo",
+                config: {
+                    title: "Jupiter's Moons: Semi-major Axis (1000 km)",
+                    data: eventsData,
+                    type: 'bar',
+                    height: 330,
+                    colors: ['grey'],
+                    isNavigable: 1,
+                },
+                sideContent: `<div class="image-container border">
+                    <img class="moon-image" src="./assets/img/europa.jpg">
+                </div>
+                <div class="content-data mt1">
+                    <h6 class="moon-name">Europa</h6>
+                    <p>Semi-major-axis: <span class="semi-major-axis">671034</span> km</p>
+                    <p>Mass: <span class="mass">4800000</span>  x 10^16 kg</p>
+                    <p>Diameter: <span class="diameter">3121.6</span> km</p>
+                </div>`,
+                postSetup: (chart, figure, row) => {
+                    chart.parent.addEventListener('data-select', (e) => {
+                        let i = e.index;
+                        let name = moonData.names[i];
+                        row.querySelector('.moon-name').innerHTML = name;
+                        row.querySelector('.semi-major-axis').innerHTML = moonData.distances[i] * 1000;
+                        row.querySelector('.mass').innerHTML = moonData.masses[i];
+                        row.querySelector('.diameter').innerHTML = moonData.diameters[i];
+                        row.querySelector('img').src = "./assets/img/" + name.toLowerCase() + ".jpg";
+                    });
+                }
+            },
+            {
+                type: "code",
+                lang: "javascript",
+                content: `  ...
+    isNavigable: 1, // Navigate across data points; default 0
+  ...
 
-	heatmap: {
+  chart.parent.addEventListener('data-select', (e) => {
+    update_moon_data(e.index); // e contains index and value of current datapoint
+  });`,
+            }
+        ]
+    },
+
+	{
         title: "And a Month-wise Heatmap",
+        name: "heatmap",
         contentBlocks: [
             {
                 type: "demo",
@@ -220,8 +310,10 @@ export default {
             }
         ],
     },
-    codePenDemo: {
+
+    {
         title: "Demo",
+        name: "codepen",
         contentBlocks: [
             {
                 type: "custom",
@@ -234,8 +326,9 @@ export default {
             }
         ]
     },
-    optionsList: {
+    {
         title: "Available Options",
+        name: "options",
         contentBlocks: [
             {
                 type: "code",
@@ -315,8 +408,9 @@ export default {
         ]
     },
 
-    installation: {
+    {
         title: "Install",
+        name: "installation",
         contentBlocks: [
             { type: "text", content: 'Install via npm' },
             { type: "code", lang: "console", content: `  npm install frappe-charts` },
@@ -341,4 +435,4 @@ export default {
             },
         ]
     }
-}
+]

@@ -1,25 +1,30 @@
 import { $ } from '../../../src/js/utils/dom';
 import { toTitleCase } from '../../../src/js/utils/helpers';
 
-export class docSectionBuilder {
+export class docsBuilder {
 	constructor(LIB_OBJ) {
 		this.LIB_OBJ = LIB_OBJ;
 	}
 
-	setParent(parent) {
-		// this.parent = parent;
-		this.section = parent;
+	makeSection(parent, sys) {
+		return new docSection(this.LIB_OBJ, parent, sys);
 	}
+}
 
-	setSys(sys) {
+class docSection {
+	constructor(LIB_OBJ, parent, sys) {
+		this.LIB_OBJ = LIB_OBJ;
+		this.parent = parent;  // should be preferably a section
 		this.sys = sys;
 		this.blockMap = {};
+
+		this.make();
 	}
 
 	make() {
-		// const section = document.querySelector(this.section);
+		// const section = document.querySelector(this.parent);
 		let s = this.sys;
-		$.create('h6', { inside: this.section, innerHTML: s.title });
+		$.create('h6', { inside: this.parent, innerHTML: s.title });
 
 		s.contentBlocks.forEach((blockConf, index) => {
 			this.blockMap[index] = this.getBlock(blockConf);
@@ -34,14 +39,16 @@ export class docSectionBuilder {
 			throw new Error(`Unknown section block type '${blockConf.type}'.`);
 		}
 	}
+
 	getText(blockConf) {
 		return $.create('p', {
-			inside: this.section,
+			inside: this.parent,
 			innerHTML: blockConf.content
 		});
 	}
+
 	getCode(blockConf) {
-		let pre = $.create('pre', { inside: this.section });
+		let pre = $.create('pre', { inside: this.parent });
 		let lang = blockConf.lang || 'javascript';
 		let code = $.create('code', {
 			inside: pre,
@@ -49,21 +56,41 @@ export class docSectionBuilder {
 			innerHTML: blockConf.content
 		});
 	}
+
 	getCustom(blockConf) {
-		this.section.innerHTML +=  blockConf.html;
+		this.parent.innerHTML +=  blockConf.html;
 	}
+
 	getDemo(blockConf) {
-		let args = blockConf.config;
-		let figure = $.create('figure', { inside: this.section });
+		let bc = blockConf;
+		let args = bc.config;
+		let figure, row;
+		if(!bc.sideContent) {
+			figure = $.create('figure', { inside: this.parent });
+		} else {
+			row = $.create('div', {
+				inside: this.parent,
+				className: "row",
+				innerHTML: `<div class="col-sm-8"></div>
+					<div class="col-sm-4"></div>`,
+			});
+			figure = $.create('figure', { inside: row.querySelector('.col-sm-8') });
+			row.querySelector('.col-sm-4').innerHTML += bc.sideContent;
+		}
 		this.libObj = new this.LIB_OBJ(figure, args);
 
-		this.getDemoOptions(blockConf.options, args, figure);
-		this.getDemoActions(blockConf.actions, args);
+		if(bc.postSetup) {
+			bc.postSetup(this.libObj, figure, row);
+		}
+
+		this.getDemoOptions(bc.options, args, figure);
+		this.getDemoActions(bc.actions, args);
 	}
-	getDemoOptions(options, args, figure) {
+
+	getDemoOptions(options=[], args={}, figure) {
 		options.forEach(o => {
 			const btnGroup = $.create('div', {
-				inside: this.section,
+				inside: this.parent,
 				className: `btn-group ${o.name}`
 			});
 			const mapKeys = o.mapKeys;
@@ -99,14 +126,14 @@ export class docSectionBuilder {
 		});
 	}
 
-	getDemoActions(actions, args) {
+	getDemoActions(actions=[], args={}) {
 		actions.forEach(o => {
 			let args = o.args || [];
 			$.create('button', {
-				inside: this.section,
-				className: `btn btn-sm btn-secondary`,
+				inside: this.parent,
+				className: `btn btn-action btn-sm btn-secondary`,
 				innerHTML: o.name,
-				onClick: () => {this.libObj[o.fn](...o.args);}
+				onClick: () => {this.libObj[o.fn](...args);}
 			});
 		});
 	}
