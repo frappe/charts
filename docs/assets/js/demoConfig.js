@@ -1,4 +1,4 @@
-import { lineCompositeData, barCompositeData, trendsData, heatmapData } from './data';
+import { lineCompositeData, barCompositeData, typeData, trendsData, heatmapData } from './data';
 import { HEATMAP_COLORS_YELLOW, HEATMAP_COLORS_BLUE } from '../../../src/js/utils/constants';
 
 export default {
@@ -35,12 +35,8 @@ export default {
 	},
 
     demoMain: {
-        title: "Creating a Chart",
+        title: "Create a Chart",
         contentBlocks: [
-            {
-                type: "text",
-                content: `Booga wooga wooga Booga Booga wooga`,
-            },
             {
                 type: "code",
                 lang: "html",
@@ -94,7 +90,7 @@ export default {
                 type: "demo",
                 config: {
                     title: "My Awesome Chart",
-                    data: "typeData",
+                    data: typeData,
                     type: "axis-mixed",
                     height: 300,
                     colors: ["purple", "magenta", "light-blue"],
@@ -105,20 +101,19 @@ export default {
                         formatTooltipY: d => d + ' pts',
                     }
                 },
-                sideContent: {},
                 options: [
                     {
-                        name: "lineOptions",
-                        path: ["lineOptions"],
-                        type: "map",
-                        mapKeys: ['hideLine', 'hideDots', 'heatline', 'regionFill'],
+                        name: "type",
+                        path: ["type"],
+                        type: "string",
                         states: {
-                            "Line": [0, 1, 0, 0],
-                            "Dots": [1, 0, 0, 0],
-                            "HeatLine": [0, 1, 1, 0],
-                            "Region": [0, 1, 0, 1]
+                            "Mixed": 'axis-mixed',
+                            "Line": 'line',
+                            "Bar": 'bar',
+                            "Pie Chart": 'pie',
+                            "Percentage Chart": 'percentage',
                         },
-                        activeState: "HeatLine"
+                        activeState: "Mixed"
                     }
                 ],
                 actions: [{ name: "Export ...", fn: "export", args: [] }],
@@ -224,5 +219,126 @@ export default {
   });`,
             }
         ],
+    },
+    codePenDemo: {
+        title: "Demo",
+        contentBlocks: [
+            {
+                type: "custom",
+                html: `<p data-height="299" data-theme-id="light" data-slug-hash="wjKBoq" data-default-tab="js,result"
+                    data-user="pratu16x7" data-embed-version="2" data-pen-title="Frappe Charts Demo" class="codepen">
+                    See the Pen <a href="https://codepen.io/pratu16x7/pen/wjKBoq/">Frappe Charts Demo</a>
+                    by Prateeksha Singh (<a href="https://codepen.io/pratu16x7">@pratu16x7</a>) on
+                    <a href="https://codepen.io">CodePen</a>.
+                </p>`
+            }
+        ]
+    },
+    optionsList: {
+        title: "Available Options",
+        contentBlocks: [
+            {
+                type: "code",
+                lang: "javascript",
+                content: `
+  ...
+  {
+    data: {
+      labels: [],
+      datasets: [],
+      yRegions: [],
+      yMarkers: []
+    }
+    title: '',
+    colors: [],
+    height: 200,
+
+    tooltipOptions: {
+      formatTooltipX: d => (d + '').toUpperCase(),
+      formatTooltipY: d => d + ' pts',
+    }
+
+    // Axis charts
+    isNavigable: 1,        // default: 0
+    valuesOverPoints: 1,   // default: 0
+    barOptions: {
+      spaceRatio: 1        // default: 0.5
+      stacked: 1           // default: 0
+    }
+
+    lineOptions: {
+      dotSize: 6,          // default: 4
+      hideLine: 0,         // default: 0
+      hideDots: 1,         // default: 0
+      heatline: 1,         // default: 0
+      regionFill: 1        // default: 0
+    }
+
+    axisOptions: {
+      yAxisMode: 'span',   // Axis lines, default
+      xAxisMode: 'tick',   // No axis lines, only short ticks
+      xIsSeries: 1         // Allow skipping x values for space
+                           // default: 0
+    },
+
+    // Pie/Percentage charts
+    maxLegendPoints: 6,    // default: 20
+    maxSlices: 10,         // default: 20
+
+    // Percentage chart
+    barOptions: {
+      height: 15           // default: 20
+      depth: 5             // default: 2
+    }
+
+    // Heatmap
+    discreteDomains: 1,    // default: 1
+  }
+  ...
+
+  // Updating values
+  chart.update(data);
+
+  // Axis charts:
+  chart.addDataPoint(label, valueFromEachDataset, index)
+  chart.removeDataPoint(index)
+  chart.updateDataset(datasetValues, index)
+
+  // Exporting
+  chart.export();
+
+  // Unbind window-resize events
+  chart.unbindWindowEvents();
+
+  `
+            }
+        ]
+    },
+
+    installation: {
+        title: "Install",
+        contentBlocks: [
+            { type: "text", content: 'Install via npm' },
+            { type: "code", lang: "console", content: `  npm install frappe-charts` },
+
+            { type: "text", content: 'And include it in your project' },
+            { type: "code", lang: "javascript", content: `  import { Chart } from "frappe-charts` },
+
+            { type: "text", content: 'Use as:' },
+            {
+                type: "code",
+                lang: "javascript",
+                content: `  new Chart();          // ES6 module
+                        // or
+  new frappe.Chart();   // Browser`,
+            },
+
+            { type: "text", content: '... or include it directly in your HTML' },
+            {
+                type: "code",
+                lang: "html",
+                content: `  &lt;script src="https://unpkg.com/frappe-charts@1.1.0"&gt;&lt;/script&gt;`,
+            },
+        ]
     }
 }

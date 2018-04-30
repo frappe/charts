@@ -1,4 +1,5 @@
 import { $ } from '../../../src/js/utils/dom';
+import { toTitleCase } from '../../../src/js/utils/helpers';
 
 export class docSectionBuilder {
 	constructor(LIB_OBJ) {
@@ -26,25 +27,30 @@ export class docSectionBuilder {
 	}
 
 	getBlock(blockConf) {
-		let block;
-		let type = blockConf.type;
-
-		if(type === "text") {
-			block = this.getText(blockConf);
-		} else if(type === "code") {
-			block = this.getCode(blockConf);
+		let fnName = 'get' + toTitleCase(blockConf.type);
+		if(this[fnName]) {
+			return this[fnName](blockConf);
 		} else {
-			block = this.getDemo(blockConf);
+			throw new Error(`Unknown section block type '${blockConf.type}'.`);
 		}
 	}
-	getText(blockConf) {}
-	getCode(blockConf) {
-		let pre = $.create('pre', { inside: this.section });
-		let code = $.create('code', {
-			inside: pre,
-			className: `hljs ${blockConf.lang}`,
+	getText(blockConf) {
+		return $.create('p', {
+			inside: this.section,
 			innerHTML: blockConf.content
 		});
+	}
+	getCode(blockConf) {
+		let pre = $.create('pre', { inside: this.section });
+		let lang = blockConf.lang || 'javascript';
+		let code = $.create('code', {
+			inside: pre,
+			className: `hljs ${lang}`,
+			innerHTML: blockConf.content
+		});
+	}
+	getCustom(blockConf) {
+		this.section.innerHTML +=  blockConf.html;
 	}
 	getDemo(blockConf) {
 		let args = blockConf.config;
@@ -81,7 +87,7 @@ export class docSectionBuilder {
 								args[o.path[0]][attr] = state[i];
 							})
 						} else {
-							// boolean, number, object
+							// boolean, string, number, object
 							args[o.path[0]] = state;
 						}
 						this.libObj = new this.LIB_OBJ(figure, args);

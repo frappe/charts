@@ -32,61 +32,7 @@
       <figure id="bar-composite-1" class="border"></figure>
     </header>
 
-    <section>
-      <h6>Create a chart</h6>
-      <p>Click or use arrow keys to navigate data points</p>
-      <pre><code class="hljs html">  &lt!--HTML--&gt;
-  &lt;figure id="frost-chart"&gt;&lt;/figure&gt;</code></pre>
-      <pre><code class="hljs javascript">  // Javascript
-  let chart = new frappe.Chart( "#frost-chart", { // or DOM element
-    data: {
-      labels: ["12am-3am", "3am-6am", "6am-9am", "9am-12pm",
-      "12pm-3pm", "3pm-6pm", "6pm-9pm", "9pm-12am"],
-
-      datasets: [
-        {
-          name: "Some Data", chartType: 'bar',
-          values: [25, 40, 30, 35, 8, 52, 17, -4]
-        },
-        {
-          name: "Another Set", chartType: 'bar',
-          values: [25, 50, -10, 15, 18, 32, 27, 14]
-        },
-        {
-          name: "Yet Another", chartType: 'line',
-          values: [15, 20, -3, -15, 58, 12, -17, 37]
-        }
-      ],
-
-      yMarkers: [{ label: "Marker", value: 70,
-        options: { labelPos: 'left' }}],
-      yRegions: [{ label: "Region", start: -10, end: 50,
-        options: { labelPos: 'right' }}]
-    },
-
-    title: "My Awesome Chart",
-    type: 'axis-mixed', // or 'bar', 'line', 'pie', 'percentage'
-    height: 300,
-    colors: ['purple', '#ffa3ef', 'light-blue'],
-
-    tooltipOptions: {
-      formatTooltipX: d => (d + '').toUpperCase(),
-      formatTooltipY: d => d + ' pts',
-    }
-  });
-
-  chart.export();
-</code></pre>
-
-      <div id="chart-aggr" class="border"></div>
-      <div class="btn-group aggr-type-buttons mt1 mx-auto" role="group">
-        <button type="button" class="btn btn-sm btn-secondary active" data-type='axis-mixed'>Mixed</button>
-        <button type="button" class="btn btn-sm btn-secondary" data-type='pie'>Pie Chart</button>
-        <button type="button" class="btn btn-sm btn-secondary" data-type='percentage'>Percentage Chart</button>
-      </div>
-      <button type="button" class="btn btn-sm btn-secondary export-aggr mt1">Export ...</button>
-
-    </section>
+    <section class="demo-main"></section>
 
     <section>
       <h6>Update Values</h6>
@@ -131,105 +77,9 @@
 
     <section class="heatmap"></section>
 
-    <section>
-      <h6>Demo</h6>
-      <p data-height="299" data-theme-id="light" data-slug-hash="wjKBoq" data-default-tab="js,result"
-        data-user="pratu16x7" data-embed-version="2" data-pen-title="Frappe Charts Demo" class="codepen">
-          See the Pen <a href="https://codepen.io/pratu16x7/pen/wjKBoq/">Frappe Charts Demo</a>
-          by Prateeksha Singh (<a href="https://codepen.io/pratu16x7">@pratu16x7</a>) on
-          <a href="https://codepen.io">CodePen</a>.
-      </p>
-      <script async src="https://static.codepen.io/assets/embed/ei.js"></script>
-    </section>
-
-    <section>
-      <h6>Available options</h6>
-      <pre><code class="hljs javascript">
-    ...
-    {
-      data: {
-        labels: [],
-        datasets: [],
-        yRegions: [],
-        yMarkers: []
-      }
-      title: '',
-      colors: [],
-      height: 200,
-
-      tooltipOptions: {
-        formatTooltipX: d => (d + '').toUpperCase(),
-        formatTooltipY: d => d + ' pts',
-      }
-
-      // Axis charts
-      isNavigable: 1,        // default: 0
-      valuesOverPoints: 1,   // default: 0
-      barOptions: {
-        spaceRatio: 1        // default: 0.5
-        stacked: 1           // default: 0
-      }
-
-      lineOptions: {
-        dotSize: 6,          // default: 4
-        hideLine: 0,         // default: 0
-        hideDots: 1,         // default: 0
-        heatline: 1,         // default: 0
-        regionFill: 1        // default: 0
-      }
-
-      axisOptions: {
-        yAxisMode: 'span',   // Axis lines, default
-        xAxisMode: 'tick',   // No axis lines, only short ticks
-        xIsSeries: 1         // Allow skipping x values for space
-                              // default: 0
-      },
-
-      // Pie/Percentage charts
-      maxLegendPoints: 6,    // default: 20
-      maxSlices: 10,         // default: 20
-
-      // Percentage chart
-      barOptions: {
-        height: 15           // default: 20
-        depth: 5             // default: 2
-      }
-
-      // Heatmap
-      discreteDomains: 1,    // default: 1
-    }
-    ...
-
-  // Updating values
-  chart.update(data);
-
-  // Axis charts:
-  chart.addDataPoint(label, valueFromEachDataset, index)
-  chart.removeDataPoint(index)
-  chart.updateDataset(datasetValues, index)
-
-  // Exporting
-  chart.export();
-
-  // Unbind window-resize events
-  chart.unbindWindowEvents();
-
-</code></pre>
-    </section>
-
-    <section>
-      <h6>Install</h6>
-      <p>Install via npm</p>
-      <pre><code class="hljs console">  npm install frappe-charts</code></pre>
-      <p>And include it in your project</p>
-      <pre><code class="hljs javascript">  import { Chart } from "frappe-charts"</code></pre>
-      <p>... or include it directly in your HTML</p>
-      <pre><code class="hljs html">  &lt;script src="https://unpkg.com/frappe-charts@1.1.0"&gt;&lt;/script&gt;</code></pre>
-      <p>Use as:</p>
-      <pre><code class="hljs javascript">  new Chart();          // ES6 module
-                        // or
-  new frappe.Chart();   // Browser</code></pre>
-    </section>
+    <section class="codepen"></section>
+    <section class="options"></section>
+    <section class="installation"></section>
 
     <section class="text-center">
       <!-- Closing -->
@@ -266,6 +116,7 @@
       </svg>
     </a>
 
+    <script async src="https://static.codepen.io/assets/embed/ei.js"></script>
     <script src="assets/js/frappe-charts.min.js"></script>
     <script src="assets/js/index.min.js"></script>
   </body>

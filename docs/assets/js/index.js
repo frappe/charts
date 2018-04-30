@@ -18,62 +18,10 @@ lineComposite.parent.addEventListener('data-select', (e) => {
 	]);
 });
 
-// ================================================================================
-
-let customColors = ['purple', 'magenta', 'light-blue'];
-let typeChartArgs = {
-	title: "My Awesome Chart",
-	data: typeData,
-	type: 'axis-mixed',
-	height: 300,
-	colors: customColors,
-	valuesOverPoints: 1,
-
-	// maxLegendPoints: 6,
-	maxSlices: 10,
-
-	tooltipOptions: {
-		formatTooltipX: d => (d + '').toUpperCase(),
-		formatTooltipY: d => d + ' pts',
-	}
-};
-
-let aggrChart = new Chart("#chart-aggr", typeChartArgs);
-
-Array.prototype.slice.call(
-	document.querySelectorAll('.aggr-type-buttons button')
-).map(el => {
-	el.addEventListener('click', (e) => {
-		let btn = e.target;
-		let type = btn.getAttribute('data-type');
-		typeChartArgs.type = type;
-		if(type !== 'axis-mixed') {
-			typeChartArgs.colors = undefined;
-		} else {
-			typeChartArgs.colors = customColors;
-		}
-
-		if(type !== 'percentage') {
-			typeChartArgs.height = 300;
-		} else {
-			typeChartArgs.height = undefined;
-		}
-
-		let newChart = new Chart("#chart-aggr", typeChartArgs);
-		if(newChart){
-			aggrChart = newChart;
-		}
-		Array.prototype.slice.call(
-			btn.parentNode.querySelectorAll('button')).map(el => {
-			el.classList.remove('active');
-		});
-		btn.classList.add('active');
-	});
-});
-
-document.querySelector('.export-aggr').addEventListener('click', () => {
-	aggrChart.export();
-});
+let section = document.querySelector('.demo-main');
+dcb.setParent(section);
+dcb.setSys(dc.demoMain);
+dcb.make();
 
 // Update values chart
 // ================================================================================
@@ -171,7 +119,7 @@ document.querySelector('.export-update').addEventListener('click', () => {
 // Trends Chart
 // ================================================================================
 
-let section = document.querySelector('.trends-plot');
+section = document.querySelector('.trends-plot');
 dcb.setParent(section);
 dcb.setSys(dc.trendsPlot);
 dcb.make();
@@ -213,4 +161,19 @@ eventsChart.parent.addEventListener('data-select', (e) => {
 section = document.querySelector('.heatmap');
 dcb.setParent(section);
 dcb.setSys(dc.heatmap);
+dcb.make();
+
+section = document.querySelector('.codepen');
+dcb.setParent(section);
+dcb.setSys(dc.codePenDemo);
+dcb.make();
+
+section = document.querySelector('.options');
+dcb.setParent(section);
+dcb.setSys(dc.optionsList);
+dcb.make();
+
+section = document.querySelector('.installation');
+dcb.setParent(section);
+dcb.setSys(dc.installation);
 dcb.make();

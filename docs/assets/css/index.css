@@ -51,8 +51,11 @@ section figure {
 	border-radius: 3px;
 	overflow: auto;
 }
-section code {
-	margin-top: 1rem;   /* SAME 2 */
+.btn, .btn-group {
+	margin-bottom: 1rem;
+}
+.btn-group {
+	margin-right: 0.5rem;
 }
 h1 {
 	font-size: 3.5rem;
