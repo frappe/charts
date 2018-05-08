@@ -40,7 +40,6 @@ fs.readFile('src/css/charts.scss', (err, css) => {
 export default [
 	{
 		input: 'src/js/index.js',
-		sourcemap: true,
 		output: [
 			{
 				file: 'docs/assets/js/frappe-charts.min.js',
@@ -83,7 +82,6 @@ export default [
 	},
 	{
 		input: 'docs/assets/js/index.js',
-		sourcemap: true,
 		output: [
 			{
 				file: 'docs/assets/js/index.min.js',

@@ -16,7 +16,6 @@ export default class AxisChart extends BaseChart {
 		this.barOptions = args.barOptions || {};
 		this.lineOptions = args.lineOptions || {};
 
-		this.type = args.type || 'line';
 		this.init = 1;
 
 		this.setup();

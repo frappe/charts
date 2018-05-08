@@ -102,6 +102,7 @@ const BASE_MEASURES = {
 	},
 
 	baseHeight: 240,
+
 	titleHeight: 20,
 	legendHeight: 30,
 
@@ -133,7 +134,9 @@ function getExtraWidth(m) {
 const INIT_CHART_UPDATE_TIMEOUT = 700;
 const CHART_POST_ANIMATE_TIMEOUT = 400;
 
-const DEFAULT_AXIS_CHART_TYPE = 'line';
+const AXIS_CHART_DEFAULT_TYPE = 'line';
+
+
 const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
 
 const AXIS_LEGEND_BAR_SIZE = 100;
@@ -301,6 +304,10 @@ class SvgTip {
 	}
 }
 
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -1357,7 +1364,7 @@ class BaseChart {
 		this.rawChartArgs = options;
 
 		this.title = options.title || '';
-		this.type = options.type || '';
+		this.type = options.type || 'line';
 
 		this.realData = this.prepareData(options.data);
 		this.data = this.prepareFirstData(this.realData);
@@ -2994,6 +3001,11 @@ function dataPrep(data, type) {
 		}];
 	}
 
+	let overridingType;
+	if(AXIS_DATASET_CHART_TYPES.includes(type)) {
+		overridingType = type;
+	}
+
 	datasets.map(d=> {
 		// Set values
 		if(!d.values) {
@@ -3012,14 +3024,13 @@ function dataPrep(data, type) {
 		}
 
 		// Set labels
-		//
 
 		// Set type
-		if(!d.chartType ) {
-			if(!AXIS_DATASET_CHART_TYPES.includes(type)) type === DEFAULT_AXIS_CHART_TYPE;
-			d.chartType = type;
+		if(overridingType) {
+			d.chartType = overridingType;
+		} else if(!d.chartType) {
+			d.chartType = AXIS_CHART_DEFAULT_TYPE;
 		}
-
 	});
 
 	// Markers
@@ -3109,7 +3120,6 @@ class AxisChart extends BaseChart {
 		this.barOptions = args.barOptions || {};
 		this.lineOptions = args.lineOptions || {};
 
-		this.type = args.type || 'line';
 		this.init = 1;
 
 		this.setup();
@@ -3676,6 +3686,7 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
+// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,

@@ -17,6 +17,7 @@ class docSection {
 		this.parent = parent;  // should be preferably a section
 		this.sys = sys;
 		this.blockMap = {};
+		this.demos = [];
 
 		this.make();
 	}
@@ -24,7 +25,9 @@ class docSection {
 	make() {
 		// const section = document.querySelector(this.parent);
 		let s = this.sys;
-		$.create('h6', { inside: this.parent, innerHTML: s.title });
+		if(s.title) {
+			$.create('h6', { inside: this.parent, innerHTML: s.title });
+		}
 
 		s.contentBlocks.forEach((blockConf, index) => {
 			this.blockMap[index] = this.getBlock(blockConf);
@@ -77,17 +80,20 @@ class docSection {
 			figure = $.create('figure', { inside: row.querySelector('.col-sm-8') });
 			row.querySelector('.col-sm-4').innerHTML += bc.sideContent;
 		}
-		this.libObj = new this.LIB_OBJ(figure, args);
+
+		let libObj = new this.LIB_OBJ(figure, args);
+		let demoIndex = this.demos.length;
+		this.demos.push(libObj);
 
 		if(bc.postSetup) {
-			bc.postSetup(this.libObj, figure, row);
+			bc.postSetup(this.demos[demoIndex], figure, row);
 		}
 
-		this.getDemoOptions(bc.options, args, figure);
-		this.getDemoActions(bc.actions, args);
+		this.getDemoOptions(demoIndex, bc.options, args, figure);
+		this.getDemoActions(demoIndex, bc.actions, args);
 	}
 
-	getDemoOptions(options=[], args={}, figure) {
+	getDemoOptions(demoIndex, options=[], args={}, figure) {
 		options.forEach(o => {
 			const btnGroup = $.create('div', {
 				inside: this.parent,
@@ -117,7 +123,7 @@ class docSection {
 							// boolean, string, number, object
 							args[o.path[0]] = state;
 						}
-						this.libObj = new this.LIB_OBJ(figure, args);
+						this.demos[demoIndex] = new this.LIB_OBJ(figure, args);
 					}
 				});
 
@@ -126,14 +132,14 @@ class docSection {
 		});
 	}
 
-	getDemoActions(actions=[], args={}) {
+	getDemoActions(demoIndex, actions=[], args={}) {
 		actions.forEach(o => {
 			let args = o.args || [];
 			$.create('button', {
 				inside: this.parent,
 				className: `btn btn-action btn-sm btn-secondary`,
 				innerHTML: o.name,
-				onClick: () => {this.libObj[o.fn](...args);}
+				onClick: () => {this.demos[demoIndex][o.fn](...args);}
 			});
 		});
 	}

@@ -1,5 +1,5 @@
 import { fillArray } from '../utils/helpers';
-import { DEFAULT_AXIS_CHART_TYPE, AXIS_DATASET_CHART_TYPES, DEFAULT_CHAR_WIDTH } from '../utils/constants';
+import { AXIS_CHART_DEFAULT_TYPE, AXIS_CHART_MIXED_TYPE, AXIS_DATASET_CHART_TYPES, DEFAULT_CHAR_WIDTH } from '../utils/constants';
 
 export function dataPrep(data, type) {
 	data.labels = data.labels || [];
@@ -15,6 +15,11 @@ export function dataPrep(data, type) {
 			values: zeroArray
 		}];
 	}
+
+	let overridingType;
+	if(AXIS_DATASET_CHART_TYPES.includes(type)) {
+		overridingType = type;
+	};
 
 	datasets.map(d=> {
 		// Set values
@@ -34,14 +39,13 @@ export function dataPrep(data, type) {
 		}
 
 		// Set labels
-		//
 
 		// Set type
-		if(!d.chartType ) {
-			if(!AXIS_DATASET_CHART_TYPES.includes(type)) type === DEFAULT_AXIS_CHART_TYPE;
-			d.chartType = type;
+		if(overridingType) {
+			d.chartType = overridingType;
+		} else if(!d.chartType) {
+			d.chartType = AXIS_CHART_DEFAULT_TYPE;
 		}
-
 	});
 
 	// Markers

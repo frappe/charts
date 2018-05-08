@@ -31,6 +31,7 @@ export const BASE_MEASURES = {
 	},
 
 	baseHeight: 240,
+
 	titleHeight: 20,
 	legendHeight: 30,
 
@@ -62,7 +63,9 @@ export function getExtraWidth(m) {
 export const INIT_CHART_UPDATE_TIMEOUT = 700;
 export const CHART_POST_ANIMATE_TIMEOUT = 400;
 
-export const DEFAULT_AXIS_CHART_TYPE = 'line';
+export const AXIS_CHART_DEFAULT_TYPE = 'line';
+export const AXIS_CHART_MIXED_TYPE = 'axis-mixed';
+export const AXIS_CHART_TYPES = ['line', 'bar', 'axis-mixed'];
 export const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
 
 export const AXIS_LEGEND_BAR_SIZE = 100;

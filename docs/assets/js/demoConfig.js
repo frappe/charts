@@ -200,7 +200,6 @@ export const demoSections = [
                 actions: [{ name: "Export ...", fn: "export", args: [] }]
             }
         ],
-
     },
 
     {

@@ -23,7 +23,7 @@ export default class BaseChart {
 		this.rawChartArgs = options;
 
 		this.title = options.title || '';
-		this.type = options.type || '';
+		this.type = options.type || 'line';
 
 		this.realData = this.prepareData(options.data);
 		this.data = this.prepareFirstData(this.realData);
