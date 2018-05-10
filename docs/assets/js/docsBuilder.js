@@ -46,6 +46,7 @@ class docSection {
 	getText(blockConf) {
 		return $.create('p', {
 			inside: this.parent,
+			className: 'new-context',
 			innerHTML: blockConf.content
 		});
 	}

@@ -68,9 +68,15 @@ export const AXIS_CHART_MIXED_TYPE = 'axis-mixed';
 export const AXIS_CHART_TYPES = ['line', 'bar', 'axis-mixed'];
 export const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
 
+export const AXIS_CHART_OPTIONS = {
+	barOptions: {
+		spaceRatio: 1,
+	}
+}
+
 export const AXIS_LEGEND_BAR_SIZE = 100;
 
-export const BAR_CHART_SPACE_RATIO = 0.5;
+export const BAR_CHART_SPACE_RATIO = 1;
 export const MIN_BAR_PERCENT_HEIGHT = 0.01;
 
 export const LINE_CHART_DOT_SIZE = 4;

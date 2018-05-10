@@ -248,7 +248,7 @@ export default class AxisChart extends BaseChart {
 					let stacked = this.barOptions.stacked;
 
 					let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
-					let barsWidth = s.unitWidth * (1 - spaceRatio);
+					let barsWidth = s.unitWidth/2 * (2 - spaceRatio);
 					let barWidth = barsWidth/(stacked ? 1 : barDatasets.length);
 
 					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2);

@@ -139,9 +139,11 @@ const AXIS_CHART_DEFAULT_TYPE = 'line';
 
 const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
 
+
+
 const AXIS_LEGEND_BAR_SIZE = 100;
 
-const BAR_CHART_SPACE_RATIO = 0.5;
+const BAR_CHART_SPACE_RATIO = 1;
 const MIN_BAR_PERCENT_HEIGHT = 0.01;
 
 const LINE_CHART_DOT_SIZE = 4;
@@ -304,10 +306,6 @@ class SvgTip {
 	}
 }
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -1464,6 +1462,7 @@ class BaseChart {
 
 		if(this.independentWidth) {
 			args.styles = { width: this.independentWidth + 'px' };
+			this.parent.style.overflow = 'auto';
 		}
 
 		this.container = $.create('div', args);
@@ -3352,7 +3351,7 @@ class AxisChart extends BaseChart {
 					let stacked = this.barOptions.stacked;
 
 					let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
-					let barsWidth = s.unitWidth * (1 - spaceRatio);
+					let barsWidth = s.unitWidth/2 * (2 - spaceRatio);
 					let barWidth = barsWidth/(stacked ? 1 : barDatasets.length);
 
 					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2);
@@ -3686,7 +3685,6 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,

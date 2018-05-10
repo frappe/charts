@@ -123,6 +123,7 @@ export default class BaseChart {
 
 		if(this.independentWidth) {
 			args.styles = { width: this.independentWidth + 'px' };
+			this.parent.style.overflow = 'auto';
 		}
 
 		this.container = $.create('div', args);
