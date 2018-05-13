@@ -1,4 +1,4 @@
-import { sampleData, trendsData } from '../assets/js/data';
+import { sampleData, trendsData } from './assets/js/data';
 
 export const demoRegistry = {
 	demo1: {

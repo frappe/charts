@@ -1,28 +1,36 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Frappe Charts</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="keywords" content="open source javascript js charts library svg zero-dependency
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Frappe Charts</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="https://frappe.github.io/charts">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+
+  <meta name="keywords" content="open source javascript js charts library svg zero-dependency
       interactive data visualization beautiful drag resize">
     <meta name="description" content="A simple, responsive, modern charts library for the web.">
 
-    <link rel="stylesheet" type="text/css" href="assets/css/reset.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="assets/css/index.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="assets/css/hljs.css" media="screen">
+  <link rel="stylesheet" type="text/css" href="vuestyle.css" media="screen">
 
-    <script src="assets/js/highlight.pack.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
+  <link rel="stylesheet" type="text/css" href="assets/css/reset.css" media="screen">
+  <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css" media="screen">
+  <link rel="stylesheet" type="text/css" href="assets/css/index.css" media="screen">
+  <link rel="stylesheet" type="text/css" href="assets/css/hljs.css" media="screen">
+  <link rel="stylesheet" type="text/css" href="style.css" media="screen">
 
-    <link rel="shortcut icon" href="https://frappe.github.io/frappe/assets/img/favicon.png" type="image/x-icon">
-    <link rel="icon" href="https://frappe.github.io/frappe/assets/img/favicon.png" type="image/x-icon">
+  <script src="assets/js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
 
-    <script async defer src="https://buttons.github.io/buttons.js"></script>
-  </head>
+  <link rel="shortcut icon" href="https://frappe.github.io/frappe/assets/img/favicon.png" type="image/x-icon">
+  <link rel="icon" href="https://frappe.github.io/frappe/assets/img/favicon.png" type="image/x-icon">
 
-  <body>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+
+</head>
+<body>
+  <div id="home-page">
+
     <header>
       <h1>Frappe Charts</h1>
       <p class="lead-text">GitHub-inspired simple and modern SVG charts for the web
@@ -37,7 +45,7 @@
     <section class="closing text-center">
       <a href="https://github.com/frappe/charts/archive/master.zip"><button class="large blue button btn">Download</button></a>
       <p style="mt1: 3rem; margin-bottom: 1.5rem;">
-        <a href="docsify/index.html" style="margin-right: 1rem;" target="_blank">Documentation</a>
+        <a href="#" id="docs-link" style="margin-right: 1rem;">Documentation</a>
         <a href="https://github.com/frappe/charts" target="_blank">GitHub</a>
       </p>
       <p><a class="github-button" href="https://github.com/frappe/charts" data-icon="octicon-star" data-show-count="true" aria-label="Star frappe/charts on GitHub">Star</a></p>
@@ -66,8 +74,17 @@
       </svg>
     </a>
 
-    <script async src="https://static.codepen.io/assets/embed/ei.js"></script>
-    <script src="assets/js/frappe-charts.min.js"></script>
-    <script src="assets/js/index.min.js"></script>
-  </body>
+  </div>
+
+  <div id="app"></div>
+
+  <!-- SCRIPTS -->
+  <script src="index.min.js"></script>
+
+  <script async src="https://static.codepen.io/assets/embed/ei.js"></script>
+  <script src="assets/js/frappe-charts.min.js"></script>
+
+  <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
+  <script src="//unpkg.com/docsify/lib/plugins/external-script.min.js"></script>
+</body>
 </html>
