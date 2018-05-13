@@ -150,12 +150,23 @@ export default [
 			babel({
 				exclude: 'node_modules/**',
 			}),
-			replace({
-				exclude: 'node_modules/**',
-				ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
-			}),
-			uglify()
+			// TODO:
+			// uglify()
 		],
+	},
+	{
+		input: 'docs/docsify/indexShadow.js',
+		output: [
+			{
+				file: 'docs/docsify/indexShadow.min.js',
+				format: 'iife',
+			}
+		],
+		plugins: [
+			babel({
+				exclude: 'node_modules/**'
+			})
+		]
 	},
 	{
 		input: 'src/js/chart.js',
@@ -179,15 +190,6 @@ export default [
 					cssnano()
 				]
 			}),
-			eslint({
-				exclude: [
-					'src/css/**',
-				]
-			}),
-			replace({
-				exclude: 'node_modules/**',
-				ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
-			})
 		],
 	}
 ];

@@ -7,6 +7,7 @@ export class docsBuilder {
 	}
 
 	makeSection(parent, sys) {
+		console.log('parent here?', parent);
 		return new docSection(this.LIB_OBJ, parent, sys);
 	}
 }
@@ -25,13 +26,15 @@ class docSection {
 	make() {
 		// const section = document.querySelector(this.parent);
 		let s = this.sys;
-		if(s.title) {
-			$.create('h6', { inside: this.parent, innerHTML: s.title });
-		}
+		// if(s.title) {
+		// 	$.create('h6', { inside: this.parent, innerHTML: s.title });
+		// }
 
-		s.contentBlocks.forEach((blockConf, index) => {
-			this.blockMap[index] = this.getBlock(blockConf);
-		});
+		// s.contentBlocks.forEach((blockConf, index) => {
+		// 	this.blockMap[index] = this.getBlock(blockConf);
+		// });
+
+		this.blockMap['test'] = this.getDemo(s);
 	}
 
 	getBlock(blockConf) {
@@ -105,6 +108,13 @@ class docSection {
 			if(o.type === "map") {
 				args[o.path[0]] = {};
 			}
+
+			const inputGroup = $.create('input', {
+				inside: btnGroup,
+				// className: `form-control`,
+				// innerHTML: `<input type="text" class="form-control" placeholder="Username"
+				// 	aria-label="Username" aria-describedby="basic-addon1">`
+			});
 
 			Object.keys(o.states).forEach(key => {
 				let state = o.states[key];

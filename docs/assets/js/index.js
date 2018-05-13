@@ -7,9 +7,9 @@ import { docsBuilder } from './docsBuilder';
 let Chart = frappe.Chart; // eslint-disable-line no-undef
 let dbd = new docsBuilder(Chart);
 let currentElement = document.querySelector('header');
-let sections;
+let sections = [];
 
-if(window.location.pathname.split("/").pop().includes('index')) {
+if(document.querySelectorAll('#line-composite-1').length) {
 	let lineCompositeChart = new Chart("#line-composite-1", lineComposite.config);
 	let barCompositeChart = new Chart("#bar-composite-1", barComposite.config);
 
@@ -21,9 +21,11 @@ if(window.location.pathname.split("/").pop().includes('index')) {
 	});
 
 	sections = demoSections;
-} else {
-	sections = docSections;
 }
+
+// else {
+// 	sections = docSections;
+// }
 
 sections.forEach(sectionConf => {
 	let sectionEl = $.create('section', { className: sectionConf.name || sectionConf.title });
