@@ -14,8 +14,6 @@
     </p>
 </div>
 
-<section class="demo"></section>
-
 <p align="center">
     <a href="https://travis-ci.org/frappe/charts">
         <img src="https://img.shields.io/travis/frappe/charts.svg?style=flat-square">

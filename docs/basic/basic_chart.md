@@ -2,7 +2,6 @@
 
 A chart is generally a 2D rendition of data. For example, for a set of values across items, the data could look like:
 ```js
-
 data = {
 	labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
 	datasets: [
