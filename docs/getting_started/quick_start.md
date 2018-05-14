@@ -1,4 +1,4 @@
-#### Installation
+## Installation
 * Install via [`npm`](https://www.npmjs.com/get-npm):
 
   ```console
@@ -18,7 +18,7 @@
     <script src="https://unpkg.com/frappe-charts@1.1.0/dist/frappe-charts.min.iife.js"></script>
   ```
 
-#### Usage
+## Usage
 ```js
 const data = {
     labels: ["12am-3am", "3am-6pm", "6am-9am", "9am-12am",

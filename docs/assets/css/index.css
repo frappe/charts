@@ -3,13 +3,16 @@ body {
     /* max-width: 720px;
     margin: auto; */
 
-	font-family: "proxima-nova", sans-serif;
 	font-size: 15px;
 	color: #6c7680;
 	text-rendering: optimizeLegibility !important;
 	line-height: 1.5em;
 	-moz-osx-font-smoothing: grayscale;
 	-webkit-font-smoothing: antialiased;
+}
+
+#home-page {
+	font-family: "proxima-nova", sans-serif;
 }
 
 h1,

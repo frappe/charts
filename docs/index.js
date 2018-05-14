@@ -9,7 +9,9 @@ import { lineComposite, barComposite, demoSections} from './assets/js/demoConfig
 let dbd = new docsBuilder(Chart);
 let currentElement = document.querySelector('header');
 
-if(document.querySelectorAll('#line-composite-1').length) {
+if(document.querySelectorAll('#line-composite-1').length
+	&& !document.querySelector('#home-page').classList.contains("hide")) {
+
 	let lineCompositeChart = new Chart("#line-composite-1", lineComposite.config);
 	let barCompositeChart = new Chart("#bar-composite-1", barComposite.config);
 
@@ -32,12 +34,20 @@ window.$docsify = {
 	name: 'frappe-charts',
 	// repo: 'https://github.com/frappe/charts',
 	loadSidebar: true,
+	subMaxLevel: 2,
 	executeScript: true,
 	plugins: [
 		function(hook, vm) {
 			hook.doneEach(function() {
-				dbd.makeSection(document.querySelector('.demo'), demoRegistry.demo2);
-				document.querySelector("main").classList.add("hide");
+				let demos = document.querySelectorAll('.demo')
+
+				for (var i = 0; i < demos.length; ++i) {
+					let el = demos[i];
+					let id = el.getAttribute("id");
+					dbd.makeSection(el, demoRegistry[id]);
+				}
+
+				// document.querySelector("main").classList.add("hide");
 			});
 		}
 	]

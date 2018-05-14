@@ -1,10 +1,34 @@
 * Getting started
+  * [Quick start](getting_started/quick_start.md)
 
-  * [Quick start](chap1/test1.md)
+* Axis charts
+  * [A basic chart](basic/basic_chart.md)
+  * [Adding more datasets](basic/multiple_datasets.md)
+  * [Trends and Region Charts](basic/trends_regions.md)
 
-* Customization
+* Aggregation Charts
+  * []()
+  * []()
 
-  * [Configuration](test2.md)
+* Update data
+  * [Single Points]()
+  * [Entire Data]()
 
+* Events
+  * [Navigation]()
+  * [Event hooks]()
 
-* [Changelog](test.md)
+* Heatmap
+  * []()
+  * []()
+
+* Exporting
+  * []()
+
+* API
+  * [Configuration]()
+  * [Methods]()
+
+* [ChangeLog]()
+* [Wrappers]()
+* [Contributing]()

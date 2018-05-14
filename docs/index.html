@@ -9,14 +9,15 @@
 
   <meta name="keywords" content="open source javascript js charts library svg zero-dependency
       interactive data visualization beautiful drag resize">
-    <meta name="description" content="A simple, responsive, modern charts library for the web.">
+  <meta name="description" content="A simple, responsive, modern charts library for the web.">
 
-  <link rel="stylesheet" type="text/css" href="vuestyle.css" media="screen">
 
   <link rel="stylesheet" type="text/css" href="assets/css/reset.css" media="screen">
   <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css" media="screen">
   <link rel="stylesheet" type="text/css" href="assets/css/index.css" media="screen">
   <link rel="stylesheet" type="text/css" href="assets/css/hljs.css" media="screen">
+
+  <link rel="stylesheet" type="text/css" href="vuestyle.css" media="screen">
   <link rel="stylesheet" type="text/css" href="style.css" media="screen">
 
   <script src="assets/js/highlight.pack.js"></script>
@@ -29,7 +30,7 @@
 
 </head>
 <body>
-  <div id="home-page">
+  <div id="home-page" class="hide">
 
     <header>
       <h1>Frappe Charts</h1>
@@ -80,9 +81,11 @@
 
   <!-- SCRIPTS -->
   <script src="index.min.js"></script>
+  <script>
+    window.$docsify.subMaxLevel = 2;
+  </script>
 
   <script async src="https://static.codepen.io/assets/embed/ei.js"></script>
-  <script src="assets/js/frappe-charts.min.js"></script>
 
   <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
   <script src="//unpkg.com/docsify/lib/plugins/external-script.min.js"></script>
