@@ -7,3 +7,5 @@ lineOptions: {
 ```
 
 <div class="demo" id="line-trends-region-toggle"></div>
+
+Next up, we'll see how multiple datasets play out in charts.
