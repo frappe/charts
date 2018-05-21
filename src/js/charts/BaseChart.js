@@ -65,15 +65,20 @@ export default class BaseChart {
 
 	validateColors(colors, type) {
 		const validColors = [];
-		colors = (colors || []).concat(DEFAULT_COLORS[type]);
-		colors.forEach((string) => {
-			const color = getColor(string);
-			if(!isValidColor(color)) {
-				console.warn('"' + string + '" is not a valid color.');
+		colors = colors || [];
+		colors.forEach((entry) => {
+			if (Array.isArray(entry)) {
+				validColors.push(this.validateColors(entry, type));
+				return;
+			}
+			const color = getColor(entry);
+			if (!isValidColor(color)) {
+				console.warn('"' + entry + '" is not a valid color.');
 			} else {
 				validColors.push(color);
 			}
 		});
+		validColors.concat(DEFAULT_COLORS[type]);
 		return validColors;
 	}
 
@@ -228,6 +233,7 @@ export default class BaseChart {
 			console.error('No data to update.');
 		}
 		this.data = this.prepareData(data);
+		this.data.datasets.forEach((d, i) => { if(d.colors) { this.colors[i] = d.colors;}});
 		this.calc(); // builds state
 		this.render(this.components, this.config.animate);
 	}

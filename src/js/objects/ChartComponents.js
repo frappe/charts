@@ -302,7 +302,7 @@ let componentConfigs = {
 					data.xPositions[j],
 					y,
 					data.barWidth,
-					c.color,
+					data.colors ? ((j < data.colors.length) ? data.colors[j] : data.colors[0]) : Array.isArray(c.color) ? (j < c.color.length ? c.color[j] : c.color[0]) : c.color,
 					data.labels[j],
 					j,
 					data.offsets[j],
@@ -336,6 +336,7 @@ let componentConfigs = {
 				yPositions: oldYPos,
 				offsets: oldOffsets,
 				labels: newLabels,
+				colors: newData.colors,
 
 				zeroLine: this.oldData.zeroLine,
 				barsWidth: this.oldData.barsWidth,

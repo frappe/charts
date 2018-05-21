@@ -61,3 +61,6 @@ typings/
 .next
 
 .DS_Store
+
+# IDE project-specific files
+.idea
