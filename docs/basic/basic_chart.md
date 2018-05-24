@@ -10,7 +10,7 @@ data = {
 }
 ```
 
-Plug that in with a type `bar`, a color and height,
+Rendering it doesn't require much more that that. Plug the data in with a [type]() `bar`, with an optional [color]() and [height]():
 
 ```js
 new frappe.Chart( "#chart", {
@@ -22,16 +22,45 @@ new frappe.Chart( "#chart", {
 ```
 <div class="demo" id="bar-basic-1"></div>
 
-And similarly, a `line` chart:
+And similarly, a `line` chart is data-wise homomorphic to a bar chart:
 
 ```js
 type:'line'
 ```
 <div class="demo" id="line-basic-1"></div>
 
-## Tweaks
+## Adding more datasets
 
-Axes lines are configurable. By default they are long `span`ning lines, but can also be short `tick`s:`
+A chart can have multiple datasets. In an axis chart, every dataset is represented individually.
+
+```js
+data: {
+    labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    datasets: [
+      { name: "Dataset 1", values: [18, 40, 30, 35, 8, 52, 17, -4] },
+      { name: "Dataset 2", values: [30, 50, -10, 15, 18, 32, 27, 14] }
+    ]
+}
+```
+<div class="demo" id="multi-dataset-line-bar"></div>
+
+## Responsiveness
+
+Frappe Charts are responsive, as they rerender all the data in the current available container width. To demonstrate, let's take the example of setting the [bar width]() for bar charts.
+
+In order to set the bar width, instead of defining it and the space between the bars independently, we simply define the <b>ratio of the space</b> between bars to the bar width. The chart then adjusts the actual size proportional to the chart container.
+
+```js
+barOptions: {
+	spaceRatio: 0.2 // default: 1
+},
+```
+Try resizing the window to see the effect, with different ratio values.
+<div class="demo" id="bar-barwidth"></div>
+
+## More Tweaks
+
+Axis lines define a chart presentation. By default they are long `span`ning lines, but to give prominence to data points, X and/or Y axes can also be short `tick`s:
 
 ```js
 axisOptions: {
@@ -40,16 +69,7 @@ axisOptions: {
 ```
 <div class="demo" id="bar-axis-tick"></div>
 
-The bar <b>width</b> can be set by defining the <b>ratio of the space</b> between bars to the bar width.
-
-```js
-barOptions: {
-	spaceRatio: 0.2 // default: 1
-},
-```
-<div class="demo" id="bar-barwidth"></div>
-
-So can the <b>dot size</b> on a line graph, with the `dotSize` property in `lineOptions`.
+Just like bar width, we can set the <b>dot size</b> on a line graph, with the [`dotSize`]() property in [`lineOptions`]().
 
 ```js
 lineOptions: {
@@ -58,4 +78,4 @@ lineOptions: {
 ```
 <div class="demo" id="line-dotsize"></div>
 
-Next up, we'll discover how multiple datasets can behave in different charts.
+These were some of the basic toggles to a chart; there are quite a few line options to go with, particularly to create [regions](). We'll look at those in next section.

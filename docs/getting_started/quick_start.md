@@ -45,3 +45,6 @@ const chart = new frappe.Chart("#chart", {  // or a DOM element,
     colors: ['#7cd6fd', '#743ee2']
 })
 ```
+
+## Demo
+Here's a demo to try out yourself:
