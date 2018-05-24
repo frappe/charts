@@ -107,41 +107,53 @@ class docSection {
 			});
 			const mapKeys = o.mapKeys;
 
-			if(o.type === "map") {
-				args[o.path[0]] = {};
-			}
+			if(o.type === "number") {
+				let numOpts = o.numberOptions;
 
-			const inputGroup = $.create('input', {
-				inside: btnGroup,
-				// className: `form-control`,
-				// innerHTML: `<input type="text" class="form-control" placeholder="Username"
-				// 	aria-label="Username" aria-describedby="basic-addon1">`
-			});
-
-			Object.keys(o.states).forEach(key => {
-				let state = o.states[key];
-				let activeClass = key === o.activeState ? 'active' : '';
-
-				let button = $.create('button', {
+				const inputGroup = $.create('input', {
 					inside: btnGroup,
-					className: `btn btn-sm btn-secondary ${activeClass}`,
-					innerHTML: key,
-					onClick: (e) => {
-						// map
-						if(o.type === "map") {
-							mapKeys.forEach((attr, i) => {
-								args[o.path[0]][attr] = state[i];
-							})
-						} else {
-							// boolean, string, number, object
-							args[o.path[0]] = state;
-						}
+					className: `form-control`,
+					type: "range",
+					min: numOpts.min,
+					max: numOpts.max,
+					step: numOpts.step,
+					value: o.activeState ? o.activeState : 0,
+					// (max - min)/2
+					onInput: (value) => {
+						args[o.path[0]][o.path[1]] = value;
+
 						this.demos[demoIndex] = new this.LIB_OBJ(figure, args);
 					}
 				});
 
-				if(activeClass) { button.click(); }
-			});
+			} else if(["map", "string"].includes(o.type)) {
+				args[o.path[0]] = {};
+
+				Object.keys(o.states).forEach(key => {
+					let state = o.states[key];
+					let activeClass = key === o.activeState ? 'active' : '';
+
+					let button = $.create('button', {
+						inside: btnGroup,
+						className: `btn btn-sm btn-secondary ${activeClass}`,
+						innerHTML: key,
+						onClick: (e) => {
+							// map
+							if(o.type === "map") {
+								mapKeys.forEach((attr, i) => {
+									args[o.path[0]][attr] = state[i];
+								})
+							} else {
+								// boolean, string, number, object
+								args[o.path[0]] = state;
+							}
+							this.demos[demoIndex] = new this.LIB_OBJ(figure, args);
+						}
+					});
+
+					if(activeClass) { button.click(); }
+				});
+			}
 		});
 	}
 

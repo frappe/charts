@@ -29,6 +29,11 @@ $.create = (tag, o) => {
 		} else if (i === "onClick" ) {
 			element.addEventListener('click', val);
 
+		} else if (i === "onInput" ) {
+			element.addEventListener('input', function(e) {
+				val(element.value);
+			});
+
 		} else if (i === "styles") {
 			if(typeof val === "object") {
 				Object.keys(val).map(prop => {

@@ -47,16 +47,14 @@ export const demoRegistry = {
 		options: [
 			{
 				name: "barOptions",
-				path: ["barOptions"],
-				type: "map",
-				mapKeys: ['spaceRatio'],
-				states: {
-					"0.2": [0.2],
-					"0.5": [0.5],
-					"1": [1],
-					"1.5": [1.5]
+				path: ["barOptions", "spaceRatio"],
+				type: "number",
+				numberOptions: {
+					min: 0.1,
+					max: 1.9,
+					step: 0.1,
 				},
-				activeState: "0.2"
+				activeState: 0.2
 			}
 		]
 	},
@@ -77,16 +75,14 @@ export const demoRegistry = {
 		options: [
 			{
 				name: "lineOptions",
-				path: ["lineOptions"],
-				type: "map",
-				mapKeys: ['dotSize'],
-				states: {
-					"3": [3],
-					"4": [4],
-					"8": [8],
-					"10": [10],
+				path: ["lineOptions", "dotSize"],
+				type: "number",
+				numberOptions: {
+					min: 3,
+					max: 10,
+					step: 1
 				},
-				activeState: "8"
+				activeState: 8
 			}
 		]
 	},

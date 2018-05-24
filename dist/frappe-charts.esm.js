@@ -21,6 +21,11 @@ $.create = (tag, o) => {
 		} else if (i === "onClick" ) {
 			element.addEventListener('click', val);
 
+		} else if (i === "onInput" ) {
+			element.addEventListener('input', function(e) {
+				val(element.value);
+			});
+
 		} else if (i === "styles") {
 			if(typeof val === "object") {
 				Object.keys(val).map(prop => {
@@ -144,7 +149,7 @@ const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
 const AXIS_LEGEND_BAR_SIZE = 100;
 
 const BAR_CHART_SPACE_RATIO = 1;
-const MIN_BAR_PERCENT_HEIGHT = 0.01;
+const MIN_BAR_PERCENT_HEIGHT = 0.02;
 
 const LINE_CHART_DOT_SIZE = 4;
 const DOT_OVERLAY_SIZE_INCR = 4;

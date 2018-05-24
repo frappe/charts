@@ -166,6 +166,10 @@ $.create = function (tag, o) {
 			element.appendChild(ref);
 		} else if (i === "onClick") {
 			element.addEventListener('click', val);
+		} else if (i === "onInput") {
+			element.addEventListener('input', function (e) {
+				val(element.value);
+			});
 		} else if (i === "styles") {
 			if ((typeof val === "undefined" ? "undefined" : _typeof(val)) === "object") {
 				Object.keys(val).map(function (prop) {
@@ -281,7 +285,7 @@ var AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
 var AXIS_LEGEND_BAR_SIZE = 100;
 
 var BAR_CHART_SPACE_RATIO = 1;
-var MIN_BAR_PERCENT_HEIGHT = 0.01;
+var MIN_BAR_PERCENT_HEIGHT = 0.02;
 
 var LINE_CHART_DOT_SIZE = 4;
 var DOT_OVERLAY_SIZE_INCR = 4;
