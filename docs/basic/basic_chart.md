@@ -20,14 +20,22 @@ new frappe.Chart( "#chart", {
     colors: ['red']
 });
 ```
-<div class="demo" id="bar-basic-1"></div>
+<chart-demo
+    data="0"
+    v-bind:config="{ type: 'bar', height: 140, colors:['red'] }">
+</chart-demo>
+
 
 And similarly, a `line` chart is data-wise homomorphic to a bar chart:
 
 ```js
 type:'line'
 ```
-<div class="demo" id="line-basic-1"></div>
+<chart-demo
+    data="0"
+    v-bind:config="{ type: 'line', height: 140, colors:['red'] }">
+</chart-demo>
+
 
 ## Adding more datasets
 
@@ -42,7 +50,22 @@ data: {
     ]
 }
 ```
-<div class="demo" id="multi-dataset-line-bar"></div>
+<chart-demo data="1" v-bind:config="{
+        type: 'line',
+        height: 200,
+        colors:['green', 'light-green']
+    }"
+    v-bind:options="[
+        {
+            name: 'type',
+            path: ['type'],
+            type: 'string',
+            states: { 'Line': 'line', 'Bar': 'bar', },
+            activeState: 'Mixed'
+        }
+    ]">
+</chart-demo>
+
 
 ## Responsiveness
 
@@ -56,7 +79,25 @@ barOptions: {
 },
 ```
 Try resizing the window to see the effect, with different ratio values.
-<div class="demo" id="bar-barwidth"></div>
+
+<chart-demo data="2" v-bind:config="{
+        type: 'bar',
+        height: 140,
+        colors: ['orange'],
+        axisOptions: { xAxisMode: 'tick' },
+        barOptions: { spaceRatio: 0.2 },
+    }"
+    v-bind:options="[
+        {
+            name: 'barOptions',
+            path: ['barOptions', 'spaceRatio'],
+            type: 'number',
+            numberOptions: { min: 0.1, max: 1.9, step: 0.1 },
+            activeState: 0.2
+        }
+    ]">
+</chart-demo>
+
 
 ## More Tweaks
 
@@ -67,7 +108,16 @@ axisOptions: {
 	xAxisMode: 'tick' // default: 'span'
 },
 ```
-<div class="demo" id="bar-axis-tick"></div>
+<chart-demo
+    data="2"
+    v-bind:config="{
+        type: 'bar',
+        height: 140,
+        colors:['blue'],
+        axisOptions: { xAxisMode: 'tick' }
+    }">
+</chart-demo>
+
 
 Just like bar width, we can set the <b>dot size</b> on a line graph, with the [`dotSize`]() property in [`lineOptions`]().
 
@@ -76,6 +126,23 @@ lineOptions: {
 	dotSize: 8 // default: 4
 },
 ```
-<div class="demo" id="line-dotsize"></div>
+<chart-demo data="2" v-bind:config="{
+        type: 'line',
+        height: 140,
+        colors:['orange'],
+        axisOptions: { xAxisMode: 'tick' },
+        lineOptions: { dotSize: 8 }
+    }"
+    v-bind:options="[
+        {
+            name: 'lineOptions',
+            path: ['lineOptions', 'dotSize'],
+            type: 'number',
+            numberOptions: { min: 3, max: 10, step: 1 },
+            activeState: 8
+        }
+    ]">
+</chart-demo>
+
 
 These were some of the basic toggles to a chart; there are quite a few line options to go with, particularly to create [regions](). We'll look at those in next section.

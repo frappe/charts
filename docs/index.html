@@ -80,13 +80,48 @@
   <div id="app"></div>
 
   <!-- SCRIPTS -->
+
+  <!-- Home page script -->
   <script src="index.min.js"></script>
+
+  <!-- Docs section script -->
+  <script src="data.js"></script>
+  <script src="demoBuilder.js"></script>
+  <script src="frappe-charts.min.iife.js"></script>
+  <script src="//unpkg.com/vue/dist/vue.js"></script>
   <script>
-    window.$docsify.subMaxLevel = 2;
-    window.$docsify.search = {
-      placeholder: 'Search Docs ...',
-      noData: 'No Results',
-      depth: 2
+
+    let dbd = new demoBuilder(frappe.Chart);
+
+    Vue.component('chart-demo', {
+      template: '<div class="chart-demo"></div>',
+      props: ['data', 'config', 'options', 'actions'],
+      mounted: function() {
+        let config = this.config;
+        config.data = sampleData[this.data];
+        var demoConfig = {
+          config: config,
+          options: this.options,
+          actions: this.actions
+        };
+
+        dbd.makeSection(this.$el, demoConfig);
+      }
+    });
+
+    new Vue({ el: '#app' });
+
+    window.$docsify = {
+      name: 'frappe-charts',
+      // repo: 'https://github.com/frappe/charts',
+      loadSidebar: true,
+      subMaxLevel: 2,
+      executeScript: true,
+      search: {
+        placeholder: 'Search Docs ...',
+        noData: 'No Results',
+        depth: 2
+      }
     };
   </script>
 

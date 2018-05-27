@@ -29,31 +29,3 @@ if(document.querySelectorAll('#line-composite-1').length
 		dbd.makeSection(sectionEl, sectionConf);
 	});
 }
-
-window.$docsify = {
-	name: 'frappe-charts',
-	// repo: 'https://github.com/frappe/charts',
-	loadSidebar: true,
-	subMaxLevel: 2,
-	executeScript: true,
-	plugins: [
-		function(hook, vm) {
-			hook.doneEach(function() {
-				let demos = document.querySelectorAll('.demo')
-
-				for (var i = 0; i < demos.length; ++i) {
-					let el = demos[i];
-					let id = el.getAttribute("id");
-					dbd.makeSection(el, demoRegistry[id]);
-				}
-
-				// document.querySelector("main").classList.add("hide");
-			});
-		}
-	]
-}
-
-document.querySelector("#docs-link").addEventListener('click', () => {
-	document.querySelector("#home-page").classList.add("hide");
-	document.querySelector("main").classList.remove("hide");
-});
