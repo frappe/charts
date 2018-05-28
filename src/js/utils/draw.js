@@ -551,7 +551,7 @@ export function getPaths(xList, yList, color, options={}, meta={}) {
 	};
 
 	// Region
-	if(options.regionFill) {
+	if(options.areaFill) {
 		let gradient_id_region = makeGradient(meta.svgDefs, color, true);
 
 		let pathStr = "M" + `${xList[0]},${meta.zeroLine}L` + pointsStr + `L${xList.slice(-1)[0]},${meta.zeroLine}`;

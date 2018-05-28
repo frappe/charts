@@ -1,6 +1,5 @@
 import { docsBuilder } from './assets/js/docsBuilder';
 import { Chart } from "../dist/frappe-charts.min.esm";
-import { demoRegistry } from './demoRegistry';
 
 import { $, insertAfter } from '../src/js/utils/dom';
 import { fireballOver25, fireball_2_5, fireball_5_25 } from './assets/js/data';

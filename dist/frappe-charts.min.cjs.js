@@ -1198,7 +1198,7 @@ function getPaths(xList, yList, color) {
 	};
 
 	// Region
-	if (options.regionFill) {
+	if (options.areaFill) {
 		var gradient_id_region = makeGradient(meta.svgDefs, color, true);
 
 		var pathStr = "M" + (xList[0] + ',' + meta.zeroLine + 'L') + pointsStr + ('L' + xList.slice(-1)[0] + ',' + meta.zeroLine);
@@ -2578,7 +2578,7 @@ var componentConfigs = {
 			if (!c.hideLine) {
 				this.paths = getPaths(data.xPositions, data.yPositions, c.color, {
 					heatline: c.heatline,
-					regionFill: c.regionFill
+					areaFill: c.areaFill
 				}, {
 					svgDefs: c.svgDefs,
 					zeroLine: data.zeroLine
@@ -3978,7 +3978,7 @@ var AxisChart = function (_BaseChart) {
 					color: _this3.colors[index],
 					svgDefs: _this3.svgDefs,
 					heatline: _this3.lineOptions.heatline,
-					regionFill: _this3.lineOptions.regionFill,
+					areaFill: _this3.lineOptions.areaFill,
 					hideDots: _this3.lineOptions.hideDots,
 					hideLine: _this3.lineOptions.hideLine,
 

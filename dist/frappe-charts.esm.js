@@ -982,7 +982,7 @@ function getPaths(xList, yList, color, options={}, meta={}) {
 	};
 
 	// Region
-	if(options.regionFill) {
+	if(options.areaFill) {
 		let gradient_id_region = makeGradient(meta.svgDefs, color, true);
 
 		let pathStr = "M" + `${xList[0]},${meta.zeroLine}L` + pointsStr + `L${xList.slice(-1)[0]},${meta.zeroLine}`;
@@ -2177,7 +2177,7 @@ let componentConfigs = {
 					c.color,
 					{
 						heatline: c.heatline,
-						regionFill: c.regionFill
+						areaFill: c.areaFill
 					},
 					{
 						svgDefs: c.svgDefs,
@@ -3406,7 +3406,7 @@ class AxisChart extends BaseChart {
 					color: this.colors[index],
 					svgDefs: this.svgDefs,
 					heatline: this.lineOptions.heatline,
-					regionFill: this.lineOptions.regionFill,
+					areaFill: this.lineOptions.areaFill,
 					hideDots: this.lineOptions.hideDots,
 					hideLine: this.lineOptions.hideLine,
 

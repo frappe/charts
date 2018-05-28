@@ -1,6 +1,6 @@
-## What is it
+## Axis chart: what is it
 
-A chart is generally a 2D rendition of data. For example, for a set of values across items, the data could look like:
+An axis chart is generally a 2D rendition of data, where a set of values corresponds to every point in a dataset. That's why, data is the most important component for a chart. For example, for some values across items, the data could look like:
 ```js
 data = {
 	labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
@@ -50,6 +50,7 @@ data: {
     ]
 }
 ```
+Notice that this case demonstrates why the `colors` option is an array. We'll see more about it ahead.
 <chart-demo data="1" v-bind:config="{
         type: 'line',
         height: 200,

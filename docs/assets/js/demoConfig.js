@@ -135,7 +135,7 @@ export const demoSections = [
                     height: 300,
                     colors: ['#ff6c03'],
                     lineOptions: {
-                        regionFill: 1
+                        areaFill: 1
                     }
                 },
                 actions: [
@@ -187,12 +187,12 @@ export const demoSections = [
                         name: "lineOptions",
                         path: ["lineOptions"],
                         type: "map",
-                        mapKeys: ['hideLine', 'hideDots', 'heatline', 'regionFill'],
+                        mapKeys: ['hideLine', 'hideDots', 'heatline', 'areaFill'],
                         states: {
                             "Line": [0, 1, 0, 0],
                             "Dots": [1, 0, 0, 0],
                             "HeatLine": [0, 1, 1, 0],
-                            "Region": [0, 1, 0, 1]
+                            "Area": [0, 1, 0, 1]
                         },
                         activeState: "HeatLine"
                     }
@@ -363,7 +363,7 @@ export const demoSections = [
       hideLine: 0,         // default: 0
       hideDots: 1,         // default: 0
       heatline: 1,         // default: 0
-      regionFill: 1        // default: 0
+      areaFill: 1        // default: 0
     }
 
     axisOptions: {

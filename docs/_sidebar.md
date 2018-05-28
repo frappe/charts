@@ -3,7 +3,7 @@
 
 * Axis charts
   * [A basic chart](basic/basic_chart.md)
-  * [Trends and Region Charts](basic/trends_regions.md)
+  * [Area and Trends Charts](basic/trends_regions.md)
   * [Annotations and Tooltip format](basic/annotations.md)
   * [Stacked and Mixed Charts](basic/stacked_and_mixed.md)
 

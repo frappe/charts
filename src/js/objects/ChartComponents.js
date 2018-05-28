@@ -354,7 +354,7 @@ let componentConfigs = {
 					c.color,
 					{
 						heatline: c.heatline,
-						regionFill: c.regionFill
+						areaFill: c.areaFill
 					},
 					{
 						svgDefs: c.svgDefs,
