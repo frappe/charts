@@ -466,10 +466,6 @@ var SvgTip = function () {
 	return SvgTip;
 }();
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -4290,7 +4286,6 @@ var AxisChart = function (_BaseChart) {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 var chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,
@@ -4306,7 +4301,7 @@ function getChartByType() {
 	var options = arguments[2];
 
 	if (chartType === 'axis-mixed') {
-		options.type = 'line';
+		// options.type = 'line';
 		return new AxisChart(parent, options);
 	}
 

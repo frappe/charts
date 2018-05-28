@@ -4,7 +4,7 @@
 * Axis charts
   * [A basic chart](basic/basic_chart.md)
   * [Area and Trends Charts](basic/trends_regions.md)
-  * [Annotations and Tooltip format](basic/annotations.md)
+  * [Tooltips and Annotations](basic/annotations.md)
   * [Stacked and Mixed Charts](basic/stacked_and_mixed.md)
 
 * Aggregation Charts

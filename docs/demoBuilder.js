@@ -45,6 +45,7 @@ function toTitleCase(str) {
     return str.replace(/\w*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 }
 
+// export class demoBuilder {
 class demoBuilder {
 	constructor(LIB_OBJ) {
 		this.LIB_OBJ = LIB_OBJ;
@@ -171,7 +172,7 @@ class docSection {
 					}
 				});
 
-			} else if(["map", "string"].includes(o.type)) {
+			} else if(["map", "string", "boolean"].includes(o.type)) {
 				args[o.path[0]] = {};
 
 				Object.keys(o.states).forEach(key => {

@@ -311,10 +311,6 @@ class SvgTip {
 	}
 }
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -3694,7 +3690,6 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,
@@ -3706,7 +3701,7 @@ const chartTypes = {
 
 function getChartByType(chartType = 'line', parent, options) {
 	if (chartType === 'axis-mixed') {
-		options.type = 'line';
+		// options.type = 'line';
 		return new AxisChart(parent, options);
 	}
 

@@ -61,7 +61,7 @@ Notice that this case demonstrates why the `colors` option is an array. We'll se
             name: 'type',
             path: ['type'],
             type: 'string',
-            states: { 'Line': 'line', 'Bar': 'bar', },
+            states: { 'Line': 'line', 'Bar': 'bar' },
             activeState: 'Mixed'
         }
     ]">

@@ -17,7 +17,7 @@ const chartTypes = {
 
 function getChartByType(chartType = 'line', parent, options) {
 	if (chartType === 'axis-mixed') {
-		options.type = 'line';
+		// options.type = 'line';
 		return new AxisChart(parent, options);
 	}
 
