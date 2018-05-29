@@ -92,6 +92,7 @@
   <script>
 
     let dbd = new demoBuilder(frappe.Chart);
+    console.log(sampleData, getAddUpdateData, getUpdateData);
 
     Vue.component('chart-demo', {
       template: '<div class="chart-demo"></div>',
@@ -99,17 +100,28 @@
       mounted: function() {
         let config = this.config;
         config.data = sampleData[this.data];
+        if(typeof sampleData[this.data] === "function") {
+          config.data = sampleData[this.data]();
+        }
+
+        console.log(sampleData, getAddUpdateData, getUpdateData);
         var demoConfig = {
           config: config,
           options: this.options,
-          actions: this.actions
+          actions: this.actions.actions
         };
 
         dbd.makeSection(this.$el, demoConfig);
       }
     });
 
-    new Vue({ el: '#app' });
+    new Vue({
+      el: '#app',
+      data: {
+        getAddUpdateData: getAddUpdateData,
+        getUpdateData: getUpdateData
+      }
+    });
 
     window.$docsify = {
       name: 'frappe-charts',

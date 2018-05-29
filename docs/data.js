@@ -39,24 +39,95 @@ const fireballOver25 = [
 	[8, 9, 8, 6, 4, 8, 5, 6, 14, 11, 21, 12]
 ];
 
-const barCompositeData = {
-	labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-	datasets: [
-		{
-			name: "Over 25 reports",
-			values: fireballOver25[9],
-		},
-		{
-			name: "5 to 25 reports",
-			values: fireball_5_25[9],
-		},
-		{
-			name: "2 to 5 reports",
-			values: fireball_2_5[9]
-		}
-	]
+// https://stackoverflow.com/a/29325222
+function getRandomBias(min, max, bias, influence) {
+	const range = max - min;
+	const biasValue = range * bias + min;
+	var rnd = Math.random() * range + min,		// random in range
+		mix = Math.random() * influence;		// random mixer
+	return rnd * (1 - mix) + biasValue * mix;	// mix full range and bias
+}
+
+/**
+ * Shuffles array in place. ES6 version
+ * @param {Array} array An array containing the items.
+ */
+function shuffle(array) {
+	// Awesomeness: https://bost.ocks.org/mike/shuffle/
+	// https://stackoverflow.com/a/2450976/6495043
+	// https://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array?noredirect=1&lq=1
+
+	for (let i = array.length - 1; i > 0; i--) {
+		let j = Math.floor(Math.random() * (i + 1));
+		[array[i], array[j]] = [array[j], array[i]];
+	}
+
+	return array;
+}
+
+let updateDataAllLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue",
+	"Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri",
+	"Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon"];
+
+const baseLength = 10;
+const fullLength = 30;
+
+let getRandom = () => Math.floor(getRandomBias(-40, 60, 0.8, 1));
+let updateDataAllValues = Array.from({length: fullLength}, getRandom);
+
+// We're gonna be shuffling this
+let updateDataAllIndices = updateDataAllLabels.map((d,i) => i);
+
+let getUpdateArray = (sourceArray, length=10) => {
+	let indices = updateDataAllIndices.slice(0, length);
+	return indices.map((index) => sourceArray[index]);
 };
+
+let currentLastIndex = baseLength;
+
+function getUpdateData() {
+	shuffle(updateDataAllIndices);
+	let value = getRandom();
+	let start = getRandom();
+	let end = getRandom();
+	currentLastIndex = baseLength;
+
+	return {
+		labels: updateDataAllLabels.slice(0, baseLength),
+		datasets: [{
+			values: getUpdateArray(updateDataAllValues)
+		}],
+		yMarkers: [
+			{
+				label: "Altitude",
+				value: value,
+				type: 'dashed'
+			}
+		],
+		yRegions: [
+			{
+				label: "Range",
+				start: start,
+				end: end
+			},
+		],
+	};
+}
+
+function getAddUpdateData() {
+	if(currentLastIndex >= fullLength) return;
+
+	// TODO: Fix update on removal
+	currentLastIndex++;
+	let c = currentLastIndex -1;
+
+	return [updateDataAllLabels[c], [updateDataAllValues[c]]];
+
+	// updateChart.addDataPoint(
+	// 	updateDataAllLabels[index], [updateDataAllValues[index]]
+	// );
+}
+
 
 const sampleData = {
 	"0": {
@@ -174,5 +245,24 @@ const sampleData = {
 		]
 	},
 
-	"bar-composite-data": barCompositeData
+	"bar-composite-data": {
+		labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+			"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+		datasets: [
+			{
+				name: "Over 25 reports",
+				values: fireballOver25[9],
+			},
+			{
+				name: "5 to 25 reports",
+				values: fireball_5_25[9],
+			},
+			{
+				name: "2 to 5 reports",
+				values: fireball_2_5[9]
+			}
+		]
+	},
+
+	"get-update-data": getUpdateData,
 }

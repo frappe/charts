@@ -7,11 +7,11 @@
   * [Tooltips and Annotations](basic/annotations.md)
   * [Stacked and Mixed Charts](basic/stacked_and_mixed.md)
 
-* Aggregation Charts
-  * [Pies and Percentages](basic/aggr_sliced_diags.md)
+* Pies and Percentages
+  * [Aggregation Charts](basic/aggr_sliced_diags.md)
 
 * Update state
-  * [Modify data](update_data/modify_data.md)
+  * [Modify data](update_state/modify_data.md)
 
 * Events
   * [Navigation]()

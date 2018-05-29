@@ -136,7 +136,7 @@ Here's a demo using different combinations of the line options.
     ]">
 </chart-demo>
 
-Next up, we'll play around with more than one datasets play out in charts.
+Next up, we'll start to annotate the data in charts.
 
 
 

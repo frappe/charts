@@ -166,7 +166,11 @@ class docSection {
 					value: o.activeState ? o.activeState : 0,
 					// (max - min)/2
 					onInput: (value) => {
-						args[o.path[0]][o.path[1]] = value;
+						if(o.path[1]) {
+							args[o.path[0]][o.path[1]] = value;
+						} else {
+							args[o.path[0]] = value;
+						}
 
 						this.demos[demoIndex] = new this.LIB_OBJ(figure, args);
 					}
