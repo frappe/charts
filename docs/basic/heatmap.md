@@ -16,6 +16,9 @@ let data = {
 	end: endDate
 }
 ```
+(We are working on making the start date and end date implicit and optional).
+
+The chart is rendered by the type `heatmap`:
 
 ```js
 let chart = new Chart("#heatmap", {
@@ -28,6 +31,13 @@ let chart = new Chart("#heatmap", {
         type: 'heatmap',
 	}">
 </project-demo>
+
+Setting `discreteDomains` to `0` allows for a continous distribution of heat squares (as on GitHub), rather than showing the month-wise separation. A different set of colors can also be specified.
+
+```js
+discreteDomains: 0, // default 1
+colors: ['#ebedf0', '#c0ddf9', '#73b3f3', '#3886e1', '#17459e'],
+```
 
 <project-demo data="heatmap-data" v-bind:config="{
 		title: 'Monthly Distribution',
@@ -57,11 +67,4 @@ let chart = new Chart("#heatmap", {
 		}
 	]">
 </project-demo>
-(We are working on making the start date and end date implicit and optional). [tip]
-
-The chart is rendered by the type `heatmap`:
-
-```js
-
-```
 

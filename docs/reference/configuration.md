@@ -133,13 +133,13 @@ Set the height of the chart in pixels.
  - Values: `span | tick`
  - Default: `span`
 
-Foo
+Display axis points as short ticks or long spanning lines.
 
 #### xIsSeries
  - Type: `Boolean`
  - Default: `0`
 
-Foo
+The X axis (often the time axis) is usually continuous. That means we can reduce the redundancy of rendering every X label by setting `xIsSeries` to `1` and allowing only a few periodic ones.
 
 ---
 
@@ -147,14 +147,19 @@ Foo
  - Type: `Object`
  - Default: `{}`
 
+Customizing options for the format of the label and value displayed on hover tooltips.
+
 ####
+ - Type: `function`
+ - Default: `{}`
+
 ---
 
 ### barOptions
  - Type: `Object`
  - Default: `{}`
 
-This option controls how width of each `column` is calculated in the chart.
+Can be used to set various properties on bar plots.
 
 #### spaceRatio
  - Type: `Number`
@@ -162,9 +167,13 @@ This option controls how width of each `column` is calculated in the chart.
  - Max: `2`
  - Default: `0.5`
 
+In order to set the bar width, instead of defining it and the space between the bars independently, we simply define the <b>ratio of the space</b> between bars to the bar width. The chart then adjusts the actual size proportional to the chart container.
+
 #### stacked
  - Type: `Boolean`
  - Default: `0`
+
+Renders multiple bar datasets in a stacked configuration, rather than the default adjacent.
 
 ---
 
@@ -172,7 +181,7 @@ This option controls how width of each `column` is calculated in the chart.
  - Type: `Object`
  - Default: `{}`
 
-Foo
+Can be used to set various properties on line plots, turn them into Area Charts and so on. Explore in details on the [Trends]() page.
 
 ---
 
@@ -180,20 +189,12 @@ Foo
  - Type: `Boolean`
  - Default: `0`
 
-Foo
-Example
+Makes the chart interactive with arrow keys and highlights the current active data point.
 
-```javascript
-{
-    dropdownButton: '<span class="fa fa-chevron-down"></span>'
-}
-
-```
+---
 
 ### valuesOverPoints
  - Type: `Boolean`
  - Default: `0`
 
-Foo
-
-###
+To display data values over bars or dots in an axis graph.
