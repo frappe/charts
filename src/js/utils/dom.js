@@ -34,6 +34,11 @@ $.create = (tag, o) => {
 				val(element.value);
 			});
 
+		} else if (i === "onChange" ) {
+			element.addEventListener('change', function(e) {
+				val(element.value);
+			});
+
 		} else if (i === "styles") {
 			if(typeof val === "object") {
 				Object.keys(val).map(prop => {

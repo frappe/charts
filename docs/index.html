@@ -88,15 +88,15 @@
   <script src="data.js"></script>
   <script src="demoBuilder.js"></script>
   <script src="frappe-charts.min.iife.js"></script>
-  <script src="//unpkg.com/vue/dist/vue.js"></script>
+  <!-- <script src="//unpkg.com/vue/dist/vue.js"></script> -->
+  <script src="/externals/vue.js"></script>
   <script>
 
     let dbd = new demoBuilder(frappe.Chart);
-    console.log(sampleData, getAddUpdateData, getUpdateData);
 
     Vue.component('chart-demo', {
       template: '<div class="chart-demo"></div>',
-      props: ['data', 'config', 'options', 'actions'],
+      props: ['data', 'config', 'options', 'actions', 'sideContent'],
       mounted: function() {
         let config = this.config;
         config.data = sampleData[this.data];
@@ -104,23 +104,28 @@
           config.data = sampleData[this.data]();
         }
 
-        console.log(sampleData, getAddUpdateData, getUpdateData);
         var demoConfig = {
           config: config,
           options: this.options,
-          actions: this.actions.actions
+          actions: this.actions,
+          sideContent: this.sideContent,
         };
+
+        console.log(this.sideContent);
 
         dbd.makeSection(this.$el, demoConfig);
       }
     });
 
-    new Vue({
-      el: '#app',
-      data: {
+    Vue.mixin({
+      methods: {
         getAddUpdateData: getAddUpdateData,
         getUpdateData: getUpdateData
       }
+    })
+
+    new Vue({
+      el: '#app',
     });
 
     window.$docsify = {
@@ -137,7 +142,8 @@
     };
   </script>
 
-  <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
+  <!-- <script src="//unpkg.com/docsify/lib/docsify.min.js"></script> -->
+  <script src="/externals/docsify.min.js"></script>
   <script src="//unpkg.com/docsify/lib/plugins/search.min.js"></script>
   <script src="//unpkg.com/docsify/lib/plugins/external-script.min.js"></script>
 </body>

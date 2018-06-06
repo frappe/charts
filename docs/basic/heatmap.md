@@ -5,7 +5,7 @@ The heatmap is a representation of day-wise data (similar to [the GitHub Contrib
 In this case, the data has three parts,
 
 ```js
-let heatmapData = {
+let data = {
 	dataPoints: {
 		"1426744959": 20,
 		"1463673055": 113,
@@ -16,6 +16,47 @@ let heatmapData = {
 	end: endDate
 }
 ```
+
+```js
+let chart = new Chart("#heatmap", {
+    type: 'heatmap',
+    data: data,
+})
+```
+<chart-demo data="heatmap-data" v-bind:config="{
+		title: 'Monthly Distribution',
+        type: 'heatmap',
+	}">
+</chart-demo>
+
+<chart-demo data="heatmap-data" v-bind:config="{
+		title: 'Monthly Distribution',
+        type: 'heatmap',
+        height: 200,
+		discreteDomains: 1,
+		countLabel: 'Level',
+		colors: ['#ebedf0', '#c0ddf9', '#73b3f3', '#3886e1', '#17459e'],
+	}"
+	v-bind:options="[
+		{
+			name: 'Discrete domains',
+			path: ['discreteDomains'],
+			type: 'Boolean',
+			// boolNames: ['Continuous', 'Discrete'],
+			states: { 'Discrete': 1, 'Continuous': 0 }
+		},
+		{
+			name: 'Colors',
+			path: ['colors'],
+			type: 'Array',
+			states: {
+				'Green (Default)': [],
+				'Blue': ['#ebedf0', '#c0ddf9', '#73b3f3', '#3886e1', '#17459e'],
+				'Halloween': ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c']
+			}
+		}
+	]">
+</chart-demo>
 (We are working on making the start date and end date implicit and optional). [tip]
 
 The chart is rendered by the type `heatmap`:

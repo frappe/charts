@@ -128,6 +128,59 @@ function getAddUpdateData() {
 	// );
 }
 
+const NO_OF_MILLIS = 1000;
+const SEC_IN_DAY = 86400;
+
+function clone(date) {
+	return new Date(date.getTime());
+}
+
+function timestampToMidnight(timestamp, roundAhead = false) {
+	let midnightTs = Math.floor(timestamp - (timestamp % SEC_IN_DAY));
+	if(roundAhead) {
+		return midnightTs + SEC_IN_DAY;
+	}
+	return midnightTs;
+}
+
+function timestampSec(date) {
+	return date.getTime()/NO_OF_MILLIS;
+}
+
+function addDays(date, numberOfDays) {
+	let newDate = clone(date);
+	newDate.setDate(newDate.getDate() + numberOfDays);
+	return newDate;
+}
+
+function getHeatmapData() {
+	let today = new Date();
+	let start = clone(today);
+	start = addDays(start, 4);
+	let end = clone(start);
+	start.setFullYear( start.getFullYear() - 2 );
+	end.setFullYear( end.getFullYear() - 1 );
+
+	let dataPoints = {};
+
+	let startTs = timestampSec(start);
+	let endTs = timestampSec(end);
+
+	startTs = timestampToMidnight(startTs);
+	endTs = timestampToMidnight(endTs, true);
+
+	while (startTs < endTs) {
+		dataPoints[parseInt(startTs)] = Math.floor(getRandomBias(0, 5, 0.2, 1));
+		startTs += SEC_IN_DAY;
+	}
+
+	return {
+		dataPoints: dataPoints,
+		start: start,
+		end: end
+	};
+}
+
 
 const sampleData = {
 	"0": {
@@ -228,13 +281,11 @@ const sampleData = {
 			{
 				name: "Some Data",
 				values: [18, 40, 30, 35, 8, 52, 17, -4],
-				axisPosition: 'right',
 				chartType: 'bar'
 			},
 			{
 				name: "Another Set",
 				values: [30, 50, -10, 15, 18, 32, 27, 14],
-				axisPosition: 'right',
 				chartType: 'bar'
 			},
 			{
@@ -265,4 +316,6 @@ const sampleData = {
 	},
 
 	"get-update-data": getUpdateData,
+
+	"heatmap-data": getHeatmapData
 }

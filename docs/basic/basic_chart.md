@@ -60,7 +60,7 @@ Notice that this case demonstrates why the `colors` option is an array. We'll se
         {
             name: 'type',
             path: ['type'],
-            type: 'string',
+            type: 'String',
             states: { 'Line': 'line', 'Bar': 'bar' },
             activeState: 'Mixed'
         }
@@ -90,7 +90,7 @@ Try resizing the window to see the effect, with different ratio values.
     }"
     v-bind:options="[
         {
-            name: 'barOptions',
+            name: 'spaceRatio',
             path: ['barOptions', 'spaceRatio'],
             type: 'number',
             numberOptions: { min: 0.1, max: 1.9, step: 0.1 },
@@ -136,7 +136,7 @@ lineOptions: {
     }"
     v-bind:options="[
         {
-            name: 'lineOptions',
+            name: 'dotSize',
             path: ['lineOptions', 'dotSize'],
             type: 'number',
             numberOptions: { min: 3, max: 10, step: 1 },

@@ -1,3 +1,15 @@
-/* a {
-	color: red;
-} */
+input[type="range"] {
+    padding: 0;
+}
+
+.input-wrapper {
+	display: flex;
+	margin-right: 15px;
+}
+
+.input-wrapper label {
+	margin-right: 10px;
+	margin-top: 5px;
+	font-size: 0.8em;
+	flex-shrink: 0;
+}

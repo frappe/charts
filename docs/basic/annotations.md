@@ -98,7 +98,7 @@ For a non-web or static interface, where tooltips are absent, `valuesOverPoints`
         {
             name: 'type',
             path: ['type'],
-            type: 'string',
+            type: 'String',
             states: { 'Bar': 'bar', 'Line': 'line' },
             activeState: 'Bar'
         }

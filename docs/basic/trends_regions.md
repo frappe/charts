@@ -18,10 +18,15 @@ lineOptions: {
 </chart-demo>
 
 ## Plotting Trends
-Line charts great to show trends data. One of the reason trends are interesting is because the data involved usually involves a large number of data points. For so many points, we'd really like to keep the plot as less detailed as we can, while also using the already present color to advantage. Let's see how we can change some properties of a default line chart can reduce clutter.
+Line charts are great to show trends. One of the reasons they are interesting is because the data involved usually involves a large number of data points. For so many points, we'd really like to keep the plot as less detailed as we can, while also using the already present color to advantage. Let's see how we can change some properties of a default line chart can reduce clutter.
 
 ## Continuity
-The X axis (often the time axis) is usually continuous. That means we can reduce the redundancy of rendering every X label by allowing for only a few periodic ones. We can do this by setting the `xIsSeries` property in `axisOptions` to `true`.
+The X axis (often the time axis) is usually continuous. That means we can reduce the redundancy of rendering every X label by allowing for only a few periodic ones.
+
+
+We can skip X labels by setting the `xIsSeries` property in `axisOptions` to `true`.
+
+
 
 ```js
 axisOptions: {
@@ -123,7 +128,7 @@ Here's a demo using different combinations of the line options.
 		{
 			name: 'lineOptions',
 			path: ['lineOptions'],
-			type: 'map',
+			type: 'Map',
 			mapKeys: ['hideLine', 'hideDots', 'heatline', 'areaFill'],
 			states: {
 				'Line': [0, 1, 0, 0],

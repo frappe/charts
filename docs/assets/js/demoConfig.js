@@ -1,6 +1,5 @@
 import { lineCompositeData, barCompositeData, typeData, getUpdateData,
     getAddUpdateData, trendsData, eventsData, moonData, heatmapData } from './data';
-import { HEATMAP_COLORS_YELLOW, HEATMAP_COLORS_BLUE } from '../../../src/js/utils/constants';
 
 export const lineComposite = {
     config: {
@@ -263,14 +262,14 @@ export const demoSections = [
                     type: 'heatmap',
                     discreteDomains: 1,
                     countLabel: 'Level',
-                    colors: HEATMAP_COLORS_BLUE,
+                    colors: ['#ebedf0', '#c0ddf9', '#73b3f3', '#3886e1', '#17459e'],
                     legendScale: [0, 1, 2, 4, 5]
                 },
                 options: [
                     {
                         name: "Discrete domains",
                         path: ["discreteDomains"],
-                        type: 'boolean',
+                        type: 'Boolean',
                         // boolNames: ["Continuous", "Discrete"],
                         states: { "Discrete": 1, "Continuous": 0 }
                     },
@@ -280,8 +279,8 @@ export const demoSections = [
                         type: "object",
                         states: {
                             "Green (Default)": [],
-                            "Blue": HEATMAP_COLORS_BLUE,
-                            "GitHub's Halloween": HEATMAP_COLORS_YELLOW
+                            "Blue": ['#ebedf0', '#c0ddf9', '#73b3f3', '#3886e1', '#17459e'],
+                            "GitHub's Halloween": ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c']
                         }
                     }
                 ],

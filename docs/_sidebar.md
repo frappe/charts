@@ -12,21 +12,17 @@
 
 * Update state
   * [Modify data](update_state/modify_data.md)
-
-* Events
-  * [Navigation]()
-  * [Event hooks]()
+  * [Navigation](update_state/navigation.md)
 
 * Heatmap
   * [Day-based Month-wise data](basic/heatmap.md)
 
 * Exporting
-  * [Image Files]()
+  * [Image Files](exporting/images.md)
 
 * Reference
-  * [Configuration]()
-  * [API]()
+  * [Configuration](reference/configuration.md)
+  * [API](reference/api.md)
 
-* [ChangeLog]()
-* [Wrappers]()
-* [Contributing]()
+* [Wrappers](wrappers.md)
+* [Contributing](contributing.md)

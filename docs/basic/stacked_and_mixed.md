@@ -84,7 +84,7 @@ barOptions: {
       {
         name: 'barOptions',
         path: ['barOptions', 'stacked'],
-        type: 'boolean',
+        type: 'Boolean',
         states: { 'Stacked': 1, 'Adjacent': 0 },
         activeState: 1
       }

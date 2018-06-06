@@ -25,12 +25,12 @@
         <img src="https://img.shields.io/travis/frappe/charts.svg?style=flat-square">
     </a>
 </p>
-
+<!--
 <p align="center">
     <a href="https://frappe.github.io/charts">
         <img src=".github/example.gif">
     </a>
-</p>
+</p> -->
 
 ### Contents
 * [Installation](#installation)
