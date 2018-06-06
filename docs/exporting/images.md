@@ -6,7 +6,7 @@ Frappe charts are exportable to an SVG format, in which they are natively render
 chart.export();
 ```
 
-<chart-demo data="get-update-data" v-bind:config="{
+<project-demo data="get-update-data" v-bind:config="{
 		title: 'My Area Chart',
         type: 'line',
         height: 300,
@@ -19,4 +19,4 @@ chart.export();
 			args: []
 		}
 	]">
-</chart-demo>
+</project-demo>

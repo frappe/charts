@@ -168,7 +168,6 @@ class docSection {
 
 	getDemoOptions(demoIndex, options=[], args={}, figure) {
 		options.forEach(o => {
-			console.log("o", o);
 			const btnGroup = $$.create('div', {
 				inside: this.parent,
 				className: `btn-group ${scrub(o.name)}`

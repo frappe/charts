@@ -9,11 +9,11 @@ Perhaps the most well-known representation of data slices are Pie charts:
 ```js
 type: 'pie'
 ```
-<chart-demo data="mixed-2" v-bind:config="{
+<project-demo data="mixed-2" v-bind:config="{
         type: 'pie',
         height: 300
     }">
-</chart-demo>
+</project-demo>
 
 #### Percentage Charts FTW
 
@@ -22,11 +22,11 @@ Pies have received some [criticism]() for data perception; we are much better at
 ```js
 type: 'percentage'
 ```
-<chart-demo data="mixed-2" v-bind:config="{
+<project-demo data="mixed-2" v-bind:config="{
         type: 'percentage',
         height: 180,
     }">
-</chart-demo>
+</project-demo>
 
 #### Limiting the slices
 When there are too many data values to show visually, it makes sense to bundle up the least of the values as a cumulated data point, rather than showing tiny slices. This can be done by defining the maximum number of slices to be shown.
@@ -34,7 +34,7 @@ When there are too many data values to show visually, it makes sense to bundle u
 ```js
 maxSlices: 7,
 ```
-<chart-demo data="mixed-2" v-bind:config="{
+<project-demo data="mixed-2" v-bind:config="{
         type: 'pie',
         height: 300,
 		maxSlices: 7,
@@ -48,7 +48,7 @@ maxSlices: 7,
             activeState: 7
         }
     ]">
-</chart-demo>
+</project-demo>
 
 #### Configuring percentage bars
 Some attributes of a percentage bar can be redefined; like its height and the depth of it's shadow.
@@ -59,7 +59,7 @@ barOptions: {
 	depth: 5             // default: 2
 }
 ```
-<chart-demo data="mixed-2" v-bind:config="{
+<project-demo data="mixed-2" v-bind:config="{
         type: 'percentage',
         height: 200,
 		barOptions: {
@@ -83,4 +83,4 @@ barOptions: {
             activeState: 15
         }
     ]">
-</chart-demo>
+</project-demo>

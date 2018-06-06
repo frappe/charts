@@ -20,10 +20,10 @@ new frappe.Chart( "#chart", {
     colors: ['red']
 });
 ```
-<chart-demo
+<project-demo
     data="0"
     v-bind:config="{ type: 'bar', height: 140, colors:['red'] }">
-</chart-demo>
+</project-demo>
 
 
 And similarly, a `line` chart is data-wise homomorphic to a bar chart:
@@ -31,10 +31,10 @@ And similarly, a `line` chart is data-wise homomorphic to a bar chart:
 ```js
 type:'line'
 ```
-<chart-demo
+<project-demo
     data="0"
     v-bind:config="{ type: 'line', height: 140, colors:['red'] }">
-</chart-demo>
+</project-demo>
 
 
 ## Adding more datasets
@@ -51,7 +51,7 @@ data: {
 }
 ```
 Notice that this case demonstrates why the `colors` option is an array. We'll see more about it ahead.
-<chart-demo data="1" v-bind:config="{
+<project-demo data="1" v-bind:config="{
         type: 'line',
         height: 200,
         colors:['green', 'light-green']
@@ -65,7 +65,7 @@ Notice that this case demonstrates why the `colors` option is an array. We'll se
             activeState: 'Mixed'
         }
     ]">
-</chart-demo>
+</project-demo>
 
 
 ## Responsiveness
@@ -81,7 +81,7 @@ barOptions: {
 ```
 Try resizing the window to see the effect, with different ratio values.
 
-<chart-demo data="2" v-bind:config="{
+<project-demo data="2" v-bind:config="{
         type: 'bar',
         height: 140,
         colors: ['orange'],
@@ -97,7 +97,7 @@ Try resizing the window to see the effect, with different ratio values.
             activeState: 0.2
         }
     ]">
-</chart-demo>
+</project-demo>
 
 
 ## More Tweaks
@@ -109,7 +109,7 @@ axisOptions: {
 	xAxisMode: 'tick' // default: 'span'
 },
 ```
-<chart-demo
+<project-demo
     data="2"
     v-bind:config="{
         type: 'bar',
@@ -117,7 +117,7 @@ axisOptions: {
         colors:['blue'],
         axisOptions: { xAxisMode: 'tick' }
     }">
-</chart-demo>
+</project-demo>
 
 
 Just like bar width, we can set the <b>dot size</b> on a line graph, with the [`dotSize`]() property in [`lineOptions`]().
@@ -127,7 +127,7 @@ lineOptions: {
 	dotSize: 8 // default: 4
 },
 ```
-<chart-demo data="2" v-bind:config="{
+<project-demo data="2" v-bind:config="{
         type: 'line',
         height: 140,
         colors:['orange'],
@@ -143,7 +143,7 @@ lineOptions: {
             activeState: 8
         }
     ]">
-</chart-demo>
+</project-demo>
 
 
 These were some of the basic toggles to a chart; there are quite a few line options to go with, particularly to create [regions](). We'll look at those in next section.

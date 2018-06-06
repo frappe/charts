@@ -94,8 +94,8 @@
 
     let dbd = new demoBuilder(frappe.Chart);
 
-    Vue.component('chart-demo', {
-      template: '<div class="chart-demo"></div>',
+    Vue.component('project-demo', {
+      template: '<div class="project-demo"></div>',
       props: ['data', 'config', 'options', 'actions', 'sideContent'],
       mounted: function() {
         let config = this.config;
@@ -110,8 +110,6 @@
           actions: this.actions,
           sideContent: this.sideContent,
         };
-
-        console.log(this.sideContent);
 
         dbd.makeSection(this.$el, demoConfig);
       }

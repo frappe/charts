@@ -23,13 +23,13 @@ let chart = new Chart("#heatmap", {
     data: data,
 })
 ```
-<chart-demo data="heatmap-data" v-bind:config="{
+<project-demo data="heatmap-data" v-bind:config="{
 		title: 'Monthly Distribution',
         type: 'heatmap',
 	}">
-</chart-demo>
+</project-demo>
 
-<chart-demo data="heatmap-data" v-bind:config="{
+<project-demo data="heatmap-data" v-bind:config="{
 		title: 'Monthly Distribution',
         type: 'heatmap',
         height: 200,
@@ -56,7 +56,7 @@ let chart = new Chart("#heatmap", {
 			}
 		}
 	]">
-</chart-demo>
+</project-demo>
 (We are working on making the start date and end date implicit and optional). [tip]
 
 The chart is rendered by the type `heatmap`:

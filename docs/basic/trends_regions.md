@@ -6,7 +6,7 @@ lineOptions: {
 	areaFill: 1 // default: 0
 },
 ```
-<chart-demo data="1"
+<project-demo data="1"
 	v-bind:config="{
 		type: 'line',
 		height: 240,
@@ -15,7 +15,7 @@ lineOptions: {
 			areaFill: 1
 		},
 	}">
-</chart-demo>
+</project-demo>
 
 ## Plotting Trends
 Line charts are great to show trends. One of the reasons they are interesting is because the data involved usually involves a large number of data points. For so many points, we'd really like to keep the plot as less detailed as we can, while also using the already present color to advantage. Let's see how we can change some properties of a default line chart can reduce clutter.
@@ -34,7 +34,7 @@ axisOptions: {
 },
 ```
 This results only some of the X ticks having a label.
-<chart-demo data="trends-data"
+<project-demo data="trends-data"
 	v-bind:config="{
 		type: 'line',
 		height: 180,
@@ -44,7 +44,7 @@ This results only some of the X ticks having a label.
 			xIsSeries: 1
 		}
 	}">
-</chart-demo>
+</project-demo>
 
 The line plot in the above plot could still be simplified. For example, to maintain uniformity, we could opt out of showing the dots at all, with `hideDots`.
 ```js
@@ -52,7 +52,7 @@ lineOptions: {
 	hideDots: 1 // default: 0
 },
 ```
-<chart-demo data="trends-data"
+<project-demo data="trends-data"
 	v-bind:config="{
 		type: 'line',
 		height: 180,
@@ -65,7 +65,7 @@ lineOptions: {
 			hideDots: 1
 		},
 	}">
-</chart-demo>
+</project-demo>
 
 Or you could just choose to show only the dots instead.
 ```js
@@ -73,7 +73,7 @@ lineOptions: {
 	hideLine: 1 // default: 0
 },
 ```
-<chart-demo data="trends-data"
+<project-demo data="trends-data"
 	v-bind:config="{
 		type: 'line',
 		height: 180,
@@ -86,7 +86,7 @@ lineOptions: {
 			hideLine: 1
 		},
 	}">
-</chart-demo>
+</project-demo>
 Needless to say, turning both of them on would be too amusing to be of any use :)
 
 A subtle way to show gradation of values is to render a change in color with the magnitude of the values. The property that does this is called `heatline`.
@@ -95,7 +95,7 @@ lineOptions: {
 	heatline: 1 // default: 0
 },
 ```
-<chart-demo data="trends-data"
+<project-demo data="trends-data"
 	v-bind:config="{
 		type: 'line',
 		height: 180,
@@ -109,12 +109,12 @@ lineOptions: {
 			heatline: 1
 		},
 	}">
-</chart-demo>
+</project-demo>
 
 ## Combinations
 Here's a demo using different combinations of the line options.
 
-<chart-demo data="trends-data"
+<project-demo data="trends-data"
 	v-bind:config="{
 		type: 'line',
 		height: 200,
@@ -139,7 +139,7 @@ Here's a demo using different combinations of the line options.
 			activeState: 'Area'
 		}
     ]">
-</chart-demo>
+</project-demo>
 
 Next up, we'll start to annotate the data in charts.
 

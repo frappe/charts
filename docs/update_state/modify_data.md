@@ -19,7 +19,7 @@ chart.removeDataPoint();
 chart.removeDataPoint(index);
 ```
 
-<chart-demo data="get-update-data" v-bind:config="{
+<project-demo data="get-update-data" v-bind:config="{
         type: 'line',
         height: 200
     }"
@@ -35,7 +35,7 @@ chart.removeDataPoint(index);
 			args: []
 		}
 	]">
-</chart-demo>
+</project-demo>
 
 ### Updating full data
 
@@ -45,7 +45,7 @@ Another way is to simply update the entire data, including annotations, by passi
 chart.update(data);
 ```
 
-<chart-demo data="get-update-data" v-bind:config="{
+<project-demo data="get-update-data" v-bind:config="{
         type: 'line',
         height: 200
     }"
@@ -56,5 +56,5 @@ chart.update(data);
 			args: [getUpdateData()]
 		}
 	]">
-</chart-demo>
+</project-demo>
 

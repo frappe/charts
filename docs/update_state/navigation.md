@@ -1,6 +1,6 @@
 # Navigation
 
-<chart-demo data="2" v-bind:config="{
+<project-demo data="2" v-bind:config="{
         type: 'bar',
         height: 140,
 		isNavigable: 1,
@@ -8,10 +8,10 @@
         axisOptions: { xAxisMode: 'tick' },
         barOptions: { spaceRatio: 0.2 },
     }">
-</chart-demo>
+</project-demo>
 
 
-<chart-demo data="2" sideContent="2"
+<project-demo data="2" sideContent="2"
 	v-bind:config="{
         type: 'bar',
         height: 140,
@@ -20,4 +20,4 @@
         axisOptions: { xAxisMode: 'tick' },
         barOptions: { spaceRatio: 0.2 },
     }">
-</chart-demo>
+</project-demo>

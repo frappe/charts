@@ -18,7 +18,7 @@ data = {
 	]
 }
 ```
-<chart-demo data="ymarkers"
+<project-demo data="ymarkers"
 	v-bind:config="{
 		type: 'line',
 		height: 180,
@@ -27,7 +27,7 @@ data = {
 			yAxisMode: 'tick'
 		},
 	}">
-</chart-demo>
+</project-demo>
 
 #### Regions
 
@@ -44,7 +44,7 @@ yRegions: [
 ],
 ```
 Shown as a greyed-out area between the extremes.
-<chart-demo data="yregions"
+<project-demo data="yregions"
 	v-bind:config="{
 		type: 'line',
 		height: 180,
@@ -53,7 +53,7 @@ Shown as a greyed-out area between the extremes.
 			yAxisMode: 'tick'
 		},
 	}">
-</chart-demo>
+</project-demo>
 
 ## Tooltips
 
@@ -66,7 +66,7 @@ tooltipOptions: {
 }
 ```
 
-<chart-demo data="0"
+<project-demo data="0"
 	v-bind:config="{
 		type: 'line',
 		height: 150,
@@ -79,7 +79,7 @@ tooltipOptions: {
 			formatTooltipY: d => d + ' pts',
 		}
 	}">
-</chart-demo>
+</project-demo>
 
 For a non-web or static interface, where tooltips are absent, `valuesOverPoints` is a useful tweak to show value information at a glance.
 
@@ -88,7 +88,7 @@ For a non-web or static interface, where tooltips are absent, `valuesOverPoints`
 	valuesOverPoints: 1 // default: 0
 }
 ```
-<chart-demo data="1" v-bind:config="{
+<project-demo data="1" v-bind:config="{
         type: 'line',
         height: 200,
         colors:['violet', 'magenta'],
@@ -103,6 +103,6 @@ For a non-web or static interface, where tooltips are absent, `valuesOverPoints`
             activeState: 'Bar'
         }
     ]">
-</chart-demo>
+</project-demo>
 
 Next up we'll look at perhaps one the more exciting parts in axis charts: **Mixed Charts**.

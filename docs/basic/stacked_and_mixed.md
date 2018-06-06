@@ -22,16 +22,16 @@ data: {
 type: 'axis-mixed'
 ```
 This allows for creation of mixed axis chart. It is recommended to list the bar datasets before the line ones to avoid overlapping.
-<chart-demo data="mixed-1" v-bind:config="{
+<project-demo data="mixed-1" v-bind:config="{
         type: 'axis-mixed',
         height: 200,
         colors:['light-green', 'green']
     }">
-</chart-demo>
+</project-demo>
 
 All the `lineOptions` and `barOptions` apply to mix and match datasets as well.
 
-<chart-demo data="mixed-2" v-bind:config="{
+<project-demo data="mixed-2" v-bind:config="{
         type: 'axis-mixed',
         height: 240,
         colors:['light-green', 'green', 'blue'],
@@ -58,7 +58,7 @@ All the `lineOptions` and `barOptions` apply to mix and match datasets as well.
             activeState: 4
         }
     ]">
-</chart-demo>
+</project-demo>
 
 Infact, one of the bar options is actually dependent on multiple datasets.
 
@@ -71,7 +71,7 @@ barOptions: {
   stacked: 1    // default 0, i.e. adjacent
 }
 ```
-<chart-demo data="bar-composite-data" v-bind:config="{
+<project-demo data="bar-composite-data" v-bind:config="{
       type: 'bar',
       height: 240,
       colors:['blue', 'green', 'light-green'],
@@ -89,7 +89,7 @@ barOptions: {
         activeState: 1
       }
     ]">
-</chart-demo>
+</project-demo>
 
 
 In [Aggregation Charts]() however, instead of being rendered individually, each data point in aggregated accross every dataset. We'll cover those next.
