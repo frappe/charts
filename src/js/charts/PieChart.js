@@ -12,6 +12,7 @@ export default class PieChart extends AggregationChart {
 		super(parent, args);
 		this.type = 'pie';
 		this.initTimeout = 0;
+		this.init = 1;
 
 		this.setup();
 	}
@@ -27,28 +28,11 @@ export default class PieChart extends AggregationChart {
 		this.clockWise = args.clockWise || false;
 	}
 
-	prepareFirstData(data=this.data) {
-		this.init = 1;
-		return data;
-	}
-
 	calc() {
 		super.calc();
 		let s = this.state;
-
-		this.center = {
-			x: this.width / 2,
-			y: this.height / 2
-		};
 		this.radius = (this.height > this.width ? this.center.x : this.center.y);
 
-		s.grandTotal = s.sliceTotals.reduce((a, b) => a + b, 0);
-
-		this.calcSlices();
-	}
-
-	calcSlices() {
-		let s = this.state;
 		const { radius, clockWise } = this;
 
 		const prevSlicesProperties = s.slicesProperties || [];
@@ -144,8 +128,8 @@ export default class PieChart extends AggregationChart {
 	}
 
 	bindTooltip() {
-		this.chartWrapper.addEventListener('mousemove', this.mouseMove);
-		this.chartWrapper.addEventListener('mouseleave', this.mouseLeave);
+		this.container.addEventListener('mousemove', this.mouseMove);
+		this.container.addEventListener('mouseleave', this.mouseLeave);
 	}
 
 	mouseMove(e){

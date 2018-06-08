@@ -1,17 +1,28 @@
 <div align="center">
     <img src="https://github.com/frappe/design/blob/master/logos/charts-logo.svg" height="128">
-    <h2>Frappe Charts</h2>
+    <a href="https://frappe.github.io/charts">
+        <h2>Frappe Charts</h2>
+    </a>
     <p align="center">
         <p>GitHub-inspired modern, intuitive and responsive charts with zero dependencies</p>
         <a href="https://frappe.github.io/charts">
-            <b>Explore Demos »</b>
+            <b>Explore Demos » </b>
+        </a>
+        <a href="https://codepen.io/pratu16x7/pen/wjKBoq">
+            <b> Edit at CodePen »</b>
         </a>
     </p>
 </div>
 
 <p align="center">
+    <a href="https://travis-ci.org/frappe/charts">
+        <img src="https://img.shields.io/travis/frappe/charts.svg?style=flat-square">
+    </a>
     <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.iife.js">
         <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.iife.js.svg?compression=gzip">
+    </a>
+    <a href="https://travis-ci.org/frappe/charts">
+        <img src="https://img.shields.io/travis/frappe/charts.svg?style=flat-square">
     </a>
 </p>
 
@@ -36,15 +47,15 @@
 
   and include in your project:
   ```js
-  import Chart from "frappe-charts/dist/frappe-charts.min.esm"
+  import { Chart } from "frappe-charts"
   ```
 
 * ...or include within your HTML
 
   ```html
-    <script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.0.0/dist/frappe-charts.min.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.1.0/dist/frappe-charts.min.iife.js"></script>
     <!-- or -->
-    <script src="https://unpkg.com/frappe-charts@1.0.0/dist/frappe-charts.min.iife.js"></script>
+    <script src="https://unpkg.com/frappe-charts@1.1.0/dist/frappe-charts.min.iife.js"></script>
   ```
 
 #### Usage
@@ -55,17 +66,18 @@ const data = {
     ],
     datasets: [
         {
-            title: "Some Data", type: "bar",
+            name: "Some Data", type: "bar",
             values: [25, 40, 30, 35, 8, 52, 17, -4]
         },
         {
-            title: "Another Set", type: "line",
+            name: "Another Set", type: "line",
             values: [25, 50, -10, 15, 18, 32, 27, 14]
         }
     ]
 }
 
-const chart = new Chart("#chart", { // or a DOM element
+const chart = new frappe.Chart("#chart", {  // or a DOM element,
+                                            // new Chart() in case of ES6 module with above usage
     title: "My Awesome Chart",
     data: data,
     type: 'axis-mixed', // or 'bar', 'line', 'scatter', 'pie', 'percentage'

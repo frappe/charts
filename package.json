@@ -1,6 +1,6 @@
 {
   "name": "frappe-charts",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "https://frappe.github.io/charts",
   "main": "dist/frappe-charts.min.cjs.js",
   "module": "dist/frappe-charts.min.esm.js",
@@ -15,7 +15,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "rollup -c --watch",
-    "reload": "livereload 'dist/' -d",
     "dev": "npm-run-all --parallel watch reload"
   },
   "repository": {
@@ -33,16 +32,27 @@
   },
   "homepage": "https://github.com/frappe/charts#readme",
   "devDependencies": {
+    "autoprefixer": "^8.2.0",
     "babel-core": "^6.26.0",
     "babel-plugin-external-helpers": "^6.22.0",
+    "babel-plugin-istanbul": "^4.1.5",
     "babel-preset-env": "^1.6.1",
     "babel-preset-latest": "^6.24.1",
+    "babel-register": "^6.26.0",
+    "clean-css": "^4.1.11",
+    "coveralls": "^3.0.0",
+    "cross-env": "^5.1.4",
     "cssnano": "^3.10.0",
-    "livereload": "^0.6.3",
+    "eslint": "^4.18.2",
+    "fs": "0.0.1-security",
+    "mocha": "^5.0.5",
     "node-sass": "^4.7.2",
     "npm-run-all": "^4.1.1",
+    "nyc": "^11.6.0",
+    "postcss": "^6.0.21",
     "postcss-cssnext": "^3.0.2",
     "postcss-nested": "^2.1.2",
+    "precss": "^3.1.2",
     "rollup": "^0.50.0",
     "rollup-plugin-babel": "^3.0.2",
     "rollup-plugin-eslint": "^4.0.0",
@@ -53,7 +63,5 @@
     "rollup-plugin-uglify-es": "0.0.1",
     "rollup-watch": "^4.3.1"
   },
-  "dependencies": {
-    "eslint": "^4.18.2"
-  }
+  "dependencies": {}
 }

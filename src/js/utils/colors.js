@@ -15,9 +15,6 @@ const PRESET_COLOR_MAP = {
 	'dark-grey': '#b8c2cc'
 };
 
-export const DEFAULT_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
-	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
-
 function limitColor(r){
 	if (r > 255) return 255;
 	else if (r < 0) return 0;

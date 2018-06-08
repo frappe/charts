@@ -7,12 +7,11 @@
     <meta name="keywords" content="open source javascript js charts library svg zero-dependency interactive data visualization beautiful drag resize">
     <meta name="description" content="A simple, responsive, modern charts library for the web.">
 
-    <link rel="stylesheet" type="text/css" href="assets/css/normalize.css" media="screen">
-    <link href='https://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="assets/css/reset.css" media="screen">
     <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="assets/css/frappe_theme.css" media="screen">
     <link rel="stylesheet" type="text/css" href="assets/css/index.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="assets/css/default.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="assets/css/hljs.css" media="screen">
+
     <script src="assets/js/highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
 
@@ -23,297 +22,274 @@
   </head>
 
   <body>
-    <div class="container">
-      <div class="row hero" style="padding-top: 30px; padding-bottom: 0px;">
-        <div class="jumbotron" style="background: transparent;">
-          <h1>Frappe Charts</h1>
-          <p class="mt-2">GitHub-inspired simple and modern charts for the web</p>
-          <p class="mt-2">with zero dependencies.</p>
-          <!--<p class="mt-2">Because dumb charts are hard to come by.</p>-->
-        </div>
+    <header>
+      <h1>Frappe Charts</h1>
+      <p class="lead-text">GitHub-inspired simple and modern SVG charts for the web<br>with zero dependencies.</p>
+      <div id="chart-composite-1" class="border"></div>
+      <p class="demo-tip">Click or use arrow keys to navigate data points</p>
+      <div id="chart-composite-2" class="border"></div>
+    </header>
 
-        <div class="col-sm-10 push-sm-1 later" style="font-size: 14px;">
-          <div id="chart-composite-1" class="border"><svg height=225></svg></div>
-          <p class="mt-1">Click or use arrow keys to navigate data points</p>
-        </div>
-        <div class="col-sm-10 push-sm-1 later" style="font-size: 14px;">
-          <div id="chart-composite-2" class="border"><svg height=225></svg></div>
-        </div>
-      </div>
-
-      <div class="group later">
-        <div class="row section">
-
-          <div class="col-sm-10 push-sm-1">
-            <div class="dashboard-section">
-              <h6 class="margin-vertical-rem">Create a chart</h6>
-              <pre><code class="hljs html">  &lt!--HTML--&gt;
+    <section>
+      <h6>Create a chart</h6>
+      <pre><code class="hljs html">  &lt!--HTML--&gt;
   &lt;div id="chart"&gt;&lt;/div&gt;</code></pre>
-              <pre><code class="hljs javascript">  // Javascript
-  let chart = new Chart( "#chart", { // or DOM element
+      <pre><code class="hljs javascript">  // Javascript
+  let chart = new frappe.Chart( "#chart", { // or DOM element
     data: {
       labels: ["12am-3am", "3am-6am", "6am-9am", "9am-12pm",
       "12pm-3pm", "3pm-6pm", "6pm-9pm", "9pm-12am"],
 
       datasets: [
         {
-          label: "Some Data", type: 'bar',
+          name: "Some Data", chartType: 'bar',
           values: [25, 40, 30, 35, 8, 52, 17, -4]
         },
         {
-          label: "Another Set", type: 'bar',
+          name: "Another Set", chartType: 'bar',
           values: [25, 50, -10, 15, 18, 32, 27, 14]
         },
         {
-          label: "Yet Another", type: 'line',
+          name: "Yet Another", chartType: 'line',
           values: [15, 20, -3, -15, 58, 12, -17, 37]
         }
       ],
 
-      yMarkers: [{ label: "Marker", value: 70 }],
-      yRegions: [{ label: "Region", start: -10, end: 50 }]
+      yMarkers: [{ label: "Marker", value: 70,
+        options: { labelPos: 'left' }}],
+      yRegions: [{ label: "Region", start: -10, end: 50,
+        options: { labelPos: 'right' }}]
     },
 
     title: "My Awesome Chart",
     type: 'axis-mixed', // or 'bar', 'line', 'pie', 'percentage'
-    height: 250,
-    colors: ['purple', '#ffa3ef', 'red']
-  });</code></pre>
-              <!-- <div id="chart-types" class="border" style="margin-bottom: 15px"></div> -->
-              <!-- <div >
-                <div class="btn-group x-axis-buttons margin-vertical-px" role="group">
-                  <button type="button" class="btn btn-sm btn-secondary active" data-type='span'>X span</button>
-                  <button type="button" class="btn btn-sm btn-secondary" data-type='tick'>X tick</button>
-                </div>
-                <div class="btn-group y-axis-buttons margin-vertical-px" role="group">
-                  <button type="button" class="btn btn-sm btn-secondary active" data-type='span'>Y span</button>
-                  <button type="button" class="btn btn-sm btn-secondary" data-type='tick'>Y tick</button>
-                </div>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-addon">.00</span>
-                  <input type="text" class="form-control" aria-label="Amount (rounded to the nearest dollar)">
-                </div>
-              </div> -->
-
-              <div id="chart-aggr" class="border"></div>
-              <div class="btn-group aggr-type-buttons margin-vertical-px mx-auto" role="group">
-                <button type="button" class="btn btn-sm btn-secondary active" data-type='axis-mixed'>Mixed</button>
-                <button type="button" class="btn btn-sm btn-secondary" data-type='pie'>Pie Chart</button>
-                <button type="button" class="btn btn-sm btn-secondary" data-type='percentage'>Percentage Chart</button>
-              </div>
-              <!-- <p class="text-muted">
-                <a target="_blank" href="http://www.storytellingwithdata.com/blog/2011/07/death-to-pie-charts">Why Percentage?</a>
-              </p> -->
-            </div>
-          </div>
-
-          <div class="col-sm-10 push-sm-1">
-            <div class="dashboard-section">
-              <h6 class="margin-vertical-rem">
-                Update Values
-              </h6>
-              <div id="chart-update" class="border"></div>
-              <div class="chart-update-buttons mt-1 mx-auto" role="group">
-                <button type="button" class="btn btn-sm btn-secondary" data-update="random">Random Data</button>
-                <button type="button" class="btn btn-sm btn-secondary" data-update="add">Add Value</button>
-                <button type="button" class="btn btn-sm btn-secondary" data-update="remove">Remove Value</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-sm-10 push-sm-1">
-            <div class="dashboard-section">
-              <h6 class="margin-vertical-rem">
-                Plot Trends
-              </h6>
-              <div id="chart-trends" class="border"></div>
-              <div class="btn-group chart-plot-buttons mt-1 mx-auto" role="group">
-                <button type="button" class="btn btn-sm btn-secondary" data-type="hideDots">Line</button>
-                <button type="button" class="btn btn-sm btn-secondary" data-type="hideLine">Dots</button>
-                <button type="button" class="btn btn-sm btn-secondary active" data-type="heatline">HeatLine</button>
-                <button type="button" class="btn btn-sm btn-secondary" data-type="regionFill">Region</button>
-              </div>
-              <!-- <pre><code class="hljs javascript margin-vertical-px">  ...
-    lineOptions: 'line',   // Line Chart specific properties:
-
-    hideDots: 1,   // Hide data points on the line; default 0
-    heatline: 1,    // Show a value-wise line gradient; default 0
-    regionFill: 1, // Fill the area under the graph; default 0
-  ...</code></pre> -->
-            </div>
-          </div>
-
-          <div class="col-sm-10 push-sm-1">
-            <div class="dashboard-section">
-              <h6 class="margin-vertical-rem">
-                Listen to state change
-              </h6>
-              <div class="row">
-                <div class="col-sm-8">
-                  <div id="chart-events" class="border"></div>
-                </div>
-                <div class="col-sm-4">
-                  <div class="chart-events-data" class="border data-container">
-                    <div class="image-container border">
-                      <img class="moon-image" src="./assets/img/europa.jpg">
-                    </div>
-                    <div class="data margin-vertical-px">
-                      <h6 class="moon-name">Europa</h6>
-                      <p>Semi-major-axis: <span class="semi-major-axis">671034</span> km</p>
-                      <p>Mass: <span class="mass">4800000</span>  x 10^16 kg</p>
-                      <p>Diameter: <span class="diameter">3121.6</span> km</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <pre><code class="hljs javascript margin-vertical-px">  ...
-    isNavigable: 1, // Navigate across data points; default 0
-  ...
-
-  chart.parent.addEventListener('data-select', (e) => {
-    update_moon_data(e.index); // e contains index and value of current datapoint
-  });</code></pre>
-            </div>
-          </div>
-
-          <div class="col-sm-10 push-sm-1">
-            <div class="dashboard-section">
-              <h6 class="margin-vertical-rem">
-                And a Month-wise Heatmap
-              </h6>
-              <div id="chart-heatmap" class="border"
-                style="overflow: scroll; text-align: center; padding: 20px;"></div>
-              <div class="heatmap-mode-buttons btn-group mt-1 mx-auto" role="group">
-                <button type="button" class="btn btn-sm btn-secondary active" data-mode="discrete">Discrete</button>
-                <button type="button" class="btn btn-sm btn-secondary" data-mode="continuous">Continuous</button>
-              </div>
-              <div class="heatmap-color-buttons btn-group mt-1 mx-auto" role="group">
-                <button type="button" class="btn btn-sm btn-secondary" data-color="default">Default green</button>
-                <button type="button" class="btn btn-sm btn-secondary active" data-color="halloween">GitHub's Halloween</button>
-              </div>
-              <pre><code class="hljs javascript margin-vertical-px">  let heatmap = new Chart("#heatmap", {
-    type: 'heatmap',
-    height: 115,
-    data: heatmapData,  // object with date/timestamp-value pairs
-
-    discreteDomains: 1  // default: 0
-
-    start: startDate,
-                  // A Date object;
-                  // default: today's date in past year
-                  //          for an annual heatmap
-
-    legendColors: ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'],
-                  // Set of five incremental colors,
-                  // beginning with a low-saturation color for zero data;
-                  // default: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127']
-
-  });</code></pre>
-            </div>
-          </div>
-
-          <div class="col-sm-10 push-sm-1">
-              <div class="dashboard-section">
-                <h6 class="margin-vertical-rem">Available options:</h6>
-                <pre><code class="hljs javascript">
-  ...
-  {
-    data: {
-      labels: [],
-      datasets: [],
-      yRegions: [],
-      yMarkers: []
-    }
-    title: '',
-    colors: [],
-    height: 200,
+    height: 300,
+    colors: ['purple', '#ffa3ef', 'light-blue'],
 
     tooltipOptions: {
       formatTooltipX: d => (d + '').toUpperCase(),
       formatTooltipY: d => d + ' pts',
     }
+  });
 
-    // Axis charts
-    isNavigable: 1,        // default: 0
-    valuesOverPoints: 1,   // default: 0
-    barOptions: {
-      stacked: 1           // default: 0
-    }
+  chart.export();
+</code></pre>
 
-    lineOptions: {
-      dotSize: 6,          // default: 4
-      hideLine: 0,         // default: 0
-      hideDots: 1,         // default: 0
-      heatline: 1,         // default: 0
-      regionFill: 1        // default: 0
-    }
+      <div id="chart-aggr" class="border"></div>
+      <div class="btn-group aggr-type-buttons margin-top mx-auto" role="group">
+        <button type="button" class="btn btn-sm btn-secondary active" data-type='axis-mixed'>Mixed</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-type='pie'>Pie Chart</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-type='percentage'>Percentage Chart</button>
+      </div>
+      <div class="btn-group export-buttons margin-top mx-auto" role="group">
+        <button type="button" class="btn btn-sm btn-secondary export-aggr">Export ...</button>
+      </div>
+    </section>
 
-    axisOptions: {
-      yAxisMode: 'span',   // Axis lines, default
-      xAxisMode: 'tick',   // No axis lines, only short ticks
-      xIsSeries: 1         // Allow skipping x values for space
-                           // default: 0
-    },
+    <section>
+      <h6>Update Values</h6>
+      <div id="chart-update" class="border"></div>
 
-    // Pie/Percentage charts
+      <div class="chart-update-buttons mt-1 mx-auto" role="group">
+        <button type="button" class="btn btn-sm btn-secondary" data-update="random">Random Data</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-update="add">Add Value</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-update="remove">Remove Value</button>
+        <button type="button" class="btn btn-sm btn-secondary export-update">Export ...</button>
+      </div>
+    </section>
 
-    maxLegendPoints: 6,    // default: 20
-    maxSlices: 10,         // default: 20
+    <section>
+      <h6>Plot Trends</h6>
+      <div id="chart-trends" class="border"></div>
 
-    // Heatmap
+      <div class="btn-group chart-plot-buttons mt-1 mx-auto" role="group">
+        <button type="button" class="btn btn-sm btn-secondary" data-type="hideDots">Line</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-type="hideLine">Dots</button>
+        <button type="button" class="btn btn-sm btn-secondary active" data-type="heatline">HeatLine</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-type="regionFill">Region</button>
+      </div>
+      <div class="btn-group export-buttons mt-1 mx-auto" role="group">
+        <button type="button" class="btn btn-sm btn-secondary export-trends">Export ...</button>
+      </div>
+    </section>
 
-    discreteDomains: 1,    // default: 1
-    start: startDate,      // Date object
-    legendColors: []
-  }
-  ...
-
-    // Updating values
-    chart.update(data);
-
-    // Axis charts:
-    chart.addDataPoint(label, valueFromEachDataset, index)
-    chart.removeDataPoint(index)
-    chart.updateDataset(datasetValues, index)
-
-  </code></pre>
-              </div>
-            </div>
-
-          <div class="col-sm-10 push-sm-1">
-            <div class="dashboard-section">
-              <h6 class="margin-vertical-rem">Install</h6>
-              <p class="step-explain">Install via npm</p>
-              <pre><code class="hljs console">  npm install frappe-charts</code></pre>
-              <p class="step-explain">And include it in your project</p>
-              <pre><code class="hljs javascript">  import Chart from "frappe-charts/dist/frappe-charts.min.esm"</code></pre>
-              <p class="step-explain">... or include it directly in your HTML</p>
-              <pre><code class="hljs html">  &lt;script src="https://unpkg.com/frappe-charts@1.0.0/dist/frappe-charts.min.iife.js"&gt;&lt;/script&gt;</code></pre>
-
-            </div>
+    <section>
+      <h6>Listen to state change</h6>
+      <div class="row">
+        <div class="col-sm-8">
+          <div id="chart-events" class="border"></div>
+        </div>
+        <div class="col-sm-4 chart-events-data">
+          <div class="image-container border">
+            <img class="moon-image" src="./assets/img/europa.jpg">
           </div>
-
-
-          <div class="col-sm-10 push-sm-1">
-            <div class="dashboard-section">
-              <!-- Closing -->
-              <div class="text-center" style="margin-top: 70px">
-                <a href="https://github.com/frappe/charts/archive/master.zip"><button class="large blue button">Download</button></a>
-                <p style="margin-top: 3rem;margin-bottom: 1.5rem;"><a href="https://github.com/frappe/charts" target="_blank">View on GitHub</a></p>
-                <p style="margin-top: 1rem;">
-                  <a class="github-button" href="https://github.com/frappe/charts" data-icon="octicon-star" data-show-count="true" aria-label="Star frappe/charts on GitHub">Star</a>
-                </p>
-                <p>License: MIT</p>
-              </div>
-            </div>
+          <div class="content-data margin-top">
+            <h6 class="moon-name">Europa</h6>
+            <p>Semi-major-axis: <span class="semi-major-axis">671034</span> km</p>
+            <p>Mass: <span class="mass">4800000</span>  x 10^16 kg</p>
+            <p>Diameter: <span class="diameter">3121.6</span> km</p>
           </div>
-
         </div>
       </div>
+      <pre><code class="hljs javascript margin-top">  ...
+  isNavigable: 1, // Navigate across data points; default 0
+  ...
 
-    </div>
+  chart.parent.addEventListener('data-select', (e) => {
+    update_moon_data(e.index); // e contains index and value of current datapoint
+  });</code></pre>
+    </section>
 
-    <div class="built-with-frappe text-center" style="margin-top: -20px">
+    <section>
+      <h6>
+        And a Month-wise Heatmap
+      </h6>
+      <div id="chart-heatmap" class="border"
+        style="overflow: scroll;"></div>
+      <div class="heatmap-mode-buttons btn-group mt-1 mx-auto" role="group">
+        <button type="button" class="btn btn-sm btn-secondary active" data-mode="discrete">Discrete</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-mode="continuous">Continuous</button>
+      </div>
+      <div class="heatmap-color-buttons btn-group mt-1 mx-auto" role="group">
+        <button type="button" class="btn btn-sm btn-secondary" data-color="default">Green (Default)</button>
+        <button type="button" class="btn btn-sm btn-secondary active" data-color="blue">Blue</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-color="halloween">GitHub's Halloween</button>
+      </div>
+      <div class="btn-group export-buttons mt-1 mx-auto" role="group">
+        <button type="button" class="btn btn-sm btn-secondary export-heatmap">Export ...</button>
+      </div>
+      <pre><code class="hljs javascript margin-top">  let heatmap = new frappe.Chart("#heatmap", {
+    type: 'heatmap',
+    title: "Monthly Distribution",
+    data: {
+      dataPoints: {'1524064033': 8, /* ... */},
+                        // object with timestamp-value pairs
+      start: startDate
+      end: endDate      // Date objects
+    },
+    countLabel: 'Level',
+    discreteDomains: 0  // default: 1
+    colors: ['#ebedf0', '#c0ddf9', '#73b3f3', '#3886e1', '#17459e'],
+                // Set of five incremental colors,
+                // preferably with a low-saturation color for zero data;
+                // def: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127']
+  });</code></pre>
+    </section>
+
+    <section>
+      <h6>Demo</h6>
+      <p data-height="299" data-theme-id="light" data-slug-hash="wjKBoq" data-default-tab="js,result"
+        data-user="pratu16x7" data-embed-version="2" data-pen-title="Frappe Charts Demo" class="codepen">
+          See the Pen <a href="https://codepen.io/pratu16x7/pen/wjKBoq/">Frappe Charts Demo</a>
+          by Prateeksha Singh (<a href="https://codepen.io/pratu16x7">@pratu16x7</a>) on
+          <a href="https://codepen.io">CodePen</a>.
+      </p>
+      <script async src="https://static.codepen.io/assets/embed/ei.js"></script>
+    </section>
+
+    <section>
+      <h6>Available options</h6>
+      <pre><code class="hljs javascript">
+    ...
+    {
+      data: {
+        labels: [],
+        datasets: [],
+        yRegions: [],
+        yMarkers: []
+      }
+      title: '',
+      colors: [],
+      height: 200,
+
+      tooltipOptions: {
+        formatTooltipX: d => (d + '').toUpperCase(),
+        formatTooltipY: d => d + ' pts',
+      }
+
+      // Axis charts
+      isNavigable: 1,        // default: 0
+      valuesOverPoints: 1,   // default: 0
+      barOptions: {
+        spaceRatio: 1        // default: 0.5
+        stacked: 1           // default: 0
+      }
+
+      lineOptions: {
+        dotSize: 6,          // default: 4
+        hideLine: 0,         // default: 0
+        hideDots: 1,         // default: 0
+        heatline: 1,         // default: 0
+        regionFill: 1        // default: 0
+      }
+
+      axisOptions: {
+        yAxisMode: 'span',   // Axis lines, default
+        xAxisMode: 'tick',   // No axis lines, only short ticks
+        xIsSeries: 1         // Allow skipping x values for space
+                              // default: 0
+      },
+
+      // Pie/Percentage charts
+      maxLegendPoints: 6,    // default: 20
+      maxSlices: 10,         // default: 20
+
+      // Percentage chart
+      barOptions: {
+        height: 15           // default: 20
+        depth: 5             // default: 2
+      }
+
+      // Heatmap
+      discreteDomains: 1,    // default: 1
+    }
+    ...
+
+  // Updating values
+  chart.update(data);
+
+  // Axis charts:
+  chart.addDataPoint(label, valueFromEachDataset, index)
+  chart.removeDataPoint(index)
+  chart.updateDataset(datasetValues, index)
+
+  // Exporting
+  chart.export();
+
+  // Unbind window-resize events
+  chart.unbindWindowEvents();
+
+</code></pre>
+    </section>
+
+    <section>
+      <h6>Install</h6>
+      <p>Install via npm</p>
+      <pre><code class="hljs console">  npm install frappe-charts</code></pre>
+      <p>And include it in your project</p>
+      <pre><code class="hljs javascript">  import { Chart } from "frappe-charts"</code></pre>
+      <p>... or include it directly in your HTML</p>
+      <pre><code class="hljs html">  &lt;script src="https://unpkg.com/frappe-charts@1.1.0"&gt;&lt;/script&gt;</code></pre>
+      <p>Use as:</p>
+      <pre><code class="hljs javascript">  new Chart();          // ES6 module
+                        // or
+  new frappe.Chart();   // Browser</code></pre>
+    </section>
+
+    <section class="text-center">
+      <!-- Closing -->
+      <a href="https://github.com/frappe/charts/archive/master.zip"><button class="large blue button btn">Download</button></a>
+      <p style="margin-top: 3rem;margin-bottom: 1.5rem;">
+        <!-- <a href="docs.html" style="margin-right: 1rem;" target="_blank">Documentation</a> -->
+        <a href="https://github.com/frappe/charts" target="_blank">View on GitHub</a>
+      </p>
+      <p style="margin-top: 1rem;">
+        <a class="github-button" href="https://github.com/frappe/charts" data-icon="octicon-star" data-show-count="true" aria-label="Star frappe/charts on GitHub">Star</a>
+      </p>
+      <p>License: MIT</p>
+    </section>
+
+    <footer class="built-with-frappe text-center">
         <img style="padding: 5px; width: 40px; background: #fff" class="frappe-bird" src="./assets/img/frappe-bird.png">
         <p style="margin: 24px 0 0px 0; font-size: 15px">
           Project maintained by <a href="https://frappe.io" target="_blank">Frappe</a>.
@@ -325,7 +301,7 @@
           <a href="http://www.sidc.be/silso" target="_blank">SILSO</a> and
           <a href="https://api.nasa.gov/index.html" target="_blank">NASA Open APIs</a>
         </p>
-    </div>
+    </footer>
 
     <a href="https://github.com/frappe/charts" target="_blank" class="github-corner" aria-label="View source on Github">
       <svg width="80" height="80" viewBox="0 0 250 250" style="fill:#9a9a9a; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true">
@@ -336,6 +312,6 @@
     </a>
 
     <script src="assets/js/frappe-charts.min.js"></script>
-    <script src="assets/js/index.js"></script>
+    <script src="assets/js/index.min.js"></script>
   </body>
 </html>

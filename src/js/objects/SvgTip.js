@@ -1,4 +1,5 @@
 import { $ } from '../utils/dom';
+import { TOOLTIP_POINTER_TRIANGLE_HEIGHT } from '../utils/constants';
 
 export default class SvgTip {
 	constructor({
@@ -28,7 +29,6 @@ export default class SvgTip {
 	refresh() {
 		this.fill();
 		this.calcPosition();
-		// this.showTip();
 	}
 
 	makeTooltip() {
@@ -64,12 +64,13 @@ export default class SvgTip {
 
 		this.listValues.map((set, i) => {
 			const color = this.colors[i] || 'black';
+			let value = set.formatted === 0 || set.formatted ? set.formatted : set.value;
 
 			let li = $.create('li', {
 				styles: {
 					'border-top': `3px solid ${color}`
 				},
-				innerHTML: `<strong style="display: block;">${ set.value === 0 || set.value ? set.value : '' }</strong>
+				innerHTML: `<strong style="display: block;">${ value === 0 || value ? value : '' }</strong>
 					${set.title ? set.title : '' }`
 			});
 
@@ -80,7 +81,8 @@ export default class SvgTip {
 	calcPosition() {
 		let width = this.container.offsetWidth;
 
-		this.top = this.y - this.container.offsetHeight;
+		this.top = this.y - this.container.offsetHeight
+			- TOOLTIP_POINTER_TRIANGLE_HEIGHT;
 		this.left = this.x - width/2;
 		let maxLeft = this.parent.offsetWidth - width;
 

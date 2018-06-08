@@ -1,0 +1,14 @@
+language: node_js
+
+node_js:
+  - "6"
+  - "8"
+
+before_install:
+  - make install
+
+script:
+  - make test
+
+after_success:
+  - make coveralls

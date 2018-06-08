@@ -1,0 +1,116 @@
+.chart-container {
+	position: relative; /* for absolutely positioned tooltip */
+
+	/* https://www.smashingmagazine.com/2015/11/using-system-ui-fonts-practical-guide/ */
+	font-family: -apple-system, BlinkMacSystemFont,
+		'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+		'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+
+	.axis, .chart-label {
+		fill: #555b51;
+
+		line {
+			stroke: #dadada;
+		}
+	}
+	.dataset-units {
+		circle {
+			stroke: #fff;
+			stroke-width: 2;
+		}
+
+		path {
+			fill: none;
+			stroke-opacity: 1;
+			stroke-width: 2px;
+		}
+	}
+	.dataset-path {
+		stroke-width: 2px;
+	}
+	.path-group {
+		path {
+			fill: none;
+			stroke-opacity: 1;
+			stroke-width: 2px;
+		}
+	}
+	line.dashed {
+		stroke-dasharray: 5, 3;
+	}
+	.axis-line {
+		.specific-value {
+			text-anchor: start;
+		}
+		.y-line {
+			text-anchor: end;
+		}
+		.x-line {
+			text-anchor: middle;
+		}
+	}
+	.legend-dataset-text {
+		fill: #6c7680;
+		font-weight: 600;
+	}
+}
+
+.graph-svg-tip {
+	position: absolute;
+	z-index: 99999;
+	padding: 10px;
+	font-size: 12px;
+	color: #959da5;
+	text-align: center;
+	background: rgba(0, 0, 0, 0.8);
+	border-radius: 3px;
+	ul {
+		padding-left: 0;
+		display: flex;
+	}
+	ol {
+		padding-left: 0;
+		display: flex;
+	}
+	ul.data-point-list {
+		li {
+			min-width: 90px;
+			flex: 1;
+			font-weight: 600;
+		}
+	}
+	strong {
+		color: #dfe2e5;
+		font-weight: 600;
+	}
+	.svg-pointer {
+		position: absolute;
+		height: 5px;
+		margin: 0 0 0 -5px;
+		content: ' ';
+		border: 5px solid transparent;
+		border-top-color: rgba(0, 0, 0, 0.8);
+	}
+	&.comparison {
+		padding: 0;
+		text-align: left;
+		pointer-events: none;
+		.title {
+			display: block;
+			padding: 10px;
+			margin: 0;
+			font-weight: 600;
+			line-height: 1;
+			pointer-events: none;
+		}
+		ul {
+			margin: 0;
+			white-space: nowrap;
+			list-style: none;
+		}
+		li {
+			display: inline-block;
+			padding: 5px 10px;
+		}
+	}
+}

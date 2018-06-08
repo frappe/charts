@@ -1,11 +1,13 @@
 import { getBarHeightAndYAttr } from './draw-utils';
 import { getStringWidth } from './helpers';
-import { DOT_OVERLAY_SIZE_INCR } from './constants';
+import { DOT_OVERLAY_SIZE_INCR, PERCENTAGE_BAR_DEFAULT_DEPTH } from './constants';
+import { lightenDarkenColor } from './colors';
 
-const AXIS_TICK_LENGTH = 6;
+export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 export const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
+const FONT_FILL = '#555b51';
 
 function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
@@ -79,12 +81,13 @@ export function makeSVGDefs(svgContainer) {
 	});
 }
 
-export function makeSVGGroup(parent, className, transform='') {
-	return createSVG('g', {
+export function makeSVGGroup(className, transform='', parent=undefined) {
+	let args = {
 		className: className,
-		inside: parent,
 		transform: transform
-	});
+	};
+	if(parent) args.inside = parent;
+	return createSVG('g', args);
 }
 
 export function wrapInSVGGroup(elements, className='') {
@@ -130,7 +133,29 @@ export function makeGradient(svgDefElem, color, lighter = false) {
 	return gradientId;
 }
 
-export function makeHeatSquare(className, x, y, size, fill='none', data={}) {
+export function percentageBar(x, y, width, height,
+	depth=PERCENTAGE_BAR_DEFAULT_DEPTH, fill='none') {
+
+	let args = {
+		className: 'percentage-bar',
+		x: x,
+		y: y,
+		width: width,
+		height: height,
+		fill: fill,
+		styles: {
+			'stroke': lightenDarkenColor(fill, -25),
+			// Diabolically good: https://stackoverflow.com/a/9000859
+			// https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-dasharray
+			'stroke-dasharray': `0, ${height + width}, ${width}, ${height}`,
+			'stroke-width': depth
+		},
+	};
+
+	return createSVG("rect", args);
+}
+
+export function heatSquare(className, x, y, size, fill='none', data={}) {
 	let args = {
 		className: className,
 		x: x,
@@ -147,13 +172,77 @@ export function makeHeatSquare(className, x, y, size, fill='none', data={}) {
 	return createSVG("rect", args);
 }
 
-export function makeText(className, x, y, content) {
+export function legendBar(x, y, size, fill='none', label) {
+	let args = {
+		className: 'legend-bar',
+		x: 0,
+		y: 0,
+		width: size,
+		height: '2px',
+		fill: fill
+	};
+	let text = createSVG('text', {
+		className: 'legend-dataset-text',
+		x: 0,
+		y: 0,
+		dy: (FONT_SIZE * 2) + 'px',
+		'font-size': (FONT_SIZE * 1.2) + 'px',
+		'text-anchor': 'start',
+		fill: FONT_FILL,
+		innerHTML: label
+	});
+
+	let group = createSVG('g', {
+		transform: `translate(${x}, ${y})`
+	});
+	group.appendChild(createSVG("rect", args));
+	group.appendChild(text);
+
+	return group;
+}
+
+export function legendDot(x, y, size, fill='none', label) {
+	let args = {
+		className: 'legend-dot',
+		cx: 0,
+		cy: 0,
+		r: size,
+		fill: fill
+	};
+	let text = createSVG('text', {
+		className: 'legend-dataset-text',
+		x: 0,
+		y: 0,
+		dx: (FONT_SIZE) + 'px',
+		dy: (FONT_SIZE/3) + 'px',
+		'font-size': (FONT_SIZE * 1.2) + 'px',
+		'text-anchor': 'start',
+		fill: FONT_FILL,
+		innerHTML: label
+	});
+
+	let group = createSVG('g', {
+		transform: `translate(${x}, ${y})`
+	});
+	group.appendChild(createSVG("circle", args));
+	group.appendChild(text);
+
+	return group;
+}
+
+export function makeText(className, x, y, content, options = {}) {
+	let fontSize = options.fontSize || FONT_SIZE;
+	let dy = options.dy !== undefined ? options.dy : (fontSize / 2);
+	let fill = options.fill || FONT_FILL;
+	let textAnchor = options.textAnchor || 'start';
 	return createSVG('text', {
 		className: className,
 		x: x,
 		y: y,
-		dy: (FONT_SIZE / 2) + 'px',
-		'font-size': FONT_SIZE + 'px',
+		dy: dy + 'px',
+		'font-size': fontSize + 'px',
+		fill: fill,
+		'text-anchor': textAnchor,
 		innerHTML: content
 	});
 }
@@ -293,9 +382,13 @@ export function xLine(x, label, height, options={}) {
 }
 
 export function yMarker(y, label, width, options={}) {
+	if(!options.labelPos) options.labelPos = 'right';
+	let x = options.labelPos === 'left' ? LABEL_MARGIN
+		: width - getStringWidth(label, 5) - LABEL_MARGIN;
+
 	let labelSvg = createSVG('text', {
 		className: 'chart-label',
-		x: width - getStringWidth(label, 5) - LABEL_MARGIN,
+		x: x,
 		y: 0,
 		dy: (FONT_SIZE / -2) + 'px',
 		'font-size': FONT_SIZE + 'px',
@@ -314,7 +407,7 @@ export function yMarker(y, label, width, options={}) {
 	return line;
 }
 
-export function yRegion(y1, y2, width, label) {
+export function yRegion(y1, y2, width, label, options={}) {
 	// return a group
 	let height = y1 - y2;
 
@@ -332,9 +425,13 @@ export function yRegion(y1, y2, width, label) {
 		height: height
 	});
 
+	if(!options.labelPos) options.labelPos = 'right';
+	let x = options.labelPos === 'left' ? LABEL_MARGIN
+		: width - getStringWidth(label+"", 4.5) - LABEL_MARGIN;
+
 	let labelSvg = createSVG('text', {
 		className: 'chart-label',
-		x: width - getStringWidth(label+"", 4.5) - LABEL_MARGIN,
+		x: x,
 		y: 0,
 		dy: (FONT_SIZE / -2) + 'px',
 		'font-size': FONT_SIZE + 'px',
@@ -356,6 +453,11 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
 	y -= offset;
 
+	if(height === 0) {
+		height = meta.minHeight;
+		y -= meta.minHeight;
+	}
+
 	let rect = createSVG('rect', {
 		className: `bar mini`,
 		style: `fill: ${color}`,
@@ -363,7 +465,7 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 		x: x,
 		y: y,
 		width: width,
-		height: height || meta.minHeight // TODO: correct y for positive min height
+		height: height
 	});
 
 	label += "";
@@ -451,7 +553,6 @@ export function getPaths(xList, yList, color, options={}, meta={}) {
 	if(options.regionFill) {
 		let gradient_id_region = makeGradient(meta.svgDefs, color, true);
 
-		// TODO: use zeroLine OR minimum
 		let pathStr = "M" + `${xList[0]},${meta.zeroLine}L` + pointsStr + `L${xList.slice(-1)[0]},${meta.zeroLine}`;
 		paths.region = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`);
 	}
@@ -477,6 +578,25 @@ export let makeOverlay = {
 	},
 
 	'dot': (unit) => {
+		let transformValue;
+		if(unit.nodeName !== 'circle') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let overlay = unit.cloneNode();
+		let radius = unit.getAttribute('r');
+		let fill = unit.getAttribute('fill');
+		overlay.setAttribute('r', parseInt(radius) + DOT_OVERLAY_SIZE_INCR);
+		overlay.setAttribute('fill', fill);
+		overlay.style.opacity = '0.6';
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+		return overlay;
+	},
+
+	'heat_square': (unit) => {
 		let transformValue;
 		if(unit.nodeName !== 'circle') {
 			transformValue = unit.getAttribute('transform');
@@ -531,5 +651,23 @@ export let updateOverlay = {
 		if(transformValue) {
 			overlay.setAttribute('transform', transformValue);
 		}
-	}
+	},
+
+	'heat_square': (unit, overlay) => {
+		let transformValue;
+		if(unit.nodeName !== 'circle') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let attributes = ['cx', 'cy'];
+		Object.values(unit.attributes)
+			.filter(attr => attributes.includes(attr.name) && attr.specified)
+			.map(attr => {
+				overlay.setAttribute(attr.name, attr.nodeValue);
+			});
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+	},
 };
