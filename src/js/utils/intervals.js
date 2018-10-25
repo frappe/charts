@@ -212,7 +212,7 @@ export function isInRange2D(coord, minCoord, maxCoord) {
 export function getClosestInArray(goal, arr, index = false) {
 	let closest = arr.reduce(function(prev, curr) {
 		return (Math.abs(curr - goal) < Math.abs(prev - goal) ? curr : prev);
-	});
+	}, []);
 
 	return index ? arr.indexOf(closest) : closest;
 }
