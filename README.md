@@ -49,6 +49,13 @@
   ```js
   import { Chart } from "frappe-charts"
   ```
+  
+  ...or include following for es-modules(eg:vuejs):
+  ```js
+  import { Chart } from 'frappe-charts/dist/frappe-charts.esm.js'
+  // import css
+  import 'frappe-charts/dist/frappe-charts.min.css'
+  ```
 
 * ...or include within your HTML
 
