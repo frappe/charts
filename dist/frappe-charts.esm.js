@@ -527,13 +527,13 @@ function makePath(pathStr, className='', stroke='none', fill='none') {
 	});
 }
 
-function makeArcPathStr(startPosition, endPosition, center, radius, clockWise=1){
+function makeArcPathStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
 	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
 	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
 
 	return `M${center.x} ${center.y}
 		L${arcStartX} ${arcStartY}
-		A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
 		${arcEndX} ${arcEndY} z`;
 }
 
@@ -2363,6 +2363,10 @@ class PieChart extends AggregationChart {
 		s.sliceTotals.map((total, i) => {
 			const startAngle = curAngle;
 			const originDiffAngle = (total / s.grandTotal) * FULL_ANGLE;
+			let largeArc = 0;
+			if(originDiffAngle > 180){
+				largeArc = 1;
+			}
 			const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
 			const endAngle = curAngle = curAngle + diffAngle;
 			const startPosition = getPositionByAngle(startAngle, radius);
@@ -2378,7 +2382,7 @@ class PieChart extends AggregationChart {
 				curStart = startPosition;
 				curEnd = endPosition;
 			}
-			const curPath = makeArcPathStr(curStart, curEnd, this.center, this.radius, this.clockWise);
+			const curPath = makeArcPathStr(curStart, curEnd, this.center, this.radius, this.clockWise, largeArc);
 
 			s.sliceStrings.push(curPath);
 			s.slicesProperties.push({
