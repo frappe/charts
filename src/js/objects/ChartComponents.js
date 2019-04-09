@@ -69,6 +69,20 @@ class ChartComponent {
 }
 
 let componentConfigs = {
+	donutSlices: {
+		layerClass: 'donut-slices',
+		makeElements(data) {
+			return data.sliceStrings.map((s, i) => {
+				let slice = makePath(s, 'donut-path', data.colors[i], 'none', data.strokeWidth);
+				slice.style.transition = 'transform .3s;';
+				return slice;
+			});
+		},
+
+		animateElements(newData) {
+			return this.store.map((slice, i) => animatePathStr(slice, newData.sliceStrings[i]));
+		},
+	},
 	pieSlices: {
 		layerClass: 'pie-slices',
 		makeElements(data) {

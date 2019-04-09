@@ -98,13 +98,14 @@ export function wrapInSVGGroup(elements, className='') {
 	return g;
 }
 
-export function makePath(pathStr, className='', stroke='none', fill='none') {
+export function makePath(pathStr, className='', stroke='none', fill='none', strokeWidth=0) {
 	return createSVG('path', {
 		className: className,
 		d: pathStr,
 		styles: {
 			stroke: stroke,
-			fill: fill
+			fill: fill,
+			'stroke-width': strokeWidth
 		}
 	});
 }
@@ -117,6 +118,15 @@ export function makeArcPathStr(startPosition, endPosition, center, radius, clock
 		L${arcStartX} ${arcStartY}
 		A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0}
 		${arcEndX} ${arcEndY} z`;
+}
+
+export function makeArcStrokePathStr(startPosition, endPosition, center, radius, clockWise=1){
+	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
+	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
+
+	return `M${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY}`;
 }
 
 export function makeGradient(svgDefElem, color, lighter = false) {

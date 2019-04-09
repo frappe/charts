@@ -98,7 +98,8 @@ export const DEFAULT_COLORS = {
 	line: DEFAULT_CHART_COLORS,
 	pie: DEFAULT_CHART_COLORS,
 	percentage: DEFAULT_CHART_COLORS,
-	heatmap: HEATMAP_COLORS_GREEN
+	heatmap: HEATMAP_COLORS_GREEN,
+	donut: DEFAULT_CHART_COLORS
 };
 
 // Universal constants
