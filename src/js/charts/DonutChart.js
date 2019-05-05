@@ -32,7 +32,10 @@ export default class DonutChart extends AggregationChart {
 	calc() {
 		super.calc();
 		let s = this.state;
-		this.radius = (this.height > this.width ? this.center.x - (this.strokeWidth / 2) : this.center.y - (this.strokeWidth / 2));
+		this.radius =
+			this.height > this.width
+			? this.center.x - this.strokeWidth / 2
+			: this.center.y - this.strokeWidth / 2;
 
 		const { radius, clockWise } = this;
 
@@ -101,7 +104,7 @@ export default class DonutChart extends AggregationChart {
 	}
 
 	calTranslateByAngle(property){
-		const{radius,hoverRadio} = this;
+		const{ radius, hoverRadio } = this;
 		const position = getPositionByAngle(property.startAngle+(property.angle / 2),radius);
 		return `translate3d(${(position.x) * hoverRadio}px,${(position.y) * hoverRadio}px,0)`;
 	}
