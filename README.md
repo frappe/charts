@@ -49,6 +49,13 @@
   ```js
   import { Chart } from "frappe-charts"
   ```
+  
+  ...or include following for es-modules(eg:vuejs):
+  ```js
+  import { Chart } from 'frappe-charts/dist/frappe-charts.esm.js'
+  // import css
+  import 'frappe-charts/dist/frappe-charts.min.css'
+  ```
 
 * ...or include within your HTML
 
@@ -85,6 +92,21 @@ const chart = new frappe.Chart("#chart", {  // or a DOM element,
     colors: ['#7cd6fd', '#743ee2']
 })
 ```
+
+...or for es-modules:
+```js
+
+//replace new frappe.Chart() with new Chart()
+const chart = new Chart("#chart", {  // or a DOM element,
+                                    // new Chart() in case of ES6 module with above usage
+    title: "My Awesome Chart",
+    data: data,
+    type: 'axis-mixed', // or 'bar', 'line', 'scatter', 'pie', 'percentage'
+    height: 250,
+    colors: ['#7cd6fd', '#743ee2']
+})
+```
+
 
 If you want to contribute:
 
