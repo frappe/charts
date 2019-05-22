@@ -529,13 +529,12 @@ function makePath(pathStr, className='', stroke='none', fill='none', strokeWidth
 	});
 }
 
-function makeArcPathStr(startPosition, endPosition, center, radius, clockWise=1){
+function makeArcPathStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
 	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
 	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
-
 	return `M${center.x} ${center.y}
 		L${arcStartX} ${arcStartY}
-		A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
 		${arcEndX} ${arcEndY} z`;
 }
 
@@ -2384,10 +2383,13 @@ class PieChart extends AggregationChart {
 		s.sliceStrings = [];
 		s.slicesProperties = [];
 		let curAngle = 180 - this.config.startAngle;
-
 		s.sliceTotals.map((total, i) => {
 			const startAngle = curAngle;
 			const originDiffAngle = (total / s.grandTotal) * FULL_ANGLE;
+			let largeArc = 0;
+			if(originDiffAngle > 180){
+				largeArc = 1;
+			}
 			const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
 			const endAngle = curAngle = curAngle + diffAngle;
 			const startPosition = getPositionByAngle(startAngle, radius);
@@ -2403,8 +2405,7 @@ class PieChart extends AggregationChart {
 				curStart = startPosition;
 				curEnd = endPosition;
 			}
-			const curPath = makeArcPathStr(curStart, curEnd, this.center, this.radius, this.clockWise);
-
+			const curPath = makeArcPathStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc);
 			s.sliceStrings.push(curPath);
 			s.slicesProperties.push({
 				startPosition,
@@ -3727,7 +3728,10 @@ class DonutChart extends AggregationChart {
 	calc() {
 		super.calc();
 		let s = this.state;
-		this.radius = (this.height > this.width ? this.center.x - (this.strokeWidth / 2) : this.center.y - (this.strokeWidth / 2));
+		this.radius =
+			this.height > this.width
+			? this.center.x - this.strokeWidth / 2
+			: this.center.y - this.strokeWidth / 2;
 
 		const { radius, clockWise } = this;
 
@@ -3796,7 +3800,7 @@ class DonutChart extends AggregationChart {
 	}
 
 	calTranslateByAngle(property){
-		const{radius,hoverRadio} = this;
+		const{ radius, hoverRadio } = this;
 		const position = getPositionByAngle(property.startAngle+(property.angle / 2),radius);
 		return `translate3d(${(position.x) * hoverRadio}px,${(position.y) * hoverRadio}px,0)`;
 	}
