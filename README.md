@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="https://github.com/frappe/design/blob/master/logos/charts-logo.svg" height="128">
+    <img src="https://github.com/frappe/design/blob/master/logos/logo-2019/frappe-charts-logo.png" height="128">
     <a href="https://frappe.github.io/charts">
         <h2>Frappe Charts</h2>
     </a>
@@ -49,7 +49,7 @@
   ```js
   import { Chart } from "frappe-charts"
   ```
-  
+
   ...or include following for es-modules(eg:vuejs):
   ```js
   import { Chart } from 'frappe-charts/dist/frappe-charts.esm.js'
