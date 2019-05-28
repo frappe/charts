@@ -34,8 +34,8 @@ export default class DonutChart extends AggregationChart {
 		let s = this.state;
 		this.radius =
 			this.height > this.width
-			? this.center.x - this.strokeWidth / 2
-			: this.center.y - this.strokeWidth / 2;
+				? this.center.x - this.strokeWidth / 2
+				: this.center.y - this.strokeWidth / 2;
 
 		const { radius, clockWise } = this;
 
