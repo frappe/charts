@@ -15,7 +15,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "rollup -c --watch",
-    "dev": "npm-run-all --parallel watch"
+    "dev": "npm-run-all --parallel watch",
+    "build": "rollup -c"
   },
   "repository": {
     "type": "git",
