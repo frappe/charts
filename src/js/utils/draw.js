@@ -98,7 +98,7 @@ export function wrapInSVGGroup(elements, className='') {
 	return g;
 }
 
-export function makePath(pathStr, className='', stroke='none', fill='none', strokeWidth=0) {
+export function makePath(pathStr, className='', stroke='none', fill='none', strokeWidth=2) {
 	return createSVG('path', {
 		className: className,
 		d: pathStr,
