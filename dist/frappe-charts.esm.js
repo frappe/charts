@@ -517,7 +517,7 @@ function makeSVGGroup(className, transform='', parent=undefined) {
 
 
 
-function makePath(pathStr, className='', stroke='none', fill='none', strokeWidth=0) {
+function makePath(pathStr, className='', stroke='none', fill='none', strokeWidth=2) {
 	return createSVG('path', {
 		className: className,
 		d: pathStr,
