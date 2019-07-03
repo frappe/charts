@@ -67,6 +67,9 @@ export default class AggregationChart extends BaseChart {
 			let divisor = Math.floor(
 				(this.width - getExtraWidth(this.measures))/barWidth
 			);
+			if (this.legendTotals.length < divisor) {
+				barWidth = this.width/this.legendTotals.length;
+			}
 			if(count > divisor) {
 				count = 0;
 				y += 20;
