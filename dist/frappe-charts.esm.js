@@ -1725,6 +1725,9 @@ class AggregationChart extends BaseChart {
 			let divisor = Math.floor(
 				(this.width - getExtraWidth(this.measures))/barWidth
 			);
+			if (this.legendTotals.length < divisor) {
+				barWidth = this.width/this.legendTotals.length;
+			}
 			if(count > divisor) {
 				count = 0;
 				y += 20;
@@ -2279,7 +2282,7 @@ class PercentageChart extends AggregationChart {
 		b.depth = b.depth || PERCENTAGE_BAR_DEFAULT_DEPTH;
 
 		m.paddings.right = 30;
-		m.legendHeight = 80;
+		m.legendHeight = 60;
 		m.baseHeight = (b.height + b.depth * 0.5) * 8;
 	}
 
