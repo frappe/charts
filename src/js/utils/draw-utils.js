@@ -24,3 +24,14 @@ export function equilizeNoOfElements(array1, array2,
 	}
 	return [array1, array2];
 }
+
+export function truncateString(txt, len) {
+	if (!txt) {
+		return;
+	}
+	if (txt.length > len) {
+		return txt.slice(0, len-3) + '...';
+	} else {
+		return txt;
+	}
+}
