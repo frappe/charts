@@ -35,6 +35,7 @@
 ### Contents
 * [Installation](#installation)
 * [Usage](#usage)
+* [Contribute](https://frappe.io/charts/docs/contributing)
 * [Updates](#updates)
 * [License](#license)
 
