@@ -42,10 +42,7 @@ export default class PieChart extends AggregationChart {
 		s.sliceTotals.map((total, i) => {
 			const startAngle = curAngle;
 			const originDiffAngle = (total / s.grandTotal) * FULL_ANGLE;
-			let largeArc = 0;
-			if(originDiffAngle > 180){
-				largeArc = 1;
-			}
+			const largeArc = originDiffAngle > 180 ? 1: 0;
 			const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
 			const endAngle = curAngle = curAngle + diffAngle;
 			const startPosition = getPositionByAngle(startAngle, radius);

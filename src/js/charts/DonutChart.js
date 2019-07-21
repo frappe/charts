@@ -47,6 +47,7 @@ export default class DonutChart extends AggregationChart {
 		s.sliceTotals.map((total, i) => {
 			const startAngle = curAngle;
 			const originDiffAngle = (total / s.grandTotal) * FULL_ANGLE;
+			const largeArc = originDiffAngle > 180 ? 1: 0;
 			const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
 			const endAngle = curAngle = curAngle + diffAngle;
 			const startPosition = getPositionByAngle(startAngle, radius);
@@ -62,7 +63,7 @@ export default class DonutChart extends AggregationChart {
 				curStart = startPosition;
 				curEnd = endPosition;
 			}
-			const curPath = makeArcStrokePathStr(curStart, curEnd, this.center, this.radius, this.clockWise);
+			const curPath = makeArcStrokePathStr(curStart, curEnd, this.center, this.radius, this.clockWise, largeArc);
 
 			s.sliceStrings.push(curPath);
 			s.slicesProperties.push({
