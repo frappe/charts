@@ -6,10 +6,13 @@
     <p align="center">
         <p>GitHub-inspired modern, intuitive and responsive charts with zero dependencies</p>
         <a href="https://frappe.github.io/charts">
-            <b>Explore Demos » </b>
+            <b>Explore Demos</b>
         </a>
         <a href="https://codepen.io/pratu16x7/pen/wjKBoq">
-            <b> Edit at CodePen »</b>
+            <b> Edit at CodePen</b>
+        </a>
+        <a href="https://t.me/frappecharts">
+            <b> Join on Telegram</b>
         </a>
     </p>
 </div>
