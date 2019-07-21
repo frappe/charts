@@ -429,7 +429,8 @@ export default class AxisChart extends BaseChart {
 					'0',
 					barWidth,
 					this.colors[i],
-					d.name);
+					d.name,
+					this.config.truncateLegends);
 				this.legendArea.appendChild(rect);
 			});
 		}
