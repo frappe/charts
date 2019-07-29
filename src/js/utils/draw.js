@@ -120,6 +120,18 @@ export function makeArcPathStr(startPosition, endPosition, center, radius, clock
 		${arcEndX} ${arcEndY} z`;
 }
 
+export function makeCircleStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
+	let [arcEndX, midArc, arcEndY] = [center.x + endPosition.x, center.y * 2, center.y + endPosition.y];
+	return `M${center.x} ${center.y}
+		L${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${midArc} z
+		L${arcStartX} ${midArc}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY} z`;
+}
+
 export function makeArcStrokePathStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
 	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
 	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];

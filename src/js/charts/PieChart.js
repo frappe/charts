@@ -2,7 +2,7 @@ import AggregationChart from './AggregationChart';
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset } from '../utils/dom';
 import { getPositionByAngle } from '../utils/helpers';
-import { makeArcPathStr } from '../utils/draw';
+import { makeArcPathStr, makeCircleStr } from '../utils/draw';
 import { lightenDarkenColor } from '../utils/colors';
 import { transform } from '../utils/animation';
 import { FULL_ANGLE } from '../utils/constants';
@@ -58,7 +58,11 @@ export default class PieChart extends AggregationChart {
 				curStart = startPosition;
 				curEnd = endPosition;
 			}
-			const curPath = makeArcPathStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc);
+			const curPath =
+				originDiffAngle === 360
+					? makeCircleStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc)
+					: makeArcPathStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc)
+
 			s.sliceStrings.push(curPath);
 			s.slicesProperties.push({
 				startPosition,
