@@ -61,7 +61,7 @@ export default class PieChart extends AggregationChart {
 			const curPath =
 				originDiffAngle === 360
 					? makeCircleStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc)
-					: makeArcPathStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc)
+					: makeArcPathStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc);
 
 			s.sliceStrings.push(curPath);
 			s.slicesProperties.push({
