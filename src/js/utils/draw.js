@@ -319,7 +319,7 @@ function makeVertLine(x, label, y1, y2, options={}) {
 function makeHoriLine(y, label, x1, x2, options={}) {
 	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	if(!options.lineType) options.lineType = '';
-	if (options.shortenNumbers) label = shortenLargeNumber(label)
+	if (options.shortenNumbers) label = shortenLargeNumber(label);
 	
 	let className = 'line-horizontal ' + options.className +
 		(options.lineType === "dashed" ? "dashed": "");
