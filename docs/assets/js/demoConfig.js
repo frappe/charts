@@ -27,7 +27,8 @@ export default {
 			colors: ["violet", "light-blue", "#46a9f9"],
 			valuesOverPoints: 1,
 			axisOptions: {
-				xAxisMode: "tick"
+				xAxisMode: "tick",
+				shortenYAxisNumbers: true
 			},
 			barOptions: {
 				stacked: 1

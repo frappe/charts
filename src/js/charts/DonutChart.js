@@ -2,7 +2,7 @@ import AggregationChart from './AggregationChart';
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset } from '../utils/dom';
 import { getPositionByAngle } from '../utils/helpers';
-import { makeArcStrokePathStr } from '../utils/draw';
+import { makeArcStrokePathStr, makeStrokeCircleStr } from '../utils/draw';
 import { lightenDarkenColor } from '../utils/colors';
 import { transform } from '../utils/animation';
 import { FULL_ANGLE } from '../utils/constants';
@@ -63,7 +63,10 @@ export default class DonutChart extends AggregationChart {
 				curStart = startPosition;
 				curEnd = endPosition;
 			}
-			const curPath = makeArcStrokePathStr(curStart, curEnd, this.center, this.radius, this.clockWise, largeArc);
+			const curPath =
+				originDiffAngle === 360
+					? makeStrokeCircleStr(curStart, curEnd, this.center, this.radius, this.clockWise, largeArc)
+					: makeArcStrokePathStr(curStart, curEnd, this.center, this.radius, this.clockWise, largeArc);
 
 			s.sliceStrings.push(curPath);
 			s.slicesProperties.push({
