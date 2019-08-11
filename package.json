@@ -1,6 +1,6 @@
 {
   "name": "frappe-charts",
-  "version": "1.2.4",
+  "version": "1.3.0",
   "description": "https://frappe.github.io/charts",
   "main": "dist/frappe-charts.min.cjs.js",
   "module": "dist/frappe-charts.min.esm.js",
@@ -10,6 +10,7 @@
     "doc": "docs"
   },
   "files": [
+    "src",
     "dist"
   ],
   "scripts": {
@@ -23,8 +24,8 @@
     "url": "git+https://github.com/frappe/charts.git"
   },
   "keywords": [
-    "\"js",
-    "charts\""
+    "js",
+    "charts"
   ],
   "author": "Prateeksha Singh",
   "license": "MIT",
