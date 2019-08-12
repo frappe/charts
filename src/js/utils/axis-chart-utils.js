@@ -4,11 +4,11 @@ import { DEFAULT_AXIS_CHART_TYPE, AXIS_DATASET_CHART_TYPES, DEFAULT_CHAR_WIDTH }
 export function dataPrep(data, type) {
 	data.labels = data.labels || [];
 
-	let datasetLength = data.labels.length;
+	const datasetLength = data.labels.length;
 
 	// Datasets
 	let datasets = data.datasets;
-	let zeroArray = new Array(datasetLength).fill(0);
+	const zeroArray = new Array(datasetLength).fill(0);
 	if(!datasets) {
 		// default
 		datasets = [{
@@ -60,8 +60,8 @@ export function dataPrep(data, type) {
 }
 
 export function zeroDataPrep(realData) {
-	let datasetLength = realData.labels.length;
-	let zeroArray = new Array(datasetLength).fill(0);
+	const datasetLength = realData.labels.length;
+	const zeroArray = new Array(datasetLength).fill(0);
 
 	let zeroData = {
 		labels: realData.labels.slice(0, -1),
@@ -99,9 +99,9 @@ export function zeroDataPrep(realData) {
 export function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
 	let allowedSpace = chartWidth / labels.length;
 	if(allowedSpace <= 0) allowedSpace = 1;
-	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
+	const allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
 
-	let calcLabels = labels.map((label, i) => {
+	const calcLabels = labels.map((label, i) => {
 		label += "";
 		if(label.length > allowedLetters) {
 
@@ -112,7 +112,7 @@ export function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
 					label = label.slice(0, allowedLetters) + '..';
 				}
 			} else {
-				let multiple = Math.ceil(label.length/allowedLetters);
+				const multiple = Math.ceil(label.length/allowedLetters);
 				if(i % multiple !== 0) {
 					label = "";
 				}
