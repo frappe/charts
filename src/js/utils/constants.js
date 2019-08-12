@@ -46,17 +46,14 @@ export function getLeftOffset(m) {
 }
 
 export function getExtraHeight(m) {
-	let totalExtraHeight = m.margins.top + m.margins.bottom
+    return m.margins.top + m.margins.bottom
 		+ m.paddings.top + m.paddings.bottom
 		+ m.titleHeight + m.legendHeight;
-	return totalExtraHeight;
 }
 
 export function getExtraWidth(m) {
-	let totalExtraWidth = m.margins.left + m.margins.right
+    return m.margins.left + m.margins.right
 		+ m.paddings.left + m.paddings.right;
-
-	return totalExtraWidth;
 }
 
 export const INIT_CHART_UPDATE_TIMEOUT = 700;
