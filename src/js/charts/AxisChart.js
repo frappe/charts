@@ -298,6 +298,7 @@ export default class AxisChart extends BaseChart {
 					svgDefs: this.svgDefs,
 					heatline: this.lineOptions.heatline,
 					regionFill: this.lineOptions.regionFill,
+					spline: this.lineOptions.spline,
 					hideDots: this.lineOptions.hideDots,
 					hideLine: this.lineOptions.hideLine,
 

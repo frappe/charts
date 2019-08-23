@@ -368,7 +368,8 @@ let componentConfigs = {
 					c.color,
 					{
 						heatline: c.heatline,
-						regionFill: c.regionFill
+						regionFill: c.regionFill,
+						spline: c.spline
 					},
 					{
 						svgDefs: c.svgDefs,
@@ -419,7 +420,7 @@ let componentConfigs = {
 
 			if(Object.keys(this.paths).length) {
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine));
+					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline));
 			}
 
 			if(this.units.length) {
