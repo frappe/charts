@@ -61,7 +61,3 @@ typings/
 .next
 
 .DS_Store
-
-package-lock.json
-dist/
-docs/assets/js/
