@@ -1,4 +1,4 @@
-import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, createSplineCurve } from './draw-utils';
+import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getSplineCurvePointsStr } from './draw-utils';
 import { getStringWidth } from './helpers';
 import { DOT_OVERLAY_SIZE_INCR, PERCENTAGE_BAR_DEFAULT_DEPTH } from './constants';
 import { lightenDarkenColor } from './colors';
@@ -580,7 +580,7 @@ export function getPaths(xList, yList, color, options={}, meta={}) {
 
 	// Spline
 	if (options.spline)
-		pointsStr = createSplineCurve(xList, yList);
+		pointsStr = getSplineCurvePointsStr(xList, yList);
     
 	let path = makePath("M"+pointsStr, 'line-graph-path', color);
 

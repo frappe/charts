@@ -1,4 +1,4 @@
-import { getBarHeightAndYAttr, createSplineCurve } from './draw-utils';
+import { getBarHeightAndYAttr, getSplineCurvePointsStr } from './draw-utils';
 
 export const UNIT_ANIM_DUR = 350;
 export const PATH_ANIM_DUR = 350;

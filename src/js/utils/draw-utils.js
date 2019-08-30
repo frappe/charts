@@ -55,7 +55,7 @@ export function shortenLargeNumber(label) {
 }
 
 // cubic bezier curve calculation (from example by François Romain)
-export function createSplineCurve(xList, yList) {
+export function getSplineCurvePointsStr(xList, yList) {
 
 	let points=[];
 	for(let i=0;i<xList.length;i++){
