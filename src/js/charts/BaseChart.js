@@ -32,7 +32,7 @@ export default class BaseChart {
 			showTooltip: 1, // calculate
 			showLegend: 1, // calculate
 			isNavigable: options.isNavigable || 0,
-			animate: 1,
+			animate: (typeof options.animate !== 'undefined') ? options.animate : 1,
 			truncateLegends: options.truncateLegends || 0
 		};
 
@@ -225,7 +225,7 @@ export default class BaseChart {
 		}
 		this.data = this.prepareData(data);
 		this.calc(); // builds state
-		this.render();
+		this.render(this.components, this.config.animate);
 	}
 
 	render(components=this.components, animate=true) {
