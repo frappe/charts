@@ -411,6 +411,50 @@ function shortenLargeNumber(label) {
 	return Math.round(shortened*100)/100 + ' ' + ['', 'K', 'M', 'B', 'T'][l];
 }
 
+// cubic bezier curve calculation (from example by François Romain)
+function createSplineCurve(xList, yList) {
+
+	let points=[];
+	for(let i=0;i<xList.length;i++){
+		points.push([xList[i], yList[i]]);
+	}
+
+	let smoothing = 0.2;
+	let line = (pointA, pointB) => {
+		let lengthX = pointB[0] - pointA[0];
+		let lengthY = pointB[1] - pointA[1];
+		return {
+			length: Math.sqrt(Math.pow(lengthX, 2) + Math.pow(lengthY, 2)),
+			angle: Math.atan2(lengthY, lengthX)
+		};
+	};
+    
+	let controlPoint = (current, previous, next, reverse) => {
+		let p = previous || current;
+		let n = next || current;
+		let o = line(p, n);
+		let angle = o.angle + (reverse ? Math.PI : 0);
+		let length = o.length * smoothing;
+		let x = current[0] + Math.cos(angle) * length;
+		let y = current[1] + Math.sin(angle) * length;
+		return [x, y];
+	};
+    
+	let bezierCommand = (point, i, a) => {
+		let cps = controlPoint(a[i - 1], a[i - 2], point);
+		let cpe = controlPoint(point, a[i - 1], a[i + 1], true);
+		return `C ${cps[0]},${cps[1]} ${cpe[0]},${cpe[1]} ${point[0]},${point[1]}`;
+	};
+    
+	let pointStr = (points, command) => {
+		return points.reduce((acc, point, i, a) => i === 0
+			? `${point[0]},${point[1]}`
+			: `${acc} ${command(point, i, a)}`, '');
+	};
+    
+	return pointStr(points, bezierCommand);
+}
+
 const PRESET_COLOR_MAP = {
 	'light-blue': '#7cd6fd',
 	'blue': '#5e64ff',
@@ -1025,6 +1069,11 @@ function datasetDot(x, y, radius, color, label='', index=0) {
 function getPaths(xList, yList, color, options={}, meta={}) {
 	let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
 	let pointsStr = pointsList.join("L");
+
+	// Spline
+	if (options.spline)
+		pointsStr = createSplineCurve(xList, yList);
+    
 	let path = makePath("M"+pointsStr, 'line-graph-path', color);
 
 	// HeatLine
@@ -1234,13 +1283,14 @@ function animateDot(dot, x, y) {
 	// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
 }
 
-function animatePath(paths, newXList, newYList, zeroLine) {
+function animatePath(paths, newXList, newYList, zeroLine, spline) {
 	let pathComponents = [];
+	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y)).join("L");
+    
+	if (spline)
+		pointsStr = createSplineCurve(newXList, newYList);
 
-	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y));
-	let pathStr = pointsStr.join("L");
-
-	const animPath = [paths.path, {d:"M"+pathStr}, PATH_ANIM_DUR, STD_EASING];
+	const animPath = [paths.path, {d:"M" + pointsStr}, PATH_ANIM_DUR, STD_EASING];
 	pathComponents.push(animPath);
 
 	if(paths.region) {
@@ -1249,7 +1299,7 @@ function animatePath(paths, newXList, newYList, zeroLine) {
 
 		const animRegion = [
 			paths.region,
-			{d:"M" + regStartPt + pathStr + regEndPt},
+			{d:"M" + regStartPt + pointsStr + regEndPt},
 			PATH_ANIM_DUR,
 			STD_EASING
 		];
@@ -1411,8 +1461,6 @@ function prepareForExport(svg) {
 	return container.innerHTML;
 }
 
-let BOUND_DRAW_FN;
-
 class BaseChart {
 	constructor(parent, options) {
 
@@ -1494,18 +1542,14 @@ class BaseChart {
 		this.height = height - getExtraHeight(this.measures);
 
 		// Bind window events
-		BOUND_DRAW_FN = this.boundDrawFn.bind(this);
-		window.addEventListener('resize', BOUND_DRAW_FN);
-		window.addEventListener('orientationchange', this.boundDrawFn.bind(this));
+		this.boundDrawFn = () => this.draw(true);
+		window.addEventListener('resize', this.boundDrawFn);
+		window.addEventListener('orientationchange', this.boundDrawFn);
 	}
 
-	boundDrawFn() {
-		this.draw(true);
-	}
-
-	unbindWindowEvents() {
-		window.removeEventListener('resize', BOUND_DRAW_FN);
-		window.removeEventListener('orientationchange', this.boundDrawFn.bind(this));
+	destroy() {
+		window.removeEventListener('resize', this.boundDrawFn);
+		window.removeEventListener('orientationchange', this.boundDrawFn);
 	}
 
 	// Has to be called manually
@@ -2250,7 +2294,8 @@ let componentConfigs = {
 					c.color,
 					{
 						heatline: c.heatline,
-						regionFill: c.regionFill
+						regionFill: c.regionFill,
+						spline: c.spline
 					},
 					{
 						svgDefs: c.svgDefs,
@@ -2301,7 +2346,7 @@ let componentConfigs = {
 
 			if(Object.keys(this.paths).length) {
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine));
+					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline));
 			}
 
 			if(this.units.length) {
@@ -2758,7 +2803,7 @@ function scale(val, yAxis) {
 function getClosestInArray(goal, arr, index = false) {
 	let closest = arr.reduce(function(prev, curr) {
 		return (Math.abs(curr - goal) < Math.abs(prev - goal) ? curr : prev);
-	});
+	}, []);
 
 	return index ? arr.indexOf(closest) : closest;
 }
@@ -3482,6 +3527,7 @@ class AxisChart extends BaseChart {
 					svgDefs: this.svgDefs,
 					heatline: this.lineOptions.heatline,
 					regionFill: this.lineOptions.regionFill,
+					spline: this.lineOptions.spline,
 					hideDots: this.lineOptions.hideDots,
 					hideLine: this.lineOptions.hideLine,
 
