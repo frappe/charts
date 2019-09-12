@@ -12,6 +12,7 @@ class ChartComponent {
 		constants,
 
 		getData,
+		realData,
 		makeElements,
 		animateElements
 	}) {
@@ -20,6 +21,7 @@ class ChartComponent {
 
 		this.makeElements = makeElements;
 		this.getData = getData;
+		this.realData = realData;
 
 		this.animateElements = animateElements;
 
@@ -365,11 +367,13 @@ let componentConfigs = {
 				this.paths = getPaths(
 					data.xPositions,
 					data.yPositions,
+					this.realData.datasets[this.constants.index].values,
 					c.color,
 					{
 						heatline: c.heatline,
 						regionFill: c.regionFill,
-						spline: c.spline
+						spline: c.spline,
+						interpolate: c.interpolate
 					},
 					{
 						svgDefs: c.svgDefs,
@@ -381,10 +385,11 @@ let componentConfigs = {
 			this.units = [];
 			if(!c.hideDots) {
 				this.units = data.yPositions.map((y, j) => {
+				    let yReal = this.realData.datasets[this.constants.index].values[j];
 					return datasetDot(
 						data.xPositions[j],
 						y,
-						data.radius,
+						yReal == null ? 0 : data.radius, // hide dot if null value
 						c.color,
 						(c.valuesOverPoints ? data.values[j] : ''),
 						j
@@ -420,7 +425,7 @@ let componentConfigs = {
 
 			if(Object.keys(this.paths).length) {
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline));
+					this.paths, newXPos, newYPos, this.realData.datasets[this.constants.index].values, newData.zeroLine, this.constants.spline, this.constants.interpolate));
 			}
 
 			if(this.units.length) {
@@ -435,12 +440,13 @@ let componentConfigs = {
 	}
 };
 
-export function getComponent(name, constants, getData) {
+export function getComponent(name, constants, getData, realData) {
 	let keys = Object.keys(componentConfigs).filter(k => name.includes(k));
 	let config = componentConfigs[keys[0]];
 	Object.assign(config, {
 		constants: constants,
-		getData: getData
+		getData: getData,
+		realData: realData
 	});
 	return new ChartComponent(config);
 }

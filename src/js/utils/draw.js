@@ -1,4 +1,4 @@
-import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getSplineCurvePointsStr } from './draw-utils';
+import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getPath } from './draw-utils';
 import { getStringWidth } from './helpers';
 import { DOT_OVERLAY_SIZE_INCR, PERCENTAGE_BAR_DEFAULT_DEPTH } from './constants';
 import { lightenDarkenColor } from './colors';
@@ -574,15 +574,9 @@ export function datasetDot(x, y, radius, color, label='', index=0) {
 	}
 }
 
-export function getPaths(xList, yList, color, options={}, meta={}) {
-	let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
-	let pointsStr = pointsList.join("L");
-
-	// Spline
-	if (options.spline)
-		pointsStr = getSplineCurvePointsStr(xList, yList);
-    
-	let path = makePath("M"+pointsStr, 'line-graph-path', color);
+export function getPaths(xList, yList, realValues, color, options={}, meta={}) {
+	let pointsStr = getPath(xList, yList, realValues, options.spline, options.interpolate);
+    let path = makePath("M"+pointsStr, 'line-graph-path', color);
 
 	// HeatLine
 	if(options.heatline) {
