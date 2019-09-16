@@ -80,7 +80,8 @@ export default class AggregationChart extends BaseChart {
 				y,
 				5,
 				this.colors[i],
-				`${s.labels[i]}: ${d}`
+				`${s.labels[i]}: ${d}`,
+				this.config.truncateLegends
 			);
 			this.legendArea.appendChild(dot);
 			count++;
