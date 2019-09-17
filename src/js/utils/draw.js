@@ -238,7 +238,9 @@ export function legendBar(x, y, size, fill='none', label, truncate=false) {
 	return group;
 }
 
-export function legendDot(x, y, size, fill='none', label) {
+export function legendDot(x, y, size, fill='none', label, truncate=false) {
+	label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
+
 	let args = {
 		className: 'legend-dot',
 		cx: 0,
