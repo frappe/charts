@@ -1,4 +1,4 @@
-import { getBarHeightAndYAttr, getPath } from './draw-utils';
+import { getBarHeightAndYAttr, getPath, getRegionPath } from './draw-utils';
 
 export const UNIT_ANIM_DUR = 350;
 export const PATH_ANIM_DUR = 350;
@@ -86,8 +86,9 @@ export function animatePath(paths, newXList, newYList, realValues, zeroLine, spl
 		let regEndPt = `L${newXList.slice(-1)[0]}, ${zeroLine}`;
 
 		const animRegion = [
-			paths.region,
-			{d:"M" + regStartPt + pointsStr + regEndPt},
+            paths.region,
+            {d: getRegionPath(pointsStr, zeroLine) },
+			// {d:"M" + regStartPt + pointsStr + regEndPt},
 			PATH_ANIM_DUR,
 			STD_EASING
 		];

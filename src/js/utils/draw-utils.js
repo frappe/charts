@@ -83,7 +83,7 @@ export function getPath(xList, yList, realValues, spline = false, interpolate = 
 
 	// line
 	function lineCommand(point) { 
-		return `L ${point[0]} ${point[1]}`;
+		return `L ${point[0]},${point[1]}`;
 	}
 
 	// convert points
@@ -110,7 +110,19 @@ export function getPath(xList, yList, realValues, spline = false, interpolate = 
 		}
 
 		if (i == points.length - 1 && path == '' && points.length < realValues.length) // last point fix
-			path += xList[i] + ' ' + yList[i]; 
+			path += xList[i] + ',' + yList[i]; 
 	});
 	return path;
+}
+
+export function getRegionPath(pointsStr, zero) {
+    let pathStr = '';
+    pointsStr.split('M').forEach((part, i) => {
+        let s = part.split(/[LC]/)[0].trim();
+        let sx = s.split(',')[0];
+        let e = part.substr(part.lastIndexOf(' ')).trim();
+        let ex = e.split(',')[0];
+        pathStr += `M${sx},${zero}L${s} ` + part + ((e.includes(',')) ? `L${e}L${ex},${zero}` : `L${sx},${zero}L${s}`);
+    });
+    return pathStr;
 }

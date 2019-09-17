@@ -1,4 +1,4 @@
-import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getPath } from './draw-utils';
+import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getPath, getRegionPath } from './draw-utils';
 import { getStringWidth } from './helpers';
 import { DOT_OVERLAY_SIZE_INCR, PERCENTAGE_BAR_DEFAULT_DEPTH } from './constants';
 import { lightenDarkenColor } from './colors';
@@ -586,15 +586,13 @@ export function getPaths(xList, yList, realValues, color, options={}, meta={}) {
 
 	let paths = {
 		path: path
-	};
+    };
 
 	// Region
 	if(options.regionFill) {
 		let gradient_id_region = makeGradient(meta.svgDefs, color, true);
-
-		let pathStr = "M" + `${xList[0]},${meta.zeroLine}L` + pointsStr + `L${xList.slice(-1)[0]},${meta.zeroLine}`;
-		paths.region = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`);
-	}
+        paths.region = makePath(getRegionPath(pointsStr, meta.zeroLine), `region-fill`, 'none', `url(#${gradient_id_region})`);
+    }
 
 	return paths;
 }

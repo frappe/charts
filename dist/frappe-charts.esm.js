@@ -440,7 +440,7 @@ function getPath(xList, yList, realValues, spline = false, interpolate = false)
 
 	// line
 	function lineCommand(point) { 
-		return `L ${point[0]} ${point[1]}`;
+		return `L ${point[0]},${point[1]}`;
 	}
 
 	// convert points
@@ -467,9 +467,21 @@ function getPath(xList, yList, realValues, spline = false, interpolate = false)
 		}
 
 		if (i == points.length - 1 && path == '' && points.length < realValues.length) // last point fix
-			path += xList[i] + ' ' + yList[i]; 
+			path += xList[i] + ',' + yList[i]; 
 	});
 	return path;
+}
+
+function getRegionPath(pointsStr, zero) {
+    let pathStr = '';
+    pointsStr.split('M').forEach((part, i) => {
+        let s = part.split(/[LC]/)[0].trim();
+        let sx = s.split(',')[0];
+        let e = part.substr(part.lastIndexOf(' ')).trim();
+        let ex = e.split(',')[0];
+        pathStr += `M${sx},${zero}L${s} ` + part + ((e.includes(',')) ? `L${e}L${ex},${zero}` : `L${sx},${zero}L${s}`);
+    });
+    return pathStr;
 }
 
 const PRESET_COLOR_MAP = {
@@ -1095,15 +1107,13 @@ function getPaths(xList, yList, realValues, color, options={}, meta={}) {
 
 	let paths = {
 		path: path
-	};
+    };
 
 	// Region
 	if(options.regionFill) {
 		let gradient_id_region = makeGradient(meta.svgDefs, color, true);
-
-		let pathStr = "M" + `${xList[0]},${meta.zeroLine}L` + pointsStr + `L${xList.slice(-1)[0]},${meta.zeroLine}`;
-		paths.region = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`);
-	}
+        paths.region = makePath(getRegionPath(pointsStr, meta.zeroLine), `region-fill`, 'none', `url(#${gradient_id_region})`);
+    }
 
 	return paths;
 }
@@ -1302,12 +1312,12 @@ function animatePath(paths, newXList, newYList, realValues, zeroLine, spline, in
 	pathComponents.push(animPath);
 
 	if(paths.region) {
-		let regStartPt = `${newXList[0]},${zeroLine}L`;
 		let regEndPt = `L${newXList.slice(-1)[0]}, ${zeroLine}`;
 
 		const animRegion = [
-			paths.region,
-			{d:"M" + regStartPt + pointsStr + regEndPt},
+            paths.region,
+            {d: getRegionPath(pointsStr, zeroLine) },
+			// {d:"M" + regStartPt + pointsStr + regEndPt},
 			PATH_ANIM_DUR,
 			STD_EASING
 		];
