@@ -299,6 +299,7 @@ export default class AxisChart extends BaseChart {
 					heatline: this.lineOptions.heatline,
 					regionFill: this.lineOptions.regionFill,
 					spline: this.lineOptions.spline,
+					// interpolate: this.lineOptions.interpolate, // needs more testing
 					hideDots: this.lineOptions.hideDots,
 					hideLine: this.lineOptions.hideLine,
 
@@ -345,7 +346,7 @@ export default class AxisChart extends BaseChart {
 		this.components = new Map(componentConfigs
 			.filter(args => !optionals.includes(args[0]) || this.state[args[0]])
 			.map(args => {
-				let component = getComponent(...args);
+				let component = getComponent(...args, this.realData);
 				if(args[0].includes('lineGraph') || args[0].includes('barGraph')) {
 					this.dataUnitComponents.push(component);
 				}
@@ -404,7 +405,7 @@ export default class AxisChart extends BaseChart {
 		let s = this.state;
 		if(!s.yExtremes) return;
 
-		let index = getClosestInArray(relX, s.xAxis.positions, true);
+        let index = Math.max(getClosestInArray(relX, s.xAxis.positions, true), 0);
 		let dbi = this.dataByIndex[index];
 
 		this.tip.setValues(
@@ -415,7 +416,16 @@ export default class AxisChart extends BaseChart {
 			index
 		);
 
-		this.tip.showTip();
+		let showTip = false;
+		this.realData.datasets.forEach((ds) => {
+			if (ds.values[index] != null)
+				showTip = true;
+		});
+
+		if (showTip)
+			this.tip.showTip();
+		else
+			this.tip.hideTip();
 	}
 
 	renderLegend() {

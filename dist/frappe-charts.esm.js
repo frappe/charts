@@ -411,48 +411,77 @@ function shortenLargeNumber(label) {
 	return Math.round(shortened*100)/100 + ' ' + ['', 'K', 'M', 'B', 'T'][l];
 }
 
-// cubic bezier curve calculation (from example by François Romain)
-function createSplineCurve(xList, yList) {
-
-	let points=[];
-	for(let i=0;i<xList.length;i++){
-		points.push([xList[i], yList[i]]);
-	}
-
-	let smoothing = 0.2;
-	let line = (pointA, pointB) => {
-		let lengthX = pointB[0] - pointA[0];
-		let lengthY = pointB[1] - pointA[1];
-		return {
-			length: Math.sqrt(Math.pow(lengthX, 2) + Math.pow(lengthY, 2)),
-			angle: Math.atan2(lengthY, lengthX)
-		};
-	};
-    
-	let controlPoint = (current, previous, next, reverse) => {
-		let p = previous || current;
-		let n = next || current;
-		let o = line(p, n);
-		let angle = o.angle + (reverse ? Math.PI : 0);
-		let length = o.length * smoothing;
-		let x = current[0] + Math.cos(angle) * length;
-		let y = current[1] + Math.sin(angle) * length;
-		return [x, y];
-	};
-    
-	let bezierCommand = (point, i, a) => {
+function getPath(xList, yList, realValues, spline = false, interpolate = false)
+{
+    // spline, cubic bezier curve calculation (from example by François Romain)
+	function bezierCommand(point, i, a) {
+		function line(pointA, pointB) {
+			let lengthX = pointB[0] - pointA[0];
+			let lengthY = pointB[1] - pointA[1];
+			return {
+				length: Math.sqrt(Math.pow(lengthX, 2) + Math.pow(lengthY, 2)),
+				angle: Math.atan2(lengthY, lengthX)
+			};
+		}
+		function controlPoint(current, previous, next, reverse) {
+			let p = previous || current;
+			let n = next || current;
+			let o = line(p, n);
+			let angle = o.angle + (reverse ? Math.PI : 0);
+			let length = o.length * 0.2; // 0.2 smoothing
+			let x = current[0] + Math.cos(angle) * length;
+			let y = current[1] + Math.sin(angle) * length;
+			return [x, y];
+		}
 		let cps = controlPoint(a[i - 1], a[i - 2], point);
 		let cpe = controlPoint(point, a[i - 1], a[i + 1], true);
 		return `C ${cps[0]},${cps[1]} ${cpe[0]},${cpe[1]} ${point[0]},${point[1]}`;
-	};
-    
-	let pointStr = (points, command) => {
-		return points.reduce((acc, point, i, a) => i === 0
-			? `${point[0]},${point[1]}`
-			: `${acc} ${command(point, i, a)}`, '');
-	};
-    
-	return pointStr(points, bezierCommand);
+	}
+
+	// line
+	function lineCommand(point) { 
+		return `L ${point[0]},${point[1]}`;
+	}
+
+	// convert points
+	let points=[];
+	for(let i=0;i<xList.length;i++){
+		points.push(realValues[i] == null ? null : [xList[i], yList[i]]);
+	}
+
+	// make path, curve line skip interpolate
+	let nonNullPoints = points.filter(x => x != null);
+	let path = '';
+	points.forEach((p, i) => {
+		if (p != null) {
+			let coord = `${p[0]},${p[1]}`;
+			if (i == 0 || (points[i-1] == null && i-1 == 0))
+				path += coord;
+			else if (points[i-1] == null) {
+				let pointInNullAr = nonNullPoints.filter((x) => {  return x[0] == xList[i]; })[0];
+				let indx = nonNullPoints.indexOf(pointInNullAr);
+				path += (path == '') ? coord : (interpolate ? (spline ? bezierCommand(p, indx, nonNullPoints) : lineCommand(p)) : 'M ' + coord);
+			}
+			else
+				path += spline ? bezierCommand(p, i, points) : lineCommand(p);
+		}
+
+		if (i == points.length - 1 && path == '' && points.length < realValues.length) // last point fix
+			path += xList[i] + ',' + yList[i]; 
+	});
+	return path;
+}
+
+function getRegionPath(pointsStr, zero) {
+    let pathStr = '';
+    pointsStr.split('M').forEach((part, i) => {
+        let s = part.split(/[LC]/)[0].trim();
+        let sx = s.split(',')[0];
+        let e = part.substr(part.lastIndexOf(' ')).trim();
+        let ex = e.split(',')[0];
+        pathStr += `M${sx},${zero}L${s} ` + part + ((e.includes(',')) ? `L${e}L${ex},${zero}` : `L${sx},${zero}L${s}`);
+    });
+    return pathStr;
 }
 
 const PRESET_COLOR_MAP = {
@@ -1066,15 +1095,9 @@ function datasetDot(x, y, radius, color, label='', index=0) {
 	}
 }
 
-function getPaths(xList, yList, color, options={}, meta={}) {
-	let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
-	let pointsStr = pointsList.join("L");
-
-	// Spline
-	if (options.spline)
-		pointsStr = createSplineCurve(xList, yList);
-    
-	let path = makePath("M"+pointsStr, 'line-graph-path', color);
+function getPaths(xList, yList, realValues, color, options={}, meta={}) {
+	let pointsStr = getPath(xList, yList, realValues, options.spline, options.interpolate);
+    let path = makePath("M"+pointsStr, 'line-graph-path', color);
 
 	// HeatLine
 	if(options.heatline) {
@@ -1084,15 +1107,13 @@ function getPaths(xList, yList, color, options={}, meta={}) {
 
 	let paths = {
 		path: path
-	};
+    };
 
 	// Region
 	if(options.regionFill) {
 		let gradient_id_region = makeGradient(meta.svgDefs, color, true);
-
-		let pathStr = "M" + `${xList[0]},${meta.zeroLine}L` + pointsStr + `L${xList.slice(-1)[0]},${meta.zeroLine}`;
-		paths.region = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`);
-	}
+        paths.region = makePath(getRegionPath(pointsStr, meta.zeroLine), `region-fill`, 'none', `url(#${gradient_id_region})`);
+    }
 
 	return paths;
 }
@@ -1283,23 +1304,20 @@ function animateDot(dot, x, y) {
 	// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
 }
 
-function animatePath(paths, newXList, newYList, zeroLine, spline) {
+function animatePath(paths, newXList, newYList, realValues, zeroLine, spline, interpolate) {
 	let pathComponents = [];
-	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y)).join("L");
-    
-	if (spline)
-		pointsStr = createSplineCurve(newXList, newYList);
+	let pointsStr = getPath(newXList, newYList, realValues, spline, interpolate);
 
 	const animPath = [paths.path, {d:"M" + pointsStr}, PATH_ANIM_DUR, STD_EASING];
 	pathComponents.push(animPath);
 
 	if(paths.region) {
-		let regStartPt = `${newXList[0]},${zeroLine}L`;
 		let regEndPt = `L${newXList.slice(-1)[0]}, ${zeroLine}`;
 
 		const animRegion = [
-			paths.region,
-			{d:"M" + regStartPt + pointsStr + regEndPt},
+            paths.region,
+            {d: getRegionPath(pointsStr, zeroLine) },
+			// {d:"M" + regStartPt + pointsStr + regEndPt},
 			PATH_ANIM_DUR,
 			STD_EASING
 		];
@@ -1486,7 +1504,7 @@ class BaseChart {
 			showTooltip: 1, // calculate
 			showLegend: 1, // calculate
 			isNavigable: options.isNavigable || 0,
-			animate: 1,
+			animate: (typeof options.animate !== 'undefined') ? options.animate : 1,
 			truncateLegends: options.truncateLegends || 0
 		};
 
@@ -1679,7 +1697,7 @@ class BaseChart {
 		}
 		this.data = this.prepareData(data);
 		this.calc(); // builds state
-		this.render();
+		this.render(this.components, this.config.animate);
 	}
 
 	render(components=this.components, animate=true) {
@@ -1938,6 +1956,7 @@ class ChartComponent {
 		constants,
 
 		getData,
+		realData,
 		makeElements,
 		animateElements
 	}) {
@@ -1946,6 +1965,7 @@ class ChartComponent {
 
 		this.makeElements = makeElements;
 		this.getData = getData;
+		this.realData = realData;
 
 		this.animateElements = animateElements;
 
@@ -2291,11 +2311,13 @@ let componentConfigs = {
 				this.paths = getPaths(
 					data.xPositions,
 					data.yPositions,
+					this.realData.datasets[this.constants.index].values,
 					c.color,
 					{
 						heatline: c.heatline,
 						regionFill: c.regionFill,
-						spline: c.spline
+						spline: c.spline,
+						interpolate: c.interpolate
 					},
 					{
 						svgDefs: c.svgDefs,
@@ -2307,10 +2329,11 @@ let componentConfigs = {
 			this.units = [];
 			if(!c.hideDots) {
 				this.units = data.yPositions.map((y, j) => {
+				    let yReal = this.realData.datasets[this.constants.index].values[j];
 					return datasetDot(
 						data.xPositions[j],
 						y,
-						data.radius,
+						yReal == null ? 0 : data.radius, // hide dot if null value
 						c.color,
 						(c.valuesOverPoints ? data.values[j] : ''),
 						j
@@ -2346,7 +2369,7 @@ let componentConfigs = {
 
 			if(Object.keys(this.paths).length) {
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline));
+					this.paths, newXPos, newYPos, this.realData.datasets[this.constants.index].values, newData.zeroLine, this.constants.spline, this.constants.interpolate));
 			}
 
 			if(this.units.length) {
@@ -2361,12 +2384,13 @@ let componentConfigs = {
 	}
 };
 
-function getComponent(name, constants, getData) {
+function getComponent(name, constants, getData, realData) {
 	let keys = Object.keys(componentConfigs).filter(k => name.includes(k));
 	let config = componentConfigs[keys[0]];
 	Object.assign(config, {
 		constants: constants,
-		getData: getData
+		getData: getData,
+		realData: realData
 	});
 	return new ChartComponent(config);
 }
@@ -3528,6 +3552,7 @@ class AxisChart extends BaseChart {
 					heatline: this.lineOptions.heatline,
 					regionFill: this.lineOptions.regionFill,
 					spline: this.lineOptions.spline,
+					// interpolate: this.lineOptions.interpolate, // needs more testing
 					hideDots: this.lineOptions.hideDots,
 					hideLine: this.lineOptions.hideLine,
 
@@ -3574,7 +3599,7 @@ class AxisChart extends BaseChart {
 		this.components = new Map(componentConfigs
 			.filter(args => !optionals.includes(args[0]) || this.state[args[0]])
 			.map(args => {
-				let component = getComponent(...args);
+				let component = getComponent(...args, this.realData);
 				if(args[0].includes('lineGraph') || args[0].includes('barGraph')) {
 					this.dataUnitComponents.push(component);
 				}
@@ -3633,7 +3658,7 @@ class AxisChart extends BaseChart {
 		let s = this.state;
 		if(!s.yExtremes) return;
 
-		let index = getClosestInArray(relX, s.xAxis.positions, true);
+        let index = Math.max(getClosestInArray(relX, s.xAxis.positions, true), 0);
 		let dbi = this.dataByIndex[index];
 
 		this.tip.setValues(
@@ -3644,7 +3669,16 @@ class AxisChart extends BaseChart {
 			index
 		);
 
-		this.tip.showTip();
+		let showTip = false;
+		this.realData.datasets.forEach((ds) => {
+			if (ds.values[index] != null)
+				showTip = true;
+		});
+
+		if (showTip)
+			this.tip.showTip();
+		else
+			this.tip.hideTip();
 	}
 
 	renderLegend() {

@@ -54,46 +54,75 @@ export function shortenLargeNumber(label) {
 	return Math.round(shortened*100)/100 + ' ' + ['', 'K', 'M', 'B', 'T'][l];
 }
 
-// cubic bezier curve calculation (from example by François Romain)
-export function getSplineCurvePointsStr(xList, yList) {
-
-	let points=[];
-	for(let i=0;i<xList.length;i++){
-		points.push([xList[i], yList[i]]);
-	}
-
-	let smoothing = 0.2;
-	let line = (pointA, pointB) => {
-		let lengthX = pointB[0] - pointA[0];
-		let lengthY = pointB[1] - pointA[1];
-		return {
-			length: Math.sqrt(Math.pow(lengthX, 2) + Math.pow(lengthY, 2)),
-			angle: Math.atan2(lengthY, lengthX)
-		};
-	};
-    
-	let controlPoint = (current, previous, next, reverse) => {
-		let p = previous || current;
-		let n = next || current;
-		let o = line(p, n);
-		let angle = o.angle + (reverse ? Math.PI : 0);
-		let length = o.length * smoothing;
-		let x = current[0] + Math.cos(angle) * length;
-		let y = current[1] + Math.sin(angle) * length;
-		return [x, y];
-	};
-    
-	let bezierCommand = (point, i, a) => {
+export function getPath(xList, yList, realValues, spline = false, interpolate = false)
+{
+    // spline, cubic bezier curve calculation (from example by François Romain)
+	function bezierCommand(point, i, a) {
+		function line(pointA, pointB) {
+			let lengthX = pointB[0] - pointA[0];
+			let lengthY = pointB[1] - pointA[1];
+			return {
+				length: Math.sqrt(Math.pow(lengthX, 2) + Math.pow(lengthY, 2)),
+				angle: Math.atan2(lengthY, lengthX)
+			};
+		}
+		function controlPoint(current, previous, next, reverse) {
+			let p = previous || current;
+			let n = next || current;
+			let o = line(p, n);
+			let angle = o.angle + (reverse ? Math.PI : 0);
+			let length = o.length * 0.2; // 0.2 smoothing
+			let x = current[0] + Math.cos(angle) * length;
+			let y = current[1] + Math.sin(angle) * length;
+			return [x, y];
+		}
 		let cps = controlPoint(a[i - 1], a[i - 2], point);
 		let cpe = controlPoint(point, a[i - 1], a[i + 1], true);
 		return `C ${cps[0]},${cps[1]} ${cpe[0]},${cpe[1]} ${point[0]},${point[1]}`;
-	};
-    
-	let pointStr = (points, command) => {
-		return points.reduce((acc, point, i, a) => i === 0
-			? `${point[0]},${point[1]}`
-			: `${acc} ${command(point, i, a)}`, '');
-	};
-    
-	return pointStr(points, bezierCommand);
+	}
+
+	// line
+	function lineCommand(point) { 
+		return `L ${point[0]},${point[1]}`;
+	}
+
+	// convert points
+	let points=[];
+	for(let i=0;i<xList.length;i++){
+		points.push(realValues[i] == null ? null : [xList[i], yList[i]]);
+	}
+
+	// make path, curve line skip interpolate
+	let nonNullPoints = points.filter(x => x != null);
+	let path = '';
+	points.forEach((p, i) => {
+		if (p != null) {
+			let coord = `${p[0]},${p[1]}`;
+			if (i == 0 || (points[i-1] == null && i-1 == 0))
+				path += coord;
+			else if (points[i-1] == null) {
+				let pointInNullAr = nonNullPoints.filter((x) => {  return x[0] == xList[i]; })[0];
+				let indx = nonNullPoints.indexOf(pointInNullAr);
+				path += (path == '') ? coord : (interpolate ? (spline ? bezierCommand(p, indx, nonNullPoints) : lineCommand(p)) : 'M ' + coord);
+			}
+			else
+				path += spline ? bezierCommand(p, i, points) : lineCommand(p);
+		}
+
+		if (i == points.length - 1 && path == '' && points.length < realValues.length) // last point fix
+			path += xList[i] + ',' + yList[i]; 
+	});
+	return path;
+}
+
+export function getRegionPath(pointsStr, zero) {
+    let pathStr = '';
+    pointsStr.split('M').forEach((part, i) => {
+        let s = part.split(/[LC]/)[0].trim();
+        let sx = s.split(',')[0];
+        let e = part.substr(part.lastIndexOf(' ')).trim();
+        let ex = e.split(',')[0];
+        pathStr += `M${sx},${zero}L${s} ` + part + ((e.includes(',')) ? `L${e}L${ex},${zero}` : `L${sx},${zero}L${s}`);
+    });
+    return pathStr;
 }
