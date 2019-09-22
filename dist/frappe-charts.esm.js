@@ -412,7 +412,7 @@ function shortenLargeNumber(label) {
 }
 
 // cubic bezier curve calculation (from example by François Romain)
-function createSplineCurve(xList, yList) {
+function getSplineCurvePointsStr(xList, yList) {
 
 	let points=[];
 	for(let i=0;i<xList.length;i++){
@@ -730,7 +730,9 @@ function legendBar(x, y, size, fill='none', label, truncate=false) {
 	return group;
 }
 
-function legendDot(x, y, size, fill='none', label) {
+function legendDot(x, y, size, fill='none', label, truncate=false) {
+	label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
+
 	let args = {
 		className: 'legend-dot',
 		cx: 0,
@@ -1072,7 +1074,7 @@ function getPaths(xList, yList, color, options={}, meta={}) {
 
 	// Spline
 	if (options.spline)
-		pointsStr = createSplineCurve(xList, yList);
+		pointsStr = getSplineCurvePointsStr(xList, yList);
     
 	let path = makePath("M"+pointsStr, 'line-graph-path', color);
 
@@ -1286,9 +1288,9 @@ function animateDot(dot, x, y) {
 function animatePath(paths, newXList, newYList, zeroLine, spline) {
 	let pathComponents = [];
 	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y)).join("L");
-    
+
 	if (spline)
-		pointsStr = createSplineCurve(newXList, newYList);
+		pointsStr = getSplineCurvePointsStr(newXList, newYList);
 
 	const animPath = [paths.path, {d:"M" + pointsStr}, PATH_ANIM_DUR, STD_EASING];
 	pathComponents.push(animPath);
@@ -1486,7 +1488,7 @@ class BaseChart {
 			showTooltip: 1, // calculate
 			showLegend: 1, // calculate
 			isNavigable: options.isNavigable || 0,
-			animate: 1,
+			animate: (typeof options.animate !== 'undefined') ? options.animate : 1,
 			truncateLegends: options.truncateLegends || 0
 		};
 
@@ -1679,7 +1681,7 @@ class BaseChart {
 		}
 		this.data = this.prepareData(data);
 		this.calc(); // builds state
-		this.render();
+		this.render(this.components, this.config.animate);
 	}
 
 	render(components=this.components, animate=true) {
@@ -1842,7 +1844,8 @@ class AggregationChart extends BaseChart {
 				y,
 				5,
 				this.colors[i],
-				`${s.labels[i]}: ${d}`
+				`${s.labels[i]}: ${d}`,
+				this.config.truncateLegends
 			);
 			this.legendArea.appendChild(dot);
 			count++;
