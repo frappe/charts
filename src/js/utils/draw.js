@@ -190,6 +190,32 @@ export function percentageBar(x, y, width, height,
 	return createSVG("rect", args);
 }
 
+export function funnelSlice(className, startPositions, height, fill='none') {
+	const endPosition = []
+	let [point_a, point_b] = startPositions[0]
+
+	// For an equilateral triangle, the angles are always 60 deg.
+	// The end points on the polygons can be created using the following formula
+	//
+	// end_point_x = start_x + height
+	// end_point_y = start_y +/- height * 1/2
+	//
+	//      b
+	//    _______________________________
+	//    \  |_|                        /
+	//     \   |                       /
+	//      \  | h                    /
+	//       \ |                     /
+	//        \|____________________/
+	//
+	//     b = h * cos(60 deg)
+	//
+
+	endPosition[0] = [point_a[0] + height, point_a[1] + height * 0.5]
+	endPosition[1] = [point_b[0] + height, point_b[1] - height * 0.5]
+
+}
+
 export function heatSquare(className, x, y, size, fill='none', data={}) {
 	let args = {
 		className: className,
