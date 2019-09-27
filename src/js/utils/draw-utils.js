@@ -25,14 +25,14 @@ export function equilizeNoOfElements(array1, array2,
 	return [array1, array2];
 }
 
-export function getEndpointsForTrapezoid(startPositions) {
-	const endPosition = []
-	let [point_a, point_b] = startPositions
+export function getEndpointsForTrapezoid(startPositions, height) {
+	const endPosition = [];
+	let [point_a, point_b] = startPositions;
 
 	// For an equilateral triangle, the angles are always 60 deg.
 	// The end points on the polygons can be created using the following formula
 	//
-	// end_point_x = start_x +/- height * 1/2
+	// end_point_x = start_x +/- height * 1/√3
 	// end_point_y = start_y + height
 	//
 	//      b
@@ -43,13 +43,14 @@ export function getEndpointsForTrapezoid(startPositions) {
 	//       \ |                     /
 	//        \|____________________/
 	//
-	//     b = h * cos(60 deg)
+	//     b = h * tan(30 deg)
 	//
 
-	endPosition[0] = [point_a[0] + height * 0.5, point_a[1] + height]
-	endPosition[1] = [point_b[0] - height * 0.5, point_b[1] + height]
+	let multiplicationFactor = 1.0/Math.sqrt(3);
+	endPosition[0] = [point_a[0] + height * multiplicationFactor, point_a[1] + height];
+	endPosition[1] = [point_b[0] - height * multiplicationFactor, point_b[1] + height];
 
-	return endPosition
+	return endPosition;
 }
 
 export function truncateString(txt, len) {

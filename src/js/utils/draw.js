@@ -190,8 +190,14 @@ export function percentageBar(x, y, width, height,
 	return createSVG("rect", args);
 }
 
-export function funnelSlice(className, startPositions, endPosition, height, fill='none') {
-	return createSVG("polygon")
+export function funnelSlice(className, start, end, fill='none') {
+	const points = `${start[0].join()} ${start[1].join()} ${end[1].join()} ${end[0].join()}`
+	let args = {
+		className: 'funnel-slice',
+		points: points,
+		fill: fill
+	}
+	return createSVG("polygon", args)
 }
 
 export function heatSquare(className, x, y, size, fill='none', data={}) {

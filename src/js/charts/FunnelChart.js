@@ -1,25 +1,40 @@
 import AggregationChart from './AggregationChart';
 import { getOffset } from '../utils/dom';
 import { getComponent } from '../objects/ChartComponents';
-import { PERCENTAGE_BAR_DEFAULT_HEIGHT, PERCENTAGE_BAR_DEFAULT_DEPTH } from '../utils/constants';
+import { getEndpointsForTrapezoid } from '../utils/draw-utils'
+import { FUNNEL_CHART_BASE_WIDTH } from '../utils/constants';
 
 export default class FunnelChart extends AggregationChart {
 	constructor(parent, args) {
 		super(parent, args);
 		this.type = 'funnel';
+		window.funnel = this;
 		this.setup();
 	}
 
-	setMeasures(options) {
-		let m = this.measures;
-		this.funnelOptions = options.funnelOptions || {};
+	calc() {
+		super.calc();
+		let s = this.state;
+		// calculate width and height options
+		const baseWidth = FUNNEL_CHART_BASE_WIDTH;
+		const totalheight = (Math.sqrt(3) * baseWidth) / 2.0;
 
-		let opts = this.funnelOptions;
-		opts.height = opts.height || PERCENTAGE_BAR_DEFAULT_HEIGHT;
+		// calculate total weightage
+		// as height decreases, area decreases by the square of the reduction
+		// hence, compensating by squaring the index value
 
-		m.paddings.right = 30;
-		m.legendHeight = 60;
-		m.baseHeight = (opts.height + opts.depth * 0.5) * 8;
+		const reducer = (accumulator, currentValue, index) => accumulator + currentValue * (Math.pow(index+1, 2));
+		const weightage = s.sliceTotals.reduce(reducer, 0.0);
+
+		let slicePoints = [];
+		let startPoint = [[0, 0], [FUNNEL_CHART_BASE_WIDTH, 0]]
+		s.sliceTotals.forEach((d, i) => {
+			let height = totalheight * d * Math.pow(i+1, 2) / weightage;
+			let endPoint = getEndpointsForTrapezoid(startPoint, height);
+			slicePoints.push([startPoint, endPoint]);
+			startPoint = endPoint;
+		})
+		s.slicePoints = slicePoints;
 	}
 
 	setupComponents() {
@@ -27,15 +42,11 @@ export default class FunnelChart extends AggregationChart {
 
 		let componentConfigs = [
 			[
-				'percentageBars',
-				{
-					barHeight: this.funnelOptions.height,
-					barDepth: this.funnelOptions.depth,
-				},
+				'funnelSlices',
+				{ },
 				function() {
 					return {
-						xPositions: s.xPositions,
-						widths: s.widths,
+						slicePoints: s.slicePoints,
 						colors: this.colors
 					};
 				}.bind(this)
@@ -49,43 +60,27 @@ export default class FunnelChart extends AggregationChart {
 			}));
 	}
 
-	calc() {
-		super.calc();
-		let s = this.state;
-
-		s.xPositions = [];
-		s.widths = [];
-
-		let xPos = 0;
-		s.sliceTotals.map((value) => {
-			let width = this.width * value / s.grandTotal;
-			s.widths.push(width);
-			s.xPositions.push(xPos);
-			xPos += width;
-		});
-	}
-
 	makeDataByIndex() { }
 
 	bindTooltip() {
-		let s = this.state;
-		this.container.addEventListener('mousemove', (e) => {
-			let bars = this.components.get('percentageBars').store;
-			let bar = e.target;
-			if(bars.includes(bar)) {
+		// let s = this.state;
+		// this.container.addEventListener('mousemove', (e) => {
+		// 	let bars = this.components.get('percentageBars').store;
+		// 	let bar = e.target;
+		// 	if(bars.includes(bar)) {
 
-				let i = bars.indexOf(bar);
-				let gOff = getOffset(this.container), pOff = getOffset(bar);
+		// 		let i = bars.indexOf(bar);
+		// 		let gOff = getOffset(this.container), pOff = getOffset(bar);
 
-				let x = pOff.left - gOff.left + parseInt(bar.getAttribute('width'))/2;
-				let y = pOff.top - gOff.top;
-				let title = (this.formattedLabels && this.formattedLabels.length>0
-					? this.formattedLabels[i] : this.state.labels[i]) + ': ';
-				let fraction = s.sliceTotals[i]/s.grandTotal;
+		// 		let x = pOff.left - gOff.left + parseInt(bar.getAttribute('width'))/2;
+		// 		let y = pOff.top - gOff.top;
+		// 		let title = (this.formattedLabels && this.formattedLabels.length>0
+		// 			? this.formattedLabels[i] : this.state.labels[i]) + ': ';
+		// 		let fraction = s.sliceTotals[i]/s.grandTotal;
 
-				this.tip.setValues(x, y, {name: title, value: (fraction*100).toFixed(1) + "%"});
-				this.tip.showTip();
-			}
-		});
+		// 		this.tip.setValues(x, y, {name: title, value: (fraction*100).toFixed(1) + "%"});
+		// 		this.tip.showTip();
+		// 	}
+		// });
 	}
 }

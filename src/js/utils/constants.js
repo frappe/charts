@@ -76,6 +76,8 @@ export const DOT_OVERLAY_SIZE_INCR = 4;
 export const PERCENTAGE_BAR_DEFAULT_HEIGHT = 20;
 export const PERCENTAGE_BAR_DEFAULT_DEPTH = 2;
 
+export const FUNNEL_CHART_BASE_WIDTH = 200
+
 // Fixed 5-color theme,
 // More colors are difficult to parse visually
 export const HEATMAP_DISTRIBUTION_SIZE = 5;
@@ -99,7 +101,8 @@ export const DEFAULT_COLORS = {
 	pie: DEFAULT_CHART_COLORS,
 	percentage: DEFAULT_CHART_COLORS,
 	heatmap: HEATMAP_COLORS_GREEN,
-	donut: DEFAULT_CHART_COLORS
+	donut: DEFAULT_CHART_COLORS,
+	funnel: DEFAULT_CHART_COLORS,
 };
 
 // Universal constants

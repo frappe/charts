@@ -1,5 +1,5 @@
 import { makeSVGGroup } from '../utils/draw';
-import { makeText, makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
+import { makeText, makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare, funnelSlice } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import { translateHoriLine, translateVertLine, animateRegion, animateBar,
 	animateDot, animatePath, animatePathStr } from '../utils/animate';
@@ -114,14 +114,18 @@ let componentConfigs = {
 			if(newData) return [];
 		}
 	},
-	funnelSlice: {
-		layerClass: 'funnel-slice',
+	funnelSlices: {
+		layerClass: 'funnel-slices',
 		makeElements(data) {
-			return data
+			return data.slicePoints.map((p, i) => {
+				return funnelSlice('funnel-slice', p[0], p[1], data.colors[i]);
+			});
 		},
 
-		animateElements: {}
-	}
+		animateElements(newData) {
+			if(newData) return [];
+		}
+	},
 	yAxis: {
 		layerClass: 'y axis',
 		makeElements(data) {
