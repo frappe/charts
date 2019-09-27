@@ -25,6 +25,33 @@ export function equilizeNoOfElements(array1, array2,
 	return [array1, array2];
 }
 
+export function getEndpointsForTrapezoid(startPositions) {
+	const endPosition = []
+	let [point_a, point_b] = startPositions
+
+	// For an equilateral triangle, the angles are always 60 deg.
+	// The end points on the polygons can be created using the following formula
+	//
+	// end_point_x = start_x +/- height * 1/2
+	// end_point_y = start_y + height
+	//
+	//      b
+	//    _______________________________
+	//    \  |_|                        /
+	//     \   |                       /
+	//      \  | h                    /
+	//       \ |                     /
+	//        \|____________________/
+	//
+	//     b = h * cos(60 deg)
+	//
+
+	endPosition[0] = [point_a[0] + height * 0.5, point_a[1] + height]
+	endPosition[1] = [point_b[0] - height * 0.5, point_b[1] + height]
+
+	return endPosition
+}
+
 export function truncateString(txt, len) {
 	if (!txt) {
 		return;
@@ -71,7 +98,7 @@ export function getSplineCurvePointsStr(xList, yList) {
 			angle: Math.atan2(lengthY, lengthX)
 		};
 	};
-    
+
 	let controlPoint = (current, previous, next, reverse) => {
 		let p = previous || current;
 		let n = next || current;
@@ -82,18 +109,18 @@ export function getSplineCurvePointsStr(xList, yList) {
 		let y = current[1] + Math.sin(angle) * length;
 		return [x, y];
 	};
-    
+
 	let bezierCommand = (point, i, a) => {
 		let cps = controlPoint(a[i - 1], a[i - 2], point);
 		let cpe = controlPoint(point, a[i - 1], a[i + 1], true);
 		return `C ${cps[0]},${cps[1]} ${cpe[0]},${cpe[1]} ${point[0]},${point[1]}`;
 	};
-    
+
 	let pointStr = (points, command) => {
 		return points.reduce((acc, point, i, a) => i === 0
 			? `${point[0]},${point[1]}`
 			: `${acc} ${command(point, i, a)}`, '');
 	};
-    
+
 	return pointStr(points, bezierCommand);
 }

@@ -190,30 +190,8 @@ export function percentageBar(x, y, width, height,
 	return createSVG("rect", args);
 }
 
-export function funnelSlice(className, startPositions, height, fill='none') {
-	const endPosition = []
-	let [point_a, point_b] = startPositions[0]
-
-	// For an equilateral triangle, the angles are always 60 deg.
-	// The end points on the polygons can be created using the following formula
-	//
-	// end_point_x = start_x + height
-	// end_point_y = start_y +/- height * 1/2
-	//
-	//      b
-	//    _______________________________
-	//    \  |_|                        /
-	//     \   |                       /
-	//      \  | h                    /
-	//       \ |                     /
-	//        \|____________________/
-	//
-	//     b = h * cos(60 deg)
-	//
-
-	endPosition[0] = [point_a[0] + height, point_a[1] + height * 0.5]
-	endPosition[1] = [point_b[0] + height, point_b[1] - height * 0.5]
-
+export function funnelSlice(className, startPositions, endPosition, height, fill='none') {
+	return createSVG("polygon")
 }
 
 export function heatSquare(className, x, y, size, fill='none', data={}) {
@@ -348,7 +326,7 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	if(!options.lineType) options.lineType = '';
 	if (options.shortenNumbers) label = shortenLargeNumber(label);
-	
+
 	let className = 'line-horizontal ' + options.className +
 		(options.lineType === "dashed" ? "dashed": "");
 
@@ -609,7 +587,7 @@ export function getPaths(xList, yList, color, options={}, meta={}) {
 	// Spline
 	if (options.spline)
 		pointsStr = getSplineCurvePointsStr(xList, yList);
-    
+
 	let path = makePath("M"+pointsStr, 'line-graph-path', color);
 
 	// HeatLine
