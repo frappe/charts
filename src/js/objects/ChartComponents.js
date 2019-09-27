@@ -114,6 +114,14 @@ let componentConfigs = {
 			if(newData) return [];
 		}
 	},
+	funnelSlice: {
+		layerClass: 'funnel-slice',
+		makeElements(data) {
+			return data
+		},
+
+		animateElements: {}
+	}
 	yAxis: {
 		layerClass: 'y axis',
 		makeElements(data) {

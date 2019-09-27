@@ -6,6 +6,7 @@ import PieChart from './charts/PieChart';
 import Heatmap from './charts/Heatmap';
 import AxisChart from './charts/AxisChart';
 import DonutChart from './charts/DonutChart';
+import FunnelChart from './charts/FunnelChart';
 
 const chartTypes = {
 	bar: AxisChart,
@@ -15,6 +16,7 @@ const chartTypes = {
 	heatmap: Heatmap,
 	pie: PieChart,
 	donut: DonutChart,
+	funnel: FunnelChart,
 };
 
 function getChartByType(chartType = 'line', parent, options) {
