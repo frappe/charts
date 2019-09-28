@@ -23,13 +23,13 @@ export default class FunnelChart extends AggregationChart {
 		// as height decreases, area decreases by the square of the reduction
 		// hence, compensating by squaring the index value
 
-		const reducer = (accumulator, currentValue, index) => accumulator + currentValue * (Math.pow(index+1, 2));
+		const reducer = (accumulator, currentValue, index) => accumulator + currentValue;
 		const weightage = s.sliceTotals.reduce(reducer, 0.0);
 
 		let slicePoints = [];
 		let startPoint = [[0, 0], [FUNNEL_CHART_BASE_WIDTH, 0]]
 		s.sliceTotals.forEach((d, i) => {
-			let height = totalheight * d * Math.pow(i+1, 2) / weightage;
+			let height = totalheight * d / weightage;
 			let endPoint = getEndpointsForTrapezoid(startPoint, height);
 			slicePoints.push([startPoint, endPoint]);
 			startPoint = endPoint;
@@ -63,24 +63,27 @@ export default class FunnelChart extends AggregationChart {
 	makeDataByIndex() { }
 
 	bindTooltip() {
-		// let s = this.state;
-		// this.container.addEventListener('mousemove', (e) => {
-		// 	let bars = this.components.get('percentageBars').store;
-		// 	let bar = e.target;
-		// 	if(bars.includes(bar)) {
+		function getPolygonWidth(slice)  {
+			const points = slice.points;
+			return points[1].x - points[0].x
+		}
 
-		// 		let i = bars.indexOf(bar);
-		// 		let gOff = getOffset(this.container), pOff = getOffset(bar);
+		let s = this.state;
+		this.container.addEventListener('mousemove', (e) => {
+			let slices = this.components.get('funnelSlices').store;
+			let slice = e.target;
+			if(slices.includes(slice)) {
+				let i = slices.indexOf(slice);
 
-		// 		let x = pOff.left - gOff.left + parseInt(bar.getAttribute('width'))/2;
-		// 		let y = pOff.top - gOff.top;
-		// 		let title = (this.formattedLabels && this.formattedLabels.length>0
-		// 			? this.formattedLabels[i] : this.state.labels[i]) + ': ';
-		// 		let fraction = s.sliceTotals[i]/s.grandTotal;
-
-		// 		this.tip.setValues(x, y, {name: title, value: (fraction*100).toFixed(1) + "%"});
-		// 		this.tip.showTip();
-		// 	}
-		// });
+				let gOff = getOffset(this.container), pOff = getOffset(slice);
+				let x = pOff.left - gOff.left + getPolygonWidth(slice)/2;
+				let y = pOff.top - gOff.top;
+				let title = (this.formatted_labels && this.formatted_labels.length > 0
+					? this.formatted_labels[i] : this.state.labels[i]) + ': ';
+				let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1);
+				this.tip.setValues(x, y, {name: title, value: percent + "%"});
+				this.tip.showTip();
+			}
+		});
 	}
 }
