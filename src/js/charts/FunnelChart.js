@@ -2,7 +2,6 @@ import AggregationChart from './AggregationChart';
 import { getOffset } from '../utils/dom';
 import { getComponent } from '../objects/ChartComponents';
 import { getEndpointsForTrapezoid } from '../utils/draw-utils'
-import { FUNNEL_CHART_BASE_WIDTH } from '../utils/constants';
 
 export default class FunnelChart extends AggregationChart {
 	constructor(parent, args) {
@@ -15,19 +14,20 @@ export default class FunnelChart extends AggregationChart {
 	calc() {
 		super.calc();
 		let s = this.state;
+		
 		// calculate width and height options
-		const baseWidth = FUNNEL_CHART_BASE_WIDTH;
-		const totalheight = (Math.sqrt(3) * baseWidth) / 2.0;
-
-		// calculate total weightage
-		// as height decreases, area decreases by the square of the reduction
-		// hence, compensating by squaring the index value
+		const totalheight = this.height * 0.9;
+		const baseWidth = (2 * totalheight) / Math.sqrt(3);
+		
 
 		const reducer = (accumulator, currentValue, index) => accumulator + currentValue;
 		const weightage = s.sliceTotals.reduce(reducer, 0.0);
 
+		const center_x_offset = this.center.x - baseWidth / 2;
+		const center_y_offset = this.center.y - totalheight / 2;
+
 		let slicePoints = [];
-		let startPoint = [[0, 0], [FUNNEL_CHART_BASE_WIDTH, 0]]
+		let startPoint = [[center_x_offset, center_y_offset], [center_x_offset + baseWidth, center_y_offset]]
 		s.sliceTotals.forEach((d, i) => {
 			let height = totalheight * d / weightage;
 			let endPoint = getEndpointsForTrapezoid(startPoint, height);

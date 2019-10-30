@@ -167,7 +167,8 @@ const DEFAULT_COLORS = {
 	pie: DEFAULT_CHART_COLORS,
 	percentage: DEFAULT_CHART_COLORS,
 	heatmap: HEATMAP_COLORS_GREEN,
-	donut: DEFAULT_CHART_COLORS
+	donut: DEFAULT_CHART_COLORS,
+	funnel: DEFAULT_CHART_COLORS,
 };
 
 // Universal constants
@@ -299,10 +300,6 @@ class SvgTip {
 	}
 }
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -382,6 +379,34 @@ function equilizeNoOfElements(array1, array2,
 	return [array1, array2];
 }
 
+function getEndpointsForTrapezoid(startPositions, height) {
+	const endPosition = [];
+	let [point_a, point_b] = startPositions;
+
+	// For an equilateral triangle, the angles are always 60 deg.
+	// The end points on the polygons can be created using the following formula
+	//
+	// end_point_x = start_x +/- height * 1/√3
+	// end_point_y = start_y + height
+	//
+	//      b
+	//    _______________________________
+	//    \  |_|                        /
+	//     \   |                       /
+	//      \  | h                    /
+	//       \ |                     /
+	//        \|____________________/
+	//
+	//     b = h * tan(30 deg)
+	//
+
+	let multiplicationFactor = 1.0/Math.sqrt(3);
+	endPosition[0] = [point_a[0] + height * multiplicationFactor, point_a[1] + height];
+	endPosition[1] = [point_b[0] - height * multiplicationFactor, point_b[1] + height];
+
+	return endPosition;
+}
+
 function truncateString(txt, len) {
 	if (!txt) {
 		return;
@@ -428,7 +453,7 @@ function getSplineCurvePointsStr(xList, yList) {
 			angle: Math.atan2(lengthY, lengthX)
 		};
 	};
-    
+
 	let controlPoint = (current, previous, next, reverse) => {
 		let p = previous || current;
 		let n = next || current;
@@ -439,19 +464,19 @@ function getSplineCurvePointsStr(xList, yList) {
 		let y = current[1] + Math.sin(angle) * length;
 		return [x, y];
 	};
-    
+
 	let bezierCommand = (point, i, a) => {
 		let cps = controlPoint(a[i - 1], a[i - 2], point);
 		let cpe = controlPoint(point, a[i - 1], a[i + 1], true);
 		return `C ${cps[0]},${cps[1]} ${cpe[0]},${cpe[1]} ${point[0]},${point[1]}`;
 	};
-    
+
 	let pointStr = (points, command) => {
 		return points.reduce((acc, point, i, a) => i === 0
 			? `${point[0]},${point[1]}`
 			: `${acc} ${command(point, i, a)}`, '');
 	};
-    
+
 	return pointStr(points, bezierCommand);
 }
 
@@ -682,6 +707,16 @@ function percentageBar(x, y, width, height,
 	return createSVG("rect", args);
 }
 
+function funnelSlice(className, start, end, fill='none') {
+	const points = `${start[0].join()} ${start[1].join()} ${end[1].join()} ${end[0].join()}`;
+	let args = {
+		className: 'funnel-slice',
+		points: points,
+		fill: fill
+	};
+	return createSVG("polygon", args)
+}
+
 function heatSquare(className, x, y, size, fill='none', data={}) {
 	let args = {
 		className: className,
@@ -814,7 +849,7 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	if(!options.lineType) options.lineType = '';
 	if (options.shortenNumbers) label = shortenLargeNumber(label);
-	
+
 	let className = 'line-horizontal ' + options.className +
 		(options.lineType === "dashed" ? "dashed": "");
 
@@ -1075,7 +1110,7 @@ function getPaths(xList, yList, color, options={}, meta={}) {
 	// Spline
 	if (options.spline)
 		pointsStr = getSplineCurvePointsStr(xList, yList);
-    
+
 	let path = makePath("M"+pointsStr, 'line-graph-path', color);
 
 	// HeatLine
@@ -2036,6 +2071,18 @@ let componentConfigs = {
 				let bar = percentageBar(x, y, data.widths[i],
 					this.constants.barHeight, this.constants.barDepth, data.colors[i]);
 				return bar;
+			});
+		},
+
+		animateElements(newData) {
+			if(newData) return [];
+		}
+	},
+	funnelSlices: {
+		layerClass: 'funnel-slices',
+		makeElements(data) {
+			return data.slicePoints.map((p, i) => {
+				return funnelSlice('funnel-slice', p[0], p[1], data.colors[i]);
 			});
 		},
 
@@ -3972,7 +4019,90 @@ class DonutChart extends AggregationChart {
 	}
 }
 
-// import MultiAxisChart from './charts/MultiAxisChart';
+class FunnelChart extends AggregationChart {
+	constructor(parent, args) {
+		super(parent, args);
+		this.type = 'funnel';
+		window.funnel = this;
+		this.setup();
+	}
+
+	calc() {
+		super.calc();
+		let s = this.state;
+		
+		// calculate width and height options
+		const totalheight = this.height * 0.9;
+		const baseWidth = (2 * totalheight) / Math.sqrt(3);
+		
+
+		const reducer = (accumulator, currentValue, index) => accumulator + currentValue;
+		const weightage = s.sliceTotals.reduce(reducer, 0.0);
+
+		const center_x_offset = this.center.x - baseWidth / 2;
+		const center_y_offset = this.center.y - totalheight / 2;
+
+		let slicePoints = [];
+		let startPoint = [[center_x_offset, center_y_offset], [center_x_offset + baseWidth, center_y_offset]];
+		s.sliceTotals.forEach((d, i) => {
+			let height = totalheight * d / weightage;
+			let endPoint = getEndpointsForTrapezoid(startPoint, height);
+			slicePoints.push([startPoint, endPoint]);
+			startPoint = endPoint;
+		});
+		s.slicePoints = slicePoints;
+	}
+
+	setupComponents() {
+		let s = this.state;
+
+		let componentConfigs = [
+			[
+				'funnelSlices',
+				{ },
+				function() {
+					return {
+						slicePoints: s.slicePoints,
+						colors: this.colors
+					};
+				}.bind(this)
+			]
+		];
+
+		this.components = new Map(componentConfigs
+			.map(args => {
+				let component = getComponent(...args);
+				return [args[0], component];
+			}));
+	}
+
+	makeDataByIndex() { }
+
+	bindTooltip() {
+		function getPolygonWidth(slice)  {
+			const points = slice.points;
+			return points[1].x - points[0].x
+		}
+
+		this.container.addEventListener('mousemove', (e) => {
+			let slices = this.components.get('funnelSlices').store;
+			let slice = e.target;
+			if(slices.includes(slice)) {
+				let i = slices.indexOf(slice);
+
+				let gOff = getOffset(this.container), pOff = getOffset(slice);
+				let x = pOff.left - gOff.left + getPolygonWidth(slice)/2;
+				let y = pOff.top - gOff.top;
+				let title = (this.formatted_labels && this.formatted_labels.length > 0
+					? this.formatted_labels[i] : this.state.labels[i]) + ': ';
+				let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1);
+				this.tip.setValues(x, y, {name: title, value: percent + "%"});
+				this.tip.showTip();
+			}
+		});
+	}
+}
+
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,
@@ -3981,6 +4111,7 @@ const chartTypes = {
 	heatmap: Heatmap,
 	pie: PieChart,
 	donut: DonutChart,
+	funnel: FunnelChart,
 };
 
 function getChartByType(chartType = 'line', parent, options) {
