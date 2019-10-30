@@ -7,7 +7,7 @@ export default class FunnelChart extends AggregationChart {
 	constructor(parent, args) {
 		super(parent, args);
 		this.type = 'funnel';
-		window.funnel = this;
+		funnel = this;
 		this.setup();
 	}
 
