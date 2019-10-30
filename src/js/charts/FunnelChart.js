@@ -1,13 +1,12 @@
 import AggregationChart from './AggregationChart';
 import { getOffset } from '../utils/dom';
 import { getComponent } from '../objects/ChartComponents';
-import { getEndpointsForTrapezoid } from '../utils/draw-utils'
+import { getEndpointsForTrapezoid } from '../utils/draw-utils';
 
 export default class FunnelChart extends AggregationChart {
 	constructor(parent, args) {
 		super(parent, args);
 		this.type = 'funnel';
-		funnel = this;
 		this.setup();
 	}
 
@@ -20,20 +19,20 @@ export default class FunnelChart extends AggregationChart {
 		const baseWidth = (2 * totalheight) / Math.sqrt(3);
 		
 
-		const reducer = (accumulator, currentValue, index) => accumulator + currentValue;
+		const reducer = (accumulator, currentValue) => accumulator + currentValue;
 		const weightage = s.sliceTotals.reduce(reducer, 0.0);
 
 		const center_x_offset = this.center.x - baseWidth / 2;
 		const center_y_offset = this.center.y - totalheight / 2;
 
 		let slicePoints = [];
-		let startPoint = [[center_x_offset, center_y_offset], [center_x_offset + baseWidth, center_y_offset]]
-		s.sliceTotals.forEach((d, i) => {
+		let startPoint = [[center_x_offset, center_y_offset], [center_x_offset + baseWidth, center_y_offset]];
+		s.sliceTotals.forEach(d => {
 			let height = totalheight * d / weightage;
 			let endPoint = getEndpointsForTrapezoid(startPoint, height);
 			slicePoints.push([startPoint, endPoint]);
 			startPoint = endPoint;
-		})
+		});
 		s.slicePoints = slicePoints;
 	}
 
@@ -60,15 +59,12 @@ export default class FunnelChart extends AggregationChart {
 			}));
 	}
 
-	makeDataByIndex() { }
-
 	bindTooltip() {
 		function getPolygonWidth(slice)  {
 			const points = slice.points;
-			return points[1].x - points[0].x
+			return points[1].x - points[0].x;
 		}
 
-		let s = this.state;
 		this.container.addEventListener('mousemove', (e) => {
 			let slices = this.components.get('funnelSlices').store;
 			let slice = e.target;
