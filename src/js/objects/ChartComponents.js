@@ -1,8 +1,9 @@
 import { makeSVGGroup } from '../utils/draw';
-import { makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, getPaths } from '../utils/draw';
+import { makeText, makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import { translateHoriLine, translateVertLine, animateRegion, animateBar,
 	animateDot, animatePath, animatePathStr } from '../utils/animate';
+import { getMonthName } from '../utils/date-utils';
 
 class ChartComponent {
 	constructor({
@@ -23,6 +24,7 @@ class ChartComponent {
 		this.animateElements = animateElements;
 
 		this.store = [];
+		this.labels = [];
 
 		this.layerClass = layerClass;
 		this.layerClass = typeof(this.layerClass) === 'function'
@@ -36,7 +38,7 @@ class ChartComponent {
 	}
 
 	setup(parent) {
-		this.layer = makeSVGGroup(parent, this.layerClass, this.layerTransform);
+		this.layer = makeSVGGroup(this.layerClass, this.layerTransform, parent);
 	}
 
 	make() {
@@ -51,19 +53,36 @@ class ChartComponent {
 		this.store.forEach(element => {
 			this.layer.appendChild(element);
 		});
+		this.labels.forEach(element => {
+			this.layer.appendChild(element);
+		});
 	}
 
 	update(animate = true) {
 		this.refresh();
 		let animateElements = [];
 		if(animate) {
-			animateElements = this.animateElements(this.data);
+			animateElements = this.animateElements(this.data) || [];
 		}
 		return animateElements;
 	}
 }
 
 let componentConfigs = {
+	donutSlices: {
+		layerClass: 'donut-slices',
+		makeElements(data) {
+			return data.sliceStrings.map((s, i) => {
+				let slice = makePath(s, 'donut-path', data.colors[i], 'none', data.strokeWidth);
+				slice.style.transition = 'transform .3s;';
+				return slice;
+			});
+		},
+
+		animateElements(newData) {
+			return this.store.map((slice, i) => animatePathStr(slice, newData.sliceStrings[i]));
+		},
+	},
 	pieSlices: {
 		layerClass: 'pie-slices',
 		makeElements(data) {
@@ -80,12 +99,27 @@ let componentConfigs = {
 			);
 		}
 	},
+	percentageBars: {
+		layerClass: 'percentage-bars',
+		makeElements(data) {
+			return data.xPositions.map((x, i) =>{
+				let y = 0;
+				let bar = percentageBar(x, y, data.widths[i],
+					this.constants.barHeight, this.constants.barDepth, data.colors[i]);
+				return bar;
+			});
+		},
+
+		animateElements(newData) {
+			if(newData) return [];
+		}
+	},
 	yAxis: {
 		layerClass: 'y axis',
 		makeElements(data) {
 			return data.positions.map((position, i) =>
 				yLine(position, data.labels[i], this.constants.width,
-					{mode: this.constants.mode, pos: this.constants.pos})
+					{mode: this.constants.mode, pos: this.constants.pos, shortenNumbers: this.constants.shortenNumbers})
 			);
 		},
 
@@ -145,9 +179,9 @@ let componentConfigs = {
 	yMarkers: {
 		layerClass: 'y-markers',
 		makeElements(data) {
-			return data.map(marker =>
-				yMarker(marker.position, marker.label, this.constants.width,
-					{pos:'right', mode: 'span', lineType: 'dashed'})
+			return data.map(m =>
+				yMarker(m.position, m.label, this.constants.width,
+					{labelPos: m.options.labelPos, mode: 'span', lineType: 'dashed'})
 			);
 		},
 		animateElements(newData) {
@@ -155,13 +189,15 @@ let componentConfigs = {
 
 			let newPos = newData.map(d => d.position);
 			let newLabels = newData.map(d => d.label);
+			let newOptions = newData.map(d => d.options);
 
 			let oldPos = this.oldData.map(d => d.position);
 
 			this.render(oldPos.map((pos, i) => {
 				return {
 					position: oldPos[i],
-					label: newLabels[i]
+					label: newLabels[i],
+					options: newOptions[i]
 				};
 			}));
 
@@ -176,9 +212,9 @@ let componentConfigs = {
 	yRegions: {
 		layerClass: 'y-regions',
 		makeElements(data) {
-			return data.map(region =>
-				yRegion(region.startPos, region.endPos, this.constants.width,
-					region.label)
+			return data.map(r =>
+				yRegion(r.startPos, r.endPos, this.constants.width,
+					r.label, {labelPos: r.options.labelPos})
 			);
 		},
 		animateElements(newData) {
@@ -187,6 +223,7 @@ let componentConfigs = {
 			let newPos = newData.map(d => d.endPos);
 			let newLabels = newData.map(d => d.label);
 			let newStarts = newData.map(d => d.startPos);
+			let newOptions = newData.map(d => d.options);
 
 			let oldPos = this.oldData.map(d => d.endPos);
 			let oldStarts = this.oldData.map(d => d.startPos);
@@ -195,7 +232,8 @@ let componentConfigs = {
 				return {
 					startPos: oldStarts[i],
 					endPos: oldPos[i],
-					label: newLabels[i]
+					label: newLabels[i],
+					options: newOptions[i]
 				};
 			}));
 
@@ -208,6 +246,49 @@ let componentConfigs = {
 			});
 
 			return animateElements;
+		}
+	},
+
+	heatDomain: {
+		layerClass: function() { return 'heat-domain domain-' + this.constants.index; },
+		makeElements(data) {
+			let {index, colWidth, rowHeight, squareSize, xTranslate} = this.constants;
+			let monthNameHeight = -12;
+			let x = xTranslate, y = 0;
+
+			this.serializedSubDomains = [];
+
+			data.cols.map((week, weekNo) => {
+				if(weekNo === 1) {
+					this.labels.push(
+						makeText('domain-name', x, monthNameHeight, getMonthName(index, true).toUpperCase(),
+							{
+								fontSize: 9
+							}
+						)
+					);
+				}
+				week.map((day, i) => {
+					if(day.fill) {
+						let data = {
+							'data-date': day.yyyyMmDd,
+							'data-value': day.dataValue,
+							'data-day': i
+						};
+						let square = heatSquare('day', x, y, squareSize, day.fill, data);
+						this.serializedSubDomains.push(square);
+					}
+					y += rowHeight;
+				});
+				y = 0;
+				x += colWidth;
+			});
+
+			return this.serializedSubDomains;
+		},
+
+		animateElements(newData) {
+			if(newData) return [];
 		}
 	},
 
@@ -287,7 +368,8 @@ let componentConfigs = {
 					c.color,
 					{
 						heatline: c.heatline,
-						regionFill: c.regionFill
+						regionFill: c.regionFill,
+						spline: c.spline
 					},
 					{
 						svgDefs: c.svgDefs,
@@ -338,7 +420,7 @@ let componentConfigs = {
 
 			if(Object.keys(this.paths).length) {
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine));
+					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline));
 			}
 
 			if(this.units.length) {

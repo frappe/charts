@@ -82,6 +82,98 @@ function fire(target, type, properties) {
 	return target.dispatchEvent(evt);
 }
 
+// https://css-tricks.com/snippets/javascript/loop-queryselectorall-matches/
+
+const BASE_MEASURES = {
+	margins: {
+		top: 10,
+		bottom: 10,
+		left: 20,
+		right: 20
+	},
+	paddings: {
+		top: 20,
+		bottom: 40,
+		left: 30,
+		right: 10
+	},
+
+	baseHeight: 240,
+	titleHeight: 20,
+	legendHeight: 30,
+
+	titleFontSize: 12,
+};
+
+function getTopOffset(m) {
+	return m.titleHeight + m.margins.top + m.paddings.top;
+}
+
+function getLeftOffset(m) {
+	return m.margins.left + m.paddings.left;
+}
+
+function getExtraHeight(m) {
+	let totalExtraHeight = m.margins.top + m.margins.bottom
+		+ m.paddings.top + m.paddings.bottom
+		+ m.titleHeight + m.legendHeight;
+	return totalExtraHeight;
+}
+
+function getExtraWidth(m) {
+	let totalExtraWidth = m.margins.left + m.margins.right
+		+ m.paddings.left + m.paddings.right;
+
+	return totalExtraWidth;
+}
+
+const INIT_CHART_UPDATE_TIMEOUT = 700;
+const CHART_POST_ANIMATE_TIMEOUT = 400;
+
+const DEFAULT_AXIS_CHART_TYPE = 'line';
+const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
+
+const AXIS_LEGEND_BAR_SIZE = 100;
+
+const BAR_CHART_SPACE_RATIO = 0.5;
+const MIN_BAR_PERCENT_HEIGHT = 0.00;
+
+const LINE_CHART_DOT_SIZE = 4;
+const DOT_OVERLAY_SIZE_INCR = 4;
+
+const PERCENTAGE_BAR_DEFAULT_HEIGHT = 20;
+const PERCENTAGE_BAR_DEFAULT_DEPTH = 2;
+
+// Fixed 5-color theme,
+// More colors are difficult to parse visually
+const HEATMAP_DISTRIBUTION_SIZE = 5;
+
+const HEATMAP_SQUARE_SIZE = 10;
+const HEATMAP_GUTTER_SIZE = 2;
+
+const DEFAULT_CHAR_WIDTH = 7;
+
+const TOOLTIP_POINTER_TRIANGLE_HEIGHT = 5;
+
+const DEFAULT_CHART_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
+	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
+const HEATMAP_COLORS_GREEN = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+
+
+
+const DEFAULT_COLORS = {
+	bar: DEFAULT_CHART_COLORS,
+	line: DEFAULT_CHART_COLORS,
+	pie: DEFAULT_CHART_COLORS,
+	percentage: DEFAULT_CHART_COLORS,
+	heatmap: HEATMAP_COLORS_GREEN,
+	donut: DEFAULT_CHART_COLORS
+};
+
+// Universal constants
+const ANGLE_RATIO = Math.PI / 180;
+const FULL_ANGLE = 360;
+
 class SvgTip {
 	constructor({
 		parent = null,
@@ -110,7 +202,6 @@ class SvgTip {
 	refresh() {
 		this.fill();
 		this.calcPosition();
-		// this.showTip();
 	}
 
 	makeTooltip() {
@@ -146,12 +237,13 @@ class SvgTip {
 
 		this.listValues.map((set, i) => {
 			const color = this.colors[i] || 'black';
+			let value = set.formatted === 0 || set.formatted ? set.formatted : set.value;
 
 			let li = $.create('li', {
 				styles: {
 					'border-top': `3px solid ${color}`
 				},
-				innerHTML: `<strong style="display: block;">${ set.value === 0 || set.value ? set.value : '' }</strong>
+				innerHTML: `<strong style="display: block;">${ value === 0 || value ? value : '' }</strong>
 					${set.title ? set.title : '' }`
 			});
 
@@ -162,7 +254,8 @@ class SvgTip {
 	calcPosition() {
 		let width = this.container.offsetWidth;
 
-		this.top = this.y - this.container.offsetHeight;
+		this.top = this.y - this.container.offsetHeight
+			- TOOLTIP_POINTER_TRIANGLE_HEIGHT;
 		this.left = this.x - width/2;
 		let maxLeft = this.parent.offsetWidth - width;
 
@@ -206,30 +299,10 @@ class SvgTip {
 	}
 }
 
-const VERT_SPACE_OUTSIDE_BASE_CHART = 50;
-const TRANSLATE_Y_BASE_CHART = 20;
-const LEFT_MARGIN_BASE_CHART = 60;
-const RIGHT_MARGIN_BASE_CHART = 40;
-const Y_AXIS_MARGIN = 60;
-
-const INIT_CHART_UPDATE_TIMEOUT = 700;
-const CHART_POST_ANIMATE_TIMEOUT = 400;
-
-const DEFAULT_AXIS_CHART_TYPE = 'line';
-const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
-
-const BAR_CHART_SPACE_RATIO = 0.5;
-const MIN_BAR_PERCENT_HEIGHT = 0.01;
-
-const LINE_CHART_DOT_SIZE = 4;
-const DOT_OVERLAY_SIZE_INCR = 4;
-
-const DEFAULT_CHAR_WIDTH = 7;
-
-// Universal constants
-const ANGLE_RATIO = Math.PI / 180;
-const FULL_ANGLE = 360;
-
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -274,10 +347,13 @@ function getStringWidth(string, charWidth) {
 
 
 
+// https://stackoverflow.com/a/29325222
+
+
 function getPositionByAngle(angle, radius) {
 	return {
-		x:Math.sin(angle * ANGLE_RATIO) * radius,
-		y:Math.cos(angle * ANGLE_RATIO) * radius,
+		x: Math.sin(angle * ANGLE_RATIO) * radius,
+		y: Math.cos(angle * ANGLE_RATIO) * radius,
 	};
 }
 
@@ -306,10 +382,131 @@ function equilizeNoOfElements(array1, array2,
 	return [array1, array2];
 }
 
+function truncateString(txt, len) {
+	if (!txt) {
+		return;
+	}
+	if (txt.length > len) {
+		return txt.slice(0, len-3) + '...';
+	} else {
+		return txt;
+	}
+}
+
+function shortenLargeNumber(label) {
+	let number;
+	if (typeof label === 'number') number = label;
+	else if (typeof label === 'string') {
+		number = Number(label);
+		if (Number.isNaN(number)) return label;
+	}
+
+	// Using absolute since log wont work for negative numbers
+	let p = Math.floor(Math.log10(Math.abs(number)));
+	if (p <= 2) return number; // Return as is for a 3 digit number of less
+	let	l = Math.floor(p / 3);
+	let shortened = (Math.pow(10, p - l * 3) * +(number / Math.pow(10, p)).toFixed(1));
+
+	// Correct for floating point error upto 2 decimal places
+	return Math.round(shortened*100)/100 + ' ' + ['', 'K', 'M', 'B', 'T'][l];
+}
+
+// cubic bezier curve calculation (from example by François Romain)
+function getSplineCurvePointsStr(xList, yList) {
+
+	let points=[];
+	for(let i=0;i<xList.length;i++){
+		points.push([xList[i], yList[i]]);
+	}
+
+	let smoothing = 0.2;
+	let line = (pointA, pointB) => {
+		let lengthX = pointB[0] - pointA[0];
+		let lengthY = pointB[1] - pointA[1];
+		return {
+			length: Math.sqrt(Math.pow(lengthX, 2) + Math.pow(lengthY, 2)),
+			angle: Math.atan2(lengthY, lengthX)
+		};
+	};
+    
+	let controlPoint = (current, previous, next, reverse) => {
+		let p = previous || current;
+		let n = next || current;
+		let o = line(p, n);
+		let angle = o.angle + (reverse ? Math.PI : 0);
+		let length = o.length * smoothing;
+		let x = current[0] + Math.cos(angle) * length;
+		let y = current[1] + Math.sin(angle) * length;
+		return [x, y];
+	};
+    
+	let bezierCommand = (point, i, a) => {
+		let cps = controlPoint(a[i - 1], a[i - 2], point);
+		let cpe = controlPoint(point, a[i - 1], a[i + 1], true);
+		return `C ${cps[0]},${cps[1]} ${cpe[0]},${cpe[1]} ${point[0]},${point[1]}`;
+	};
+    
+	let pointStr = (points, command) => {
+		return points.reduce((acc, point, i, a) => i === 0
+			? `${point[0]},${point[1]}`
+			: `${acc} ${command(point, i, a)}`, '');
+	};
+    
+	return pointStr(points, bezierCommand);
+}
+
+const PRESET_COLOR_MAP = {
+	'light-blue': '#7cd6fd',
+	'blue': '#5e64ff',
+	'violet': '#743ee2',
+	'red': '#ff5858',
+	'orange': '#ffa00a',
+	'yellow': '#feef72',
+	'green': '#28a745',
+	'light-green': '#98d85b',
+	'purple': '#b554ff',
+	'magenta': '#ffa3ef',
+	'black': '#36114C',
+	'grey': '#bdd3e6',
+	'light-grey': '#f0f4f7',
+	'dark-grey': '#b8c2cc'
+};
+
+function limitColor(r){
+	if (r > 255) return 255;
+	else if (r < 0) return 0;
+	return r;
+}
+
+function lightenDarkenColor(color, amt) {
+	let col = getColor(color);
+	let usePound = false;
+	if (col[0] == "#") {
+		col = col.slice(1);
+		usePound = true;
+	}
+	let num = parseInt(col,16);
+	let r = limitColor((num >> 16) + amt);
+	let b = limitColor(((num >> 8) & 0x00FF) + amt);
+	let g = limitColor((num & 0x0000FF) + amt);
+	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
+}
+
+function isValidColor(string) {
+	// https://stackoverflow.com/a/8027444/6495043
+	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
+}
+
+const getColor = (color) => {
+	return PRESET_COLOR_MAP[color] || color;
+};
+
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
+const LABEL_MAX_CHARS = 15;
 const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
+const FONT_FILL = '#555b51';
 
 function $$1(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
@@ -383,35 +580,69 @@ function makeSVGDefs(svgContainer) {
 	});
 }
 
-function makeSVGGroup(parent, className, transform='') {
-	return createSVG('g', {
+function makeSVGGroup(className, transform='', parent=undefined) {
+	let args = {
 		className: className,
-		inside: parent,
 		transform: transform
-	});
+	};
+	if(parent) args.inside = parent;
+	return createSVG('g', args);
 }
 
 
 
-function makePath(pathStr, className='', stroke='none', fill='none') {
+function makePath(pathStr, className='', stroke='none', fill='none', strokeWidth=2) {
 	return createSVG('path', {
 		className: className,
 		d: pathStr,
 		styles: {
 			stroke: stroke,
-			fill: fill
+			fill: fill,
+			'stroke-width': strokeWidth
 		}
 	});
 }
 
-function makeArcPathStr(startPosition, endPosition, center, radius, clockWise=1){
+function makeArcPathStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
+	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
+	return `M${center.x} ${center.y}
+		L${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY} z`;
+}
+
+function makeCircleStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
+	let [arcEndX, midArc, arcEndY] = [center.x + endPosition.x, center.y * 2, center.y + endPosition.y];
+	return `M${center.x} ${center.y}
+		L${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${midArc} z
+		L${arcStartX} ${midArc}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY} z`;
+}
+
+function makeArcStrokePathStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
 	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
 	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
 
-	return `M${center.x} ${center.y}
-		L${arcStartX} ${arcStartY}
-		A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0}
-		${arcEndX} ${arcEndY} z`;
+	return `M${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY}`;
+}
+
+function makeStrokeCircleStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
+	let [arcEndX, midArc, arcEndY] = [center.x + endPosition.x, radius * 2 + arcStartY, center.y + startPosition.y];
+
+	return `M${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${midArc}
+		M${arcStartX} ${midArc}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY}`;
 }
 
 function makeGradient(svgDefElem, color, lighter = false) {
@@ -429,7 +660,29 @@ function makeGradient(svgDefElem, color, lighter = false) {
 	return gradientId;
 }
 
-function makeHeatSquare(className, x, y, size, fill='none', data={}) {
+function percentageBar(x, y, width, height,
+	depth=PERCENTAGE_BAR_DEFAULT_DEPTH, fill='none') {
+
+	let args = {
+		className: 'percentage-bar',
+		x: x,
+		y: y,
+		width: width,
+		height: height,
+		fill: fill,
+		styles: {
+			'stroke': lightenDarkenColor(fill, -25),
+			// Diabolically good: https://stackoverflow.com/a/9000859
+			// https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-dasharray
+			'stroke-dasharray': `0, ${height + width}, ${width}, ${height}`,
+			'stroke-width': depth
+		},
+	};
+
+	return createSVG("rect", args);
+}
+
+function heatSquare(className, x, y, size, fill='none', data={}) {
 	let args = {
 		className: className,
 		x: x,
@@ -446,13 +699,81 @@ function makeHeatSquare(className, x, y, size, fill='none', data={}) {
 	return createSVG("rect", args);
 }
 
-function makeText(className, x, y, content) {
+function legendBar(x, y, size, fill='none', label, truncate=false) {
+	label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
+
+	let args = {
+		className: 'legend-bar',
+		x: 0,
+		y: 0,
+		width: size,
+		height: '2px',
+		fill: fill
+	};
+	let text = createSVG('text', {
+		className: 'legend-dataset-text',
+		x: 0,
+		y: 0,
+		dy: (FONT_SIZE * 2) + 'px',
+		'font-size': (FONT_SIZE * 1.2) + 'px',
+		'text-anchor': 'start',
+		fill: FONT_FILL,
+		innerHTML: label
+	});
+
+	let group = createSVG('g', {
+		transform: `translate(${x}, ${y})`
+	});
+	group.appendChild(createSVG("rect", args));
+	group.appendChild(text);
+
+	return group;
+}
+
+function legendDot(x, y, size, fill='none', label, truncate=false) {
+	label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
+
+	let args = {
+		className: 'legend-dot',
+		cx: 0,
+		cy: 0,
+		r: size,
+		fill: fill
+	};
+	let text = createSVG('text', {
+		className: 'legend-dataset-text',
+		x: 0,
+		y: 0,
+		dx: (FONT_SIZE) + 'px',
+		dy: (FONT_SIZE/3) + 'px',
+		'font-size': (FONT_SIZE * 1.2) + 'px',
+		'text-anchor': 'start',
+		fill: FONT_FILL,
+		innerHTML: label
+	});
+
+	let group = createSVG('g', {
+		transform: `translate(${x}, ${y})`
+	});
+	group.appendChild(createSVG("circle", args));
+	group.appendChild(text);
+
+	return group;
+}
+
+function makeText(className, x, y, content, options = {}) {
+	let fontSize = options.fontSize || FONT_SIZE;
+	let dy = options.dy !== undefined ? options.dy : (fontSize / 2);
+	let fill = options.fill || FONT_FILL;
+	let textAnchor = options.textAnchor || 'start';
 	return createSVG('text', {
 		className: className,
 		x: x,
 		y: y,
-		dy: (FONT_SIZE / 2) + 'px',
-		'font-size': FONT_SIZE + 'px',
+		dy: dy + 'px',
+		'font-size': fontSize + 'px',
+		fill: fill,
+		'text-anchor': textAnchor,
 		innerHTML: content
 	});
 }
@@ -492,6 +813,8 @@ function makeVertLine(x, label, y1, y2, options={}) {
 function makeHoriLine(y, label, x1, x2, options={}) {
 	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	if(!options.lineType) options.lineType = '';
+	if (options.shortenNumbers) label = shortenLargeNumber(label);
+	
 	let className = 'line-horizontal ' + options.className +
 		(options.lineType === "dashed" ? "dashed": "");
 
@@ -553,7 +876,8 @@ function yLine(y, label, width, options={}) {
 	return makeHoriLine(y, label, x1, x2, {
 		stroke: options.stroke,
 		className: options.className,
-		lineType: options.lineType
+		lineType: options.lineType,
+		shortenNumbers: options.shortenNumbers
 	});
 }
 
@@ -592,9 +916,13 @@ function xLine(x, label, height, options={}) {
 }
 
 function yMarker(y, label, width, options={}) {
+	if(!options.labelPos) options.labelPos = 'right';
+	let x = options.labelPos === 'left' ? LABEL_MARGIN
+		: width - getStringWidth(label, 5) - LABEL_MARGIN;
+
 	let labelSvg = createSVG('text', {
 		className: 'chart-label',
-		x: width - getStringWidth(label, 5) - LABEL_MARGIN,
+		x: x,
 		y: 0,
 		dy: (FONT_SIZE / -2) + 'px',
 		'font-size': FONT_SIZE + 'px',
@@ -613,7 +941,7 @@ function yMarker(y, label, width, options={}) {
 	return line;
 }
 
-function yRegion(y1, y2, width, label) {
+function yRegion(y1, y2, width, label, options={}) {
 	// return a group
 	let height = y1 - y2;
 
@@ -631,9 +959,13 @@ function yRegion(y1, y2, width, label) {
 		height: height
 	});
 
+	if(!options.labelPos) options.labelPos = 'right';
+	let x = options.labelPos === 'left' ? LABEL_MARGIN
+		: width - getStringWidth(label+"", 4.5) - LABEL_MARGIN;
+
 	let labelSvg = createSVG('text', {
 		className: 'chart-label',
-		x: width - getStringWidth(label+"", 4.5) - LABEL_MARGIN,
+		x: x,
 		y: 0,
 		dy: (FONT_SIZE / -2) + 'px',
 		'font-size': FONT_SIZE + 'px',
@@ -655,6 +987,11 @@ function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={})
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
 	y -= offset;
 
+	if(height === 0) {
+		height = meta.minHeight;
+		y -= meta.minHeight;
+	}
+
 	let rect = createSVG('rect', {
 		className: `bar mini`,
 		style: `fill: ${color}`,
@@ -662,7 +999,7 @@ function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={})
 		x: x,
 		y: y,
 		width: width,
-		height: height || meta.minHeight // TODO: correct y for positive min height
+		height: height
 	});
 
 	label += "";
@@ -734,6 +1071,11 @@ function datasetDot(x, y, radius, color, label='', index=0) {
 function getPaths(xList, yList, color, options={}, meta={}) {
 	let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
 	let pointsStr = pointsList.join("L");
+
+	// Spline
+	if (options.spline)
+		pointsStr = getSplineCurvePointsStr(xList, yList);
+    
 	let path = makePath("M"+pointsStr, 'line-graph-path', color);
 
 	// HeatLine
@@ -750,7 +1092,6 @@ function getPaths(xList, yList, color, options={}, meta={}) {
 	if(options.regionFill) {
 		let gradient_id_region = makeGradient(meta.svgDefs, color, true);
 
-		// TODO: use zeroLine OR minimum
 		let pathStr = "M" + `${xList[0]},${meta.zeroLine}L` + pointsStr + `L${xList.slice(-1)[0]},${meta.zeroLine}`;
 		paths.region = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`);
 	}
@@ -776,6 +1117,25 @@ let makeOverlay = {
 	},
 
 	'dot': (unit) => {
+		let transformValue;
+		if(unit.nodeName !== 'circle') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let overlay = unit.cloneNode();
+		let radius = unit.getAttribute('r');
+		let fill = unit.getAttribute('fill');
+		overlay.setAttribute('r', parseInt(radius) + DOT_OVERLAY_SIZE_INCR);
+		overlay.setAttribute('fill', fill);
+		overlay.style.opacity = '0.6';
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+		return overlay;
+	},
+
+	'heat_square': (unit) => {
 		let transformValue;
 		if(unit.nodeName !== 'circle') {
 			transformValue = unit.getAttribute('transform');
@@ -830,102 +1190,26 @@ let updateOverlay = {
 		if(transformValue) {
 			overlay.setAttribute('transform', transformValue);
 		}
-	}
+	},
+
+	'heat_square': (unit, overlay) => {
+		let transformValue;
+		if(unit.nodeName !== 'circle') {
+			transformValue = unit.getAttribute('transform');
+			unit = unit.childNodes[0];
+		}
+		let attributes = ['cx', 'cy'];
+		Object.values(unit.attributes)
+			.filter(attr => attributes.includes(attr.name) && attr.specified)
+			.map(attr => {
+				overlay.setAttribute(attr.name, attr.nodeValue);
+			});
+
+		if(transformValue) {
+			overlay.setAttribute('transform', transformValue);
+		}
+	},
 };
-
-const PRESET_COLOR_MAP = {
-	'light-blue': '#7cd6fd',
-	'blue': '#5e64ff',
-	'violet': '#743ee2',
-	'red': '#ff5858',
-	'orange': '#ffa00a',
-	'yellow': '#feef72',
-	'green': '#28a745',
-	'light-green': '#98d85b',
-	'purple': '#b554ff',
-	'magenta': '#ffa3ef',
-	'black': '#36114C',
-	'grey': '#bdd3e6',
-	'light-grey': '#f0f4f7',
-	'dark-grey': '#b8c2cc'
-};
-
-const DEFAULT_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
-	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
-
-function limitColor(r){
-	if (r > 255) return 255;
-	else if (r < 0) return 0;
-	return r;
-}
-
-function lightenDarkenColor(color, amt) {
-	let col = getColor(color);
-	let usePound = false;
-	if (col[0] == "#") {
-		col = col.slice(1);
-		usePound = true;
-	}
-	let num = parseInt(col,16);
-	let r = limitColor((num >> 16) + amt);
-	let b = limitColor(((num >> 8) & 0x00FF) + amt);
-	let g = limitColor((num & 0x0000FF) + amt);
-	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
-}
-
-function isValidColor(string) {
-	// https://stackoverflow.com/a/8027444/6495043
-	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
-}
-
-const getColor = (color) => {
-	return PRESET_COLOR_MAP[color] || color;
-};
-
-const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
-
-const COMPATIBLE_CHARTS = {
-	bar: ['line', 'scatter', 'percentage', 'pie'],
-	line: ['scatter', 'bar', 'percentage', 'pie'],
-	pie: ['line', 'scatter', 'percentage', 'bar'],
-	scatter: ['line', 'bar', 'percentage', 'pie'],
-	percentage: ['bar', 'line', 'scatter', 'pie'],
-	heatmap: []
-};
-
-// Needs structure as per only labels/datasets
-const COLOR_COMPATIBLE_CHARTS = {
-	bar: ['line', 'scatter'],
-	line: ['scatter', 'bar'],
-	pie: ['percentage'],
-	scatter: ['line', 'bar'],
-	percentage: ['pie'],
-	heatmap: []
-};
-
-function getDifferentChart(type, current_type, parent, args) {
-	if(type === current_type) return;
-
-	if(!ALL_CHART_TYPES.includes(type)) {
-		console.error(`'${type}' is not a valid chart type.`);
-	}
-
-	if(!COMPATIBLE_CHARTS[current_type].includes(type)) {
-		console.error(`'${current_type}' chart cannot be converted to a '${type}' chart.`);
-	}
-
-	// whether the new chart can use the existing colors
-	const useColor = COLOR_COMPATIBLE_CHARTS[current_type].includes(type);
-
-	// Okay, this is anticlimactic
-	// this function will need to actually be 'changeChartType(type)'
-	// that will update only the required elements, but for now ...
-
-	args.type = type;
-	args.colors = useColor ? args.colors : undefined;
-
-	return new Chart(parent, args);
-}
 
 const UNIT_ANIM_DUR = 350;
 const PATH_ANIM_DUR = 350;
@@ -1001,13 +1285,14 @@ function animateDot(dot, x, y) {
 	// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
 }
 
-function animatePath(paths, newXList, newYList, zeroLine) {
+function animatePath(paths, newXList, newYList, zeroLine, spline) {
 	let pathComponents = [];
+	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y)).join("L");
 
-	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y));
-	let pathStr = pointsStr.join("L");
+	if (spline)
+		pointsStr = getSplineCurvePointsStr(newXList, newYList);
 
-	const animPath = [paths.path, {d:"M"+pathStr}, PATH_ANIM_DUR, STD_EASING];
+	const animPath = [paths.path, {d:"M" + pointsStr}, PATH_ANIM_DUR, STD_EASING];
 	pathComponents.push(animPath);
 
 	if(paths.region) {
@@ -1016,7 +1301,7 @@ function animatePath(paths, newXList, newYList, zeroLine) {
 
 		const animRegion = [
 			paths.region,
-			{d:"M" + regStartPt + pathStr + regEndPt},
+			{d:"M" + regStartPt + pointsStr + regEndPt},
 			PATH_ANIM_DUR,
 			STD_EASING
 		];
@@ -1145,29 +1430,75 @@ function runSMILAnimation(parent, svgElement, elementsToAnimate) {
 	}, REPLACE_ALL_NEW_DUR);
 }
 
+const CSSTEXT = ".chart-container{position:relative;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif}.chart-container .axis,.chart-container .chart-label{fill:#555b51}.chart-container .axis line,.chart-container .chart-label line{stroke:#dadada}.chart-container .dataset-units circle{stroke:#fff;stroke-width:2}.chart-container .dataset-units path{fill:none;stroke-opacity:1;stroke-width:2px}.chart-container .dataset-path{stroke-width:2px}.chart-container .path-group path{fill:none;stroke-opacity:1;stroke-width:2px}.chart-container line.dashed{stroke-dasharray:5,3}.chart-container .axis-line .specific-value{text-anchor:start}.chart-container .axis-line .y-line{text-anchor:end}.chart-container .axis-line .x-line{text-anchor:middle}.chart-container .legend-dataset-text{fill:#6c7680;font-weight:600}.graph-svg-tip{position:absolute;z-index:99999;padding:10px;font-size:12px;color:#959da5;text-align:center;background:rgba(0,0,0,.8);border-radius:3px}.graph-svg-tip ul{padding-left:0;display:flex}.graph-svg-tip ol{padding-left:0;display:flex}.graph-svg-tip ul.data-point-list li{min-width:90px;flex:1;font-weight:600}.graph-svg-tip strong{color:#dfe2e5;font-weight:600}.graph-svg-tip .svg-pointer{position:absolute;height:5px;margin:0 0 0 -5px;content:' ';border:5px solid transparent;border-top-color:rgba(0,0,0,.8)}.graph-svg-tip.comparison{padding:0;text-align:left;pointer-events:none}.graph-svg-tip.comparison .title{display:block;padding:10px;margin:0;font-weight:600;line-height:1;pointer-events:none}.graph-svg-tip.comparison ul{margin:0;white-space:nowrap;list-style:none}.graph-svg-tip.comparison li{display:inline-block;padding:5px 10px}";
+
+function downloadFile(filename, data) {
+	var a = document.createElement('a');
+	a.style = "display: none";
+	var blob = new Blob(data, {type: "image/svg+xml; charset=utf-8"});
+	var url = window.URL.createObjectURL(blob);
+	a.href = url;
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+	setTimeout(function(){
+		document.body.removeChild(a);
+		window.URL.revokeObjectURL(url);
+	}, 300);
+}
+
+function prepareForExport(svg) {
+	let clone = svg.cloneNode(true);
+	clone.classList.add('chart-container');
+	clone.setAttribute('xmlns', "http://www.w3.org/2000/svg");
+	clone.setAttribute('xmlns:xlink', "http://www.w3.org/1999/xlink");
+	let styleEl = $.create('style', {
+		'innerHTML': CSSTEXT
+	});
+	clone.insertBefore(styleEl, clone.firstChild);
+
+	let container = $.create('div');
+	container.appendChild(clone);
+
+	return container.innerHTML;
+}
+
 class BaseChart {
 	constructor(parent, options) {
-		this.rawChartArgs = options;
 
-		this.parent = typeof parent === 'string' ? document.querySelector(parent) : parent;
+		this.parent = typeof parent === 'string'
+			? document.querySelector(parent)
+			: parent;
+
 		if (!(this.parent instanceof HTMLElement)) {
 			throw new Error('No `parent` element to render on was provided.');
 		}
 
+		this.rawChartArgs = options;
+
 		this.title = options.title || '';
-		this.subtitle = options.subtitle || '';
-		this.argHeight = options.height || 240;
 		this.type = options.type || '';
 
 		this.realData = this.prepareData(options.data);
 		this.data = this.prepareFirstData(this.realData);
-		this.colors = [];
+
+		this.colors = this.validateColors(options.colors, this.type);
+
 		this.config = {
 			showTooltip: 1, // calculate
-			showLegend: options.showLegend || 1,
+			showLegend: 1, // calculate
 			isNavigable: options.isNavigable || 0,
-			animate: 1
+			animate: (typeof options.animate !== 'undefined') ? options.animate : 1,
+			truncateLegends: options.truncateLegends || 0
 		};
+
+		this.measures = JSON.parse(JSON.stringify(BASE_MEASURES));
+		let m = this.measures;
+		this.setMeasures(options);
+		if(!this.title.length) { m.titleHeight = 0; }
+		if(!this.config.showLegend) m.legendHeight = 0;
+		this.argHeight = options.height || m.baseHeight;
+
 		this.state = {};
 		this.options = {};
 
@@ -1180,84 +1511,77 @@ class BaseChart {
 		this.configure(options);
 	}
 
-	configure(args) {
-		this.setColors(args);
-		this.setMargins();
-
-		// Bind window events
-		window.addEventListener('resize', () => this.draw(true));
-		window.addEventListener('orientationchange', () => this.draw(true));
+	prepareData(data) {
+		return data;
 	}
 
-	setColors() {
-		let args = this.rawChartArgs;
-
-		// Needs structure as per only labels/datasets, from config
-		const list = args.type === 'percentage' || args.type === 'pie'
-			? args.data.labels
-			: args.data.datasets;
-
-		if(!args.colors || (list && args.colors.length < list.length)) {
-			this.colors = DEFAULT_COLORS;
-		} else {
-			this.colors = args.colors;
-		}
-
-		this.colors = this.colors.map(color => getColor(color));
+	prepareFirstData(data) {
+		return data;
 	}
 
-	setMargins() {
+	validateColors(colors, type) {
+		const validColors = [];
+		colors = (colors || []).concat(DEFAULT_COLORS[type]);
+		colors.forEach((string) => {
+			const color = getColor(string);
+			if(!isValidColor(color)) {
+				console.warn('"' + string + '" is not a valid color.');
+			} else {
+				validColors.push(color);
+			}
+		});
+		return validColors;
+	}
+
+	setMeasures() {
+		// Override measures, including those for title and legend
+		// set config for legend and title
+	}
+
+	configure() {
 		let height = this.argHeight;
 		this.baseHeight = height;
-		this.height = height - VERT_SPACE_OUTSIDE_BASE_CHART;
-		this.translateY = TRANSLATE_Y_BASE_CHART;
+		this.height = height - getExtraHeight(this.measures);
 
-		// Horizontal margins
-		this.leftMargin = LEFT_MARGIN_BASE_CHART;
-		this.rightMargin = RIGHT_MARGIN_BASE_CHART;
+		// Bind window events
+		this.boundDrawFn = () => this.draw(true);
+		window.addEventListener('resize', this.boundDrawFn);
+		window.addEventListener('orientationchange', this.boundDrawFn);
 	}
 
-	validate() {
-		return true;
+	destroy() {
+		window.removeEventListener('resize', this.boundDrawFn);
+		window.removeEventListener('orientationchange', this.boundDrawFn);
 	}
 
+	// Has to be called manually
 	setup() {
-		if(this.validate()) {
-			this._setup();
-		}
-	}
-
-	_setup() {
 		this.makeContainer();
+		this.updateWidth();
 		this.makeTooltip();
 
 		this.draw(false, true);
 	}
 
-	setupComponents() {
-		this.components = new Map();
-	}
-
 	makeContainer() {
-		this.container = $.create('div', {
-			className: 'chart-container',
-			innerHTML: `<h6 class="title">${this.title}</h6>
-				<h6 class="sub-title uppercase">${this.subtitle}</h6>
-				<div class="frappe-chart graphics"></div>
-				<div class="graph-stats-container"></div>`
-		});
-
 		// Chart needs a dedicated parent element
 		this.parent.innerHTML = '';
-		this.parent.appendChild(this.container);
 
-		this.chartWrapper = this.container.querySelector('.frappe-chart');
-		this.statsWrapper = this.container.querySelector('.graph-stats-container');
+		let args = {
+			inside: this.parent,
+			className: 'chart-container'
+		};
+
+		if(this.independentWidth) {
+			args.styles = { width: this.independentWidth + 'px' };
+		}
+
+		this.container = $.create('div', args);
 	}
 
 	makeTooltip() {
 		this.tip = new SvgTip({
-			parent: this.chartWrapper,
+			parent: this.container,
 			colors: this.colors
 		});
 		this.bindTooltip();
@@ -1266,7 +1590,8 @@ class BaseChart {
 	bindTooltip() {}
 
 	draw(onlyWidthChange=false, init=false) {
-		this.calcWidth();
+		this.updateWidth();
+
 		this.calc(onlyWidthChange);
 		this.makeChartArea();
 		this.setupComponents();
@@ -1277,36 +1602,87 @@ class BaseChart {
 
 		if(init) {
 			this.data = this.realData;
-			setTimeout(() => {this.update();}, this.initTimeout);
+			setTimeout(() => {this.update(this.data);}, this.initTimeout);
 		}
 
-		if(!onlyWidthChange) {
-			this.renderLegend();
-		}
+		this.renderLegend();
 
 		this.setupNavigation(init);
 	}
 
-	calcWidth() {
+	calc() {} // builds state
+
+	updateWidth() {
 		this.baseWidth = getElementContentWidth(this.parent);
-		this.width = this.baseWidth - (this.leftMargin + this.rightMargin);
+		this.width = this.baseWidth - getExtraWidth(this.measures);
 	}
 
-	update(data=this.data) {
+	makeChartArea() {
+		if(this.svg) {
+			this.container.removeChild(this.svg);
+		}
+		let m = this.measures;
+
+		this.svg = makeSVGContainer(
+			this.container,
+			'frappe-chart chart',
+			this.baseWidth,
+			this.baseHeight
+		);
+		this.svgDefs = makeSVGDefs(this.svg);
+
+		if(this.title.length) {
+			this.titleEL = makeText(
+				'title',
+				m.margins.left,
+				m.margins.top,
+				this.title,
+				{
+					fontSize: m.titleFontSize,
+					fill: '#666666',
+					dy: m.titleFontSize
+				}
+			);
+		}
+
+		let top = getTopOffset(m);
+		this.drawArea = makeSVGGroup(
+			this.type + '-chart chart-draw-area',
+			`translate(${getLeftOffset(m)}, ${top})`
+		);
+
+		if(this.config.showLegend) {
+			top += this.height + m.paddings.bottom;
+			this.legendArea = makeSVGGroup(
+				'chart-legend',
+				`translate(${getLeftOffset(m)}, ${top})`
+			);
+		}
+
+		if(this.title.length) { this.svg.appendChild(this.titleEL); }
+		this.svg.appendChild(this.drawArea);
+		if(this.config.showLegend) { this.svg.appendChild(this.legendArea); }
+
+		this.updateTipOffset(getLeftOffset(m), getTopOffset(m));
+	}
+
+	updateTipOffset(x, y) {
+		this.tip.offset = {
+			x: x,
+			y: y
+		};
+	}
+
+	setupComponents() { this.components = new Map(); }
+
+	update(data) {
+		if(!data) {
+			console.error('No data to update.');
+		}
 		this.data = this.prepareData(data);
 		this.calc(); // builds state
-		this.render();
+		this.render(this.components, this.config.animate);
 	}
-
-	prepareData(data=this.data) {
-		return data;
-	}
-
-	prepareFirstData(data=this.data) {
-		return data;
-	}
-
-	calc() {} // builds state
 
 	render(components=this.components, animate=true) {
 		if(this.config.isNavigable) {
@@ -1320,7 +1696,7 @@ class BaseChart {
 			elementsToAnimate = elementsToAnimate.concat(c.update(animate));
 		});
 		if(elementsToAnimate.length > 0) {
-			runSMILAnimation(this.chartWrapper, this.svg, elementsToAnimate);
+			runSMILAnimation(this.container, this.svg, elementsToAnimate);
 			setTimeout(() => {
 				components.forEach(c => c.make());
 				this.updateNav();
@@ -1333,39 +1709,9 @@ class BaseChart {
 
 	updateNav() {
 		if(this.config.isNavigable) {
-			// if(!this.overlayGuides){
 			this.makeOverlay();
 			this.bindUnits();
-			// } else {
-			// 	this.updateOverlay();
-			// }
 		}
-	}
-
-	makeChartArea() {
-		if(this.svg) {
-			this.chartWrapper.removeChild(this.svg);
-		}
-		this.svg = makeSVGContainer(
-			this.chartWrapper,
-			'chart',
-			this.baseWidth,
-			this.baseHeight
-		);
-		this.svgDefs = makeSVGDefs(this.svg);
-
-		// I WISH !!!
-		// this.svg = makeSVGGroup(
-		// 	svgContainer,
-		// 	'flipped-coord-system',
-		// 	`translate(0, ${this.baseHeight}) scale(1, -1)`
-		// );
-
-		this.drawArea = makeSVGGroup(
-			this.svg,
-			this.type + '-chart',
-			`translate(${this.leftMargin}, ${this.translateY})`
-		);
 	}
 
 	renderLegend() {}
@@ -1385,7 +1731,7 @@ class BaseChart {
 			};
 
 			document.addEventListener('keydown', (e) => {
-				if(isElementInViewport(this.chartWrapper)) {
+				if(isElementInViewport(this.container)) {
 					e = e || window.event;
 					if(this.keyActions[e.keyCode]) {
 						this.keyActions[e.keyCode]();
@@ -1414,8 +1760,9 @@ class BaseChart {
 
 	updateDataset() {}
 
-	getDifferentChart(type) {
-		return getDifferentChart(type, this.type, this.parent, this.rawChartArgs);
+	export() {
+		let chartSvg = prepareForExport(this.svg);
+		downloadFile(this.title || 'Chart', [chartSvg]);
 	}
 }
 
@@ -1442,7 +1789,7 @@ class AggregationChart extends BaseChart {
 				total += e.values[i];
 			});
 			return [total, label];
-		}).filter(d => { return d[0] > 0; }); // keep only positive results
+		}).filter(d => { return d[0] >= 0; }); // keep only positive results
 
 		let totals = allTotals;
 		if(allTotals.length > maxSlices) {
@@ -1463,103 +1810,128 @@ class AggregationChart extends BaseChart {
 			s.sliceTotals.push(d[0]);
 			s.labels.push(d[1]);
 		});
+
+		s.grandTotal = s.sliceTotals.reduce((a, b) => a + b, 0);
+
+		this.center = {
+			x: this.width / 2,
+			y: this.height / 2
+		};
 	}
 
 	renderLegend() {
 		let s = this.state;
-
-		this.statsWrapper.textContent = '';
-
+		this.legendArea.textContent = '';
 		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
 
-		let xValues = s.labels;
+		let count = 0;
+		let y = 0;
 		this.legendTotals.map((d, i) => {
-			if(d) {
-				let stats = $.create('div', {
-					className: 'stats',
-					inside: this.statsWrapper
-				});
-				stats.innerHTML = `<span class="indicator">
-					<i style="background: ${this.colors[i]}"></i>
-					<span class="text-muted">${xValues[i]}:</span>
-					${d}
-				</span>`;
+			let barWidth = 110;
+			let divisor = Math.floor(
+				(this.width - getExtraWidth(this.measures))/barWidth
+			);
+			if (this.legendTotals.length < divisor) {
+				barWidth = this.width/this.legendTotals.length;
 			}
+			if(count > divisor) {
+				count = 0;
+				y += 20;
+			}
+			let x = barWidth * count + 5;
+			let dot = legendDot(
+				x,
+				y,
+				5,
+				this.colors[i],
+				`${s.labels[i]}: ${d}`,
+				this.config.truncateLegends
+			);
+			this.legendArea.appendChild(dot);
+			count++;
 		});
 	}
 }
 
-class PercentageChart extends AggregationChart {
-	constructor(parent, args) {
-		super(parent, args);
-		this.type = 'percentage';
+// Playing around with dates
 
-		this.setup();
+const NO_OF_YEAR_MONTHS = 12;
+const NO_OF_DAYS_IN_WEEK = 7;
+
+const NO_OF_MILLIS = 1000;
+const SEC_IN_DAY = 86400;
+
+const MONTH_NAMES = ["January", "February", "March", "April", "May",
+	"June", "July", "August", "September", "October", "November", "December"];
+
+
+const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+
+// https://stackoverflow.com/a/11252167/6495043
+function treatAsUtc(date) {
+	let result = new Date(date);
+	result.setMinutes(result.getMinutes() - result.getTimezoneOffset());
+	return result;
+}
+
+function getYyyyMmDd(date) {
+	let dd = date.getDate();
+	let mm = date.getMonth() + 1; // getMonth() is zero-based
+	return [
+		date.getFullYear(),
+		(mm>9 ? '' : '0') + mm,
+		(dd>9 ? '' : '0') + dd
+	].join('-');
+}
+
+function clone(date) {
+	return new Date(date.getTime());
+}
+
+
+
+
+
+// export function getMonthsBetween(startDate, endDate) {}
+
+function getWeeksBetween(startDate, endDate) {
+	let weekStartDate = setDayToSunday(startDate);
+	return Math.ceil(getDaysBetween(weekStartDate, endDate) / NO_OF_DAYS_IN_WEEK);
+}
+
+function getDaysBetween(startDate, endDate) {
+	let millisecondsPerDay = SEC_IN_DAY * NO_OF_MILLIS;
+	return (treatAsUtc(endDate) - treatAsUtc(startDate)) / millisecondsPerDay;
+}
+
+function areInSameMonth(startDate, endDate) {
+	return startDate.getMonth() === endDate.getMonth()
+		&& startDate.getFullYear() === endDate.getFullYear();
+}
+
+function getMonthName(i, short=false) {
+	let monthName = MONTH_NAMES[i];
+	return short ? monthName.slice(0, 3) : monthName;
+}
+
+function getLastDateInMonth (month, year) {
+	return new Date(year, month + 1, 0); // 0: last day in previous month
+}
+
+// mutates
+function setDayToSunday(date) {
+	let newDate = clone(date);
+	const day = newDate.getDay();
+	if(day !== 0) {
+		addDays(newDate, (-1) * day);
 	}
+	return newDate;
+}
 
-	makeChartArea() {
-		this.chartWrapper.className += ' ' + 'graph-focus-margin';
-		this.chartWrapper.style.marginTop = '45px';
-
-		this.statsWrapper.className += ' ' + 'graph-focus-margin';
-		this.statsWrapper.style.marginBottom = '30px';
-		this.statsWrapper.style.paddingTop = '0px';
-
-		this.svg = $.create('div', {
-			className: 'div',
-			inside: this.chartWrapper
-		});
-
-		this.chart = $.create('div', {
-			className: 'progress-chart',
-			inside: this.svg
-		});
-
-		this.percentageBar = $.create('div', {
-			className: 'progress',
-			inside: this.chart
-		});
-	}
-
-	render() {
-		let s = this.state;
-		this.grandTotal = s.sliceTotals.reduce((a, b) => a + b, 0);
-		s.slices = [];
-		s.sliceTotals.map((total, i) => {
-			let slice = $.create('div', {
-				className: `progress-bar`,
-				'data-index': i,
-				inside: this.percentageBar,
-				styles: {
-					background: this.colors[i],
-					width: total*100/this.grandTotal + "%"
-				}
-			});
-			s.slices.push(slice);
-		});
-	}
-
-	bindTooltip() {
-		let s = this.state;
-
-		this.chartWrapper.addEventListener('mousemove', (e) => {
-			let slice = e.target;
-			if(slice.classList.contains('progress-bar')) {
-
-				let i = slice.getAttribute('data-index');
-				let gOff = getOffset(this.chartWrapper), pOff = getOffset(slice);
-
-				let x = pOff.left - gOff.left + slice.offsetWidth/2;
-				let y = pOff.top - gOff.top - 6;
-				let title = (this.formattedLabels && this.formattedLabels.length>0
-					? this.formattedLabels[i] : this.state.labels[i]) + ': ';
-				let percent = (s.sliceTotals[i]*100/this.grandTotal).toFixed(1);
-
-				this.tip.setValues(x, y, {name: title, value: percent + "%"});
-				this.tip.showTip();
-			}
-		});
-	}
+// mutates
+function addDays(date, numberOfDays) {
+	date.setDate(date.getDate() + numberOfDays);
 }
 
 class ChartComponent {
@@ -1581,6 +1953,7 @@ class ChartComponent {
 		this.animateElements = animateElements;
 
 		this.store = [];
+		this.labels = [];
 
 		this.layerClass = layerClass;
 		this.layerClass = typeof(this.layerClass) === 'function'
@@ -1594,7 +1967,7 @@ class ChartComponent {
 	}
 
 	setup(parent) {
-		this.layer = makeSVGGroup(parent, this.layerClass, this.layerTransform);
+		this.layer = makeSVGGroup(this.layerClass, this.layerTransform, parent);
 	}
 
 	make() {
@@ -1609,19 +1982,36 @@ class ChartComponent {
 		this.store.forEach(element => {
 			this.layer.appendChild(element);
 		});
+		this.labels.forEach(element => {
+			this.layer.appendChild(element);
+		});
 	}
 
 	update(animate = true) {
 		this.refresh();
 		let animateElements = [];
 		if(animate) {
-			animateElements = this.animateElements(this.data);
+			animateElements = this.animateElements(this.data) || [];
 		}
 		return animateElements;
 	}
 }
 
 let componentConfigs = {
+	donutSlices: {
+		layerClass: 'donut-slices',
+		makeElements(data) {
+			return data.sliceStrings.map((s, i) => {
+				let slice = makePath(s, 'donut-path', data.colors[i], 'none', data.strokeWidth);
+				slice.style.transition = 'transform .3s;';
+				return slice;
+			});
+		},
+
+		animateElements(newData) {
+			return this.store.map((slice, i) => animatePathStr(slice, newData.sliceStrings[i]));
+		},
+	},
 	pieSlices: {
 		layerClass: 'pie-slices',
 		makeElements(data) {
@@ -1638,12 +2028,27 @@ let componentConfigs = {
 			);
 		}
 	},
+	percentageBars: {
+		layerClass: 'percentage-bars',
+		makeElements(data) {
+			return data.xPositions.map((x, i) =>{
+				let y = 0;
+				let bar = percentageBar(x, y, data.widths[i],
+					this.constants.barHeight, this.constants.barDepth, data.colors[i]);
+				return bar;
+			});
+		},
+
+		animateElements(newData) {
+			if(newData) return [];
+		}
+	},
 	yAxis: {
 		layerClass: 'y axis',
 		makeElements(data) {
 			return data.positions.map((position, i) =>
 				yLine(position, data.labels[i], this.constants.width,
-					{mode: this.constants.mode, pos: this.constants.pos})
+					{mode: this.constants.mode, pos: this.constants.pos, shortenNumbers: this.constants.shortenNumbers})
 			);
 		},
 
@@ -1703,9 +2108,9 @@ let componentConfigs = {
 	yMarkers: {
 		layerClass: 'y-markers',
 		makeElements(data) {
-			return data.map(marker =>
-				yMarker(marker.position, marker.label, this.constants.width,
-					{pos:'right', mode: 'span', lineType: 'dashed'})
+			return data.map(m =>
+				yMarker(m.position, m.label, this.constants.width,
+					{labelPos: m.options.labelPos, mode: 'span', lineType: 'dashed'})
 			);
 		},
 		animateElements(newData) {
@@ -1713,13 +2118,15 @@ let componentConfigs = {
 
 			let newPos = newData.map(d => d.position);
 			let newLabels = newData.map(d => d.label);
+			let newOptions = newData.map(d => d.options);
 
 			let oldPos = this.oldData.map(d => d.position);
 
 			this.render(oldPos.map((pos, i) => {
 				return {
 					position: oldPos[i],
-					label: newLabels[i]
+					label: newLabels[i],
+					options: newOptions[i]
 				};
 			}));
 
@@ -1734,9 +2141,9 @@ let componentConfigs = {
 	yRegions: {
 		layerClass: 'y-regions',
 		makeElements(data) {
-			return data.map(region =>
-				yRegion(region.startPos, region.endPos, this.constants.width,
-					region.label)
+			return data.map(r =>
+				yRegion(r.startPos, r.endPos, this.constants.width,
+					r.label, {labelPos: r.options.labelPos})
 			);
 		},
 		animateElements(newData) {
@@ -1745,6 +2152,7 @@ let componentConfigs = {
 			let newPos = newData.map(d => d.endPos);
 			let newLabels = newData.map(d => d.label);
 			let newStarts = newData.map(d => d.startPos);
+			let newOptions = newData.map(d => d.options);
 
 			let oldPos = this.oldData.map(d => d.endPos);
 			let oldStarts = this.oldData.map(d => d.startPos);
@@ -1753,7 +2161,8 @@ let componentConfigs = {
 				return {
 					startPos: oldStarts[i],
 					endPos: oldPos[i],
-					label: newLabels[i]
+					label: newLabels[i],
+					options: newOptions[i]
 				};
 			}));
 
@@ -1766,6 +2175,49 @@ let componentConfigs = {
 			});
 
 			return animateElements;
+		}
+	},
+
+	heatDomain: {
+		layerClass: function() { return 'heat-domain domain-' + this.constants.index; },
+		makeElements(data) {
+			let {index, colWidth, rowHeight, squareSize, xTranslate} = this.constants;
+			let monthNameHeight = -12;
+			let x = xTranslate, y = 0;
+
+			this.serializedSubDomains = [];
+
+			data.cols.map((week, weekNo) => {
+				if(weekNo === 1) {
+					this.labels.push(
+						makeText('domain-name', x, monthNameHeight, getMonthName(index, true).toUpperCase(),
+							{
+								fontSize: 9
+							}
+						)
+					);
+				}
+				week.map((day, i) => {
+					if(day.fill) {
+						let data = {
+							'data-date': day.yyyyMmDd,
+							'data-value': day.dataValue,
+							'data-day': i
+						};
+						let square = heatSquare('day', x, y, squareSize, day.fill, data);
+						this.serializedSubDomains.push(square);
+					}
+					y += rowHeight;
+				});
+				y = 0;
+				x += colWidth;
+			});
+
+			return this.serializedSubDomains;
+		},
+
+		animateElements(newData) {
+			if(newData) return [];
 		}
 	},
 
@@ -1845,7 +2297,8 @@ let componentConfigs = {
 					c.color,
 					{
 						heatline: c.heatline,
-						regionFill: c.regionFill
+						regionFill: c.regionFill,
+						spline: c.spline
 					},
 					{
 						svgDefs: c.svgDefs,
@@ -1896,7 +2349,7 @@ let componentConfigs = {
 
 			if(Object.keys(this.paths).length) {
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine));
+					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline));
 			}
 
 			if(this.units.length) {
@@ -1921,11 +2374,100 @@ function getComponent(name, constants, getData) {
 	return new ChartComponent(config);
 }
 
+class PercentageChart extends AggregationChart {
+	constructor(parent, args) {
+		super(parent, args);
+		this.type = 'percentage';
+		this.setup();
+	}
+
+	setMeasures(options) {
+		let m = this.measures;
+		this.barOptions = options.barOptions || {};
+
+		let b = this.barOptions;
+		b.height = b.height || PERCENTAGE_BAR_DEFAULT_HEIGHT;
+		b.depth = b.depth || PERCENTAGE_BAR_DEFAULT_DEPTH;
+
+		m.paddings.right = 30;
+		m.legendHeight = 60;
+		m.baseHeight = (b.height + b.depth * 0.5) * 8;
+	}
+
+	setupComponents() {
+		let s = this.state;
+
+		let componentConfigs = [
+			[
+				'percentageBars',
+				{
+					barHeight: this.barOptions.height,
+					barDepth: this.barOptions.depth,
+				},
+				function() {
+					return {
+						xPositions: s.xPositions,
+						widths: s.widths,
+						colors: this.colors
+					};
+				}.bind(this)
+			]
+		];
+
+		this.components = new Map(componentConfigs
+			.map(args => {
+				let component = getComponent(...args);
+				return [args[0], component];
+			}));
+	}
+
+	calc() {
+		super.calc();
+		let s = this.state;
+
+		s.xPositions = [];
+		s.widths = [];
+
+		let xPos = 0;
+		s.sliceTotals.map((value) => {
+			let width = this.width * value / s.grandTotal;
+			s.widths.push(width);
+			s.xPositions.push(xPos);
+			xPos += width;
+		});
+	}
+
+	makeDataByIndex() { }
+
+	bindTooltip() {
+		let s = this.state;
+		this.container.addEventListener('mousemove', (e) => {
+			let bars = this.components.get('percentageBars').store;
+			let bar = e.target;
+			if(bars.includes(bar)) {
+
+				let i = bars.indexOf(bar);
+				let gOff = getOffset(this.container), pOff = getOffset(bar);
+
+				let x = pOff.left - gOff.left + parseInt(bar.getAttribute('width'))/2;
+				let y = pOff.top - gOff.top;
+				let title = (this.formattedLabels && this.formattedLabels.length>0
+					? this.formattedLabels[i] : this.state.labels[i]) + ': ';
+				let fraction = s.sliceTotals[i]/s.grandTotal;
+
+				this.tip.setValues(x, y, {name: title, value: (fraction*100).toFixed(1) + "%"});
+				this.tip.showTip();
+			}
+		});
+	}
+}
+
 class PieChart extends AggregationChart {
 	constructor(parent, args) {
 		super(parent, args);
 		this.type = 'pie';
 		this.initTimeout = 0;
+		this.init = 1;
 
 		this.setup();
 	}
@@ -1941,38 +2483,21 @@ class PieChart extends AggregationChart {
 		this.clockWise = args.clockWise || false;
 	}
 
-	prepareFirstData(data=this.data) {
-		this.init = 1;
-		return data;
-	}
-
 	calc() {
 		super.calc();
 		let s = this.state;
-
-		this.center = {
-			x: this.width / 2,
-			y: this.height / 2
-		};
 		this.radius = (this.height > this.width ? this.center.x : this.center.y);
 
-		s.grandTotal = s.sliceTotals.reduce((a, b) => a + b, 0);
-
-		this.calcSlices();
-	}
-
-	calcSlices() {
-		let s = this.state;
 		const { radius, clockWise } = this;
 
 		const prevSlicesProperties = s.slicesProperties || [];
 		s.sliceStrings = [];
 		s.slicesProperties = [];
 		let curAngle = 180 - this.config.startAngle;
-
 		s.sliceTotals.map((total, i) => {
 			const startAngle = curAngle;
 			const originDiffAngle = (total / s.grandTotal) * FULL_ANGLE;
+			const largeArc = originDiffAngle > 180 ? 1: 0;
 			const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
 			const endAngle = curAngle = curAngle + diffAngle;
 			const startPosition = getPositionByAngle(startAngle, radius);
@@ -1988,7 +2513,10 @@ class PieChart extends AggregationChart {
 				curStart = startPosition;
 				curEnd = endPosition;
 			}
-			const curPath = makeArcPathStr(curStart, curEnd, this.center, this.radius, this.clockWise);
+			const curPath =
+				originDiffAngle === 360
+					? makeCircleStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc)
+					: makeArcPathStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc);
 
 			s.sliceStrings.push(curPath);
 			s.slicesProperties.push({
@@ -2056,8 +2584,8 @@ class PieChart extends AggregationChart {
 	}
 
 	bindTooltip() {
-		this.chartWrapper.addEventListener('mousemove', this.mouseMove);
-		this.chartWrapper.addEventListener('mouseleave', this.mouseLeave);
+		this.container.addEventListener('mousemove', this.mouseMove);
+		this.container.addEventListener('mouseleave', this.mouseLeave);
 	}
 
 	mouseMove(e){
@@ -2079,39 +2607,6 @@ class PieChart extends AggregationChart {
 	mouseLeave(){
 		this.hoverSlice(this.curActiveSlice,this.curActiveSliceIndex,false);
 	}
-}
-
-// Playing around with dates
-
-// https://stackoverflow.com/a/11252167/6495043
-function treatAsUtc(dateStr) {
-	let result = new Date(dateStr);
-	result.setMinutes(result.getMinutes() - result.getTimezoneOffset());
-	return result;
-}
-
-function getDdMmYyyy(date) {
-	let dd = date.getDate();
-	let mm = date.getMonth() + 1; // getMonth() is zero-based
-	return [
-		(dd>9 ? '' : '0') + dd,
-		(mm>9 ? '' : '0') + mm,
-		date.getFullYear()
-	].join('-');
-}
-
-function getWeeksBetween(startDateStr, endDateStr) {
-	return Math.ceil(getDaysBetween(startDateStr, endDateStr) / 7);
-}
-
-function getDaysBetween(startDateStr, endDateStr) {
-	let millisecondsPerDay = 24 * 60 * 60 * 1000;
-	return (treatAsUtc(endDateStr) - treatAsUtc(startDateStr)) / millisecondsPerDay;
-}
-
-// mutates
-function addDays(date, numberOfDays) {
-	date.setDate(date.getDate() + numberOfDays);
 }
 
 function normalize(x) {
@@ -2304,6 +2799,18 @@ function scale(val, yAxis) {
 	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier);
 }
 
+
+
+
+
+function getClosestInArray(goal, arr, index = false) {
+	let closest = arr.reduce(function(prev, curr) {
+		return (Math.abs(curr - goal) < Math.abs(prev - goal) ? curr : prev);
+	}, []);
+
+	return index ? arr.indexOf(closest) : closest;
+}
+
 function calcDistribution(values, distributionSize) {
 	// Assume non-negative values,
 	// implying distribution minimum at zero
@@ -2325,261 +2832,289 @@ function getMaxCheckpoint(value, distribution) {
 	return distribution.filter(d => d < value).length;
 }
 
+const COL_WIDTH = HEATMAP_SQUARE_SIZE + HEATMAP_GUTTER_SIZE;
+const ROW_HEIGHT = COL_WIDTH;
+// const DAY_INCR = 1;
+
 class Heatmap extends BaseChart {
 	constructor(parent, options) {
 		super(parent, options);
-
 		this.type = 'heatmap';
 
-		this.domain = options.domain || '';
-		this.subdomain = options.subdomain || '';
-		this.data = options.data || {};
-		this.discreteDomains = options.discreteDomains === 0 ? 0 : 1;
 		this.countLabel = options.countLabel || '';
 
-		let today = new Date();
-		this.start = options.start || addDays(today, 365);
+		let validStarts = ['Sunday', 'Monday'];
+		let startSubDomain = validStarts.includes(options.startSubDomain)
+			? options.startSubDomain : 'Sunday';
+		this.startSubDomainIndex = validStarts.indexOf(startSubDomain);
 
-		let legendColors = (options.legendColors || []).slice(0, 5);
-		this.legendColors = this.validate_colors(legendColors)
-			? legendColors
-			: ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
-
-		// Fixed 5-color theme,
-		// More colors are difficult to parse visually
-		this.distribution_size = 5;
-
-		this.translateX = 0;
 		this.setup();
 	}
 
-	setMargins() {
-		super.setMargins();
-		this.leftMargin = 10;
-		this.translateY = 10;
+	setMeasures(options) {
+		let m = this.measures;
+		this.discreteDomains = options.discreteDomains === 0 ? 0 : 1;
+
+		m.paddings.top = ROW_HEIGHT * 3;
+		m.paddings.bottom = 0;
+		m.legendHeight = ROW_HEIGHT * 2;
+		m.baseHeight = ROW_HEIGHT * NO_OF_DAYS_IN_WEEK
+			+ getExtraHeight(m);
+
+		let d = this.data;
+		let spacing = this.discreteDomains ? NO_OF_YEAR_MONTHS : 0;
+		this.independentWidth = (getWeeksBetween(d.start, d.end)
+			+ spacing) * COL_WIDTH + getExtraWidth(m);
 	}
 
-	validate_colors(colors) {
-		if(colors.length < 5) return 0;
-
-		let valid = 1;
-		colors.forEach(function(string) {
-			if(!isValidColor(string)) {
-				valid = 0;
-				console.warn('"' + string + '" is not a valid color.');
-			}
-		}, this);
-
-		return valid;
+	updateWidth() {
+		let spacing = this.discreteDomains ? NO_OF_YEAR_MONTHS : 0;
+		let noOfWeeks = this.state.noOfWeeks ? this.state.noOfWeeks : 52;
+		this.baseWidth = (noOfWeeks + spacing) * COL_WIDTH
+			+ getExtraWidth(this.measures);
 	}
 
-	configure() {
-		super.configure();
-		this.today = new Date();
-
-		if(!this.start) {
-			this.start = new Date();
-			this.start.setFullYear( this.start.getFullYear() - 1 );
+	prepareData(data=this.data) {
+		if(data.start && data.end && data.start > data.end) {
+			throw new Error('Start date cannot be greater than end date.');
 		}
-		this.firstWeekStart = new Date(this.start.toDateString());
-		this.lastWeekStart = new Date(this.today.toDateString());
-		if(this.firstWeekStart.getDay() !== 7) {
-			addDays(this.firstWeekStart, (-1) * this.firstWeekStart.getDay());
+
+		if(!data.start) {
+			data.start = new Date();
+			data.start.setFullYear( data.start.getFullYear() - 1 );
 		}
-		if(this.lastWeekStart.getDay() !== 7) {
-			addDays(this.lastWeekStart, (-1) * this.lastWeekStart.getDay());
+		if(!data.end) { data.end = new Date(); }
+		data.dataPoints = data.dataPoints || {};
+
+		if(parseInt(Object.keys(data.dataPoints)[0]) > 100000) {
+			let points = {};
+			Object.keys(data.dataPoints).forEach(timestampSec$$1 => {
+				let date = new Date(timestampSec$$1 * NO_OF_MILLIS);
+				points[getYyyyMmDd(date)] = data.dataPoints[timestampSec$$1];
+			});
+			data.dataPoints = points;
 		}
-		this.no_of_cols = getWeeksBetween(this.firstWeekStart + '', this.lastWeekStart + '') + 1;
-	}
 
-	calcWidth() {
-		this.baseWidth = (this.no_of_cols + 3) * 12 ;
-
-		if(this.discreteDomains) {
-			this.baseWidth += (12 * 12);
-		}
-	}
-
-	makeChartArea() {
-		super.makeChartArea();
-		this.domainLabelGroup = makeSVGGroup(this.drawArea,
-			'domain-label-group chart-label');
-
-		this.dataGroups = makeSVGGroup(this.drawArea,
-			'data-groups',
-			`translate(0, 20)`
-		);
-
-		this.container.querySelector('.title').style.display = 'None';
-		this.container.querySelector('.sub-title').style.display = 'None';
-		this.container.querySelector('.graph-stats-container').style.display = 'None';
-		this.chartWrapper.style.marginTop = '0px';
-		this.chartWrapper.style.paddingTop = '0px';
+		return data;
 	}
 
 	calc() {
+		let s = this.state;
 
-		let dataValues = Object.keys(this.data).map(key => this.data[key]);
-		this.distribution = calcDistribution(dataValues, this.distribution_size);
+		s.start = clone(this.data.start);
+		s.end = clone(this.data.end);
 
-		this.monthNames = ["January", "February", "March", "April", "May", "June",
-			"July", "August", "September", "October", "November", "December"
-		];
+		s.firstWeekStart = clone(s.start);
+		s.noOfWeeks = getWeeksBetween(s.start, s.end);
+		s.distribution = calcDistribution(
+			Object.values(this.data.dataPoints), HEATMAP_DISTRIBUTION_SIZE);
+
+		s.domainConfigs = this.getDomains();
 	}
 
-	render() {
-		this.renderAllWeeksAndStoreXValues(this.no_of_cols);
-	}
+	setupComponents() {
+		let s = this.state;
+		let lessCol = this.discreteDomains ? 0 : 1;
 
-	renderAllWeeksAndStoreXValues(no_of_weeks) {
-		// renderAllWeeksAndStoreXValues
-		this.domainLabelGroup.textContent = '';
-		this.dataGroups.textContent = '';
+		let componentConfigs = s.domainConfigs.map((config, i) => [
+			'heatDomain',
+			{
+				index: config.index,
+				colWidth: COL_WIDTH,
+				rowHeight: ROW_HEIGHT,
+				squareSize: HEATMAP_SQUARE_SIZE,
+				xTranslate: s.domainConfigs
+					.filter((config, j) => j < i)
+					.map(config => config.cols.length - lessCol)
+					.reduce((a, b) => a + b, 0)
+					* COL_WIDTH
+			},
+			function() {
+				return s.domainConfigs[i];
+			}.bind(this)
 
-		let currentWeekSunday = new Date(this.firstWeekStart);
-		this.weekCol = 0;
-		this.currentMonth = currentWeekSunday.getMonth();
+		]);
 
-		this.months = [this.currentMonth + ''];
-		this.monthWeeks = {}, this.monthStartPoints = [];
-		this.monthWeeks[this.currentMonth] = 0;
-		this.monthStartPoints.push(13);
+		this.components = new Map(componentConfigs
+			.map((args, i) => {
+				let component = getComponent(...args);
+				return [args[0] + '-' + i, component];
+			})
+		);
 
-		for(var i = 0; i < no_of_weeks; i++) {
-			let dataGroup, monthChange = 0;
-			let day = new Date(currentWeekSunday);
-
-			[dataGroup, monthChange] = this.get_week_squares_group(day, this.weekCol);
-			this.dataGroups.appendChild(dataGroup);
-			this.weekCol += 1 + parseInt(this.discreteDomains && monthChange);
-			this.monthWeeks[this.currentMonth]++;
-			if(monthChange) {
-				this.currentMonth = (this.currentMonth + 1) % 12;
-				this.months.push(this.currentMonth + '');
-				this.monthWeeks[this.currentMonth] = 1;
+		let y = 0;
+		DAY_NAMES_SHORT.forEach((dayName, i) => {
+			if([1, 3, 5].includes(i)) {
+				let dayText = makeText('subdomain-name', -COL_WIDTH/2, y, dayName,
+					{
+						fontSize: HEATMAP_SQUARE_SIZE,
+						dy: 8,
+						textAnchor: 'end'
+					}
+				);
+				this.drawArea.appendChild(dayText);
 			}
-			addDays(currentWeekSunday, 7);
-		}
-		this.render_month_labels();
-	}
-
-	get_week_squares_group(currentDate, index) {
-		const noOfWeekdays = 7;
-		const squareSide = 10;
-		const cellPadding = 2;
-		const step = 1;
-		const todayTime = this.today.getTime();
-
-		let monthChange = 0;
-		let weekColChange = 0;
-
-		let dataGroup = makeSVGGroup(this.dataGroups, 'data-group');
-
-		for(var y = 0, i = 0; i < noOfWeekdays; i += step, y += (squareSide + cellPadding)) {
-			let dataValue = 0;
-			let colorIndex = 0;
-
-			let currentTimestamp = currentDate.getTime()/1000;
-			let timestamp = Math.floor(currentTimestamp - (currentTimestamp % 86400)).toFixed(1);
-
-			if(this.data[timestamp]) {
-				dataValue = this.data[timestamp];
-			}
-
-			if(this.data[Math.round(timestamp)]) {
-				dataValue = this.data[Math.round(timestamp)];
-			}
-
-			if(dataValue) {
-				colorIndex = getMaxCheckpoint(dataValue, this.distribution);
-			}
-
-			let x = 13 + (index + weekColChange) * 12;
-
-			let dataAttr = {
-				'data-date': getDdMmYyyy(currentDate),
-				'data-value': dataValue,
-				'data-day': currentDate.getDay()
-			};
-
-			let heatSquare = makeHeatSquare('day', x, y, squareSide,
-				this.legendColors[colorIndex], dataAttr);
-
-			dataGroup.appendChild(heatSquare);
-
-			let nextDate = new Date(currentDate);
-			addDays(nextDate, 1);
-			if(nextDate.getTime() > todayTime) break;
-
-
-			if(nextDate.getMonth() - currentDate.getMonth()) {
-				monthChange = 1;
-				if(this.discreteDomains) {
-					weekColChange = 1;
-				}
-
-				this.monthStartPoints.push(13 + (index + weekColChange) * 12);
-			}
-			currentDate = nextDate;
-		}
-
-		return [dataGroup, monthChange];
-	}
-
-	render_month_labels() {
-		// this.first_month_label = 1;
-		// if (this.firstWeekStart.getDate() > 8) {
-		// 	this.first_month_label = 0;
-		// }
-		// this.last_month_label = 1;
-
-		// let first_month = this.months.shift();
-		// let first_month_start = this.monthStartPoints.shift();
-		// render first month if
-
-		// let last_month = this.months.pop();
-		// let last_month_start = this.monthStartPoints.pop();
-		// render last month if
-
-		this.months.shift();
-		this.monthStartPoints.shift();
-		this.months.pop();
-		this.monthStartPoints.pop();
-
-		this.monthStartPoints.map((start, i) => {
-			let month_name =  this.monthNames[this.months[i]].substring(0, 3);
-			let text = makeText('y-value-text', start+12, 10, month_name);
-			this.domainLabelGroup.appendChild(text);
-		});
-	}
-
-	bindTooltip() {
-		Array.prototype.slice.call(
-			document.querySelectorAll(".data-group .day")
-		).map(el => {
-			el.addEventListener('mouseenter', (e) => {
-				let count = e.target.getAttribute('data-value');
-				let dateParts = e.target.getAttribute('data-date').split('-');
-
-				let month = this.monthNames[parseInt(dateParts[1])-1].substring(0, 3);
-
-				let gOff = this.chartWrapper.getBoundingClientRect(), pOff = e.target.getBoundingClientRect();
-
-				let width = parseInt(e.target.getAttribute('width'));
-				let x = pOff.left - gOff.left + (width+2)/2;
-				let y = pOff.top - gOff.top - (width+2)/2;
-				let value = count + ' ' + this.countLabel;
-				let name = ' on ' + month + ' ' + dateParts[0] + ', ' + dateParts[2];
-
-				this.tip.setValues(x, y, {name: name, value: value, valueFirst: 1}, []);
-				this.tip.showTip();
-			});
+			y += ROW_HEIGHT;
 		});
 	}
 
 	update(data) {
-		super.update(data);
+		if(!data) {
+			console.error('No data to update.');
+		}
+
+		this.data = this.prepareData(data);
+		this.draw();
 		this.bindTooltip();
+	}
+
+	bindTooltip() {
+		this.container.addEventListener('mousemove', (e) => {
+			this.components.forEach(comp => {
+				let daySquares = comp.store;
+				let daySquare = e.target;
+				if(daySquares.includes(daySquare)) {
+
+					let count = daySquare.getAttribute('data-value');
+					let dateParts = daySquare.getAttribute('data-date').split('-');
+
+					let month = getMonthName(parseInt(dateParts[1])-1, true);
+
+					let gOff = this.container.getBoundingClientRect(), pOff = daySquare.getBoundingClientRect();
+
+					let width = parseInt(e.target.getAttribute('width'));
+					let x = pOff.left - gOff.left + width/2;
+					let y = pOff.top - gOff.top;
+					let value = count + ' ' + this.countLabel;
+					let name = ' on ' + month + ' ' + dateParts[0] + ', ' + dateParts[2];
+
+					this.tip.setValues(x, y, {name: name, value: value, valueFirst: 1}, []);
+					this.tip.showTip();
+				}
+			});
+		});
+	}
+
+	renderLegend() {
+		this.legendArea.textContent = '';
+		let x = 0;
+		let y = ROW_HEIGHT;
+
+		let lessText = makeText('subdomain-name', x, y, 'Less',
+			{
+				fontSize: HEATMAP_SQUARE_SIZE + 1,
+				dy: 9
+			}
+		);
+		x = (COL_WIDTH * 2) + COL_WIDTH/2;
+		this.legendArea.appendChild(lessText);
+
+		this.colors.slice(0, HEATMAP_DISTRIBUTION_SIZE).map((color, i) => {
+			const square = heatSquare('heatmap-legend-unit', x + (COL_WIDTH + 3) * i,
+				y, HEATMAP_SQUARE_SIZE, color);
+			this.legendArea.appendChild(square);
+		});
+
+		let moreTextX = x + HEATMAP_DISTRIBUTION_SIZE * (COL_WIDTH + 3) + COL_WIDTH/4;
+		let moreText = makeText('subdomain-name', moreTextX, y, 'More',
+			{
+				fontSize: HEATMAP_SQUARE_SIZE + 1,
+				dy: 9
+			}
+		);
+		this.legendArea.appendChild(moreText);
+	}
+
+	getDomains() {
+		let s = this.state;
+		const [startMonth, startYear] = [s.start.getMonth(), s.start.getFullYear()];
+		const [endMonth, endYear] = [s.end.getMonth(), s.end.getFullYear()];
+
+		const noOfMonths = (endMonth - startMonth + 1) + (endYear - startYear) * 12;
+
+		let domainConfigs = [];
+
+		let startOfMonth = clone(s.start);
+		for(var i = 0; i < noOfMonths; i++) {
+			let endDate = s.end;
+			if(!areInSameMonth(startOfMonth, s.end)) {
+				let [month, year] = [startOfMonth.getMonth(), startOfMonth.getFullYear()];
+				endDate = getLastDateInMonth(month, year);
+			}
+			domainConfigs.push(this.getDomainConfig(startOfMonth, endDate));
+
+			addDays(endDate, 1);
+			startOfMonth = endDate;
+		}
+
+		return domainConfigs;
+	}
+
+	getDomainConfig(startDate, endDate='') {
+		let [month, year] = [startDate.getMonth(), startDate.getFullYear()];
+		let startOfWeek = setDayToSunday(startDate); // TODO: Monday as well
+		endDate = clone(endDate) || getLastDateInMonth(month, year);
+
+		let domainConfig = {
+			index: month,
+			cols: []
+		};
+
+		addDays(endDate, 1);
+		let noOfMonthWeeks = getWeeksBetween(startOfWeek, endDate);
+
+		let cols = [], col;
+		for(var i = 0; i < noOfMonthWeeks; i++) {
+			col = this.getCol(startOfWeek, month);
+			cols.push(col);
+
+			startOfWeek = new Date(col[NO_OF_DAYS_IN_WEEK - 1].yyyyMmDd);
+			addDays(startOfWeek, 1);
+		}
+
+		if(col[NO_OF_DAYS_IN_WEEK - 1].dataValue !== undefined) {
+			addDays(startOfWeek, 1);
+			cols.push(this.getCol(startOfWeek, month, true));
+		}
+
+		domainConfig.cols = cols;
+
+		return domainConfig;
+	}
+
+	getCol(startDate, month, empty = false) {
+		let s = this.state;
+
+		// startDate is the start of week
+		let currentDate = clone(startDate);
+		let col = [];
+
+		for(var i = 0; i < NO_OF_DAYS_IN_WEEK; i++, addDays(currentDate, 1)) {
+			let config = {};
+
+			// Non-generic adjustment for entire heatmap, needs state
+			let currentDateWithinData = currentDate >= s.start && currentDate <= s.end;
+
+			if(empty || currentDate.getMonth() !== month || !currentDateWithinData) {
+				config.yyyyMmDd = getYyyyMmDd(currentDate);
+			} else {
+				config = this.getSubDomainConfig(currentDate);
+			}
+			col.push(config);
+		}
+
+		return col;
+	}
+
+	getSubDomainConfig(date) {
+		let yyyyMmDd = getYyyyMmDd(date);
+		let dataValue = this.data.dataPoints[yyyyMmDd];
+		let config = {
+			yyyyMmDd: yyyyMmDd,
+			dataValue: dataValue || 0,
+			fill: this.colors[getMaxCheckpoint(dataValue, this.state.distribution)]
+		};
+		return config;
 	}
 }
 
@@ -2680,6 +3215,7 @@ function zeroDataPrep(realData) {
 
 function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
 	let allowedSpace = chartWidth / labels.length;
+	if(allowedSpace <= 0) allowedSpace = 1;
 	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
 
 	let calcLabels = labels.map((label, i) => {
@@ -2718,26 +3254,28 @@ class AxisChart extends BaseChart {
 		this.setup();
 	}
 
-	configure(args) {
-		super.configure();
-
-		args.axisOptions = args.axisOptions || {};
-		args.tooltipOptions = args.tooltipOptions || {};
-
-		this.config.xAxisMode = args.axisOptions.xAxisMode || 'span';
-		this.config.yAxisMode = args.axisOptions.yAxisMode || 'span';
-		this.config.xIsSeries = args.axisOptions.xIsSeries || 0;
-
-		this.config.formatTooltipX = args.tooltipOptions.formatTooltipX;
-		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
-
-		this.config.valuesOverPoints = args.valuesOverPoints;
+	setMeasures() {
+		if(this.data.datasets.length <= 1) {
+			this.config.showLegend = 0;
+			this.measures.paddings.bottom = 30;
+		}
 	}
 
-	setMargins() {
-		super.setMargins();
-		this.leftMargin = Y_AXIS_MARGIN;
-		this.rightMargin = Y_AXIS_MARGIN;
+	configure(options) {
+		super.configure(options);
+
+		options.axisOptions = options.axisOptions || {};
+		options.tooltipOptions = options.tooltipOptions || {};
+
+		this.config.xAxisMode = options.axisOptions.xAxisMode || 'span';
+		this.config.yAxisMode = options.axisOptions.yAxisMode || 'span';
+		this.config.xIsSeries = options.axisOptions.xIsSeries || 0;
+		this.config.shortenYAxisNumbers = options.axisOptions.shortenYAxisNumbers || 0;
+
+		this.config.formatTooltipX = options.tooltipOptions.formatTooltipX;
+		this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
+
+		this.config.valuesOverPoints = options.valuesOverPoints;
 	}
 
 	prepareData(data=this.data) {
@@ -2750,8 +3288,10 @@ class AxisChart extends BaseChart {
 
 	calc(onlyWidthChange = false) {
 		this.calcXPositions();
-		if(onlyWidthChange) return;
-		this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+		if(!onlyWidthChange) {
+			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+		}
+		this.makeDataByIndex();
 	}
 
 	calcXPositions() {
@@ -2836,6 +3376,7 @@ class AxisChart extends BaseChart {
 		if(this.data.yMarkers) {
 			this.state.yMarkers = this.data.yMarkers.map(d => {
 				d.position = scale(d.value, s.yAxis);
+				if(!d.options) d.options = {};
 				// if(!d.label.includes(':')) {
 				// 	d.label += ': ' + d.value;
 				// }
@@ -2846,13 +3387,13 @@ class AxisChart extends BaseChart {
 			this.state.yRegions = this.data.yRegions.map(d => {
 				d.startPos = scale(d.start, s.yAxis);
 				d.endPos = scale(d.end, s.yAxis);
+				if(!d.options) d.options = {};
 				return d;
 			});
 		}
 	}
 
 	getAllYValues() {
-		// TODO: yMarkers, regions, sums, every Y value ever
 		let key = 'values';
 
 		if(this.barOptions.stacked) {
@@ -2884,6 +3425,7 @@ class AxisChart extends BaseChart {
 				{
 					mode: this.config.yAxisMode,
 					width: this.width,
+					shortenNumbers: this.config.shortenYAxisNumbers
 					// pos: 'right'
 				},
 				function() {
@@ -2988,6 +3530,7 @@ class AxisChart extends BaseChart {
 					svgDefs: this.svgDefs,
 					heatline: this.lineOptions.heatline,
 					regionFill: this.lineOptions.regionFill,
+					spline: this.lineOptions.spline,
 					hideDots: this.lineOptions.hideDots,
 					hideLine: this.lineOptions.hideLine,
 
@@ -2997,6 +3540,8 @@ class AxisChart extends BaseChart {
 				function() {
 					let s = this.state;
 					let d = s.datasets[index];
+					let minLine = s.yAxis.positions[0] < s.yAxis.zeroLine
+						? s.yAxis.positions[0] : s.yAxis.zeroLine;
 
 					return {
 						xPositions: s.xAxis.positions,
@@ -3004,7 +3549,7 @@ class AxisChart extends BaseChart {
 
 						values: d.values,
 
-						zeroLine: s.yAxis.zeroLine,
+						zeroLine: minLine,
 						radius: this.lineOptions.dotSize || LINE_CHART_DOT_SIZE,
 					};
 				}.bind(this)
@@ -3040,14 +3585,46 @@ class AxisChart extends BaseChart {
 			}));
 	}
 
+	makeDataByIndex() {
+		this.dataByIndex = {};
+
+		let s = this.state;
+		let formatX = this.config.formatTooltipX;
+		let formatY = this.config.formatTooltipY;
+		let titles = s.xAxis.labels;
+
+		titles.map((label, index) => {
+			let values = this.state.datasets.map((set, i) => {
+				let value = set.values[index];
+				return {
+					title: set.name,
+					value: value,
+					yPos: set.yPositions[index],
+					color: this.colors[i],
+					formatted: formatY ? formatY(value) : value,
+				};
+			});
+
+			this.dataByIndex[index] = {
+				label: label,
+				formattedLabel: formatX ? formatX(label) : label,
+				xPos: s.xAxis.positions[index],
+				values: values,
+				yExtreme: s.yExtremes[index],
+			};
+		});
+	}
+
 	bindTooltip() {
 		// NOTE: could be in tooltip itself, as it is a given functionality for its parent
-		this.chartWrapper.addEventListener('mousemove', (e) => {
-			let o = getOffset(this.chartWrapper);
-			let relX = e.pageX - o.left - this.leftMargin;
-			let relY = e.pageY - o.top - this.translateY;
+		this.container.addEventListener('mousemove', (e) => {
+			let m = this.measures;
+			let o = getOffset(this.container);
+			let relX = e.pageX - o.left - getLeftOffset(m);
+			let relY = e.pageY - o.top;
 
-			if(relY < this.height + this.translateY * 2) {
+			if(relY < this.height + getTopOffset(m)
+				&& relY >  getTopOffset(m)) {
 				this.mapTooltipXPosition(relX);
 			} else {
 				this.tip.hideTip();
@@ -3059,56 +3636,44 @@ class AxisChart extends BaseChart {
 		let s = this.state;
 		if(!s.yExtremes) return;
 
-		let formatY = this.config.formatTooltipY;
-		let formatX = this.config.formatTooltipX;
+		let index = getClosestInArray(relX, s.xAxis.positions, true);
+		let dbi = this.dataByIndex[index];
 
-		let titles = s.xAxis.labels;
-		if(formatX && formatX(titles[0])) {
-			titles = titles.map(d=>formatX(d));
-		}
+		this.tip.setValues(
+			dbi.xPos + this.tip.offset.x,
+			dbi.yExtreme + this.tip.offset.y,
+			{name: dbi.formattedLabel, value: ''},
+			dbi.values,
+			index
+		);
 
-		formatY = formatY && formatY(s.yAxis.labels[0]) ? formatY : 0;
-
-		for(var i=s.datasetLength - 1; i >= 0 ; i--) {
-			let xVal = s.xAxis.positions[i];
-			// let delta = i === 0 ? s.unitWidth : xVal - s.xAxis.positions[i-1];
-			if(relX > xVal - s.unitWidth/2) {
-				let x = xVal + this.leftMargin;
-				let y = s.yExtremes[i] + this.translateY;
-
-				let values = this.data.datasets.map((set, j) => {
-					return {
-						title: set.name,
-						value: formatY ? formatY(set.values[i]) : set.values[i],
-						color: this.colors[j],
-					};
-				});
-
-				this.tip.setValues(x, y, {name: titles[i], value: ''}, values, i);
-				this.tip.showTip();
-				break;
-			}
-		}
+		this.tip.showTip();
 	}
 
 	renderLegend() {
 		let s = this.data;
-		this.statsWrapper.textContent = '';
-
 		if(s.datasets.length > 1) {
+			this.legendArea.textContent = '';
 			s.datasets.map((d, i) => {
-				let stats = $.create('div', {
-					className: 'stats',
-					inside: this.statsWrapper
-				});
-				stats.innerHTML = `<span class="indicator">
-					<i style="background: ${this.colors[i]}"></i>
-					${d.name}
-				</span>`;
+				let barWidth = AXIS_LEGEND_BAR_SIZE;
+				// let rightEndPoint = this.baseWidth - this.measures.margins.left - this.measures.margins.right;
+				// let multiplier = s.datasets.length - i;
+				let rect = legendBar(
+					// rightEndPoint - multiplier * barWidth,	// To right align
+					barWidth * i,
+					'0',
+					barWidth,
+					this.colors[i],
+					d.name,
+					this.config.truncateLegends);
+				this.legendArea.appendChild(rect);
 			});
 		}
 	}
 
+
+
+	// Overlay
 	makeOverlay() {
 		if(this.init) {
 			this.init = 0;
@@ -3209,6 +3774,8 @@ class AxisChart extends BaseChart {
 		fire(this.parent, "data-select", this.getDataPoint());
 	}
 
+
+
 	// API
 	addDataPoint(label, datasetValues, index=this.state.datasetLength) {
 		super.addDataPoint(label, datasetValues, index);
@@ -3252,21 +3819,172 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
+class DonutChart extends AggregationChart {
+	constructor(parent, args) {
+		super(parent, args);
+		this.type = 'donut';
+		this.initTimeout = 0;
+		this.init = 1;
+
+		this.setup();
+	}
+
+	configure(args) {
+		super.configure(args);
+		this.mouseMove = this.mouseMove.bind(this);
+		this.mouseLeave = this.mouseLeave.bind(this);
+
+		this.hoverRadio = args.hoverRadio || 0.1;
+		this.config.startAngle = args.startAngle || 0;
+
+		this.clockWise = args.clockWise || false;
+		this.strokeWidth = args.strokeWidth || 30;
+	}
+
+	calc() {
+		super.calc();
+		let s = this.state;
+		this.radius =
+			this.height > this.width
+				? this.center.x - this.strokeWidth / 2
+				: this.center.y - this.strokeWidth / 2;
+
+		const { radius, clockWise } = this;
+
+		const prevSlicesProperties = s.slicesProperties || [];
+		s.sliceStrings = [];
+		s.slicesProperties = [];
+		let curAngle = 180 - this.config.startAngle;
+
+		s.sliceTotals.map((total, i) => {
+			const startAngle = curAngle;
+			const originDiffAngle = (total / s.grandTotal) * FULL_ANGLE;
+			const largeArc = originDiffAngle > 180 ? 1: 0;
+			const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
+			const endAngle = curAngle = curAngle + diffAngle;
+			const startPosition = getPositionByAngle(startAngle, radius);
+			const endPosition = getPositionByAngle(endAngle, radius);
+
+			const prevProperty = this.init && prevSlicesProperties[i];
+
+			let curStart,curEnd;
+			if(this.init) {
+				curStart = prevProperty ? prevProperty.startPosition : startPosition;
+				curEnd = prevProperty ? prevProperty.endPosition : startPosition;
+			} else {
+				curStart = startPosition;
+				curEnd = endPosition;
+			}
+			const curPath =
+				originDiffAngle === 360
+					? makeStrokeCircleStr(curStart, curEnd, this.center, this.radius, this.clockWise, largeArc)
+					: makeArcStrokePathStr(curStart, curEnd, this.center, this.radius, this.clockWise, largeArc);
+
+			s.sliceStrings.push(curPath);
+			s.slicesProperties.push({
+				startPosition,
+				endPosition,
+				value: total,
+				total: s.grandTotal,
+				startAngle,
+				endAngle,
+				angle: diffAngle
+			});
+
+		});
+		this.init = 0;
+	}
+
+	setupComponents() {
+		let s = this.state;
+
+		let componentConfigs = [
+			[
+				'donutSlices',
+				{ },
+				function() {
+					return {
+						sliceStrings: s.sliceStrings,
+						colors: this.colors,
+						strokeWidth: this.strokeWidth,
+					};
+				}.bind(this)
+			]
+		];
+
+		this.components = new Map(componentConfigs
+			.map(args => {
+				let component = getComponent(...args);
+				return [args[0], component];
+			}));
+	}
+
+	calTranslateByAngle(property){
+		const{ radius, hoverRadio } = this;
+		const position = getPositionByAngle(property.startAngle+(property.angle / 2),radius);
+		return `translate3d(${(position.x) * hoverRadio}px,${(position.y) * hoverRadio}px,0)`;
+	}
+
+	hoverSlice(path,i,flag,e){
+		if(!path) return;
+		const color = this.colors[i];
+		if(flag) {
+			transform(path, this.calTranslateByAngle(this.state.slicesProperties[i]));
+			path.style.stroke = lightenDarkenColor(color, 50);
+			let g_off = getOffset(this.svg);
+			let x = e.pageX - g_off.left + 10;
+			let y = e.pageY - g_off.top - 10;
+			let title = (this.formatted_labels && this.formatted_labels.length > 0
+				? this.formatted_labels[i] : this.state.labels[i]) + ': ';
+			let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1);
+			this.tip.setValues(x, y, {name: title, value: percent + "%"});
+			this.tip.showTip();
+		} else {
+			transform(path,'translate3d(0,0,0)');
+			this.tip.hideTip();
+			path.style.stroke = color;
+		}
+	}
+
+	bindTooltip() {
+		this.container.addEventListener('mousemove', this.mouseMove);
+		this.container.addEventListener('mouseleave', this.mouseLeave);
+	}
+
+	mouseMove(e){
+		const target = e.target;
+		let slices = this.components.get('donutSlices').store;
+		let prevIndex = this.curActiveSliceIndex;
+		let prevAcitve = this.curActiveSlice;
+		if(slices.includes(target)) {
+			let i = slices.indexOf(target);
+			this.hoverSlice(prevAcitve, prevIndex,false);
+			this.curActiveSlice = target;
+			this.curActiveSliceIndex = i;
+			this.hoverSlice(target, i, true, e);
+		} else {
+			this.mouseLeave();
+		}
+	}
+
+	mouseLeave(){
+		this.hoverSlice(this.curActiveSlice,this.curActiveSliceIndex,false);
+	}
+}
+
+// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
+	bar: AxisChart,
+	line: AxisChart,
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,
 	heatmap: Heatmap,
-	pie: PieChart
+	pie: PieChart,
+	donut: DonutChart,
 };
 
 function getChartByType(chartType = 'line', parent, options) {
-	if(chartType === 'line') {
-		options.type = 'line';
-		return new AxisChart(parent, options);
-	} else if (chartType === 'bar') {
-		options.type = 'bar';
-		return new AxisChart(parent, options);
-	} else if (chartType === 'axis-mixed') {
+	if (chartType === 'axis-mixed') {
 		options.type = 'line';
 		return new AxisChart(parent, options);
 	}
@@ -3285,4 +4003,4 @@ class Chart {
 	}
 }
 
-export default Chart;
+export { Chart, PercentageChart, PieChart, Heatmap, AxisChart };

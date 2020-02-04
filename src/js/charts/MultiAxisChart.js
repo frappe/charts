@@ -14,11 +14,11 @@ export default class MultiAxisChart extends AxisChart {
 		this.type = 'multiaxis';
 	}
 
-	setMargins() {
-		super.setMargins();
+	setMeasures() {
+		super.setMeasures();
 		let noOfLeftAxes = this.data.datasets.filter(d => d.axisPosition === 'left').length;
-		this.leftMargin = (noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
-		this.rightMargin = (this.data.datasets.length - noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
+		this.measures.margins.left = (noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
+		this.measures.margins.right = (this.data.datasets.length - noOfLeftAxes) * Y_AXIS_MARGIN || Y_AXIS_MARGIN;
 	}
 
 	prepareYAxis() { }

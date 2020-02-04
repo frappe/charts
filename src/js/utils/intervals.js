@@ -200,6 +200,23 @@ export function scale(val, yAxis) {
 	return floatTwo(yAxis.zeroLine - val * yAxis.scaleMultiplier);
 }
 
+export function isInRange(val, min, max) {
+	return val > min && val < max;
+}
+
+export function isInRange2D(coord, minCoord, maxCoord) {
+	return isInRange(coord[0], minCoord[0], maxCoord[0])
+		&& isInRange(coord[1], minCoord[1], maxCoord[1]);
+}
+
+export function getClosestInArray(goal, arr, index = false) {
+	let closest = arr.reduce(function(prev, curr) {
+		return (Math.abs(curr - goal) < Math.abs(prev - goal) ? curr : prev);
+	}, []);
+
+	return index ? arr.indexOf(closest) : closest;
+}
+
 export function calcDistribution(values, distributionSize) {
 	// Assume non-negative values,
 	// implying distribution minimum at zero
