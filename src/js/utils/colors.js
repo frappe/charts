@@ -36,8 +36,10 @@ export function lightenDarkenColor(color, amt) {
 }
 
 export function isValidColor(string) {
-	// https://stackoverflow.com/a/8027444/6495043
-	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
+	// https://stackoverflow.com/a/32685393
+	let HEX_RE = /(^\s*)(#)((?:[A-Fa-f0-9]{3}){1,2})$/i
+	let RGB_RE = /(^\s*)(rgb|hsl)(a?)[(]\s*([\d.]+\s*%?)\s*,\s*([\d.]+\s*%?)\s*,\s*([\d.]+\s*%?)\s*(?:,\s*([\d.]+)\s*)?[)]$/i
+	return HEX_RE.test(string) || RGB_RE.test(string);
 }
 
 export const getColor = (color) => {
