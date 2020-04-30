@@ -3220,6 +3220,13 @@ function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
 	if(allowedSpace <= 0) allowedSpace = 1;
 	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
 
+	let seriesMultiple;
+	if(isSeries) {
+		// Find the maximum label length for spacing calculations
+		let maxLabelLength = Math.max(...labels.map(label => label.length));
+		seriesMultiple = Math.ceil(maxLabelLength/allowedLetters);
+	}
+
 	let calcLabels = labels.map((label, i) => {
 		label += "";
 		if(label.length > allowedLetters) {
@@ -3231,8 +3238,7 @@ function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
 					label = label.slice(0, allowedLetters) + '..';
 				}
 			} else {
-				let multiple = Math.ceil(label.length/allowedLetters);
-				if(i % multiple !== 0) {
+				if(i % seriesMultiple !== 0) {
 					label = "";
 				}
 			}
