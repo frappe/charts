@@ -391,7 +391,7 @@ let componentConfigs = {
 						y,
 						yReal == null ? 0 : data.radius, // hide dot if null value
 						c.color,
-						(c.valuesOverPoints ? data.values[j] : ''),
+						((c.valuesOverPoints && data.values[j]) ? data.values[j] : ''),
 						j
 					);
 				});
