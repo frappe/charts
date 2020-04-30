@@ -493,8 +493,10 @@ function lightenDarkenColor(color, amt) {
 }
 
 function isValidColor(string) {
-	// https://stackoverflow.com/a/8027444/6495043
-	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
+	// https://stackoverflow.com/a/32685393
+	let HEX_RE = /(^\s*)(#)((?:[A-Fa-f0-9]{3}){1,2})$/i;
+	let RGB_RE = /(^\s*)(rgb|hsl)(a?)[(]\s*([\d.]+\s*%?)\s*,\s*([\d.]+\s*%?)\s*,\s*([\d.]+\s*%?)\s*(?:,\s*([\d.]+)\s*)?[)]$/i;
+	return HEX_RE.test(string) || RGB_RE.test(string);
 }
 
 const getColor = (color) => {
@@ -3637,17 +3639,19 @@ class AxisChart extends BaseChart {
 		if(!s.yExtremes) return;
 
 		let index = getClosestInArray(relX, s.xAxis.positions, true);
-		let dbi = this.dataByIndex[index];
+		if (index >= 0) {
+			let dbi = this.dataByIndex[index];
 
-		this.tip.setValues(
-			dbi.xPos + this.tip.offset.x,
-			dbi.yExtreme + this.tip.offset.y,
-			{name: dbi.formattedLabel, value: ''},
-			dbi.values,
-			index
-		);
+			this.tip.setValues(
+				dbi.xPos + this.tip.offset.x,
+				dbi.yExtreme + this.tip.offset.y,
+				{name: dbi.formattedLabel, value: ''},
+				dbi.values,
+				index
+			);
 
-		this.tip.showTip();
+			this.tip.showTip();
+		}
 	}
 
 	renderLegend() {
