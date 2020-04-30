@@ -1,8 +1,10 @@
 import { shuffle, getRandomBias } from '../../../src/js/utils/helpers';
 import { HEATMAP_COLORS_YELLOW, HEATMAP_COLORS_BLUE } from '../../../src/js/utils/constants';
 import { SEC_IN_DAY, clone, timestampToMidnight, timestampSec, addDays } from '../../../src/js/utils/date-utils';
+/* eslint-disable no-unused-vars */
 import { fireballOver25, fireball_2_5, fireball_5_25, lineCompositeData,
 	barCompositeData, typeData, trendsData, moonData } from './data';
+/* eslint-enable no-unused-vars */
 import demoConfig from './demoConfig';
 // import { lineComposite, barComposite } from './demoConfig';
 // ================================================================================
