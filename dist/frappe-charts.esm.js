@@ -3003,6 +3003,7 @@ class Heatmap extends BaseChart {
 		this.legendArea.textContent = '';
 		let x = 0;
 		let y = ROW_HEIGHT;
+		let radius = this.rawChartArgs.radius || 0;
 
 		let lessText = makeText('subdomain-name', x, y, 'Less',
 			{
@@ -3015,7 +3016,7 @@ class Heatmap extends BaseChart {
 
 		this.colors.slice(0, HEATMAP_DISTRIBUTION_SIZE).map((color, i) => {
 			const square = heatSquare('heatmap-legend-unit', x + (COL_WIDTH + 3) * i,
-				y, HEATMAP_SQUARE_SIZE, color);
+				y, HEATMAP_SQUARE_SIZE, radius, color);
 			this.legendArea.appendChild(square);
 		});
 
