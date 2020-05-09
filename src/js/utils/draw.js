@@ -190,13 +190,14 @@ export function percentageBar(x, y, width, height,
 	return createSVG("rect", args);
 }
 
-export function heatSquare(className, x, y, size, fill='none', data={}) {
+export function heatSquare(className, x, y, size, radius, fill='none', data={}) {
 	let args = {
 		className: className,
 		x: x,
 		y: y,
 		width: size,
 		height: size,
+		rx: radius,
 		fill: fill
 	};
 
@@ -322,7 +323,7 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	if(!options.lineType) options.lineType = '';
 	if (options.shortenNumbers) label = shortenLargeNumber(label);
-	
+
 	let className = 'line-horizontal ' + options.className +
 		(options.lineType === "dashed" ? "dashed": "");
 
@@ -583,7 +584,7 @@ export function getPaths(xList, yList, color, options={}, meta={}) {
 	// Spline
 	if (options.spline)
 		pointsStr = getSplineCurvePointsStr(xList, yList);
-    
+
 	let path = makePath("M"+pointsStr, 'line-graph-path', color);
 
 	// HeatLine
