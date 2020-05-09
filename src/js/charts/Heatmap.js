@@ -175,7 +175,7 @@ export default class Heatmap extends BaseChart {
 		this.legendArea.textContent = '';
 		let x = 0;
 		let y = ROW_HEIGHT;
-		let radius = this.rawChartArgs.radius || 0
+		let radius = this.rawChartArgs.radius || 0;
 
 		let lessText = makeText('subdomain-name', x, y, 'Less',
 			{
