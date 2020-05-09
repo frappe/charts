@@ -252,7 +252,7 @@ let componentConfigs = {
 	heatDomain: {
 		layerClass: function() { return 'heat-domain domain-' + this.constants.index; },
 		makeElements(data) {
-			let {index, colWidth, rowHeight, squareSize, xTranslate} = this.constants;
+			let {index, colWidth, rowHeight, squareSize, radius, xTranslate} = this.constants;
 			let monthNameHeight = -12;
 			let x = xTranslate, y = 0;
 
@@ -275,7 +275,7 @@ let componentConfigs = {
 							'data-value': day.dataValue,
 							'data-day': i
 						};
-						let square = heatSquare('day', x, y, squareSize, day.fill, data);
+						let square = heatSquare('day', x, y, squareSize, radius, day.fill, data);
 						this.serializedSubDomains.push(square);
 					}
 					y += rowHeight;

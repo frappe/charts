@@ -98,6 +98,7 @@ export default class Heatmap extends BaseChart {
 				colWidth: COL_WIDTH,
 				rowHeight: ROW_HEIGHT,
 				squareSize: HEATMAP_SQUARE_SIZE,
+				radius: this.rawChartArgs.radius || 0,
 				xTranslate: s.domainConfigs
 					.filter((config, j) => j < i)
 					.map(config => config.cols.length - lessCol)
