@@ -684,13 +684,14 @@ function percentageBar(x, y, width, height,
 	return createSVG("rect", args);
 }
 
-function heatSquare(className, x, y, size, fill='none', data={}) {
+function heatSquare(className, x, y, size, radius, fill='none', data={}) {
 	let args = {
 		className: className,
 		x: x,
 		y: y,
 		width: size,
 		height: size,
+		rx: radius,
 		fill: fill
 	};
 
@@ -816,7 +817,7 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	if(!options.lineType) options.lineType = '';
 	if (options.shortenNumbers) label = shortenLargeNumber(label);
-	
+
 	let className = 'line-horizontal ' + options.className +
 		(options.lineType === "dashed" ? "dashed": "");
 
@@ -1077,7 +1078,7 @@ function getPaths(xList, yList, color, options={}, meta={}) {
 	// Spline
 	if (options.spline)
 		pointsStr = getSplineCurvePointsStr(xList, yList);
-    
+
 	let path = makePath("M"+pointsStr, 'line-graph-path', color);
 
 	// HeatLine
@@ -2183,7 +2184,7 @@ let componentConfigs = {
 	heatDomain: {
 		layerClass: function() { return 'heat-domain domain-' + this.constants.index; },
 		makeElements(data) {
-			let {index, colWidth, rowHeight, squareSize, xTranslate} = this.constants;
+			let {index, colWidth, rowHeight, squareSize, radius, xTranslate} = this.constants;
 			let monthNameHeight = -12;
 			let x = xTranslate, y = 0;
 
@@ -2206,7 +2207,7 @@ let componentConfigs = {
 							'data-value': day.dataValue,
 							'data-day': i
 						};
-						let square = heatSquare('day', x, y, squareSize, day.fill, data);
+						let square = heatSquare('day', x, y, squareSize, radius, day.fill, data);
 						this.serializedSubDomains.push(square);
 					}
 					y += rowHeight;
@@ -2925,6 +2926,7 @@ class Heatmap extends BaseChart {
 				colWidth: COL_WIDTH,
 				rowHeight: ROW_HEIGHT,
 				squareSize: HEATMAP_SQUARE_SIZE,
+				radius: this.rawChartArgs.radius || 0,
 				xTranslate: s.domainConfigs
 					.filter((config, j) => j < i)
 					.map(config => config.cols.length - lessCol)
