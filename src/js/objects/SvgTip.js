@@ -42,6 +42,7 @@ export default class SvgTip {
 		this.hideTip();
 
 		this.title = this.container.querySelector('.title');
+		this.list = this.container.querySelector('.data-point-list');
 		this.dataPointList = this.container.querySelector('.data-point-list');
 
 		this.parent.addEventListener('mouseleave', () => {
@@ -59,13 +60,19 @@ export default class SvgTip {
 		} else {
 			title = `${this.titleName}<strong>${this.titleValue}</strong>`;
 		}
+
+		if (this.listValues.length > 4) {
+			this.list.classList.add('tooltip-grid');
+		} else {
+			this.list.classList.remove('tooltip-grid');
+		}
+
 		this.title.innerHTML = title;
 		this.dataPointList.innerHTML = '';
 
 		this.listValues.map((set, i) => {
 			const color = this.colors[i] || 'black';
 			let value = set.formatted === 0 || set.formatted ? set.formatted : set.value;
-
 			let li = $.create('li', {
 				innerHTML: `<div class="tooltip-legend" style="background: ${color};"></div>
 					<div>

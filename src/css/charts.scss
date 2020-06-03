@@ -98,7 +98,6 @@
 		text-align: left;
 		padding: 0px;
 		pointer-events: none;
-
 		.title {
 			display: block;
 			padding: 16px;
@@ -114,6 +113,12 @@
 			margin: 0;
 			white-space: nowrap;
 			list-style: none;
+
+			&.tooltip-grid {
+				display: grid;
+				grid-template-columns: repeat(4, minmax(0, 1fr));
+				gap: 5px;
+			}
 		}
 
 		li {
