@@ -33,7 +33,7 @@ export default class BaseChart {
 			showLegend: 1, // calculate
 			isNavigable: options.isNavigable || 0,
 			animate: (typeof options.animate !== 'undefined') ? options.animate : 1,
-			truncateLegends: options.truncateLegends || 0
+			truncateLegends: options.truncateLegends || 1
 		};
 
 		this.measures = JSON.parse(JSON.stringify(BASE_MEASURES));
