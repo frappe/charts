@@ -1492,7 +1492,7 @@ class BaseChart {
 			showLegend: 1, // calculate
 			isNavigable: options.isNavigable || 0,
 			animate: (typeof options.animate !== 'undefined') ? options.animate : 1,
-			truncateLegends: options.truncateLegends || 0
+			truncateLegends: options.truncateLegends || 1
 		};
 
 		this.measures = JSON.parse(JSON.stringify(BASE_MEASURES));
@@ -1830,7 +1830,7 @@ class AggregationChart extends BaseChart {
 		let count = 0;
 		let y = 0;
 		this.legendTotals.map((d, i) => {
-			let barWidth = 110;
+			let barWidth = 150;
 			let divisor = Math.floor(
 				(this.width - getExtraWidth(this.measures))/barWidth
 			);
@@ -1842,13 +1842,14 @@ class AggregationChart extends BaseChart {
 				y += 20;
 			}
 			let x = barWidth * count + 5;
+			let label = this.config.truncateLegends ? truncateString(s.labels[i], barWidth/10) : s.labels[i];
 			let dot = legendDot(
 				x,
 				y,
 				5,
 				this.colors[i],
-				`${s.labels[i]}: ${d}`,
-				this.config.truncateLegends
+				`${label}: ${d}`,
+				false
 			);
 			this.legendArea.appendChild(dot);
 			count++;
