@@ -1,4 +1,5 @@
 import BaseChart from './BaseChart';
+import { truncateString } from '../utils/draw-utils';
 import { legendDot } from '../utils/draw';
 import { getExtraWidth } from '../utils/constants';
 
@@ -75,13 +76,14 @@ export default class AggregationChart extends BaseChart {
 				y += 20;
 			}
 			let x = barWidth * count + 5;
+			let label = this.config.truncateLegends ? truncateString(s.labels[i], barWidth/10) : s.labels[i];
 			let dot = legendDot(
 				x,
 				y,
 				5,
 				this.colors[i],
-				`${s.labels[i]}: ${d}`,
-				this.config.truncateLegends
+				`${label}: ${d}`,
+				false
 			);
 			this.legendArea.appendChild(dot);
 			count++;
