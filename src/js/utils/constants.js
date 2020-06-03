@@ -85,7 +85,7 @@ export const HEATMAP_GUTTER_SIZE = 2;
 
 export const DEFAULT_CHAR_WIDTH = 7;
 
-export const TOOLTIP_POINTER_TRIANGLE_HEIGHT = 5;
+export const TOOLTIP_POINTER_TRIANGLE_HEIGHT = 7.48;
 
 const DEFAULT_CHART_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
 	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
