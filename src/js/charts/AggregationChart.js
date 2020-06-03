@@ -63,7 +63,7 @@ export default class AggregationChart extends BaseChart {
 		let count = 0;
 		let y = 0;
 		this.legendTotals.map((d, i) => {
-			let barWidth = 110;
+			let barWidth = 150;
 			let divisor = Math.floor(
 				(this.width - getExtraWidth(this.measures))/barWidth
 			);
