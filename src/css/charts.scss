@@ -1,3 +1,6 @@
+$label-color: #313B44;
+$axis-line-color:  #E2E6E9;
+
 .chart-container {
 	position: relative; /* for absolutely positioned tooltip */
 
@@ -7,10 +10,10 @@
 		'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 
 	.axis, .chart-label {
-		fill: #555b51;
+		fill: $label-color;
 
 		line {
-			stroke: #dadada;
+			stroke: $axis-line-color;
 		}
 	}
 	.dataset-units {
@@ -98,6 +101,7 @@
 		text-align: left;
 		padding: 0px;
 		pointer-events: none;
+		
 		.title {
 			display: block;
 			padding: 16px;
