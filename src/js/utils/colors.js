@@ -1,6 +1,6 @@
 const PRESET_COLOR_MAP = {
 	'pink': '#F683AE',
-	'blue': '#2D95F0',
+	'blue': '#318AD8',
 	'green': '#48BB74',
 	'grey': '#A6B1B9',
 	'red': '#F56B6B',
@@ -10,7 +10,7 @@ const PRESET_COLOR_MAP = {
 	'cyan': '#15CCEF',
 	'orange': '#F8814F',
 	'light-pink': '#FED7E5',
-	'light-blue': '#EBF5FF',
+	'light-blue': '#BFDDF7',
 	'light-green': '#48BB74',
 	'light-grey': '#F4F5F6',
 	'light-red': '#F6DFDF',
