@@ -1,5 +1,5 @@
 import SvgTip from '../objects/SvgTip';
-import { $, isElementInViewport, getElementContentWidth } from '../utils/dom';
+import { $, isElementInViewport, getElementContentWidth, isHidden } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup, makeText } from '../utils/draw';
 import { BASE_MEASURES, getExtraHeight, getExtraWidth, getTopOffset, getLeftOffset,
 	INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS} from '../utils/constants';
@@ -134,6 +134,10 @@ export default class BaseChart {
 	bindTooltip() {}
 
 	draw(onlyWidthChange=false, init=false) {
+		if (onlyWidthChange && isHidden(this.parent)) {
+			// Don't update anything if the chart is hidden
+			return;
+		}
 		this.updateWidth();
 
 		this.calc(onlyWidthChange);
