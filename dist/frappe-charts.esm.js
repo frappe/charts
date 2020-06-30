@@ -46,6 +46,13 @@ function getOffset(element) {
 	};
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/offsetParent
+// an element's offsetParent property will return null whenever it, or any of its parents,
+// is hidden via the display style property.
+function isHidden(el) {
+	return (el.offsetParent === null);
+}
+
 function isElementInViewport(el) {
 	// Although straightforward: https://stackoverflow.com/a/7557433/6495043
 	var rect = el.getBoundingClientRect();
@@ -1593,6 +1600,10 @@ class BaseChart {
 	bindTooltip() {}
 
 	draw(onlyWidthChange=false, init=false) {
+		if (onlyWidthChange && isHidden(this.parent)) {
+			// Don't update anything if the chart is hidden
+			return;
+		}
 		this.updateWidth();
 
 		this.calc(onlyWidthChange);
