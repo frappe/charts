@@ -364,6 +364,19 @@ function getPositionByAngle(angle, radius) {
 	};
 }
 
+/**
+ * Check if a number is valid for svg attributes
+ * @param {object} candidate Candidate to test
+ * @param {Boolean} nonNegative flag to treat negative number as invalid
+ */
+function isValidNumber(candidate, nonNegative=false) {
+	if (Number.isNaN(candidate)) return false;
+	else if (candidate === undefined) return false;
+	else if (!Number.isFinite(candidate)) return false;
+	else if (nonNegative && candidate < 0) return false;
+	else return true;
+}
+
 function getBarHeightAndYAttr(yTop, zeroLine) {
 	let height, y;
 	if (yTop <= zeroLine) {
@@ -864,6 +877,8 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 }
 
 function yLine(y, label, width, options={}) {
+	if (!isValidNumber(y)) y = 0;
+
 	if(!options.pos) options.pos = 'left';
 	if(!options.offset) options.offset = 0;
 	if(!options.mode) options.mode = 'span';
@@ -892,6 +907,8 @@ function yLine(y, label, width, options={}) {
 }
 
 function xLine(x, label, height, options={}) {
+	if (!isValidNumber(x)) x = 0;
+
 	if(!options.pos) options.pos = 'bottom';
 	if(!options.offset) options.offset = 0;
 	if(!options.mode) options.mode = 'span';
@@ -1001,6 +1018,12 @@ function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={})
 		height = meta.minHeight;
 		y -= meta.minHeight;
 	}
+
+	// Preprocess numbers to avoid svg building errors
+	if (!isValidNumber(x)) x = 0;
+	if (!isValidNumber(y)) y = 0;
+	if (!isValidNumber(height, true)) height = 0;
+	if (!isValidNumber(width, true)) width = 0;
 
 	let rect = createSVG('rect', {
 		className: `bar mini`,
