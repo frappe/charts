@@ -505,6 +505,12 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 		y -= meta.minHeight;
 	}
 
+	// Preprocess numbers to avoid svg building errors
+	if (!isValidNumber(x)) x = 0;
+	if (!isValidNumber(y)) y = 0;
+	if (!isValidNumber(height, true)) height = 0;
+	if (!isValidNumber(width, true)) width = 0;
+
 	let rect = createSVG('rect', {
 		className: `bar mini`,
 		style: `fill: ${color}`,
