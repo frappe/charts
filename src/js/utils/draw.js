@@ -1,5 +1,5 @@
 import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getSplineCurvePointsStr } from './draw-utils';
-import { getStringWidth } from './helpers';
+import { getStringWidth, isValidNumber } from './helpers';
 import { DOT_OVERLAY_SIZE_INCR, PERCENTAGE_BAR_DEFAULT_DEPTH } from './constants';
 import { lightenDarkenColor } from './colors';
 
@@ -363,6 +363,8 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 }
 
 export function yLine(y, label, width, options={}) {
+	if (!isValidNumber(y)) y = 0;
+
 	if(!options.pos) options.pos = 'left';
 	if(!options.offset) options.offset = 0;
 	if(!options.mode) options.mode = 'span';
@@ -391,6 +393,8 @@ export function yLine(y, label, width, options={}) {
 }
 
 export function xLine(x, label, height, options={}) {
+	if (!isValidNumber(x)) x = 0;
+
 	if(!options.pos) options.pos = 'bottom';
 	if(!options.offset) options.offset = 0;
 	if(!options.mode) options.mode = 'span';
