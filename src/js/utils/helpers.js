@@ -92,3 +92,16 @@ export function getPositionByAngle(angle, radius) {
 		y: Math.cos(angle * ANGLE_RATIO) * radius,
 	};
 }
+
+/**
+ * Check if a number is valid for svg attributes
+ * @param {object} candidate Candidate to test
+ * @param {Boolean} nonNegative flag to treat negative number as invalid
+ */
+export function isValidNumber(candidate, nonNegative=false) {
+	if (Number.isNaN(candidate)) return false;
+	else if (candidate === undefined) return false;
+	else if (!Number.isFinite(candidate)) return false;
+	else if (nonNegative && candidate < 0) return false;
+	else return true;
+}
