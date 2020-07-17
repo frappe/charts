@@ -1,3 +1,7 @@
+'use strict';
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
 function _typeof(obj) {
   "@babel/helpers - typeof";
 
@@ -574,16 +578,6 @@ function getPositionByAngle(angle, radius) {
 function isValidNumber(candidate) {
   var nonNegative = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
   if (Number.isNaN(candidate)) return false;else if (candidate === undefined) return false;else if (!Number.isFinite(candidate)) return false;else if (nonNegative && candidate < 0) return false;else return true;
-}
-
-/**
- * Round a number to the closes precision, max max precision 4
- * @param {Number} d Any Number
- */
-function round(d) {
-	// https://floating-point-gui.de/
-	// https://www.jacklmoore.com/notes/rounding-in-javascript/
-	return Number(Math.round(d + 'e4') + 'e-4');
 }
 
 function getBarHeightAndYAttr(yTop, zeroLine) {
@@ -3034,15 +3028,9 @@ function getChartRangeIntervals(max) {
       range = upperBound - lowerBound;
     }
 
-		if(maxValue >= absMinValue) {
-			exponent = normalize(maxValue)[1];
-			intervals = getPositiveFirstIntervals(maxValue, absMinValue);
-		} else {
-			// Mirror: maxValue => absMinValue, then change sign
-			exponent = normalize(absMinValue)[1];
-			let posIntervals = getPositiveFirstIntervals(absMinValue, maxValue);
-			intervals = posIntervals.reverse().map(d => d * (-1));
-		}
+    noOfParts = range / 2;
+    partSize = 2;
+  } // Special case: 1 and 2
 
 
   if (range <= 2) {
@@ -4464,4 +4452,8 @@ var Chart = function Chart(parent, options) {
   return getChartByType(options.type, parent, options);
 };
 
-export { AxisChart, Chart, Heatmap, PercentageChart, PieChart };
+exports.AxisChart = AxisChart;
+exports.Chart = Chart;
+exports.Heatmap = Heatmap;
+exports.PercentageChart = PercentageChart;
+exports.PieChart = PieChart;

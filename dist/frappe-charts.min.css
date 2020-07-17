@@ -1,1 +1,104 @@
-.chart-container{position:relative;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif}.chart-container .axis,.chart-container .chart-label{fill:#555b51}.chart-container .axis line,.chart-container .chart-label line{stroke:#dadada}.chart-container .dataset-units circle{stroke:#fff;stroke-width:2}.chart-container .dataset-units path{fill:none;stroke-opacity:1;stroke-width:2px}.chart-container .dataset-path{stroke-width:2px}.chart-container .path-group path{fill:none;stroke-opacity:1;stroke-width:2px}.chart-container line.dashed{stroke-dasharray:5,3}.chart-container .axis-line .specific-value{text-anchor:start}.chart-container .axis-line .y-line{text-anchor:end}.chart-container .axis-line .x-line{text-anchor:middle}.chart-container .legend-dataset-text{fill:#6c7680;font-weight:600}.graph-svg-tip{position:absolute;z-index:1;padding:10px;font-size:12px;color:#959da5;text-align:center;background:rgba(0,0,0,.8);border-radius:3px}.graph-svg-tip ol,.graph-svg-tip ul{padding-left:0;display:-webkit-box;display:-ms-flexbox;display:flex}.graph-svg-tip ul.data-point-list li{min-width:90px;-webkit-box-flex:1;-ms-flex:1;flex:1;font-weight:600}.graph-svg-tip strong{color:#dfe2e5;font-weight:600}.graph-svg-tip .svg-pointer{position:absolute;height:5px;margin:0 0 0 -5px;content:" ";border:5px solid transparent;border-top-color:rgba(0,0,0,.8)}.graph-svg-tip.comparison{padding:0;text-align:left;pointer-events:none}.graph-svg-tip.comparison .title{display:block;padding:10px;margin:0;font-weight:600;line-height:1;pointer-events:none}.graph-svg-tip.comparison ul{margin:0;white-space:nowrap;list-style:none}.graph-svg-tip.comparison li{display:inline-block;padding:5px 10px}
+.chart-container {
+  position: relative;
+  /* for absolutely positioned tooltip */
+  /* https://www.smashingmagazine.com/2015/11/using-system-ui-fonts-practical-guide/ */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; }
+  .chart-container .axis, .chart-container .chart-label {
+    fill: #313B44; }
+    .chart-container .axis line, .chart-container .chart-label line {
+      stroke: #E2E6E9; }
+  .chart-container .dataset-units circle {
+    stroke: #fff;
+    stroke-width: 2; }
+  .chart-container .dataset-units path {
+    fill: none;
+    stroke-opacity: 1;
+    stroke-width: 2px; }
+  .chart-container .dataset-path {
+    stroke-width: 2px; }
+  .chart-container .path-group path {
+    fill: none;
+    stroke-opacity: 1;
+    stroke-width: 2px; }
+  .chart-container line.dashed {
+    stroke-dasharray: 5, 3; }
+  .chart-container .axis-line .specific-value {
+    text-anchor: start; }
+  .chart-container .axis-line .y-line {
+    text-anchor: end; }
+  .chart-container .axis-line .x-line {
+    text-anchor: middle; }
+  .chart-container .legend-dataset-text {
+    fill: #6c7680;
+    font-weight: 600; }
+
+.graph-svg-tip {
+  position: absolute;
+  z-index: 99999;
+  padding: 10px;
+  font-size: 12px;
+  text-align: center;
+  background: #FFFFFF;
+  box-shadow: 0px 1px 4px rgba(17, 43, 66, 0.1), 0px 2px 6px rgba(17, 43, 66, 0.08), 0px 40px 30px -30px rgba(17, 43, 66, 0.1);
+  border-radius: 6px; }
+  .graph-svg-tip ul {
+    padding-left: 0;
+    display: flex; }
+  .graph-svg-tip ol {
+    padding-left: 0;
+    display: flex; }
+  .graph-svg-tip ul.data-point-list li {
+    min-width: 90px;
+    font-weight: 600; }
+  .graph-svg-tip .svg-pointer {
+    position: absolute;
+    height: 12px;
+    width: 12px;
+    border-radius: 2px;
+    background: white;
+    transform: rotate(45deg);
+    margin-top: -7px;
+    margin-left: -6px; }
+  .graph-svg-tip.comparison {
+    text-align: left;
+    padding: 0px;
+    pointer-events: none; }
+    .graph-svg-tip.comparison .title {
+      display: block;
+      padding: 16px;
+      margin: 0;
+      color: #313B44;
+      font-weight: 600;
+      line-height: 1;
+      pointer-events: none;
+      text-transform: uppercase; }
+    .graph-svg-tip.comparison ul {
+      margin: 0;
+      white-space: nowrap;
+      list-style: none; }
+      .graph-svg-tip.comparison ul.tooltip-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 5px; }
+    .graph-svg-tip.comparison li {
+      display: inline-block;
+      display: flex;
+      flex-direction: row;
+      font-weight: 600;
+      line-height: 1;
+      padding: 5px 15px 15px 15px; }
+      .graph-svg-tip.comparison li .tooltip-legend {
+        height: 12px;
+        width: 12px;
+        margin-right: 8px;
+        border-radius: 2px; }
+      .graph-svg-tip.comparison li .tooltip-label {
+        margin-top: 4px;
+        font-size: 11px;
+        max-width: 100px;
+        color: #313B44;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap; }
+      .graph-svg-tip.comparison li .tooltip-value {
+        color: #192734; }
