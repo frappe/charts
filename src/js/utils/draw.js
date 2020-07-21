@@ -9,6 +9,7 @@ const LABEL_MAX_CHARS = 15;
 export const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
 const FONT_FILL = '#555b51';
+const LIGHTER_FONT_FILL = '#888c85';
 
 function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
@@ -306,7 +307,8 @@ function makeVertLine(x, label, y1, y2, options={}) {
 		dy: FONT_SIZE + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': 'middle',
-		innerHTML: label + ""
+		innerHTML: label + "",
+		style: `fill: ${options.whiteLabels ? LIGHTER_FONT_FILL : FONT_FILL}`
 	});
 
 	let line = createSVG('g', {
@@ -344,7 +346,8 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 		dy: (FONT_SIZE / 2 - 2) + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': x1 < x2 ? 'end' : 'start',
-		innerHTML: label+""
+		innerHTML: label+"",
+		style: `fill: ${options.whiteLabels ? LIGHTER_FONT_FILL : FONT_FILL}`
 	});
 
 	let line = createSVG('g', {
@@ -388,6 +391,7 @@ export function yLine(y, label, width, options={}) {
 		stroke: options.stroke,
 		className: options.className,
 		lineType: options.lineType,
+		whiteLabels: options.whiteLabels,
 		shortenNumbers: options.shortenNumbers
 	});
 }
@@ -424,7 +428,8 @@ export function xLine(x, label, height, options={}) {
 	return makeVertLine(x, label, y1, y2, {
 		stroke: options.stroke,
 		className: options.className,
-		lineType: options.lineType
+		lineType: options.lineType,
+		whiteLabels: options.whiteLabels
 	});
 }
 
@@ -496,7 +501,7 @@ export function yRegion(y1, y2, width, label, options={}) {
 	return region;
 }
 
-export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={}) {
+export function datasetBar(x, yTop, width, color, label='', whiteLabels=false, index=0, offset=0, meta={}) {
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
 	y -= offset;
 
@@ -535,7 +540,8 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 			dy: (FONT_SIZE / 2 * -1) + 'px',
 			'font-size': FONT_SIZE + 'px',
 			'text-anchor': 'middle',
-			innerHTML: label
+			innerHTML: label,
+			style: `fill: ${whiteLabels ? 'white' : 'black'}`
 		});
 
 		let group = createSVG('g', {
@@ -549,7 +555,7 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 	}
 }
 
-export function datasetDot(x, y, radius, color, label='', index=0) {
+export function datasetDot(x, y, radius, color, label='', whiteLabels=false, index=0) {
 	let dot = createSVG('circle', {
 		style: `fill: ${color}`,
 		'data-point-index': index,
@@ -573,7 +579,8 @@ export function datasetDot(x, y, radius, color, label='', index=0) {
 			dy: (FONT_SIZE / 2 * -1 - radius) + 'px',
 			'font-size': FONT_SIZE + 'px',
 			'text-anchor': 'middle',
-			innerHTML: label
+			innerHTML: label,
+			style: `fill: ${whiteLabels ? 'white' : 'black'}`
 		});
 
 		let group = createSVG('g', {

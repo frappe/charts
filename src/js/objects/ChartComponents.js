@@ -119,7 +119,13 @@ let componentConfigs = {
 		makeElements(data) {
 			return data.positions.map((position, i) =>
 				yLine(position, data.labels[i], this.constants.width,
-					{mode: this.constants.mode, pos: this.constants.pos, shortenNumbers: this.constants.shortenNumbers})
+					{
+						mode: this.constants.mode, 
+						pos: this.constants.pos, 
+						shortenNumbers: this.constants.shortenNumbers,
+						whiteLabels: this.constants.whiteLabels
+					}
+				)
 			);
 		},
 
@@ -150,7 +156,12 @@ let componentConfigs = {
 		makeElements(data) {
 			return data.positions.map((position, i) =>
 				xLine(position, data.calcLabels[i], this.constants.height,
-					{mode: this.constants.mode, pos: this.constants.pos})
+					{
+						mode: this.constants.mode, 
+						pos: this.constants.pos, 
+						whiteLabels: this.constants.whiteLabels
+					}
+				)
 			);
 		},
 
@@ -304,6 +315,7 @@ let componentConfigs = {
 					data.barWidth,
 					c.color,
 					data.labels[j],
+					c.whiteLabels,
 					j,
 					data.offsets[j],
 					{
@@ -387,6 +399,7 @@ let componentConfigs = {
 						data.radius,
 						c.color,
 						(c.valuesOverPoints ? data.values[j] : ''),
+						c.whiteLabels,
 						j
 					);
 				});
