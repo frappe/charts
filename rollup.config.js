@@ -13,6 +13,7 @@ export default [
 	{
 		input: 'src/js/index.js',
 		output: {
+			sourcemap: true,
 			name: 'frappe-charts',
 			file: pkg.browser,
 			format: 'umd'
@@ -32,8 +33,8 @@ export default [
 	{
 		input: 'src/js/chart.js',
 		output: [
-			{ file: pkg.common, format: 'cjs' },
-			{ file: pkg.module, format: 'es' }
+			{ file: pkg.common, format: 'cjs', sourcemap: true },
+			{ file: pkg.module, format: 'es', sourcemap: true }
 		],
 		plugins: [
 			babel({
