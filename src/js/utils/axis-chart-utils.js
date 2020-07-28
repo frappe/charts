@@ -1,5 +1,6 @@
 import { fillArray } from '../utils/helpers';
-import { DEFAULT_AXIS_CHART_TYPE, AXIS_DATASET_CHART_TYPES, DEFAULT_CHAR_WIDTH } from '../utils/constants';
+import { DEFAULT_AXIS_CHART_TYPE, AXIS_DATASET_CHART_TYPES, DEFAULT_CHAR_WIDTH,
+	SERIES_LABEL_SPACE_RATIO } from '../utils/constants';
 
 export function dataPrep(data, type) {
 	data.labels = data.labels || [];
@@ -95,7 +96,7 @@ export function zeroDataPrep(realData) {
 }
 
 export function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
-	let allowedSpace = chartWidth / labels.length;
+	let allowedSpace = (chartWidth / labels.length) * SERIES_LABEL_SPACE_RATIO;
 	if(allowedSpace <= 0) allowedSpace = 1;
 	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
 

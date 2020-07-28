@@ -66,6 +66,7 @@ export const DEFAULT_AXIS_CHART_TYPE = 'line';
 export const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
 
 export const AXIS_LEGEND_BAR_SIZE = 100;
+export const SERIES_LABEL_SPACE_RATIO = 0.6;
 
 export const BAR_CHART_SPACE_RATIO = 0.5;
 export const MIN_BAR_PERCENT_HEIGHT = 0.00;
