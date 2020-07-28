@@ -102,10 +102,14 @@ let componentConfigs = {
 	percentageBars: {
 		layerClass: 'percentage-bars',
 		makeElements(data) {
+			const numberOfPoints = data.xPositions.length;
 			return data.xPositions.map((x, i) =>{
 				let y = 0;
-				let bar = percentageBar(x, y, data.widths[i],
-					this.constants.barHeight, this.constants.barDepth, data.colors[i]);
+
+				let isLast = i == numberOfPoints - 1;
+				let isFirst = i == 0;
+
+				let bar = percentageBar(x, y, data.widths[i], this.constants.barHeight, isFirst, isLast, data.colors[i]);
 				return bar;
 			});
 		},
