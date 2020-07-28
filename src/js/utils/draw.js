@@ -168,8 +168,44 @@ export function makeGradient(svgDefElem, color, lighter = false) {
 	return gradientId;
 }
 
-export function percentageBar(x, y, width, height,
-	depth=PERCENTAGE_BAR_DEFAULT_DEPTH, fill='none') {
+export function makeRoundedCornerBarPath(x, width, height) {
+	let radius = height/2;
+
+	return `M${x},0
+			h${width - radius}
+			q${radius},0 ${radius},${radius}
+			q0,${radius} -${radius},${radius}
+			h-${width - radius}
+			v${height}z`;
+}
+
+export function makeRoundedCornerBarPathLast(x, width, height) {
+	let radius = height/2;
+
+	return `M${x + radius},0
+			h${width - radius}
+			v${height}
+			h-${width - radius}
+			q-${radius}, 0 -${radius},-${radius}
+			q0,-${radius} ${radius},-${radius}z`;
+}
+
+
+export function percentageBar(x, y, width, height, isFirst, isLast, fill='none') {
+	// https://medium.com/@dennismphil/one-side-rounded-rectangle-using-svg-fb31cf318d90
+	// <rect class="percentage-bar" x="1400.0628798685607" y="0" width="163.9371201314394" height="20" fill="#F8814F"></rect>
+	// <path d="M1400,0 h163.93 q10,0 10,10 q0,10 -10,10 h-163.93 v20 z" fill="gray">
+
+	if (isLast) {
+		let pathStr = makeRoundedCornerBarPath(x, width, height);
+		return makePath(pathStr, 'percentage-bar', null, fill);
+	}
+
+	if (isFirst) {
+		let pathStr = makeRoundedCornerBarPathLast(x, width, height);
+		return makePath(pathStr, 'percentage-bar', null, fill);
+	}
+
 
 	let args = {
 		className: 'percentage-bar',
@@ -177,14 +213,7 @@ export function percentageBar(x, y, width, height,
 		y: y,
 		width: width,
 		height: height,
-		fill: fill,
-		styles: {
-			'stroke': lightenDarkenColor(fill, -25),
-			// Diabolically good: https://stackoverflow.com/a/9000859
-			// https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-dasharray
-			'stroke-dasharray': `0, ${height + width}, ${width}, ${height}`,
-			'stroke-width': depth
-		},
+		fill: fill
 	};
 
 	return createSVG("rect", args);
