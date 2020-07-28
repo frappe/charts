@@ -156,8 +156,8 @@ export function makeGradient(svgDefElem, color, lighter = false) {
 	let gradientId ='path-fill-gradient' + '-' + color + '-' +(lighter ? 'lighter' : 'default');
 	let gradientDef = renderVerticalGradient(svgDefElem, gradientId);
 	let opacities = [1, 0.6, 0.2];
-	if(lighter) {
-		opacities = [0.4, 0.2, 0];
+	if (lighter) {
+		opacities = [0.4, 0.05, 0];
 	}
 
 	setGradientStop(gradientDef, "0%", color, opacities[0]);
