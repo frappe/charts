@@ -1,7 +1,7 @@
 import AggregationChart from './AggregationChart';
 import { getOffset } from '../utils/dom';
 import { getComponent } from '../objects/ChartComponents';
-import { PERCENTAGE_BAR_DEFAULT_HEIGHT } from '../utils/constants';
+import { PERCENTAGE_BAR_DEFAULT_HEIGHT, getExtraHeight } from '../utils/constants';
 
 export default class PercentageChart extends AggregationChart {
 	constructor(parent, args) {
@@ -18,8 +18,11 @@ export default class PercentageChart extends AggregationChart {
 		b.height = b.height || PERCENTAGE_BAR_DEFAULT_HEIGHT;
 
 		m.paddings.right = 30;
-		m.legendHeight = 60;
-		m.baseHeight = (b.height + b.depth * 0.5) * 8;
+		m.paddings.top = 60;
+		m.paddings.bottom = 0;
+
+		m.legendHeight = 80;
+		m.baseHeight = (b.height) * 8 + getExtraHeight(m);
 	}
 
 	setupComponents() {
@@ -71,12 +74,13 @@ export default class PercentageChart extends AggregationChart {
 		this.container.addEventListener('mousemove', (e) => {
 			let bars = this.components.get('percentageBars').store;
 			let bar = e.target;
-			if(bars.includes(bar)) {
-
+			if (bars.includes(bar)) {
 				let i = bars.indexOf(bar);
 				let gOff = getOffset(this.container), pOff = getOffset(bar);
 
-				let x = pOff.left - gOff.left + parseInt(bar.getAttribute('width'))/2;
+				let width = bar.getAttribute('width') || bar.getBoundingClientRect().width;
+
+				let x = pOff.left - gOff.left + parseInt(width)/2;
 				let y = pOff.top - gOff.top;
 				let title = (this.formattedLabels && this.formattedLabels.length>0
 					? this.formattedLabels[i] : this.state.labels[i]) + ': ';
