@@ -319,7 +319,6 @@ export function makeText(className, x, y, content, options = {}) {
 }
 
 function makeVertLine(x, label, y1, y2, options={}) {
-	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	let l = createSVG('line', {
 		className: 'line-vertical ' + options.className,
 		x1: 0,
@@ -351,7 +350,6 @@ function makeVertLine(x, label, y1, y2, options={}) {
 }
 
 function makeHoriLine(y, label, x1, x2, options={}) {
-	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	if(!options.lineType) options.lineType = '';
 	if (options.shortenNumbers) label = shortenLargeNumber(label);
 
@@ -416,7 +414,6 @@ export function yLine(y, label, width, options={}) {
 	x2 += options.offset;
 
 	return makeHoriLine(y, label, x1, x2, {
-		stroke: options.stroke,
 		className: options.className,
 		lineType: options.lineType,
 		shortenNumbers: options.shortenNumbers
@@ -429,7 +426,6 @@ export function xLine(x, label, height, options={}) {
 	if(!options.pos) options.pos = 'bottom';
 	if(!options.offset) options.offset = 0;
 	if(!options.mode) options.mode = 'span';
-	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	if(!options.className) options.className = '';
 
 	// Draw X axis line in span/tick mode with optional label
@@ -453,7 +449,6 @@ export function xLine(x, label, height, options={}) {
 	}
 
 	return makeVertLine(x, label, y1, y2, {
-		stroke: options.stroke,
 		className: options.className,
 		lineType: options.lineType
 	});
