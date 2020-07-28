@@ -1,7 +1,6 @@
 import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getSplineCurvePointsStr } from './draw-utils';
 import { getStringWidth, isValidNumber } from './helpers';
-import { DOT_OVERLAY_SIZE_INCR, PERCENTAGE_BAR_DEFAULT_DEPTH } from './constants';
-import { lightenDarkenColor } from './colors';
+import { DOT_OVERLAY_SIZE_INCR } from './constants';
 
 export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
