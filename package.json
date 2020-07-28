@@ -39,6 +39,7 @@
     "@babel/preset-env": "^7.10.4",
     "rollup": "^2.21.0",
     "rollup-plugin-babel": "^4.4.0",
+    "rollup-plugin-bundle-size": "^1.0.3",
     "rollup-plugin-commonjs": "^10.1.0",
     "rollup-plugin-eslint": "^7.0.0",
     "rollup-plugin-postcss": "^3.1.3",

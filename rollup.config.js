@@ -4,6 +4,7 @@ import commonjs from 'rollup-plugin-commonjs';
 import babel from 'rollup-plugin-babel';
 import postcss from 'rollup-plugin-postcss';
 import scss from 'rollup-plugin-scss';
+import bundleSize from 'rollup-plugin-bundle-size';
 import { terser } from 'rollup-plugin-terser';
 
 
@@ -22,7 +23,8 @@ export default [
 				exclude: ['node_modules/**']
 			}),
 			terser(),
-			scss({ output: 'dist/frappe-charts.min.css' })
+			scss({ output: 'dist/frappe-charts.min.css' }),
+			bundleSize()
 		]
 	},
 
@@ -37,7 +39,9 @@ export default [
 			babel({
 				exclude: ['node_modules/**']
 			}),
-			postcss()
+			terser(),
+			postcss(),
+			bundleSize()
 		]
 	}
 ];
