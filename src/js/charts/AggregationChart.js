@@ -75,7 +75,7 @@ export default class AggregationChart extends BaseChart {
 			}
 			if(count > divisor) {
 				count = 0;
-				y += 20;
+				y += 60;
 			}
 			let x = barWidth * count + 5;
 			let label = this.config.truncateLegends ? truncateString(s.labels[i], barWidth/10) : s.labels[i];
@@ -83,9 +83,11 @@ export default class AggregationChart extends BaseChart {
 			let dot = legendDot(
 				x,
 				y,
-				5,
+				12,
+				3,
 				this.colors[i],
 				`${label}: ${formatted}`,
+				d,
 				false
 			);
 			this.legendArea.appendChild(dot);
