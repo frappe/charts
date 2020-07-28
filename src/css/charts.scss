@@ -1,50 +1,61 @@
-$label-color: #313B44;
-$axis-line-color:  #E2E6E9;
+:root {
+	--fr-label-color: #313b44;
+	--fr-axis-line-color:  #E2E6E9;
 
-$tooltip-title: $label-color;
-$tooltip-label: $label-color;
-$tooltip-value: #192734;
+	--fr-stroke-width: 2px;
+	--fr-dataset-circle-stroke: #FFFFFF;
+	--fr-dataset-circle-stroke-width: var(--fr-stroke-width);
+
+	--fr-tooltip-title: var(--fr-label-color);
+	--fr-tooltip-label: var(--fr-label-color);
+	--fr-tooltip-value: #192734;
+	--fr-tooltip-bg: #FFFFFF;
+}
 
 .chart-container {
 	position: relative; /* for absolutely positioned tooltip */
 
-	/* https://www.smashingmagazine.com/2015/11/using-system-ui-fonts-practical-guide/ */
 	font-family: -apple-system, BlinkMacSystemFont,
 		'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
 		'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 
 	.axis, .chart-label {
-		fill: $label-color;
+		fill: var(--fr-label-color);
 
 		line {
-			stroke: $axis-line-color;
+			stroke: var(--fr-axis-line-color);
 		}
 	}
+
 	.dataset-units {
 		circle {
-			stroke: #fff;
-			stroke-width: 2;
+			stroke: var(--fr-dataset-circle-stroke);
+			stroke-width: var(--fr-dataset-circle-stroke-width);
 		}
 
 		path {
 			fill: none;
 			stroke-opacity: 1;
-			stroke-width: 2px;
+			stroke-width: var(--fr-stroke-width);
 		}
 	}
+
 	.dataset-path {
-		stroke-width: 2px;
+		stroke-width: var(--fr-stroke-width);
 	}
+
 	.path-group {
 		path {
 			fill: none;
 			stroke-opacity: 1;
-			stroke-width: 2px;
+			stroke-width: var(--fr-stroke-width);
 		}
 	}
+
 	line.dashed {
 		stroke-dasharray: 5, 3;
 	}
+
 	.axis-line {
 		.specific-value {
 			text-anchor: start;
@@ -56,9 +67,14 @@ $tooltip-value: #192734;
 			text-anchor: middle;
 		}
 	}
-	.legend-dataset-text {
-		fill: #6c7680;
+
+	.legend-dataset-label {
+		fill: var(--fr-tooltip-label);
 		font-weight: 600;
+	}
+
+	.legend-dataset-value {
+		fill: var(--fr-tooltip-value);
 	}
 }
 
@@ -68,7 +84,7 @@ $tooltip-value: #192734;
 	padding: 10px;
 	font-size: 12px;
 	text-align: center;
-	background: #FFFFFF;
+	background: var(--fr-tooltip-bg);
 	box-shadow: 0px 1px 4px rgba(17, 43, 66, 0.1), 0px 2px 6px rgba(17, 43, 66, 0.08), 0px 40px 30px -30px rgba(17, 43, 66, 0.1);
 	border-radius: 6px;
 
@@ -94,7 +110,7 @@ $tooltip-value: #192734;
 		height: 12px;
 		width: 12px;
 		border-radius: 2px;
-		background: white;
+		background: var(--fr-tooltip-bg);
 		transform: rotate(45deg);
 		margin-top: -7px;
 		margin-left: -6px;
@@ -104,12 +120,12 @@ $tooltip-value: #192734;
 		text-align: left;
 		padding: 0px;
 		pointer-events: none;
-		
+
 		.title {
 			display: block;
 			padding: 16px;
 			margin: 0;
-			color: $tooltip-title;
+			color: var(--fr-tooltip-title);
 			font-weight: 600;
 			line-height: 1;
 			pointer-events: none;
@@ -149,14 +165,14 @@ $tooltip-value: #192734;
 				font-size: 11px;
 				max-width: 100px;
 
-				color: $tooltip-label;
+				color: var(--fr-tooltip-label);
 				overflow: hidden;
 				text-overflow: ellipsis;
 				white-space: nowrap;
 			}
 
 			.tooltip-value {
-				color: $tooltip-value;
+				color: var(--fr-tooltip-value);
 			}
 		}
 	}
