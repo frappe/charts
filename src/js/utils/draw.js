@@ -542,6 +542,26 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 	if (!isValidNumber(height, true)) height = 0;
 	if (!isValidNumber(width, true)) width = 0;
 
+	// x y h w
+
+	// M{x},{y+r}
+	// q0,-{r} {r},-{r}
+	// q{r},0 {r},{r}
+	// v{h-r}
+	// h-{w}z
+
+	// let radius = width/2;
+	// let pathStr = `M${x},${y+radius} q0,-${radius} ${radius},-${radius} q${radius},0 ${radius},${radius} v${height-radius} h-${width}z`
+
+	// let rect = createSVG('path', {
+	// 	className: 'bar mini',
+	// 	d: pathStr,
+	// 	styles: { fill: color },
+	// 	x: x,
+	// 	y: y,
+	// 	'data-point-index': index,
+	// });
+
 	let rect = createSVG('rect', {
 		className: `bar mini`,
 		style: `fill: ${color}`,
