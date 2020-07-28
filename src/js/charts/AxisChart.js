@@ -299,7 +299,7 @@ export default class AxisChart extends BaseChart {
 					heatline: this.lineOptions.heatline,
 					regionFill: this.lineOptions.regionFill,
 					spline: this.lineOptions.spline,
-					hideDots: this.lineOptions.hideDots,
+					showDots: this.lineOptions.showDots,
 					hideLine: this.lineOptions.hideLine,
 
 					// same for all datasets

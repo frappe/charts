@@ -383,7 +383,7 @@ let componentConfigs = {
 			}
 
 			this.units = [];
-			if(!c.hideDots) {
+			if(c.showDots) {
 				this.units = data.yPositions.map((y, j) => {
 					return datasetDot(
 						data.xPositions[j],
