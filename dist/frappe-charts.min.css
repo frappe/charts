@@ -1,25 +1,35 @@
+:root {
+  --fr-label-color: #313b44;
+  --fr-axis-line-color:  #E2E6E9;
+  --fr-stroke-width: 2px;
+  --fr-dataset-circle-stroke: #FFFFFF;
+  --fr-dataset-circle-stroke-width: var(--fr-stroke-width);
+  --fr-tooltip-title: var(--fr-label-color);
+  --fr-tooltip-label: var(--fr-label-color);
+  --fr-tooltip-value: #192734;
+  --fr-tooltip-bg: #FFFFFF; }
+
 .chart-container {
   position: relative;
   /* for absolutely positioned tooltip */
-  /* https://www.smashingmagazine.com/2015/11/using-system-ui-fonts-practical-guide/ */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; }
   .chart-container .axis, .chart-container .chart-label {
-    fill: #313B44; }
+    fill: var(--fr-label-color); }
     .chart-container .axis line, .chart-container .chart-label line {
-      stroke: #E2E6E9; }
+      stroke: var(--fr-axis-line-color); }
   .chart-container .dataset-units circle {
-    stroke: #fff;
-    stroke-width: 2; }
+    stroke: var(--fr-dataset-circle-stroke);
+    stroke-width: var(--fr-dataset-circle-stroke-width); }
   .chart-container .dataset-units path {
     fill: none;
     stroke-opacity: 1;
-    stroke-width: 2px; }
+    stroke-width: var(--fr-stroke-width); }
   .chart-container .dataset-path {
-    stroke-width: 2px; }
+    stroke-width: var(--fr-stroke-width); }
   .chart-container .path-group path {
     fill: none;
     stroke-opacity: 1;
-    stroke-width: 2px; }
+    stroke-width: var(--fr-stroke-width); }
   .chart-container line.dashed {
     stroke-dasharray: 5, 3; }
   .chart-container .axis-line .specific-value {
@@ -28,9 +38,11 @@
     text-anchor: end; }
   .chart-container .axis-line .x-line {
     text-anchor: middle; }
-  .chart-container .legend-dataset-text {
-    fill: #6c7680;
+  .chart-container .legend-dataset-label {
+    fill: var(--fr-tooltip-label);
     font-weight: 600; }
+  .chart-container .legend-dataset-value {
+    fill: var(--fr-tooltip-value); }
 
 .graph-svg-tip {
   position: absolute;
@@ -38,7 +50,7 @@
   padding: 10px;
   font-size: 12px;
   text-align: center;
-  background: #FFFFFF;
+  background: var(--fr-tooltip-bg);
   box-shadow: 0px 1px 4px rgba(17, 43, 66, 0.1), 0px 2px 6px rgba(17, 43, 66, 0.08), 0px 40px 30px -30px rgba(17, 43, 66, 0.1);
   border-radius: 6px; }
   .graph-svg-tip ul {
@@ -55,7 +67,7 @@
     height: 12px;
     width: 12px;
     border-radius: 2px;
-    background: white;
+    background: var(--fr-tooltip-bg);
     transform: rotate(45deg);
     margin-top: -7px;
     margin-left: -6px; }
@@ -67,7 +79,7 @@
       display: block;
       padding: 16px;
       margin: 0;
-      color: #313B44;
+      color: var(--fr-tooltip-title);
       font-weight: 600;
       line-height: 1;
       pointer-events: none;
@@ -96,9 +108,9 @@
         margin-top: 4px;
         font-size: 11px;
         max-width: 100px;
-        color: #313B44;
+        color: var(--fr-tooltip-label);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap; }
       .graph-svg-tip.comparison li .tooltip-value {
-        color: #192734; }
+        color: var(--fr-tooltip-value); }
