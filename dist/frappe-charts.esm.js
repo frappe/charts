@@ -306,10 +306,6 @@ class SvgTip {
 	}
 }
 
-/**
- * Returns the value of a number upto 2 decimal places.
- * @param {Number} d Any number
- */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -3317,6 +3313,7 @@ class AxisChart extends BaseChart {
 		this.config.yAxisMode = options.axisOptions.yAxisMode || 'span';
 		this.config.xIsSeries = options.axisOptions.xIsSeries || 0;
 		this.config.shortenYAxisNumbers = options.axisOptions.shortenYAxisNumbers || 0;
+		this.config.xAxisLabelFormatter = options.xAxisLabelFormatter || getShortenedLabels;
 
 		this.config.formatTooltipX = options.tooltipOptions.formatTooltipX;
 		this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
@@ -3488,9 +3485,7 @@ class AxisChart extends BaseChart {
 				},
 				function() {
 					let s = this.state;
-					s.xAxis.calcLabels = getShortenedLabels(this.width,
-						s.xAxis.labels, this.config.xIsSeries);
-
+					s.xAxis.calcLabels = this.config.xAxisLabelFormatter(this.width, s.xAxis.labels, this.config.xIsSeries);
 					return s.xAxis;
 				}.bind(this)
 			],
@@ -4020,7 +4015,6 @@ class DonutChart extends AggregationChart {
 	}
 }
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,

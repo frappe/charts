@@ -39,6 +39,7 @@ export default class AxisChart extends BaseChart {
 		this.config.yAxisMode = options.axisOptions.yAxisMode || 'span';
 		this.config.xIsSeries = options.axisOptions.xIsSeries || 0;
 		this.config.shortenYAxisNumbers = options.axisOptions.shortenYAxisNumbers || 0;
+		this.config.xAxisLabelFormatter = options.xAxisLabelFormatter || getShortenedLabels;
 
 		this.config.formatTooltipX = options.tooltipOptions.formatTooltipX;
 		this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
@@ -210,9 +211,7 @@ export default class AxisChart extends BaseChart {
 				},
 				function() {
 					let s = this.state;
-					s.xAxis.calcLabels = getShortenedLabels(this.width,
-						s.xAxis.labels, this.config.xIsSeries);
-
+					s.xAxis.calcLabels = this.config.xAxisLabelFormatter(this.width, s.xAxis.labels, this.config.xIsSeries);
 					return s.xAxis;
 				}.bind(this)
 			],
