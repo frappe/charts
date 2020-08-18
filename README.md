@@ -1,3 +1,15 @@
+# What's in this fork?
+
+Frappe Charts doesn't give you a way to format x-axis labels. This is necessary especially when you have a lot of data points in a series and the Frappe Charts ends up truncating x-axis labels (by default). You end-up with a mess in the x-axis consisting of tons of ellipsis - essentially making the x-axes useless. This fork introduces the following config parameter:
+
+```javascript
+{
+  xAxisLabelFormatter: function(xAxisWidth, xAxisOriginaLabels, xIsSeries) {
+    // create a COPY of xAxisOriginalLabels, transform individual labels, and return a new array of labels
+  }
+}
+```
+
 <div align="center">
     <img src="https://github.com/frappe/design/blob/master/logos/logo-2019/frappe-charts-logo.png" height="128">
     <a href="https://frappe.github.io/charts">
