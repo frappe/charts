@@ -34,7 +34,7 @@ export default [
 		input: 'src/js/chart.js',
 		output: [
 			{ file: pkg.common, format: 'cjs', sourcemap: true },
-			{ file: pkg.module, format: 'es', sourcemap: true }
+			{ file: pkg.module, format: 'es', sourcemap: true },
 		],
 		plugins: [
 			babel({

@@ -1,11 +1,12 @@
 {
   "name": "frappe-charts",
   "version": "1.5.2",
-  "main": "dist/frappe-charts.cjs.js",
-  "common": "dist/frappe-charts.cjs.js",
+  "main": "dist/frappe-charts.esm.js",
   "module": "dist/frappe-charts.esm.js",
   "browser": "dist/frappe-charts.umd.js",
-  "unpkg": "dist/frappe-charts.umd.js",
+  "common": "dist/frappe-charts.cjs.js",
+  "unnpkg": "dist/frappe-charts.umd.js",
+  "type": "module",
   "description": "https://frappe.github.io/charts",
   "directories": {
     "doc": "docs"
