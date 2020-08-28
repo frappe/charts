@@ -27,6 +27,9 @@ export default class DonutChart extends AggregationChart {
 
 		this.clockWise = args.clockWise || false;
 		this.strokeWidth = args.strokeWidth || 30;
+		
+		args.tooltipOptions = args.tooltipOptions || {};
+		this.config.formatTooltip = args.tooltipOptions.formatTooltip;
 	}
 
 	calc() {
@@ -125,7 +128,11 @@ export default class DonutChart extends AggregationChart {
 			let title = (this.formatted_labels && this.formatted_labels.length > 0
 				? this.formatted_labels[i] : this.state.labels[i]) + ': ';
 			let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1);
-			this.tip.setValues(x, y, {name: title, value: percent + "%"});
+			let valueTooltip = percent + "%";
+			if(this.config.formatTooltip){
+				valueTooltip = this.config.formatTooltip(this.state.sliceTotals[i],this.state.grandTotal);
+			}
+			this.tip.setValues(x, y, {name: title, value: valueTooltip });
 			this.tip.showTip();
 		} else {
 			transform(path,'translate3d(0,0,0)');
