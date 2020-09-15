@@ -39,7 +39,7 @@
 #### Installation
 * Install via [`npm`](https://www.npmjs.com/get-npm):
 
-  ```console
+  ```sh
   $ npm install frappe-charts
   ```
 
@@ -91,11 +91,10 @@ const chart = new frappe.Chart("#chart", {  // or a DOM element,
 })
 ```
 
-...or for es-modules:
-```js
-
-//replace new frappe.Chart() with new Chart()
-const chart = new Chart("#chart", {  // or a DOM element,
+...or for es-modules (replace `new frappe.Chart()` with `new Chart()`):
+```diff
+- const chart = new frappe.Chart("#chart", {
++ const chart = new Chart("#chart", {  // or a DOM element,
                                     // new Chart() in case of ES6 module with above usage
     title: "My Awesome Chart",
     data: data,
