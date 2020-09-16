@@ -2775,7 +2775,7 @@ function calcChartIntervals(values, withMinimum=false) {
 			// Mirror: maxValue => absMinValue, then change sign
 			exponent = normalize(absMinValue)[1];
 			let posIntervals = getPositiveFirstIntervals(absMinValue, maxValue);
-			intervals = posIntervals.map(d => d * (-1));
+			intervals = posIntervals.reverse().map(d => d * (-1));
 		}
 
 	}
