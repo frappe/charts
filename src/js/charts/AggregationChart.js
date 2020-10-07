@@ -11,6 +11,7 @@ export default class AggregationChart extends BaseChart {
 	configure(args) {
 		super.configure(args);
 
+		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
 		this.config.maxSlices = args.maxSlices || 20;
 		this.config.maxLegendPoints = args.maxLegendPoints || 20;
 	}
@@ -77,12 +78,13 @@ export default class AggregationChart extends BaseChart {
 			}
 			let x = barWidth * count + 5;
 			let label = this.config.truncateLegends ? truncateString(s.labels[i], barWidth/10) : s.labels[i];
+			let formatted = this.config.formatTooltipY ? this.config.formatTooltipY(d) : d;
 			let dot = legendDot(
 				x,
 				y,
 				5,
 				this.colors[i],
-				`${label}: ${d}`,
+				`${label}: ${formatted}`,
 				false
 			);
 			this.legendArea.appendChild(dot);
