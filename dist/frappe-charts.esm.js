@@ -1817,7 +1817,7 @@ class AggregationChart extends BaseChart {
 	configure(args) {
 		super.configure(args);
 
-		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
+		this.config.formatTooltipY = (args.tooltipOptions || {}).formatTooltipY;
 		this.config.maxSlices = args.maxSlices || 20;
 		this.config.maxLegendPoints = args.maxLegendPoints || 20;
 	}
