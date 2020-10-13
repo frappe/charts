@@ -448,7 +448,7 @@ function getSplineCurvePointsStr(xList, yList) {
 			angle: Math.atan2(lengthY, lengthX)
 		};
 	};
-    
+
 	let controlPoint = (current, previous, next, reverse) => {
 		let p = previous || current;
 		let n = next || current;
@@ -459,19 +459,19 @@ function getSplineCurvePointsStr(xList, yList) {
 		let y = current[1] + Math.sin(angle) * length;
 		return [x, y];
 	};
-    
+
 	let bezierCommand = (point, i, a) => {
 		let cps = controlPoint(a[i - 1], a[i - 2], point);
 		let cpe = controlPoint(point, a[i - 1], a[i + 1], true);
 		return `C ${cps[0]},${cps[1]} ${cpe[0]},${cpe[1]} ${point[0]},${point[1]}`;
 	};
-    
+
 	let pointStr = (points, command) => {
 		return points.reduce((acc, point, i, a) => i === 0
 			? `${point[0]},${point[1]}`
 			: `${acc} ${command(point, i, a)}`, '');
 	};
-    
+
 	return pointStr(points, bezierCommand);
 }
 
@@ -520,6 +520,12 @@ function isValidColor(string) {
 }
 
 const getColor = (color) => {
+	// When RGB color, convert to hexadecimal (alpha value is omitted)
+	if((/rgb[a]{0,1}\([\d, ]+\)/gim).test(color)) {
+		return (/\D+(\d*)\D+(\d*)\D+(\d*)/gim).exec(color)
+			.map((x, i) => (i !== 0 ? Number(x).toString(16) : '#'))
+			.reduce((c, ch) => `${c}${ch}`);
+	}
 	return PRESET_COLOR_MAP[color] || color;
 };
 
