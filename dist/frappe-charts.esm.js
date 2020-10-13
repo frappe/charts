@@ -448,7 +448,7 @@ function getSplineCurvePointsStr(xList, yList) {
 			angle: Math.atan2(lengthY, lengthX)
 		};
 	};
-
+    
 	let controlPoint = (current, previous, next, reverse) => {
 		let p = previous || current;
 		let n = next || current;
@@ -459,19 +459,19 @@ function getSplineCurvePointsStr(xList, yList) {
 		let y = current[1] + Math.sin(angle) * length;
 		return [x, y];
 	};
-
+    
 	let bezierCommand = (point, i, a) => {
 		let cps = controlPoint(a[i - 1], a[i - 2], point);
 		let cpe = controlPoint(point, a[i - 1], a[i + 1], true);
 		return `C ${cps[0]},${cps[1]} ${cpe[0]},${cpe[1]} ${point[0]},${point[1]}`;
 	};
-
+    
 	let pointStr = (points, command) => {
 		return points.reduce((acc, point, i, a) => i === 0
 			? `${point[0]},${point[1]}`
 			: `${acc} ${command(point, i, a)}`, '');
 	};
-
+    
 	return pointStr(points, bezierCommand);
 }
 
@@ -1817,6 +1817,7 @@ class AggregationChart extends BaseChart {
 	configure(args) {
 		super.configure(args);
 
+		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
 		this.config.maxSlices = args.maxSlices || 20;
 		this.config.maxLegendPoints = args.maxLegendPoints || 20;
 	}
@@ -1883,12 +1884,13 @@ class AggregationChart extends BaseChart {
 			}
 			let x = barWidth * count + 5;
 			let label = this.config.truncateLegends ? truncateString(s.labels[i], barWidth/10) : s.labels[i];
+			let formatted = this.config.formatTooltipY ? this.config.formatTooltipY(d) : d;
 			let dot = legendDot(
 				x,
 				y,
 				5,
 				this.colors[i],
-				`${label}: ${d}`,
+				`${label}: ${formatted}`,
 				false
 			);
 			this.legendArea.appendChild(dot);
