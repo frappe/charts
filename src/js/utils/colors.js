@@ -21,7 +21,7 @@ const PRESET_COLOR_MAP = {
 	'light-orange': '#FECDB8'
 };
 
-function limitColor(r){
+function limitColor(r) {
 	if (r > 255) return 255;
 	else if (r < 0) return 0;
 	return r;
@@ -34,11 +34,11 @@ export function lightenDarkenColor(color, amt) {
 		col = col.slice(1);
 		usePound = true;
 	}
-	let num = parseInt(col,16);
+	let num = parseInt(col, 16);
 	let r = limitColor((num >> 16) + amt);
 	let b = limitColor(((num >> 8) & 0x00FF) + amt);
 	let g = limitColor((num & 0x0000FF) + amt);
-	return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
+	return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16);
 }
 
 export function isValidColor(string) {

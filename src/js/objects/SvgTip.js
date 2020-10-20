@@ -52,10 +52,10 @@ export default class SvgTip {
 
 	fill() {
 		let title;
-		if(this.index) {
+		if (this.index) {
 			this.container.setAttribute('data-point-index', this.index);
 		}
-		if(this.titleValueFirst) {
+		if (this.titleValueFirst) {
 			title = `<strong>${this.titleValue}</strong>${this.titleName}`;
 		} else {
 			title = `${this.titleName}<strong>${this.titleValue}</strong>`;
@@ -76,8 +76,8 @@ export default class SvgTip {
 			let li = $.create('li', {
 				innerHTML: `<div class="tooltip-legend" style="background: ${color};"></div>
 					<div>
-						<div class="tooltip-value">${ value === 0 || value ? value : '' }</div>
-						<div class="tooltip-label">${set.title ? set.title : '' }</div>
+						<div class="tooltip-value">${value === 0 || value ? value : ''}</div>
+						<div class="tooltip-label">${set.title ? set.title : ''}</div>
 					</div>`
 			});
 
@@ -90,15 +90,15 @@ export default class SvgTip {
 
 		this.top = this.y - this.container.offsetHeight
 			- TOOLTIP_POINTER_TRIANGLE_HEIGHT;
-		this.left = this.x - width/2;
+		this.left = this.x - width / 2;
 		let maxLeft = this.parent.offsetWidth - width;
 
 		let pointer = this.container.querySelector('.svg-pointer');
 
-		if(this.left < 0) {
+		if (this.left < 0) {
 			pointer.style.left = `calc(50% - ${-1 * this.left}px)`;
 			this.left = 0;
-		} else if(this.left > maxLeft) {
+		} else if (this.left > maxLeft) {
 			let delta = this.left - maxLeft;
 			let pointerOffset = `calc(50% + ${delta}px)`;
 			pointer.style.left = pointerOffset;
