@@ -163,12 +163,11 @@
 			.tooltip-label {
 				margin-top: 4px;
 				font-size: 11px;
-				max-width: 100px;
+				line-height: 1.25;
+				max-width: 150px;
+				white-space: normal;
 
 				color: var(--fr-tooltip-label);
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
 			}
 
 			.tooltip-value {
