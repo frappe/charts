@@ -4,7 +4,7 @@ import { DOT_OVERLAY_SIZE_INCR } from './constants';
 
 export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
-const LABEL_MAX_CHARS = 15;
+const LABEL_MAX_CHARS = 18;
 export const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#E2E6E9';
 const FONT_FILL = '#313B44';
@@ -223,43 +223,9 @@ export function heatSquare(className, x, y, size, radius, fill='none', data={}) 
 	return createSVG("rect", args);
 }
 
-export function legendBar(x, y, fill = 'none', label, truncate = true) {
+export function legendDot(x, y, size, radius, fill = 'none', label, value, font_size = null, truncate = false) {
 	label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
-
-	let args = {
-		className: 'legend-bar',
-		x: 0,
-		y: 0,
-		width: '12px',
-		height: '12px',
-		rx: '2px',
-		ry: '2px',
-		fill: fill
-	};
-
-	let text = createSVG('text', {
-		className: 'legend-dataset-text',
-		x: 0,
-		y: 0,
-		dy: (FONT_SIZE) + 'px',
-		dx: (FONT_SIZE * 1.5) + 'px',
-		'font-size': (FONT_SIZE * 1.2) + 'px',
-		'text-anchor': 'start',
-		fill: FONT_FILL,
-		innerHTML: label
-	});
-
-	let group = createSVG('g', {
-		transform: `translate(${x}, ${y})`
-	});
-	group.appendChild(createSVG("rect", args));
-	group.appendChild(text);
-
-	return group;
-}
-
-export function legendDot(x, y, size, radius, fill='none', label, value, truncate=false) {
-	label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
+	if (!font_size) font_size = FONT_SIZE;
 
 	let args = {
 		className: 'legend-dot',
@@ -275,32 +241,38 @@ export function legendDot(x, y, size, radius, fill='none', label, value, truncat
 		className: 'legend-dataset-label',
 		x: size,
 		y: 0,
-		dx: (FONT_SIZE) + 'px',
-		dy: (FONT_SIZE/3) + 'px',
-		'font-size': (FONT_SIZE * 1.6) + 'px',
+		dx: (font_size) + 'px',
+		dy: (font_size / 3) + 'px',
+		'font-size': (font_size * 1.6) + 'px',
 		'text-anchor': 'start',
 		fill: FONT_FILL,
 		innerHTML: label
 	});
 
-	let textValue = createSVG('text', {
-		className: 'legend-dataset-value',
-		x: size,
-		y: FONT_SIZE + 10,
-		dx: (FONT_SIZE) + 'px',
-		dy: (FONT_SIZE/3) + 'px',
-		'font-size': (FONT_SIZE * 1.2) + 'px',
-		'text-anchor': 'start',
-		fill: FONT_FILL,
-		innerHTML: value
-	});
+	let textValue = null;
+	if (value) {
+		textValue = createSVG('text', {
+			className: 'legend-dataset-value',
+			x: size,
+			y: FONT_SIZE + 10,
+			dx: (FONT_SIZE) + 'px',
+			dy: (FONT_SIZE / 3) + 'px',
+			'font-size': (FONT_SIZE * 1.2) + 'px',
+			'text-anchor': 'start',
+			fill: FONT_FILL,
+			innerHTML: value
+		});
+	}
 
 	let group = createSVG('g', {
 		transform: `translate(${x}, ${y})`
 	});
 	group.appendChild(createSVG("rect", args));
 	group.appendChild(textLabel);
-	group.appendChild(textValue);
+
+	if (value && textValue) {
+		group.appendChild(textValue);
+	}
 
 	return group;
 }

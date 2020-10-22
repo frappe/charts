@@ -1,8 +1,11 @@
 import SvgTip from '../objects/SvgTip';
 import { $, isElementInViewport, getElementContentWidth, isHidden } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup, makeText } from '../utils/draw';
-import { BASE_MEASURES, getExtraHeight, getExtraWidth, getTopOffset, getLeftOffset,
-	INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS} from '../utils/constants';
+import { LEGEND_ITEM_WIDTH } from '../utils/constants';
+import {
+	BASE_MEASURES, getExtraHeight, getExtraWidth, getTopOffset, getLeftOffset,
+	INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS
+} from '../utils/constants';
 import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
 import { downloadFile, prepareForExport } from '../utils/export';
@@ -262,10 +265,29 @@ export default class BaseChart {
 		}
 	}
 
-	renderLegend() {}
+	renderLegend(dataset) {
+		this.legendArea.textContent = '';
+		let count = 0;
+		let y = 0;
 
-	setupNavigation(init=false) {
-		if(!this.config.isNavigable) return;
+		dataset.map((data, index) => {
+			let divisor = Math.floor(this.width / LEGEND_ITEM_WIDTH);
+			if (count > divisor) {
+				count = 0;
+				y += this.config.legendRowHeight;
+			}
+			let x = LEGEND_ITEM_WIDTH * count;
+			let dot = this.makeLegend(data, index, x, y);
+			this.legendArea.appendChild(dot);
+			count++;
+		});
+	}
+
+	makeLegend() { }
+
+
+	setupNavigation(init = false) {
+		if (!this.config.isNavigable) return;
 
 		if(init) {
 			this.bindOverlay();

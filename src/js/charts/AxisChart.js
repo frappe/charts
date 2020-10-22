@@ -1,13 +1,14 @@
 import BaseChart from './BaseChart';
 import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-utils';
-import { AXIS_LEGEND_BAR_SIZE } from '../utils/constants';
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
 import { floatTwo } from '../utils/helpers';
-import { makeOverlay, updateOverlay, legendBar } from '../utils/draw';
-import { getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
-	LINE_CHART_DOT_SIZE } from '../utils/constants';
+import { makeOverlay, updateOverlay, legendDot } from '../utils/draw';
+import {
+	getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
+	LINE_CHART_DOT_SIZE
+} from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
 	constructor(parent, args) {
@@ -44,6 +45,7 @@ export default class AxisChart extends BaseChart {
 		this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
 
 		this.config.valuesOverPoints = options.valuesOverPoints;
+		this.config.legendRowHeight = 30;
 	}
 
 	prepareData(data=this.data) {
@@ -423,29 +425,31 @@ export default class AxisChart extends BaseChart {
 	renderLegend() {
 		let s = this.data;
 		if (s.datasets.length > 1) {
-			this.legendArea.textContent = '';
-			let barWidth = AXIS_LEGEND_BAR_SIZE;
-			s.datasets.map((d, i) => {
-				let rect = legendBar(
-					barWidth * i,
-					'0',
-					this.colors[i],
-					d.name,
-					this.config.truncateLegends);
-				this.legendArea.appendChild(rect);
-			});
+			super.renderLegend(s.datasets);
 		}
 	}
 
-
+	makeLegend(data, index, x_pos, y_pos) {
+		return legendDot(
+			x_pos,
+			y_pos + 5, // Extra offset
+			12, // size
+			3, // dot radius
+			this.colors[index], // fill
+			data.name, //label
+			null, // value
+			8.75, // base_font_size
+			this.config.truncateLegends // truncate legends
+		);
+	}
 
 	// Overlay
 	makeOverlay() {
-		if(this.init) {
+		if (this.init) {
 			this.init = 0;
 			return;
 		}
-		if(this.overlayGuides) {
+		if (this.overlayGuides) {
 			this.overlayGuides.forEach(g => {
 				let o = g.overlay;
 				o.parentNode.removeChild(o);
