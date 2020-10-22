@@ -223,22 +223,26 @@ export function heatSquare(className, x, y, size, radius, fill='none', data={}) 
 	return createSVG("rect", args);
 }
 
-export function legendBar(x, y, size, fill='none', label, truncate=false) {
+export function legendBar(x, y, fill = 'none', label, truncate = true) {
 	label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
 
 	let args = {
 		className: 'legend-bar',
 		x: 0,
 		y: 0,
-		width: size,
-		height: '2px',
+		width: '12px',
+		height: '12px',
+		rx: '2px',
+		ry: '2px',
 		fill: fill
 	};
+
 	let text = createSVG('text', {
 		className: 'legend-dataset-text',
 		x: 0,
 		y: 0,
-		dy: (FONT_SIZE * 2) + 'px',
+		dy: (FONT_SIZE) + 'px',
+		dx: (FONT_SIZE * 1.5) + 'px',
 		'font-size': (FONT_SIZE * 1.2) + 'px',
 		'text-anchor': 'start',
 		fill: FONT_FILL,

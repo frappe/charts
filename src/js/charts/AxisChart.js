@@ -422,17 +422,13 @@ export default class AxisChart extends BaseChart {
 
 	renderLegend() {
 		let s = this.data;
-		if(s.datasets.length > 1) {
+		if (s.datasets.length > 1) {
 			this.legendArea.textContent = '';
+			let barWidth = AXIS_LEGEND_BAR_SIZE;
 			s.datasets.map((d, i) => {
-				let barWidth = AXIS_LEGEND_BAR_SIZE;
-				// let rightEndPoint = this.baseWidth - this.measures.margins.left - this.measures.margins.right;
-				// let multiplier = s.datasets.length - i;
 				let rect = legendBar(
-					// rightEndPoint - multiplier * barWidth,	// To right align
 					barWidth * i,
 					'0',
-					barWidth,
 					this.colors[i],
 					d.name,
 					this.config.truncateLegends);
