@@ -1,6 +1,5 @@
 import '../css/charts.scss';
 
-// import MultiAxisChart from './charts/MultiAxisChart';
 import PercentageChart from './charts/PercentageChart';
 import PieChart from './charts/PieChart';
 import Heatmap from './charts/Heatmap';
@@ -10,7 +9,6 @@ import DonutChart from './charts/DonutChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,
-	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,
 	heatmap: Heatmap,
 	pie: PieChart,
