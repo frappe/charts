@@ -1,7 +1,7 @@
 {
   "name": "frappe-charts",
   "version": "1.5.2",
-  "main": "dist/frappe-charts.esm.js",
+  "main": "src/js/chart.js",
   "module": "dist/frappe-charts.esm.js",
   "browser": "dist/frappe-charts.umd.js",
   "common": "dist/frappe-charts.cjs.js",
