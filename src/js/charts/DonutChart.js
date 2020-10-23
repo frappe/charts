@@ -47,7 +47,7 @@ export default class DonutChart extends AggregationChart {
 		s.sliceTotals.map((total, i) => {
 			const startAngle = curAngle;
 			const originDiffAngle = (total / s.grandTotal) * FULL_ANGLE;
-			const largeArc = originDiffAngle > 180 ? 1: 0;
+			const largeArc = originDiffAngle > 180 ? 1 : 0;
 			const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
 			const endAngle = curAngle = curAngle + diffAngle;
 			const startPosition = getPositionByAngle(startAngle, radius);
@@ -55,8 +55,8 @@ export default class DonutChart extends AggregationChart {
 
 			const prevProperty = this.init && prevSlicesProperties[i];
 
-			let curStart,curEnd;
-			if(this.init) {
+			let curStart, curEnd;
+			if (this.init) {
 				curStart = prevProperty ? prevProperty.startPosition : startPosition;
 				curEnd = prevProperty ? prevProperty.endPosition : startPosition;
 			} else {
@@ -89,8 +89,8 @@ export default class DonutChart extends AggregationChart {
 		let componentConfigs = [
 			[
 				'donutSlices',
-				{ },
-				function() {
+				{},
+				function () {
 					return {
 						sliceStrings: s.sliceStrings,
 						colors: this.colors,
@@ -107,16 +107,16 @@ export default class DonutChart extends AggregationChart {
 			}));
 	}
 
-	calTranslateByAngle(property){
-		const{ radius, hoverRadio } = this;
-		const position = getPositionByAngle(property.startAngle+(property.angle / 2),radius);
+	calTranslateByAngle(property) {
+		const { radius, hoverRadio } = this;
+		const position = getPositionByAngle(property.startAngle + (property.angle / 2), radius);
 		return `translate3d(${(position.x) * hoverRadio}px,${(position.y) * hoverRadio}px,0)`;
 	}
 
-	hoverSlice(path,i,flag,e){
-		if(!path) return;
+	hoverSlice(path, i, flag, e) {
+		if (!path) return;
 		const color = this.colors[i];
-		if(flag) {
+		if (flag) {
 			transform(path, this.calTranslateByAngle(this.state.slicesProperties[i]));
 			path.style.stroke = lightenDarkenColor(color, 50);
 			let g_off = getOffset(this.svg);
@@ -125,10 +125,10 @@ export default class DonutChart extends AggregationChart {
 			let title = (this.formatted_labels && this.formatted_labels.length > 0
 				? this.formatted_labels[i] : this.state.labels[i]) + ': ';
 			let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1);
-			this.tip.setValues(x, y, {name: title, value: percent + "%"});
+			this.tip.setValues(x, y, { name: title, value: percent + "%" });
 			this.tip.showTip();
 		} else {
-			transform(path,'translate3d(0,0,0)');
+			transform(path, 'translate3d(0,0,0)');
 			this.tip.hideTip();
 			path.style.stroke = color;
 		}
@@ -139,14 +139,14 @@ export default class DonutChart extends AggregationChart {
 		this.container.addEventListener('mouseleave', this.mouseLeave);
 	}
 
-	mouseMove(e){
+	mouseMove(e) {
 		const target = e.target;
 		let slices = this.components.get('donutSlices').store;
 		let prevIndex = this.curActiveSliceIndex;
 		let prevAcitve = this.curActiveSlice;
-		if(slices.includes(target)) {
+		if (slices.includes(target)) {
 			let i = slices.indexOf(target);
-			this.hoverSlice(prevAcitve, prevIndex,false);
+			this.hoverSlice(prevAcitve, prevIndex, false);
 			this.curActiveSlice = target;
 			this.curActiveSliceIndex = i;
 			this.hoverSlice(target, i, true, e);
@@ -155,7 +155,7 @@ export default class DonutChart extends AggregationChart {
 		}
 	}
 
-	mouseLeave(){
-		this.hoverSlice(this.curActiveSlice,this.curActiveSliceIndex,false);
+	mouseLeave() {
+		this.hoverSlice(this.curActiveSlice, this.curActiveSliceIndex, false);
 	}
 }
