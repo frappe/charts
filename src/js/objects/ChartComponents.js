@@ -220,7 +220,7 @@ let componentConfigs = {
 		makeElements(data) {
 			return data.map(r =>
 				yRegion(r.startPos, r.endPos, this.constants.width,
-					r.label, { labelPos: r.options.labelPos })
+					r.label, { labelPos: r.options.labelPos, stroke: r.options.stroke, fill: r.options.fill })
 			);
 		},
 		animateElements(newData) {

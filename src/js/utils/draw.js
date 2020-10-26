@@ -465,8 +465,8 @@ export function yRegion(y1, y2, width, label, options = {}) {
 	let rect = createSVG('rect', {
 		className: `bar mini`, // remove class
 		styles: {
-			fill: `rgba(228, 234, 239, 0.49)`,
-			stroke: BASE_LINE_COLOR,
+			fill: options.fill || `rgba(228, 234, 239, 0.49)`,
+			stroke: options.stroke || BASE_LINE_COLOR,
 			'stroke-dasharray': `${width}, ${height}`
 		},
 		// 'data-point-index': index,
