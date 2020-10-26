@@ -41,8 +41,6 @@ export default class DonutChart extends PieChart {
 				}.bind(this)
 			]
 		];
-		/* eslint-disable no-console */
-		console.log(this.sliceName);
 
 		this.components = new Map(componentConfigs
 			.map(args => {
