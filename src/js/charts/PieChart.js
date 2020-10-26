@@ -10,7 +10,6 @@ import { FULL_ANGLE } from '../utils/constants';
 export default class PieChart extends AggregationChart {
 	constructor(parent, args) {
 		super(parent, args);
-		this.type = 'pie';
 		this.initTimeout = 0;
 		this.init = 1;
 
@@ -25,13 +24,23 @@ export default class PieChart extends AggregationChart {
 		this.hoverRadio = args.hoverRadio || 0.1;
 		this.config.startAngle = args.startAngle || 0;
 
+		this.type = 'pie';
+		this.sliceName = 'pieSlices';
+
+		this.arcFunc = makeArcPathStr;
+		this.shapeFunc = makeCircleStr;
+
 		this.clockWise = args.clockWise || false;
+	}
+
+	getRadius() {
+		return this.height > this.width ? this.center.x : this.center.y;
 	}
 
 	calc() {
 		super.calc();
 		let s = this.state;
-		this.radius = (this.height > this.width ? this.center.x : this.center.y);
+		this.radius = this.getRadius();
 
 		const { radius, clockWise } = this;
 
@@ -60,8 +69,8 @@ export default class PieChart extends AggregationChart {
 			}
 			const curPath =
 				originDiffAngle === 360
-					? makeCircleStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc)
-					: makeArcPathStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc);
+					? this.shapeFunc(curStart, curEnd, this.center, this.radius, clockWise, largeArc)
+					: this.arcFunc(curStart, curEnd, this.center, this.radius, clockWise, largeArc);
 
 			s.sliceStrings.push(curPath);
 			s.slicesProperties.push({
@@ -112,7 +121,8 @@ export default class PieChart extends AggregationChart {
 		const color = this.colors[i];
 		if (flag) {
 			transform(path, this.calTranslateByAngle(this.state.slicesProperties[i]));
-			path.style.fill = lightenDarkenColor(color, 50);
+			// path.style.fill = lightenDarkenColor(color, 50);
+			// path.style.stroke = lightenDarkenColor(color, 50);
 			let g_off = getOffset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
@@ -135,12 +145,12 @@ export default class PieChart extends AggregationChart {
 
 	mouseMove(e) {
 		const target = e.target;
-		let slices = this.components.get('pieSlices').store;
+		let slices = this.components.get(this.sliceName).store;
 		let prevIndex = this.curActiveSliceIndex;
-		let prevAcitve = this.curActiveSlice;
+		let prevActive = this.curActiveSlice;
 		if (slices.includes(target)) {
 			let i = slices.indexOf(target);
-			this.hoverSlice(prevAcitve, prevIndex, false);
+			this.hoverSlice(prevActive, prevIndex, false);
 			this.curActiveSlice = target;
 			this.curActiveSliceIndex = i;
 			this.hoverSlice(target, i, true, e);
