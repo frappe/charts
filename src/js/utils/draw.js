@@ -10,7 +10,7 @@ const BASE_LINE_COLOR = '#E2E6E9';
 const FONT_FILL = '#313B44';
 
 function $(expr, con) {
-	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
+	return typeof expr === "string" ? (con || document).querySelector(expr) : expr || null;
 }
 
 export function createSVG(tag, o) {
@@ -28,14 +28,14 @@ export function createSVG(tag, o) {
 			element.appendChild(ref);
 
 		} else if (i === "styles") {
-			if(typeof val === "object") {
+			if (typeof val === "object") {
 				Object.keys(val).map(prop => {
 					element.style[prop] = val[prop];
 				});
 			}
 		} else {
-			if(i === "className") { i = "class"; }
-			if(i === "innerHTML") {
+			if (i === "className") { i = "class"; }
+			if (i === "innerHTML") {
 				element['textContent'] = val;
 			} else {
 				element.setAttribute(i, val);
@@ -81,16 +81,16 @@ export function makeSVGDefs(svgContainer) {
 	});
 }
 
-export function makeSVGGroup(className, transform='', parent=undefined) {
+export function makeSVGGroup(className, transform = '', parent = undefined) {
 	let args = {
 		className: className,
 		transform: transform
 	};
-	if(parent) args.inside = parent;
+	if (parent) args.inside = parent;
 	return createSVG('g', args);
 }
 
-export function wrapInSVGGroup(elements, className='') {
+export function wrapInSVGGroup(elements, className = '') {
 	let g = createSVG('g', {
 		className: className
 	});
@@ -98,7 +98,7 @@ export function wrapInSVGGroup(elements, className='') {
 	return g;
 }
 
-export function makePath(pathStr, className='', stroke='none', fill='none', strokeWidth=2) {
+export function makePath(pathStr, className = '', stroke = 'none', fill = 'none', strokeWidth = 2) {
 	return createSVG('path', {
 		className: className,
 		d: pathStr,
@@ -110,7 +110,7 @@ export function makePath(pathStr, className='', stroke='none', fill='none', stro
 	});
 }
 
-export function makeArcPathStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+export function makeArcPathStr(startPosition, endPosition, center, radius, clockWise = 1, largeArc = 0) {
 	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
 	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
 	return `M${center.x} ${center.y}
@@ -119,7 +119,7 @@ export function makeArcPathStr(startPosition, endPosition, center, radius, clock
 		${arcEndX} ${arcEndY} z`;
 }
 
-export function makeCircleStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+export function makeCircleStr(startPosition, endPosition, center, radius, clockWise = 1, largeArc = 0) {
 	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
 	let [arcEndX, midArc, arcEndY] = [center.x + endPosition.x, center.y * 2, center.y + endPosition.y];
 	return `M${center.x} ${center.y}
@@ -131,7 +131,7 @@ export function makeCircleStr(startPosition, endPosition, center, radius, clockW
 		${arcEndX} ${arcEndY} z`;
 }
 
-export function makeArcStrokePathStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+export function makeArcStrokePathStr(startPosition, endPosition, center, radius, clockWise = 1, largeArc = 0) {
 	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
 	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
 
@@ -140,7 +140,7 @@ export function makeArcStrokePathStr(startPosition, endPosition, center, radius,
 		${arcEndX} ${arcEndY}`;
 }
 
-export function makeStrokeCircleStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+export function makeStrokeCircleStr(startPosition, endPosition, center, radius, clockWise = 1, largeArc = 0) {
 	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
 	let [arcEndX, midArc, arcEndY] = [center.x + endPosition.x, radius * 2 + arcStartY, center.y + startPosition.y];
 
@@ -153,7 +153,7 @@ export function makeStrokeCircleStr(startPosition, endPosition, center, radius, 
 }
 
 export function makeGradient(svgDefElem, color, lighter = false) {
-	let gradientId ='path-fill-gradient' + '-' + color + '-' +(lighter ? 'lighter' : 'default');
+	let gradientId = 'path-fill-gradient' + '-' + color + '-' + (lighter ? 'lighter' : 'default');
 	let gradientDef = renderVerticalGradient(svgDefElem, gradientId);
 	let opacities = [1, 0.6, 0.2];
 	if (lighter) {
@@ -169,20 +169,20 @@ export function makeGradient(svgDefElem, color, lighter = false) {
 
 export function rightRoundedBar(x, width, height) {
 	// https://medium.com/@dennismphil/one-side-rounded-rectangle-using-svg-fb31cf318d90
-	let radius = height/2;
+	let radius = height / 2;
 	let xOffset = width - radius;
 
 	return `M${x},0 h${xOffset} q${radius},0 ${radius},${radius} q0,${radius} -${radius},${radius} h-${xOffset} v${height}z`;
 }
 
 export function leftRoundedBar(x, width, height) {
-	let radius = height/2;
+	let radius = height / 2;
 	let xOffset = width - radius;
 
 	return `M${x + radius},0 h${xOffset} v${height} h-${xOffset} q-${radius}, 0 -${radius},-${radius} q0,-${radius} ${radius},-${radius}z`;
 }
 
-export function percentageBar(x, y, width, height, isFirst, isLast, fill='none') {
+export function percentageBar(x, y, width, height, isFirst, isLast, fill = 'none') {
 	if (isLast) {
 		let pathStr = rightRoundedBar(x, width, height);
 		return makePath(pathStr, 'percentage-bar', null, fill);
@@ -205,7 +205,7 @@ export function percentageBar(x, y, width, height, isFirst, isLast, fill='none')
 	return createSVG("rect", args);
 }
 
-export function heatSquare(className, x, y, size, radius, fill='none', data={}) {
+export function heatSquare(className, x, y, size, radius, fill = 'none', data = {}) {
 	let args = {
 		className: className,
 		x: x,
@@ -294,7 +294,7 @@ export function makeText(className, x, y, content, options = {}) {
 	});
 }
 
-function makeVertLine(x, label, y1, y2, options={}) {
+function makeVertLine(x, label, y1, y2, options = {}) {
 	let l = createSVG('line', {
 		className: 'line-vertical ' + options.className,
 		x1: 0,
@@ -316,7 +316,7 @@ function makeVertLine(x, label, y1, y2, options={}) {
 	});
 
 	let line = createSVG('g', {
-		transform: `translate(${ x }, 0)`
+		transform: `translate(${x}, 0)`
 	});
 
 	line.appendChild(l);
@@ -325,12 +325,12 @@ function makeVertLine(x, label, y1, y2, options={}) {
 	return line;
 }
 
-function makeHoriLine(y, label, x1, x2, options={}) {
-	if(!options.lineType) options.lineType = '';
+function makeHoriLine(y, label, x1, x2, options = {}) {
+	if (!options.lineType) options.lineType = '';
 	if (options.shortenNumbers) label = shortenLargeNumber(label);
 
 	let className = 'line-horizontal ' + options.className +
-		(options.lineType === "dashed" ? "dashed": "");
+		(options.lineType === "dashed" ? "dashed" : "");
 
 	let l = createSVG('line', {
 		className: className,
@@ -349,7 +349,7 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 		dy: (FONT_SIZE / 2 - 2) + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': x1 < x2 ? 'end' : 'start',
-		innerHTML: label+""
+		innerHTML: label + ""
 	});
 
 	let line = createSVG('g', {
@@ -357,7 +357,7 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 		'stroke-opacity': 1
 	});
 
-	if(text === 0 || text === '0') {
+	if (text === 0 || text === '0') {
 		line.style.stroke = "rgba(27, 31, 35, 0.6)";
 	}
 
@@ -367,19 +367,19 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 	return line;
 }
 
-export function yLine(y, label, width, options={}) {
+export function yLine(y, label, width, options = {}) {
 	if (!isValidNumber(y)) y = 0;
 
-	if(!options.pos) options.pos = 'left';
-	if(!options.offset) options.offset = 0;
-	if(!options.mode) options.mode = 'span';
-	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
-	if(!options.className) options.className = '';
+	if (!options.pos) options.pos = 'left';
+	if (!options.offset) options.offset = 0;
+	if (!options.mode) options.mode = 'span';
+	if (!options.stroke) options.stroke = BASE_LINE_COLOR;
+	if (!options.className) options.className = '';
 
 	let x1 = -1 * AXIS_TICK_LENGTH;
 	let x2 = options.mode === 'span' ? width + AXIS_TICK_LENGTH : 0;
 
-	if(options.mode === 'tick' && options.pos === 'right') {
+	if (options.mode === 'tick' && options.pos === 'right') {
 		x1 = width + AXIS_TICK_LENGTH;
 		x2 = width;
 	}
@@ -398,13 +398,13 @@ export function yLine(y, label, width, options={}) {
 	});
 }
 
-export function xLine(x, label, height, options={}) {
+export function xLine(x, label, height, options = {}) {
 	if (!isValidNumber(x)) x = 0;
 
-	if(!options.pos) options.pos = 'bottom';
-	if(!options.offset) options.offset = 0;
-	if(!options.mode) options.mode = 'span';
-	if(!options.className) options.className = '';
+	if (!options.pos) options.pos = 'bottom';
+	if (!options.offset) options.offset = 0;
+	if (!options.mode) options.mode = 'span';
+	if (!options.className) options.className = '';
 
 	// Draw X axis line in span/tick mode with optional label
 	//                        	y2(span)
@@ -420,7 +420,7 @@ export function xLine(x, label, height, options={}) {
 	let y1 = height + AXIS_TICK_LENGTH;
 	let y2 = options.mode === 'span' ? -1 * AXIS_TICK_LENGTH : height;
 
-	if(options.mode === 'tick' && options.pos === 'top') {
+	if (options.mode === 'tick' && options.pos === 'top') {
 		// top axis ticks
 		y1 = -1 * AXIS_TICK_LENGTH;
 		y2 = 0;
@@ -432,8 +432,8 @@ export function xLine(x, label, height, options={}) {
 	});
 }
 
-export function yMarker(y, label, width, options={}) {
-	if(!options.labelPos) options.labelPos = 'right';
+export function yMarker(y, label, width, options = {}) {
+	if (!options.labelPos) options.labelPos = 'right';
 	let x = options.labelPos === 'left' ? LABEL_MARGIN
 		: width - getStringWidth(label, 5) - LABEL_MARGIN;
 
@@ -444,7 +444,7 @@ export function yMarker(y, label, width, options={}) {
 		dy: (FONT_SIZE / -2) + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': 'start',
-		innerHTML: label+""
+		innerHTML: label + ""
 	});
 
 	let line = makeHoriLine(y, '', 0, width, {
@@ -458,7 +458,7 @@ export function yMarker(y, label, width, options={}) {
 	return line;
 }
 
-export function yRegion(y1, y2, width, label, options={}) {
+export function yRegion(y1, y2, width, label, options = {}) {
 	// return a group
 	let height = y1 - y2;
 
@@ -476,9 +476,9 @@ export function yRegion(y1, y2, width, label, options={}) {
 		height: height
 	});
 
-	if(!options.labelPos) options.labelPos = 'right';
+	if (!options.labelPos) options.labelPos = 'right';
 	let x = options.labelPos === 'left' ? LABEL_MARGIN
-		: width - getStringWidth(label+"", 4.5) - LABEL_MARGIN;
+		: width - getStringWidth(label + "", 4.5) - LABEL_MARGIN;
 
 	let labelSvg = createSVG('text', {
 		className: 'chart-label',
@@ -487,7 +487,7 @@ export function yRegion(y1, y2, width, label, options={}) {
 		dy: (FONT_SIZE / -2) + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': 'start',
-		innerHTML: label+""
+		innerHTML: label + ""
 	});
 
 	let region = createSVG('g', {
@@ -500,11 +500,11 @@ export function yRegion(y1, y2, width, label, options={}) {
 	return region;
 }
 
-export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={}) {
+export function datasetBar(x, yTop, width, color, label = '', index = 0, offset = 0, meta = {}) {
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
 	y -= offset;
 
-	if(height === 0) {
+	if (height === 0) {
 		height = meta.minHeight;
 		y -= meta.minHeight;
 	}
@@ -547,14 +547,14 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 
 	label += "";
 
-	if(!label && !label.length) {
+	if (!label && !label.length) {
 		return rect;
 	} else {
 		rect.setAttribute('y', 0);
 		rect.setAttribute('x', 0);
 		let text = createSVG('text', {
 			className: 'data-point-value',
-			x: width/2,
+			x: width / 2,
 			y: 0,
 			dy: (FONT_SIZE / 2 * -1) + 'px',
 			'font-size': FONT_SIZE + 'px',
@@ -573,7 +573,7 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 	}
 }
 
-export function datasetDot(x, y, radius, color, label='', index=0) {
+export function datasetDot(x, y, radius, color, label = '', index = 0) {
 	let dot = createSVG('circle', {
 		style: `fill: ${color}`,
 		'data-point-index': index,
@@ -584,7 +584,7 @@ export function datasetDot(x, y, radius, color, label='', index=0) {
 
 	label += "";
 
-	if(!label && !label.length) {
+	if (!label && !label.length) {
 		return dot;
 	} else {
 		dot.setAttribute('cy', 0);
@@ -611,7 +611,7 @@ export function datasetDot(x, y, radius, color, label='', index=0) {
 	}
 }
 
-export function getPaths(xList, yList, color, options={}, meta={}) {
+export function getPaths(xList, yList, color, options = {}, meta = {}) {
 	let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
 	let pointsStr = pointsList.join("L");
 
@@ -619,10 +619,10 @@ export function getPaths(xList, yList, color, options={}, meta={}) {
 	if (options.spline)
 		pointsStr = getSplineCurvePointsStr(xList, yList);
 
-	let path = makePath("M"+pointsStr, 'line-graph-path', color);
+	let path = makePath("M" + pointsStr, 'line-graph-path', color);
 
 	// HeatLine
-	if(options.heatline) {
+	if (options.heatline) {
 		let gradient_id = makeGradient(meta.svgDefs, color);
 		path.style.stroke = `url(#${gradient_id})`;
 	}
@@ -632,7 +632,7 @@ export function getPaths(xList, yList, color, options={}, meta={}) {
 	};
 
 	// Region
-	if(options.regionFill) {
+	if (options.regionFill) {
 		let gradient_id_region = makeGradient(meta.svgDefs, color, true);
 
 		let pathStr = "M" + `${xList[0]},${meta.zeroLine}L` + pointsStr + `L${xList.slice(-1)[0]},${meta.zeroLine}`;
@@ -645,7 +645,7 @@ export function getPaths(xList, yList, color, options={}, meta={}) {
 export let makeOverlay = {
 	'bar': (unit) => {
 		let transformValue;
-		if(unit.nodeName !== 'rect') {
+		if (unit.nodeName !== 'rect') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];
 		}
@@ -653,7 +653,7 @@ export let makeOverlay = {
 		overlay.style.fill = '#000000';
 		overlay.style.opacity = '0.4';
 
-		if(transformValue) {
+		if (transformValue) {
 			overlay.setAttribute('transform', transformValue);
 		}
 		return overlay;
@@ -661,7 +661,7 @@ export let makeOverlay = {
 
 	'dot': (unit) => {
 		let transformValue;
-		if(unit.nodeName !== 'circle') {
+		if (unit.nodeName !== 'circle') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];
 		}
@@ -672,7 +672,7 @@ export let makeOverlay = {
 		overlay.setAttribute('fill', fill);
 		overlay.style.opacity = '0.6';
 
-		if(transformValue) {
+		if (transformValue) {
 			overlay.setAttribute('transform', transformValue);
 		}
 		return overlay;
@@ -680,7 +680,7 @@ export let makeOverlay = {
 
 	'heat_square': (unit) => {
 		let transformValue;
-		if(unit.nodeName !== 'circle') {
+		if (unit.nodeName !== 'circle') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];
 		}
@@ -691,7 +691,7 @@ export let makeOverlay = {
 		overlay.setAttribute('fill', fill);
 		overlay.style.opacity = '0.6';
 
-		if(transformValue) {
+		if (transformValue) {
 			overlay.setAttribute('transform', transformValue);
 		}
 		return overlay;
@@ -701,7 +701,7 @@ export let makeOverlay = {
 export let updateOverlay = {
 	'bar': (unit, overlay) => {
 		let transformValue;
-		if(unit.nodeName !== 'rect') {
+		if (unit.nodeName !== 'rect') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];
 		}
@@ -712,14 +712,14 @@ export let updateOverlay = {
 				overlay.setAttribute(attr.name, attr.nodeValue);
 			});
 
-		if(transformValue) {
+		if (transformValue) {
 			overlay.setAttribute('transform', transformValue);
 		}
 	},
 
 	'dot': (unit, overlay) => {
 		let transformValue;
-		if(unit.nodeName !== 'circle') {
+		if (unit.nodeName !== 'circle') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];
 		}
@@ -730,14 +730,14 @@ export let updateOverlay = {
 				overlay.setAttribute(attr.name, attr.nodeValue);
 			});
 
-		if(transformValue) {
+		if (transformValue) {
 			overlay.setAttribute('transform', transformValue);
 		}
 	},
 
 	'heat_square': (unit, overlay) => {
 		let transformValue;
-		if(unit.nodeName !== 'circle') {
+		if (unit.nodeName !== 'circle') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];
 		}
@@ -748,7 +748,7 @@ export let updateOverlay = {
 				overlay.setAttribute(attr.name, attr.nodeValue);
 			});
 
-		if(transformValue) {
+		if (transformValue) {
 			overlay.setAttribute('transform', transformValue);
 		}
 	},

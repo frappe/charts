@@ -11,14 +11,14 @@ const EASING = {
 	easeinout: "0.42 0 0.58 1"
 };
 
-function animateSVGElement(element, props, dur, easingType="linear", type=undefined, oldValues={}) {
+function animateSVGElement(element, props, dur, easingType = "linear", type = undefined, oldValues = {}) {
 
 	let animElement = element.cloneNode(true);
 	let newElement = element.cloneNode(true);
 
-	for(var attributeName in props) {
+	for (var attributeName in props) {
 		let animateElement;
-		if(attributeName === 'transform') {
+		if (attributeName === 'transform') {
 			animateElement = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
 		} else {
 			animateElement = document.createElementNS("http://www.w3.org/2000/svg", "animate");
@@ -31,7 +31,7 @@ function animateSVGElement(element, props, dur, easingType="linear", type=undefi
 			from: currentValue,
 			to: value,
 			begin: "0s",
-			dur: dur/1000 + "s",
+			dur: dur / 1000 + "s",
 			values: currentValue + ";" + value,
 			keySplines: EASING[easingType],
 			keyTimes: "0;1",
@@ -39,7 +39,7 @@ function animateSVGElement(element, props, dur, easingType="linear", type=undefi
 			fill: 'freeze'
 		};
 
-		if(type) {
+		if (type) {
 			animAttr["type"] = type;
 		}
 
@@ -49,7 +49,7 @@ function animateSVGElement(element, props, dur, easingType="linear", type=undefi
 
 		animElement.appendChild(animateElement);
 
-		if(type) {
+		if (type) {
 			newElement.setAttribute(attributeName, `translate(${value})`);
 		} else {
 			newElement.setAttribute(attributeName, value);
@@ -97,10 +97,10 @@ function animateSVG(svgContainer, elements) {
 }
 
 export function runSMILAnimation(parent, svgElement, elementsToAnimate) {
-	if(elementsToAnimate.length === 0) return;
+	if (elementsToAnimate.length === 0) return;
 
 	let animSvgElement = animateSVG(svgElement, elementsToAnimate);
-	if(svgElement.parentNode == parent) {
+	if (svgElement.parentNode == parent) {
 		parent.removeChild(svgElement);
 		parent.appendChild(animSvgElement);
 
@@ -108,7 +108,7 @@ export function runSMILAnimation(parent, svgElement, elementsToAnimate) {
 
 	// Replace the new svgElement (data has already been replaced)
 	setTimeout(() => {
-		if(animSvgElement.parentNode == parent) {
+		if (animSvgElement.parentNode == parent) {
 			parent.removeChild(animSvgElement);
 			parent.appendChild(svgElement);
 		}

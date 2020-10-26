@@ -5,25 +5,25 @@ function normalize(x) {
 	// Returns normalized number and exponent
 	// https://stackoverflow.com/q/9383593/6495043
 
-	if(x===0) {
+	if (x === 0) {
 		return [0, 0];
 	}
-	if(isNaN(x)) {
-		return {mantissa: -6755399441055744, exponent: 972};
+	if (isNaN(x)) {
+		return { mantissa: -6755399441055744, exponent: 972 };
 	}
 	var sig = x > 0 ? 1 : -1;
-	if(!isFinite(x)) {
-		return {mantissa: sig * 4503599627370496, exponent: 972};
+	if (!isFinite(x)) {
+		return { mantissa: sig * 4503599627370496, exponent: 972 };
 	}
 
 	x = Math.abs(x);
 	var exp = Math.floor(Math.log10(x));
-	var man = x/Math.pow(10, exp);
+	var man = x / Math.pow(10, exp);
 
 	return [sig * man, exp];
 }
 
-function getChartRangeIntervals(max, min=0) {
+function getChartRangeIntervals(max, min = 0) {
 	let upperBound = Math.ceil(max);
 	let lowerBound = Math.floor(min);
 	let range = upperBound - lowerBound;
@@ -32,38 +32,38 @@ function getChartRangeIntervals(max, min=0) {
 	let partSize = 1;
 
 	// To avoid too many partitions
-	if(range > 5) {
-		if(range % 2 !== 0) {
+	if (range > 5) {
+		if (range % 2 !== 0) {
 			upperBound++;
 			// Recalc range
 			range = upperBound - lowerBound;
 		}
-		noOfParts = range/2;
+		noOfParts = range / 2;
 		partSize = 2;
 	}
 
 	// Special case: 1 and 2
-	if(range <= 2) {
+	if (range <= 2) {
 		noOfParts = 4;
-		partSize = range/noOfParts;
+		partSize = range / noOfParts;
 	}
 
 	// Special case: 0
-	if(range === 0) {
+	if (range === 0) {
 		noOfParts = 5;
 		partSize = 1;
 	}
 
 	let intervals = [];
-	for(var i = 0; i <= noOfParts; i++){
+	for (var i = 0; i <= noOfParts; i++) {
 		intervals.push(lowerBound + partSize * i);
 	}
 	return intervals;
 }
 
-function getChartIntervals(maxValue, minValue=0) {
+function getChartIntervals(maxValue, minValue = 0) {
 	let [normalMaxValue, exponent] = normalize(maxValue);
-	let normalMinValue = minValue ? minValue/Math.pow(10, exponent): 0;
+	let normalMinValue = minValue ? minValue / Math.pow(10, exponent) : 0;
 
 	// Allow only 7 significant digits
 	normalMaxValue = normalMaxValue.toFixed(6);
@@ -73,7 +73,7 @@ function getChartIntervals(maxValue, minValue=0) {
 	return intervals;
 }
 
-export function calcChartIntervals(values, withMinimum=false) {
+export function calcChartIntervals(values, withMinimum = false) {
 	//*** Where the magic happens ***
 
 	// Calculates best-fit y intervals from given values
@@ -92,7 +92,7 @@ export function calcChartIntervals(values, withMinimum=false) {
 
 		// Then unshift the negative values
 		let value = 0;
-		for(var i = 1; value < absMinValue; i++) {
+		for (var i = 1; value < absMinValue; i++) {
 			value += intervalSize;
 			intervals.unshift((-1) * value);
 		}
@@ -101,9 +101,9 @@ export function calcChartIntervals(values, withMinimum=false) {
 
 	// CASE I: Both non-negative
 
-	if(maxValue >= 0 && minValue >= 0) {
+	if (maxValue >= 0 && minValue >= 0) {
 		exponent = normalize(maxValue)[1];
-		if(!withMinimum) {
+		if (!withMinimum) {
 			intervals = getChartIntervals(maxValue);
 		} else {
 			intervals = getChartIntervals(maxValue, minValue);
@@ -112,7 +112,7 @@ export function calcChartIntervals(values, withMinimum=false) {
 
 	// CASE II: Only minValue negative
 
-	else if(maxValue > 0 && minValue < 0) {
+	else if (maxValue > 0 && minValue < 0) {
 		// `withMinimum` irrelevant in this case,
 		// We'll be handling both sides of zero separately
 		// (both starting from zero)
@@ -121,7 +121,7 @@ export function calcChartIntervals(values, withMinimum=false) {
 
 		let absMinValue = Math.abs(minValue);
 
-		if(maxValue >= absMinValue) {
+		if (maxValue >= absMinValue) {
 			exponent = normalize(maxValue)[1];
 			intervals = getPositiveFirstIntervals(maxValue, absMinValue);
 		} else {
@@ -135,7 +135,7 @@ export function calcChartIntervals(values, withMinimum=false) {
 
 	// CASE III: Both non-positive
 
-	else if(maxValue <= 0 && minValue <= 0) {
+	else if (maxValue <= 0 && minValue <= 0) {
 		// Mirrored Case I:
 		// Work with positives, then reverse the sign and array
 
@@ -143,7 +143,7 @@ export function calcChartIntervals(values, withMinimum=false) {
 		let pseudoMinValue = Math.abs(maxValue);
 
 		exponent = normalize(pseudoMaxValue)[1];
-		if(!withMinimum) {
+		if (!withMinimum) {
 			intervals = getChartIntervals(pseudoMaxValue);
 		} else {
 			intervals = getChartIntervals(pseudoMaxValue, pseudoMinValue);
@@ -158,11 +158,11 @@ export function calcChartIntervals(values, withMinimum=false) {
 export function getZeroIndex(yPts) {
 	let zeroIndex;
 	let interval = getIntervalSize(yPts);
-	if(yPts.indexOf(0) >= 0) {
+	if (yPts.indexOf(0) >= 0) {
 		// the range has a given zero
 		// zero-line on the chart
 		zeroIndex = yPts.indexOf(0);
-	} else if(yPts[0] > 0) {
+	} else if (yPts[0] > 0) {
 		// Minimum value is positive
 		// zero-line is off the chart: below
 		let min = yPts[0];
@@ -181,7 +181,7 @@ export function getRealIntervals(max, noOfIntervals, min = 0, asc = 1) {
 	let part = range * 1.0 / noOfIntervals;
 	let intervals = [];
 
-	for(var i = 0; i <= noOfIntervals; i++) {
+	for (var i = 0; i <= noOfIntervals; i++) {
 		intervals.push(min + part * i);
 	}
 
@@ -193,7 +193,7 @@ export function getIntervalSize(orderedArray) {
 }
 
 export function getValueRange(orderedArray) {
-	return orderedArray[orderedArray.length-1] - orderedArray[0];
+	return orderedArray[orderedArray.length - 1] - orderedArray[0];
 }
 
 export function scale(val, yAxis) {
@@ -210,7 +210,7 @@ export function isInRange2D(coord, minCoord, maxCoord) {
 }
 
 export function getClosestInArray(goal, arr, index = false) {
-	let closest = arr.reduce(function(prev, curr) {
+	let closest = arr.reduce(function (prev, curr) {
 		return (Math.abs(curr - goal) < Math.abs(prev - goal) ? curr : prev);
 	}, []);
 
@@ -226,7 +226,7 @@ export function calcDistribution(values, distributionSize) {
 	let distributionStep = 1 / (distributionSize - 1);
 	let distribution = [];
 
-	for(var i = 0; i < distributionSize; i++) {
+	for (var i = 0; i < distributionSize; i++) {
 		let checkpoint = dataMaxValue * (distributionStep * i);
 		distribution.push(checkpoint);
 	}

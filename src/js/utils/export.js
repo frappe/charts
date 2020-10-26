@@ -4,13 +4,13 @@ import { CSSTEXT } from '../../css/chartsCss';
 export function downloadFile(filename, data) {
 	var a = document.createElement('a');
 	a.style = "display: none";
-	var blob = new Blob(data, {type: "image/svg+xml; charset=utf-8"});
+	var blob = new Blob(data, { type: "image/svg+xml; charset=utf-8" });
 	var url = window.URL.createObjectURL(blob);
 	a.href = url;
 	a.download = filename;
 	document.body.appendChild(a);
 	a.click();
-	setTimeout(function(){
+	setTimeout(function () {
 		document.body.removeChild(a);
 		window.URL.revokeObjectURL(url);
 	}, 300);

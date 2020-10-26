@@ -1,9 +1,8 @@
 export function $(expr, con) {
-	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
+	return typeof expr === "string" ? (con || document).querySelector(expr) : expr || null;
 }
 
-export function findNodeIndex(node)
-{
+export function findNodeIndex(node) {
 	var i = 0;
 	while (node.previousSibling) {
 		node = node.previousSibling;
@@ -27,12 +26,12 @@ $.create = (tag, o) => {
 			element.appendChild(ref);
 
 		} else if (i === "styles") {
-			if(typeof val === "object") {
+			if (typeof val === "object") {
 				Object.keys(val).map(prop => {
 					element.style[prop] = val[prop];
 				});
 			}
-		} else if (i in element ) {
+		} else if (i in element) {
 			element[i] = val;
 		}
 		else {
@@ -67,9 +66,9 @@ export function isElementInViewport(el) {
 
 	return (
 		rect.top >= 0 &&
-        rect.left >= 0 &&
-        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /*or $(window).height() */
-        rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
+		rect.left >= 0 &&
+		rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /*or $(window).height() */
+		rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
 	);
 }
 
@@ -81,7 +80,7 @@ export function getElementContentWidth(element) {
 	return element.clientWidth - padding;
 }
 
-export function bind(element, o){
+export function bind(element, o) {
 	if (element) {
 		for (var event in o) {
 			var callback = o[event];
@@ -93,12 +92,12 @@ export function bind(element, o){
 	}
 }
 
-export function unbind(element, o){
+export function unbind(element, o) {
 	if (element) {
 		for (var event in o) {
 			var callback = o[event];
 
-			event.split(/\s+/).forEach(function(event) {
+			event.split(/\s+/).forEach(function (event) {
 				element.removeEventListener(event, callback);
 			});
 		}
@@ -108,7 +107,7 @@ export function unbind(element, o){
 export function fire(target, type, properties) {
 	var evt = document.createEvent("HTMLEvents");
 
-	evt.initEvent(type, true, true );
+	evt.initEvent(type, true, true);
 
 	for (var j in properties) {
 		evt[j] = properties[j];
@@ -119,17 +118,17 @@ export function fire(target, type, properties) {
 
 // https://css-tricks.com/snippets/javascript/loop-queryselectorall-matches/
 export function forEachNode(nodeList, callback, scope) {
-	if(!nodeList) return;
+	if (!nodeList) return;
 	for (var i = 0; i < nodeList.length; i++) {
 		callback.call(scope, nodeList[i], i);
 	}
 }
 
-export function activate($parent, $child, commonClass, activeClass='active', index = -1) {
+export function activate($parent, $child, commonClass, activeClass = 'active', index = -1) {
 	let $children = $parent.querySelectorAll(`.${commonClass}.${activeClass}`);
 
 	forEachNode($children, (node, i) => {
-		if(index >= 0 && i <= index) return;
+		if (index >= 0 && i <= index) return;
 		node.classList.remove(activeClass);
 	});
 

@@ -34,7 +34,7 @@ export default class PercentageChart extends AggregationChart {
 				{
 					barHeight: this.barOptions.height,
 				},
-				function() {
+				function () {
 					return {
 						xPositions: s.xPositions,
 						widths: s.widths,
@@ -80,13 +80,13 @@ export default class PercentageChart extends AggregationChart {
 
 				let width = bar.getAttribute('width') || bar.getBoundingClientRect().width;
 
-				let x = pOff.left - gOff.left + parseInt(width)/2;
+				let x = pOff.left - gOff.left + parseInt(width) / 2;
 				let y = pOff.top - gOff.top;
-				let title = (this.formattedLabels && this.formattedLabels.length>0
+				let title = (this.formattedLabels && this.formattedLabels.length > 0
 					? this.formattedLabels[i] : this.state.labels[i]) + ': ';
-				let fraction = s.sliceTotals[i]/s.grandTotal;
+				let fraction = s.sliceTotals[i] / s.grandTotal;
 
-				this.tip.setValues(x, y, {name: title, value: (fraction*100).toFixed(1) + "%"});
+				this.tip.setValues(x, y, { name: title, value: (fraction * 100).toFixed(1) + "%" });
 				this.tip.showTip();
 			}
 		});

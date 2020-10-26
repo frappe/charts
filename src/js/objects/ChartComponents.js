@@ -1,8 +1,10 @@
 import { makeSVGGroup } from '../utils/draw';
 import { makeText, makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
-import { translateHoriLine, translateVertLine, animateRegion, animateBar,
-	animateDot, animatePath, animatePathStr } from '../utils/animate';
+import {
+	translateHoriLine, translateVertLine, animateRegion, animateBar,
+	animateDot, animatePath, animatePathStr
+} from '../utils/animate';
 import { getMonthName } from '../utils/date-utils';
 
 class ChartComponent {
@@ -27,7 +29,7 @@ class ChartComponent {
 		this.labels = [];
 
 		this.layerClass = layerClass;
-		this.layerClass = typeof(this.layerClass) === 'function'
+		this.layerClass = typeof (this.layerClass) === 'function'
 			? this.layerClass() : this.layerClass;
 
 		this.refresh();
@@ -61,7 +63,7 @@ class ChartComponent {
 	update(animate = true) {
 		this.refresh();
 		let animateElements = [];
-		if(animate) {
+		if (animate) {
 			animateElements = this.animateElements(this.data) || [];
 		}
 		return animateElements;
@@ -86,7 +88,7 @@ let componentConfigs = {
 	pieSlices: {
 		layerClass: 'pie-slices',
 		makeElements(data) {
-			return data.sliceStrings.map((s, i) =>{
+			return data.sliceStrings.map((s, i) => {
 				let slice = makePath(s, 'pie-path', 'none', data.colors[i]);
 				slice.style.transition = 'transform .3s;';
 				return slice;
@@ -103,7 +105,7 @@ let componentConfigs = {
 		layerClass: 'percentage-bars',
 		makeElements(data) {
 			const numberOfPoints = data.xPositions.length;
-			return data.xPositions.map((x, i) =>{
+			return data.xPositions.map((x, i) => {
 				let y = 0;
 
 				let isLast = i == numberOfPoints - 1;
@@ -115,7 +117,7 @@ let componentConfigs = {
 		},
 
 		animateElements(newData) {
-			if(newData) return [];
+			if (newData) return [];
 		}
 	},
 	yAxis: {
@@ -123,7 +125,7 @@ let componentConfigs = {
 		makeElements(data) {
 			return data.positions.map((position, i) =>
 				yLine(position, data.labels[i], this.constants.width,
-					{mode: this.constants.mode, pos: this.constants.pos, shortenNumbers: this.constants.shortenNumbers})
+					{ mode: this.constants.mode, pos: this.constants.pos, shortenNumbers: this.constants.shortenNumbers })
 			);
 		},
 
@@ -154,7 +156,7 @@ let componentConfigs = {
 		makeElements(data) {
 			return data.positions.map((position, i) =>
 				xLine(position, data.calcLabels[i], this.constants.height,
-					{mode: this.constants.mode, pos: this.constants.pos})
+					{ mode: this.constants.mode, pos: this.constants.pos })
 			);
 		},
 
@@ -218,7 +220,7 @@ let componentConfigs = {
 		makeElements(data) {
 			return data.map(r =>
 				yRegion(r.startPos, r.endPos, this.constants.width,
-					r.label, {labelPos: r.options.labelPos})
+					r.label, { labelPos: r.options.labelPos })
 			);
 		},
 		animateElements(newData) {
@@ -254,16 +256,16 @@ let componentConfigs = {
 	},
 
 	heatDomain: {
-		layerClass: function() { return 'heat-domain domain-' + this.constants.index; },
+		layerClass: function () { return 'heat-domain domain-' + this.constants.index; },
 		makeElements(data) {
-			let {index, colWidth, rowHeight, squareSize, radius, xTranslate} = this.constants;
+			let { index, colWidth, rowHeight, squareSize, radius, xTranslate } = this.constants;
 			let monthNameHeight = -12;
 			let x = xTranslate, y = 0;
 
 			this.serializedSubDomains = [];
 
 			data.cols.map((week, weekNo) => {
-				if(weekNo === 1) {
+				if (weekNo === 1) {
 					this.labels.push(
 						makeText('domain-name', x, monthNameHeight, getMonthName(index, true).toUpperCase(),
 							{
@@ -273,7 +275,7 @@ let componentConfigs = {
 					);
 				}
 				week.map((day, i) => {
-					if(day.fill) {
+					if (day.fill) {
 						let data = {
 							'data-date': day.yyyyMmDd,
 							'data-value': day.dataValue,
@@ -292,12 +294,12 @@ let componentConfigs = {
 		},
 
 		animateElements(newData) {
-			if(newData) return [];
+			if (newData) return [];
 		}
 	},
 
 	barGraph: {
-		layerClass: function() { return 'dataset-units dataset-bars dataset-' + this.constants.index; },
+		layerClass: function () { return 'dataset-units dataset-bars dataset-' + this.constants.index; },
 		makeElements(data) {
 			let c = this.constants;
 			this.unitType = 'bar';
@@ -351,7 +353,7 @@ let componentConfigs = {
 			this.store.map((bar, i) => {
 				animateElements = animateElements.concat(animateBar(
 					bar, newXPos[i], newYPos[i], newData.barWidth, newOffsets[i],
-					{zeroLine: newData.zeroLine}
+					{ zeroLine: newData.zeroLine }
 				));
 			});
 
@@ -360,12 +362,12 @@ let componentConfigs = {
 	},
 
 	lineGraph: {
-		layerClass: function() { return 'dataset-units dataset-line dataset-' + this.constants.index; },
+		layerClass: function () { return 'dataset-units dataset-line dataset-' + this.constants.index; },
 		makeElements(data) {
 			let c = this.constants;
 			this.unitType = 'dot';
 			this.paths = {};
-			if(!c.hideLine) {
+			if (!c.hideLine) {
 				this.paths = getPaths(
 					data.xPositions,
 					data.yPositions,
@@ -383,7 +385,7 @@ let componentConfigs = {
 			}
 
 			this.units = [];
-			if(c.showDots) {
+			if (c.showDots) {
 				this.units = data.yPositions.map((y, j) => {
 					return datasetDot(
 						data.xPositions[j],
@@ -422,12 +424,12 @@ let componentConfigs = {
 
 			let animateElements = [];
 
-			if(Object.keys(this.paths).length) {
+			if (Object.keys(this.paths).length) {
 				animateElements = animateElements.concat(animatePath(
 					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline));
 			}
 
-			if(this.units.length) {
+			if (this.units.length) {
 				this.units.map((dot, i) => {
 					animateElements = animateElements.concat(animateDot(
 						dot, newXPos[i], newYPos[i]));

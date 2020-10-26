@@ -27,8 +27,8 @@ export function getYyyyMmDd(date) {
 	let mm = date.getMonth() + 1; // getMonth() is zero-based
 	return [
 		date.getFullYear(),
-		(mm>9 ? '' : '0') + mm,
-		(dd>9 ? '' : '0') + dd
+		(mm > 9 ? '' : '0') + mm,
+		(dd > 9 ? '' : '0') + dd
 	].join('-');
 }
 
@@ -37,12 +37,12 @@ export function clone(date) {
 }
 
 export function timestampSec(date) {
-	return date.getTime()/NO_OF_MILLIS;
+	return date.getTime() / NO_OF_MILLIS;
 }
 
 export function timestampToMidnight(timestamp, roundAhead = false) {
 	let midnightTs = Math.floor(timestamp - (timestamp % SEC_IN_DAY));
-	if(roundAhead) {
+	if (roundAhead) {
 		return midnightTs + SEC_IN_DAY;
 	}
 	return midnightTs;
@@ -65,12 +65,12 @@ export function areInSameMonth(startDate, endDate) {
 		&& startDate.getFullYear() === endDate.getFullYear();
 }
 
-export function getMonthName(i, short=false) {
+export function getMonthName(i, short = false) {
 	let monthName = MONTH_NAMES[i];
 	return short ? monthName.slice(0, 3) : monthName;
 }
 
-export function getLastDateInMonth (month, year) {
+export function getLastDateInMonth(month, year) {
 	return new Date(year, month + 1, 0); // 0: last day in previous month
 }
 
@@ -78,7 +78,7 @@ export function getLastDateInMonth (month, year) {
 export function setDayToSunday(date) {
 	let newDate = clone(date);
 	const day = newDate.getDay();
-	if(day !== 0) {
+	if (day !== 0) {
 		addDays(newDate, (-1) * day);
 	}
 	return newDate;
