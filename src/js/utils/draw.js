@@ -1,5 +1,5 @@
 import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getSplineCurvePointsStr } from './draw-utils';
-import { getStringWidth, isValidNumber } from './helpers';
+import { getStringWidth, isValidNumber, round } from './helpers';
 import { DOT_OVERLAY_SIZE_INCR } from './constants';
 
 export const AXIS_TICK_LENGTH = 6;
@@ -388,6 +388,8 @@ export function yLine(y, label, width, options={}) {
 
 	x1 += options.offset;
 	x2 += options.offset;
+
+	if (typeof label === "number") label = round(label);
 
 	return makeHoriLine(y, label, x1, x2, {
 		className: options.className,
