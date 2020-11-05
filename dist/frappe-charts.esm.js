@@ -377,6 +377,16 @@ function isValidNumber(candidate, nonNegative=false) {
 	else return true;
 }
 
+/**
+ * Round a number to the closes precision, max max precision 4
+ * @param {Number} d Any Number
+ */
+function round(d) {
+	// https://floating-point-gui.de/
+	// https://www.jacklmoore.com/notes/rounding-in-javascript/
+	return Number(Math.round(d + 'e4') + 'e-4');
+}
+
 function getBarHeightAndYAttr(yTop, zeroLine) {
 	let height, y;
 	if (yTop <= zeroLine) {
@@ -1811,6 +1821,7 @@ class AggregationChart extends BaseChart {
 	configure(args) {
 		super.configure(args);
 
+		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
 		this.config.maxSlices = args.maxSlices || 20;
 		this.config.maxLegendPoints = args.maxLegendPoints || 20;
 	}
@@ -1844,7 +1855,7 @@ class AggregationChart extends BaseChart {
 
 		s.labels = [];
 		totals.map(d => {
-			s.sliceTotals.push(d[0]);
+			s.sliceTotals.push(round(d[0]));
 			s.labels.push(d[1]);
 		});
 
@@ -1877,12 +1888,13 @@ class AggregationChart extends BaseChart {
 			}
 			let x = barWidth * count + 5;
 			let label = this.config.truncateLegends ? truncateString(s.labels[i], barWidth/10) : s.labels[i];
+			let formatted = this.config.formatTooltipY ? this.config.formatTooltipY(d) : d;
 			let dot = legendDot(
 				x,
 				y,
 				5,
 				this.colors[i],
-				`${label}: ${d}`,
+				`${label}: ${formatted}`,
 				false
 			);
 			this.legendArea.appendChild(dot);
