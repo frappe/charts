@@ -1,6 +1,7 @@
 import BaseChart from './BaseChart';
 import { truncateString } from '../utils/draw-utils';
 import { legendDot } from '../utils/draw';
+import { round } from '../utils/helpers';
 import { getExtraWidth } from '../utils/constants';
 
 export default class AggregationChart extends BaseChart {
@@ -45,7 +46,7 @@ export default class AggregationChart extends BaseChart {
 
 		s.labels = [];
 		totals.map(d => {
-			s.sliceTotals.push(d[0]);
+			s.sliceTotals.push(round(d[0]));
 			s.labels.push(d[1]);
 		});
 
