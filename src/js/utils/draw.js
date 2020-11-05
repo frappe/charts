@@ -433,6 +433,8 @@ export function xLine(x, label, height, options = {}) {
 }
 
 export function yMarker(y, label, width, options = {}) {
+	if (!isValidNumber(y)) y = 0;
+
 	if (!options.labelPos) options.labelPos = 'right';
 	let x = options.labelPos === 'left' ? LABEL_MARGIN
 		: width - getStringWidth(label, 5) - LABEL_MARGIN;
