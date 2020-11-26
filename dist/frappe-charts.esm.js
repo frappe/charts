@@ -530,6 +530,12 @@ function isValidColor(string) {
 }
 
 const getColor = (color) => {
+	// When RGB color, convert to hexadecimal (alpha value is omitted)
+	if((/rgb[a]{0,1}\([\d, ]+\)/gim).test(color)) {
+		return (/\D+(\d*)\D+(\d*)\D+(\d*)/gim).exec(color)
+			.map((x, i) => (i !== 0 ? Number(x).toString(16) : '#'))
+			.reduce((c, ch) => `${c}${ch}`);
+	}
 	return PRESET_COLOR_MAP[color] || color;
 };
 
@@ -1821,7 +1827,8 @@ class AggregationChart extends BaseChart {
 	configure(args) {
 		super.configure(args);
 
-		this.config.formatTooltipY = args.tooltipOptions.formatTooltipY;
+    // Catch undefined tooltipOptions
+		this.config.formatTooltipY = (args.tooltipOptions || {}).formatTooltipY;
 		this.config.maxSlices = args.maxSlices || 20;
 		this.config.maxLegendPoints = args.maxLegendPoints || 20;
 	}
