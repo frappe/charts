@@ -3406,7 +3406,7 @@ class AxisChart extends BaseChart {
 			let values = d.values;
 			let cumulativeYs = d.cumulativeYs || [];
 			return {
-				name: d.name,
+				name: d.name.replace(/<|>|&/g, (char) => char == '&' ? '&amp;' : char == '<' ? '&lt;' : '&gt;'),
 				index: i,
 				chartType: d.chartType,
 
