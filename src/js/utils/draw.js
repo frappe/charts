@@ -277,7 +277,7 @@ export function legendDot(x, y, size, radius, fill = 'none', label, value, font_
 export function makeText(className, x, y, content, options = {}) {
 	let fontSize = options.fontSize || FONT_SIZE;
 	let dy = options.dy !== undefined ? options.dy : (fontSize / 2);
-	let fill = options.fill || FONT_FILL;
+	let fill = options.fill || "var(--charts-label-color)";
 	let textAnchor = options.textAnchor || 'start';
 	return createSVG('text', {
 		className: className,
