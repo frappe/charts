@@ -3,7 +3,7 @@ import * as Charts from './chart';
 let frappe     = { };
 
 frappe.NAME    = 'Frappe Charts';
-frappe.VERSION = '2.0.0-rc2';
+frappe.VERSION = '2.0.0-rc3';
 
 frappe         = Object.assign({ }, frappe, Charts);
 
