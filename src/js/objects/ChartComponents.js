@@ -4,6 +4,7 @@ import { equilizeNoOfElements } from '../utils/draw-utils';
 import { translateHoriLine, translateVertLine, animateRegion, animateBar,
 	animateDot, animatePath, animatePathStr } from '../utils/animate';
 import { getMonthName } from '../utils/date-utils';
+import {resolveBarColor} from "../utils/colors";
 
 class ChartComponent {
 	constructor({
@@ -302,7 +303,7 @@ let componentConfigs = {
 					data.xPositions[j],
 					y,
 					data.barWidth,
-					data.colors ? ((j < data.colors.length) ? data.colors[j] : data.colors[0]) : Array.isArray(c.color) ? (j < c.color.length ? c.color[j] : c.color[0]) : c.color,
+					resolveBarColor(data.colors || this.constants.color, j),
 					data.labels[j],
 					j,
 					data.offsets[j],

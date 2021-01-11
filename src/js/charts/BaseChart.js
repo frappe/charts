@@ -65,7 +65,7 @@ export default class BaseChart {
 
 	validateColors(colors, type) {
 		const validColors = [];
-		colors = colors || [];
+		colors = (colors || []).concat(DEFAULT_COLORS[type]);
 		colors.forEach((entry) => {
 			if (Array.isArray(entry)) {
 				validColors.push(this.validateColors(entry, type));

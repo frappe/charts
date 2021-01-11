@@ -51,3 +51,9 @@ export const getColor = (color) => {
 	}
 	return PRESET_COLOR_MAP[color] || color;
 };
+
+export const resolveBarColor = (colors, barIndex) => {
+	if(!Array.isArray(colors)) return colors;
+	if(barIndex > colors.length) barIndex = colors.length-1;
+	return colors[barIndex];
+};
