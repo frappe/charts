@@ -82,15 +82,19 @@ function animateSVG(svgContainer, elements) {
 
 		newElements.push(newElement);
 		animElements.push([animElement, parent]);
-
-		parent.replaceChild(animElement, unit);
+		
+		if(parent) {
+			parent.replaceChild(animElement, unit);
+		}
 	});
 
 	let animSvg = svgContainer.cloneNode(true);
 
 	animElements.map((animElement, i) => {
-		animElement[1].replaceChild(newElements[i], animElement[0]);
-		elements[i][0] = newElements[i];
+		if(animElement[1]) {
+			animElement[1].replaceChild(newElements[i], animElement[0]);
+			elements[i][0] = newElements[i];
+		}
 	});
 
 	return animSvg;
