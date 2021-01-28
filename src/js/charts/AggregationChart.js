@@ -1,5 +1,6 @@
 import BaseChart from './BaseChart';
 import { legendDot } from '../utils/draw';
+import { round } from '../utils/helpers';
 
 export default class AggregationChart extends BaseChart {
 	constructor(parent, args) {
