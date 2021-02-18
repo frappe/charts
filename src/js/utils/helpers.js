@@ -14,10 +14,10 @@ export function floatTwo(d) {
  * @param {Array} arr2 Second array
  */
 export function arraysEqual(arr1, arr2) {
-	if (arr1.length !== arr2.length) return false;
+	if(arr1.length !== arr2.length) return false;
 	let areEqual = true;
 	arr1.map((d, i) => {
-		if (arr2[i] !== d) areEqual = false;
+		if(arr2[i] !== d) areEqual = false;
 	});
 	return areEqual;
 }
@@ -46,8 +46,8 @@ export function shuffle(array) {
  * @param {Object} element element to fill with
  * @param {Boolean} start fill at start?
  */
-export function fillArray(array, count, element, start = false) {
-	if (!element) {
+export function fillArray(array, count, element, start=false) {
+	if(!element) {
 		element = start ? array[0] : array[array.length - 1];
 	}
 	let fillerArray = new Array(Math.abs(count)).fill(element);
@@ -61,16 +61,16 @@ export function fillArray(array, count, element, start = false) {
  * @param {Number} charWidth Width of single char in pixels
  */
 export function getStringWidth(string, charWidth) {
-	return (string + "").length * charWidth;
+	return (string+"").length * charWidth;
 }
 
 export function bindChange(obj, getFn, setFn) {
 	return new Proxy(obj, {
-		set: function (target, prop, value) {
+		set: function(target, prop, value) {
 			setFn();
 			return Reflect.set(target, prop, value);
 		},
-		get: function (target, prop) {
+		get: function(target, prop) {
 			getFn();
 			return Reflect.get(target, prop);
 		}
@@ -98,7 +98,7 @@ export function getPositionByAngle(angle, radius) {
  * @param {object} candidate Candidate to test
  * @param {Boolean} nonNegative flag to treat negative number as invalid
  */
-export function isValidNumber(candidate, nonNegative = false) {
+export function isValidNumber(candidate, nonNegative=false) {
 	if (Number.isNaN(candidate)) return false;
 	else if (candidate === undefined) return false;
 	else if (!Number.isFinite(candidate)) return false;
@@ -115,3 +115,29 @@ export function round(d) {
 	// https://www.jacklmoore.com/notes/rounding-in-javascript/
 	return Number(Math.round(d + 'e4') + 'e-4');
 }
+
+/**
+ * Creates a deep clone of an object
+ * @param {Object} candidate Any Object
+ */
+ export function deepClone(candidate) {
+	let cloned, value, key;
+  
+	if (candidate instanceof Date) {
+	  return new Date(candidate.getTime());
+	}
+  
+	if (typeof candidate !== "object" || candidate === null) {
+	  return candidate;
+	}
+  
+	cloned = Array.isArray(candidate) ? [] : {};
+  
+	for (key in candidate) {
+	  value = candidate[key];
+  
+	  cloned[key] = deepClone(value);
+	}
+  
+	return cloned;
+  }

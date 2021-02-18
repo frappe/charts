@@ -9,9 +9,11 @@ import {
 import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
 import { downloadFile, prepareForExport } from '../utils/export';
+import { deepClone } from '../utils/helpers';
 
 export default class BaseChart {
 	constructor(parent, options) {
+		options = deepClone(options)
 
 		this.parent = typeof parent === 'string'
 			? document.querySelector(parent)
