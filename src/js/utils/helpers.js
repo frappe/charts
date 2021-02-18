@@ -115,3 +115,29 @@ export function round(d) {
 	// https://www.jacklmoore.com/notes/rounding-in-javascript/
 	return Number(Math.round(d + 'e4') + 'e-4');
 }
+
+/**
+ * Creates a deep clone of an object
+ * @param {Object} candidate Any Object
+ */
+ export function deepClone(candidate) {
+	let cloned, value, key;
+  
+	if (candidate instanceof Date) {
+	  return new Date(candidate.getTime());
+	}
+  
+	if (typeof candidate !== "object" || candidate === null) {
+	  return candidate;
+	}
+  
+	cloned = Array.isArray(candidate) ? [] : {};
+  
+	for (key in candidate) {
+	  value = candidate[key];
+  
+	  cloned[key] = deepClone(value);
+	}
+  
+	return cloned;
+  }
