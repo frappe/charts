@@ -433,6 +433,7 @@ export function yMarker(y, label, width, options = {}) {
 	if (!isValidNumber(y)) y = 0;
 
 	if (!options.labelPos) options.labelPos = 'right';
+	if (!options.lineType) options.lineType = 'dashed';
 	let x = options.labelPos === 'left' ? LABEL_MARGIN
 		: width - getStringWidth(label, 5) - LABEL_MARGIN;
 
