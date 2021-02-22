@@ -35,7 +35,7 @@ export default class BaseChart {
 
 		this.config = {
 			showTooltip: 1, // calculate
-			showLegend: 1, // calculate
+			showLegend: (typeof options.showLegend !== 'undefined') ? options.showLegend : 1,
 			isNavigable: options.isNavigable || 0,
 			animate: (typeof options.animate !== 'undefined') ? options.animate : 1,
 			truncateLegends: options.truncateLegends || 1
@@ -157,8 +157,10 @@ export default class BaseChart {
 			this.data = this.realData;
 			setTimeout(() => { this.update(this.data); }, this.initTimeout);
 		}
-
-		this.renderLegend();
+		
+		if (this.config.showLegend) {
+			this.renderLegend();
+		}
 
 		this.setupNavigation(init);
 	}
