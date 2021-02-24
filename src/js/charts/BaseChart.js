@@ -13,7 +13,7 @@ import { deepClone } from '../utils/helpers';
 
 export default class BaseChart {
 	constructor(parent, options) {
-		options = deepClone(options)
+		options = deepClone(options);
 
 		this.parent = typeof parent === 'string'
 			? document.querySelector(parent)
@@ -155,7 +155,7 @@ export default class BaseChart {
 
 		if (init) {
 			this.data = this.realData;
-			setTimeout(() => { this.update(this.data); }, this.initTimeout);
+			setTimeout(() => { this.update(this.data, true); }, this.initTimeout);
 		}
 		
 		if (this.config.showLegend) {
@@ -230,10 +230,9 @@ export default class BaseChart {
 
 	setupComponents() { this.components = new Map(); }
 
-	update(data) {
-		if (!data) {
-			console.error('No data to update.');
-		}
+	update(data, drawing = false) {
+		if (!data) console.error('No data to update.');
+		if (!drawing) data = deepClone(data);
 		this.data = this.prepareData(data);
 		this.calc(); // builds state
 		this.render(this.components, this.config.animate);
