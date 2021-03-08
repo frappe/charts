@@ -233,6 +233,7 @@ export default class BaseChart {
 		this.data = this.prepareData(data);
 		this.calc(); // builds state
 		this.render(this.components, this.config.animate);
+		this.renderLegend();
 	}
 
 	render(components=this.components, animate=true) {
