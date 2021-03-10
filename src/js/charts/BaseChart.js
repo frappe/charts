@@ -6,12 +6,12 @@ import { BASE_MEASURES, getExtraHeight, getExtraWidth, getTopOffset, getLeftOffs
 import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
 import { downloadFile, prepareForExport } from '../utils/export';
-import { deepClone } from  '../utils/helpers'
+import { deepClone } from  '../utils/helpers';
 
 export default class BaseChart {
 	constructor(parent, options) {
 		// deepclone options to avoid making changes to orignal object
-		options = deepClone(options)
+		options = deepClone(options);
 
 		this.parent = typeof parent === 'string'
 			? document.querySelector(parent)
@@ -233,6 +233,7 @@ export default class BaseChart {
 		this.data = this.prepareData(data);
 		this.calc(); // builds state
 		this.render(this.components, this.config.animate);
+		this.renderLegend();
 	}
 
 	render(components=this.components, animate=true) {
