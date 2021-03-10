@@ -83,7 +83,7 @@ function animateSVG(svgContainer, elements) {
 		newElements.push(newElement);
 		animElements.push([animElement, parent]);
 		
-		if(parent) {
+		if (parent) {
 			parent.replaceChild(animElement, unit);
 		}
 	});
