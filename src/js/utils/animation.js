@@ -91,7 +91,7 @@ function animateSVG(svgContainer, elements) {
 	let animSvg = svgContainer.cloneNode(true);
 
 	animElements.map((animElement, i) => {
-		if(animElement[1]) {
+		if (animElement[1]) {
 			animElement[1].replaceChild(newElements[i], animElement[0]);
 			elements[i][0] = newElements[i];
 		}
