@@ -63,7 +63,7 @@ export default class SvgTip {
 		this.dataPointList.innerHTML = '';
 
 		this.listValues.map((set, i) => {
-			const color = this.colors[i] || 'black';
+			const color = Array.isArray(this.colors[i]) ? this.colors[i][this.index] : (this.colors[i] || 'black');
 			let value = set.formatted === 0 || set.formatted ? set.formatted : set.value;
 
 			let li = $.create('li', {
