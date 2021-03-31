@@ -18,8 +18,8 @@
     <a href="https://travis-ci.org/frappe/charts">
         <img src="https://img.shields.io/travis/frappe/charts.svg?style=flat-square">
     </a>
-    <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.iife.js">
-        <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.iife.js.svg?compression=gzip">
+    <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.umd.js">
+        <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.umd.js.svg?compression=gzip">
     </a>
 </p>
 
@@ -58,9 +58,9 @@
 * ...or include within your HTML
 
   ```html
-    <script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.1.0/dist/frappe-charts.min.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.1.0/dist/frappe-charts.min.umd.js"></script>
     <!-- or -->
-    <script src="https://unpkg.com/frappe-charts@1.1.0/dist/frappe-charts.min.iife.js"></script>
+    <script src="https://unpkg.com/frappe-charts@1.1.0/dist/frappe-charts.min.umd.js"></script>
   ```
 
 #### Usage
@@ -152,4 +152,3 @@ This repository has been released under the [MIT License](LICENSE)
 ------------------
 Project maintained by [Frappe](https://frappe.io).
 Used in [ERPNext](https://erpnext.com). Read the [blog post](https://medium.com/@pratu16x7/so-we-decided-to-create-our-own-charts-a95cb5032c97).
-

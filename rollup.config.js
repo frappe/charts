@@ -48,7 +48,7 @@ export default [
 			},
 			{
 				file: pkg.browser,
-				format: 'iife',
+				format: 'umd',
 			}
 		],
 		name: 'frappe',
