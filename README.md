@@ -5,11 +5,14 @@
     </a>
     <p align="center">
         <p>GitHub-inspired modern, intuitive and responsive charts with zero dependencies</p>
-        <a href="https://frappe.github.io/charts">
+        <a href="https://frappe.io/charts">
             <b>Explore Demos » </b>
         </a>
-        <a href="https://codepen.io/pratu16x7/pen/wjKBoq">
-            <b> Edit at CodePen »</b>
+        <a href="https://codesandbox.io/s/frappe-charts-demo-viqud">
+            <b> Edit at CodeSandbox »</b>
+        </a>
+        <a href="https://frappe.io/charts/docs">
+            <b>Documentation » </b>
         </a>
     </p>
 </div>
