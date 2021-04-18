@@ -58,6 +58,8 @@ export function shortenLargeNumber(label) {
 export function getSplineCurvePointsStr(xList, yList) {
 
 	let points = [];
+	const length = Math.min(xList.length, yList.length);
+	
 	for (let i = 0; i < xList.length; i++) {
 		points.push([xList[i], yList[i]]);
 	}
