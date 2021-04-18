@@ -122,8 +122,14 @@ export function getShortenedLabels(chartWidth, labels = [], isSeries = true) {
 					label = label.slice(0, allowedLetters) + '..';
 				}
 			} else {
-				if (i % seriesMultiple !== 0 && i !== (labels.length - 1)) {
-					label = "";
+				if (i % seriesMultiple !== 0) {
+					if (i !== (labels.length - 1)) {
+						label = "";
+					}
+				} else {
+					if (i > (labels.length - (seriesMultiple / 2))) {
+						label = "";
+					}
 				}
 			}
 		}
