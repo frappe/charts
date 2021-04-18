@@ -131,10 +131,14 @@ export default class PieChart extends AggregationChart {
 			this.tip.setValues(x, y, { name: title, value: percent + "%" });
 			this.tip.showTip();
 		} else {
-			transform(path, 'translate3d(0,0,0)');
-			this.tip.hideTip();
-			path.style.fill = color;
+			this.resetHover(path, color)
 		}
+	}
+
+	resetHover(path, color) {
+		transform(path, 'translate3d(0,0,0)');
+		this.tip.hideTip();
+		path.style.fill = color;
 	}
 
 	bindTooltip() {

@@ -25,6 +25,12 @@ export default class DonutChart extends PieChart {
 			: this.center.y - this.strokeWidth / 2;
 	}
 
+	resetHover(path, color) {
+		transform(path,'translate3d(0,0,0)');
+		this.tip.hideTip();
+		path.style.stroke = color;
+	}
+
 	setupComponents() {
 		let s = this.state;
 
