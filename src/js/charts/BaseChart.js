@@ -92,11 +92,16 @@ export default class BaseChart {
 
 		// Bind window events
 		this.boundDrawFn = () => this.draw(true);
+		if (ResizeObserver) {
+			this.resizeObserver = new ResizeObserver(this.boundDrawFn);
+			this.resizeObserver.observe(this.parent);
+		}
 		window.addEventListener('resize', this.boundDrawFn);
 		window.addEventListener('orientationchange', this.boundDrawFn);
 	}
 
 	destroy() {
+		if (this.resizeObserver) this.resizeObserver.disconnect();
 		window.removeEventListener('resize', this.boundDrawFn);
 		window.removeEventListener('orientationchange', this.boundDrawFn);
 	}
