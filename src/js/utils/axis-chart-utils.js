@@ -31,23 +31,8 @@ export function dataPrep(data, type) {
 			} else {
 				vals = fillArray(vals, datasetLength - vals.length, 0);
 			}
+			d.values = vals;
 		}
-
-		//XSS
-		try{
-			for(var i=0;i<datasetLength;i++){
-				var temp = data.datasets[i]['values'];
-				for(var j=0;j<temp.length;j++){
-					if(typeof(temp[j]) == "string"){
-						data.datasets[i]['values'][j] = String(temp[j]).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-					}
-				}
-			}
-		}catch(e){
-		}
-
-		// Set labels
-		//
 
 		// Set type
 		if(!d.chartType ) {
