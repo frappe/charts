@@ -31,10 +31,8 @@ export function dataPrep(data, type) {
 			} else {
 				vals = fillArray(vals, datasetLength - vals.length, 0);
 			}
+			d.values = vals;
 		}
-
-		// Set labels
-		//
 
 		// Set type
 		if(!d.chartType ) {
