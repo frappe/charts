@@ -82,12 +82,12 @@ export function calcChartIntervals(values, withMinimum = false, range = {}) {
 	let maxValue = Math.max(...values);
 	let minValue = Math.min(...values);
 
-	if (range.max) {
+	if (range.max !== undefined) {
 		maxValue = maxValue > range.max ? maxValue : range.max;
 	}
 	
-	if (range.min) {
-		minValue = minValue < range.min ? minValue : range.end;
+	if (range.min !== undefined) {
+		minValue = minValue < range.min ? minValue : range.min;
 	}
 
 	// Exponent to be used for pretty print
