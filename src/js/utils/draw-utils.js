@@ -51,7 +51,7 @@ export function shortenLargeNumber(label) {
 	let shortened = (Math.pow(10, p - l * 3) * +(number / Math.pow(10, p)).toFixed(1));
 
 	// Correct for floating point error upto 2 decimal places
-	return Math.round(shortened * 100) / 100 + ' ' + ['', 'K', 'M', 'B', 'T'][l];
+	return Math.round(shortened * 100) / 100 + ['', 'K', 'M', 'B', 'T'][l];
 }
 
 // cubic bezier curve calculation (from example by François Romain)
