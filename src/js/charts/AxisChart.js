@@ -40,6 +40,7 @@ export default class AxisChart extends BaseChart {
 		this.config.yAxisMode = options.axisOptions.yAxisMode || 'span';
 		this.config.xIsSeries = options.axisOptions.xIsSeries || 0;
 		this.config.shortenYAxisNumbers = options.axisOptions.shortenYAxisNumbers || 0;
+		this.config.yAxisRange = options.axisOptions.yAxisRange || {},
 
 		this.config.formatTooltipX = options.tooltipOptions.formatTooltipX;
 		this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
@@ -86,7 +87,7 @@ export default class AxisChart extends BaseChart {
 	}
 
 	calcYAxisParameters(dataValues, withMinimum = 'false') {
-		const yPts = calcChartIntervals(dataValues, withMinimum);
+		const yPts = calcChartIntervals(dataValues, withMinimum, this.config.yAxisRange);
 		const scaleMultiplier = this.height / getValueRange(yPts);
 		const intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
 		const zeroLine = this.height - (getZeroIndex(yPts) * intervalHeight);
