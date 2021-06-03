@@ -303,6 +303,8 @@ export default class AxisChart extends BaseChart {
 					regionFill: this.lineOptions.regionFill,
 					spline: this.lineOptions.spline,
 					showDots: this.lineOptions.showDots,
+					trailingDot: this.lineOptions.trailingDot,
+					hideDotBorder: this.lineOptions.hideDotBorder,
 					hideLine: this.lineOptions.hideLine,
 
 					// same for all datasets

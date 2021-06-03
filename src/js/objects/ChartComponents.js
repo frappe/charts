@@ -384,7 +384,7 @@ let componentConfigs = {
 				);
 			}
 
-			this.units = [];
+						this.units = [];
 			if (c.showDots) {
 				this.units = data.yPositions.map((y, j) => {
 					return datasetDot(
@@ -393,9 +393,25 @@ let componentConfigs = {
 						data.radius,
 						c.color,
 						(c.valuesOverPoints ? data.values[j] : ''),
-						j
+						j,
+						c.hideDotBorder
 					);
 				});
+			}
+
+			if (c.trailingDot && !c.showDots) {
+				const lastIndex = data.yPositions.length - 1;
+				const dot = datasetDot(
+					data.xPositions[lastIndex],
+					data.yPositions[lastIndex],
+					data.radius,
+					c.color,
+					(c.valuesOverPoints ? data.values[lastIndex] : ''),
+					lastIndex,
+					c.hideDotBorder
+				);
+
+				this.units.push(dot);
 			}
 
 			return Object.values(this.paths).concat(this.units);

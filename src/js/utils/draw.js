@@ -573,9 +573,9 @@ export function datasetBar(x, yTop, width, color, label = '', index = 0, offset 
 	}
 }
 
-export function datasetDot(x, y, radius, color, label = '', index = 0) {
+export function datasetDot(x, y, radius, color, label = '', index = 0, hideDotBorder = false) {
 	let dot = createSVG('circle', {
-		style: `fill: ${color}`,
+		style: `fill: ${color} ${hideDotBorder ? `stroke: ${color}`: ''}`,
 		'data-point-index': index,
 		cx: x,
 		cy: y,
