@@ -11,7 +11,7 @@ export function downloadFile(filename, data) {
 	document.body.appendChild(a);
 	a.click();
 	setTimeout(function () {
-		document.body.removeChild(a);
+		a.remove();
 		window.URL.revokeObjectURL(url);
 	}, 300);
 }
