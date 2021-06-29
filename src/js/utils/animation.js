@@ -101,7 +101,7 @@ export function runSMILAnimation(parent, svgElement, elementsToAnimate) {
 
 	let animSvgElement = animateSVG(svgElement, elementsToAnimate);
 	if (svgElement.parentNode == parent) {
-		parent.removeChild(svgElement);
+		svgElement.remove();
 		parent.appendChild(animSvgElement);
 
 	}
@@ -109,7 +109,7 @@ export function runSMILAnimation(parent, svgElement, elementsToAnimate) {
 	// Replace the new svgElement (data has already been replaced)
 	setTimeout(() => {
 		if (animSvgElement.parentNode == parent) {
-			parent.removeChild(animSvgElement);
+			animSvgElement.remove();
 			parent.appendChild(svgElement);
 		}
 	}, REPLACE_ALL_NEW_DUR);
