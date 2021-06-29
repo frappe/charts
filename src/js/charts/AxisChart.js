@@ -84,7 +84,7 @@ export default class AxisChart extends BaseChart {
 	}
 
 	calcYAxisParameters(dataValues, withMinimum = 'false') {
-		const yPts = calcChartIntervals(dataValues, withMinimum);
+		const yPts = calcChartIntervals(dataValues, withMinimum, this.rawChartArgs.y_axis_exp_based_on_range === true);
 		const scaleMultiplier = this.height / getValueRange(yPts);
 		const intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
 		const zeroLine = this.height - (getZeroIndex(yPts) * intervalHeight);

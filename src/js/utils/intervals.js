@@ -61,8 +61,17 @@ function getChartRangeIntervals(max, min=0) {
 	return intervals;
 }
 
-function getChartIntervals(maxValue, minValue=0) {
-	let [normalMaxValue, exponent] = normalize(maxValue);
+function getChartIntervals(maxValue, minValue=0, expBasedOnRange=false) {
+	let exponent, normalMaxValue;
+
+	if (expBasedOnRange) {
+		let range = maxValue - minValue;
+		exponent = normalize(range)[1];
+		normalMaxValue = maxValue/Math.pow(10, exponent);
+	} else {
+		[normalMaxValue, exponent] = normalize(maxValue);
+	}
+
 	let normalMinValue = minValue ? minValue/Math.pow(10, exponent): 0;
 
 	// Allow only 7 significant digits
@@ -73,7 +82,7 @@ function getChartIntervals(maxValue, minValue=0) {
 	return intervals;
 }
 
-export function calcChartIntervals(values, withMinimum=false) {
+export function calcChartIntervals(values, withMinimum=false, expBasedOnRange=false) {
 	//*** Where the magic happens ***
 
 	// Calculates best-fit y intervals from given values
@@ -106,7 +115,7 @@ export function calcChartIntervals(values, withMinimum=false) {
 		if(!withMinimum) {
 			intervals = getChartIntervals(maxValue);
 		} else {
-			intervals = getChartIntervals(maxValue, minValue);
+			intervals = getChartIntervals(maxValue, minValue, expBasedOnRange);
 		}
 	}
 
@@ -146,7 +155,7 @@ export function calcChartIntervals(values, withMinimum=false) {
 		if(!withMinimum) {
 			intervals = getChartIntervals(pseudoMaxValue);
 		} else {
-			intervals = getChartIntervals(pseudoMaxValue, pseudoMinValue);
+			intervals = getChartIntervals(pseudoMaxValue, pseudoMinValue, expBasedOnRange);
 		}
 
 		intervals = intervals.reverse().map(d => d * (-1));
