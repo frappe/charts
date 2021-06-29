@@ -17,6 +17,7 @@ export default class AxisChart extends BaseChart {
 		this.lineOptions = args.lineOptions || {};
 
 		this.type = args.type || 'line';
+		this.withMinimum = args.withMinimum !== undefined ? args.withMinimum : args.type || 'line';
 		this.init = 1;
 
 		this.setup();
@@ -57,7 +58,7 @@ export default class AxisChart extends BaseChart {
 	calc(onlyWidthChange = false) {
 		this.calcXPositions();
 		if(!onlyWidthChange) {
-			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+			this.calcYAxisParameters(this.getAllYValues(), this.withMinimum);
 		}
 		this.makeDataByIndex();
 	}
