@@ -72,11 +72,11 @@ const data = {
     ],
     datasets: [
         {
-            name: "Some Data", type: "bar",
+            name: "Some Data", chartType: "bar",
             values: [25, 40, 30, 35, 8, 52, 17, -4]
         },
         {
-            name: "Another Set", type: "line",
+            name: "Another Set", chartType: "line",
             values: [25, 50, -10, 15, 18, 32, 27, 14]
         }
     ]
