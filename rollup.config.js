@@ -40,18 +40,19 @@ fs.readFile('src/css/charts.scss', (err, css) => {
 export default [
 	{
 		input: 'src/js/index.js',
-		sourcemap: true,
 		output: [
 			{
 				file: 'docs/assets/js/frappe-charts.min.js',
 				format: 'iife',
+				sourcemap: true,
 			},
 			{
 				file: pkg.browser,
 				format: 'umd',
+				name: 'frappe',
+				sourcemap: true,
 			}
 		],
-		name: 'frappe',
 		plugins: [
 			postcssPlugin({
 				preprocessor: (content, id) => new Promise((resolve, reject) => {
@@ -83,14 +84,13 @@ export default [
 	},
 	{
 		input: 'docs/assets/js/index.js',
-		sourcemap: true,
 		output: [
 			{
 				file: 'docs/assets/js/index.min.js',
 				format: 'iife',
+				sourcemap: true,
 			}
 		],
-		name: 'frappe',
 		plugins: [
 			postcssPlugin({
 				preprocessor: (content, id) => new Promise((resolve, reject) => {
@@ -120,15 +120,16 @@ export default [
 	},
 	{
 		input: 'src/js/chart.js',
-		sourcemap: true,
 		output: [
 			{
 				file: pkg.main,
 				format: 'cjs',
+				sourcemap: true,
 			},
 			{
 				file: pkg.module,
 				format: 'es',
+				sourcemap: true,
 			}
 		],
 		plugins: [
