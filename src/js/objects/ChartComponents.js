@@ -1,5 +1,5 @@
 import { makeSVGGroup } from '../utils/draw';
-import { makeText, makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
+import { makeText, generateAxisLabel, makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import { translateHoriLine, translateVertLine, animateRegion, animateBar,
 	animateDot, animatePath, animatePathStr } from '../utils/animate';
@@ -50,9 +50,13 @@ class ChartComponent {
 		this.store = this.makeElements(data);
 
 		this.layer.textContent = '';
-		this.store.forEach(element => {
-			this.layer.appendChild(element);
-		});
+        this.store.forEach((element) => {
+            element.length
+                ? element.forEach((el) => {
+                      this.layer.appendChild(el);
+                  })
+                : this.layer.appendChild(element);
+        });
 		this.labels.forEach(element => {
 			this.layer.appendChild(element);
 		});
@@ -114,36 +118,93 @@ let componentConfigs = {
 			if(newData) return [];
 		}
 	},
-	yAxis: {
-		layerClass: 'y axis',
-		makeElements(data) {
-			return data.positions.map((position, i) =>
-				yLine(position, data.labels[i], this.constants.width,
-					{mode: this.constants.mode, pos: this.constants.pos, shortenNumbers: this.constants.shortenNumbers})
-			);
-		},
+    yAxis: {
+        layerClass: 'y axis',
+        makeElements(data) {
+            let elements = [];
 
-		animateElements(newData) {
-			let newPos = newData.positions;
-			let newLabels = newData.labels;
-			let oldPos = this.oldData.positions;
-			let oldLabels = this.oldData.labels;
+            if (data.length) {
+                data.forEach((item, i) => {
+                    item.positions.map((position, i) => {
+                        elements.push(
+                            yLine(position, item.labels[i], this.constants.width, {
+                                mode: this.constants.mode,
+                                pos: item.pos || this.constants.pos,
+                                shortenNumbers: this.constants.shortenNumbers
+                            })
+                        );
+                    });
+                    // we need to make yAxis titles if they are defined
+                    if (item.title) {
+                        elements.push(
+                            generateAxisLabel({
+                                title: item.title,
+                                position: item.pos,
+                                height: item.zeroLine,
+                                width: this.constants.width
+                            })
+                        );
+                    }
+                });
 
-			[oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
-			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+                return elements;
+            }
 
-			this.render({
-				positions: oldPos,
-				labels: newLabels
-			});
+            return data.positions.map((position, i) => {
+                return yLine(position, data.labels[i], this.constants.width, {
+                    mode: this.constants.mode,
+                    pos: this.constants.pos,
+                    shortenNumbers: this.constants.shortenNumbers
+                });
+            });
+        },
 
-			return this.store.map((line, i) => {
-				return translateHoriLine(
-					line, newPos[i], oldPos[i]
-				);
-			});
-		}
-	},
+        animateElements(newData) {
+            const animateMultipleElements = (oldData, newData) => {
+                let newPos = newData.positions;
+                let newLabels = newData.labels;
+                let oldPos = oldData.positions;
+                let oldLabels = oldData.labels;
+
+                [oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
+                [oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+
+                this.render({
+                    positions: oldPos,
+                    labels: newLabels
+                });
+
+                return this.store.map((line, i) => {
+                    return translateHoriLine(line, newPos[i], oldPos[i]);
+                });
+            };
+
+            // we will need to animate both axis if we have more than one.
+            // so check if the oldData is an array of values.
+            if (this.oldData instanceof Array) {
+                return this.oldData.forEach((old, i) => {
+                    animateMultipleElements(old, newData[i]);
+                });
+            }
+
+            let newPos = newData.positions;
+            let newLabels = newData.labels;
+            let oldPos = this.oldData.positions;
+            let oldLabels = this.oldData.labels;
+
+            [oldPos, newPos] = equilizeNoOfElements(oldPos, newPos);
+            [oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+
+            this.render({
+                positions: oldPos,
+                labels: newLabels
+            });
+
+            return this.store.map((line, i) => {
+                return translateHoriLine(line, newPos[i], oldPos[i]);
+            });
+        }
+    },
 
 	xAxis: {
 		layerClass: 'x axis',

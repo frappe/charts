@@ -61,16 +61,18 @@ export function zeroDataPrep(realData) {
 	let datasetLength = realData.labels.length;
 	let zeroArray = new Array(datasetLength).fill(0);
 
-	let zeroData = {
-		labels: realData.labels.slice(0, -1),
-		datasets: realData.datasets.map(d => {
-			return {
-				name: '',
-				values: zeroArray.slice(0, -1),
-				chartType: d.chartType
-			};
-		}),
-	};
+    let zeroData = {
+        labels: realData.labels.slice(0, -1),
+        datasets: realData.datasets.map((d) => {
+            const { axisID } = d;
+            return {
+                axisID,
+                name: '',
+                values: zeroArray.slice(0, -1),
+                chartType: d.chartType
+            };
+        })
+    };
 
 	if(realData.yMarkers) {
 		zeroData.yMarkers = [

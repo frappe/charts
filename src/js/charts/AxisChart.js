@@ -30,20 +30,37 @@ export default class AxisChart extends BaseChart {
 	}
 
 	configure(options) {
-		super.configure(options);
+        super.configure(options);
+        const { axisOptions = {} } = options;
+        const { xAxis, yAxis } = axisOptions || {};
 
-		options.axisOptions = options.axisOptions || {};
-		options.tooltipOptions = options.tooltipOptions || {};
+        options.tooltipOptions = options.tooltipOptions || {};
 
-		this.config.xAxisMode = options.axisOptions.xAxisMode || 'span';
-		this.config.yAxisMode = options.axisOptions.yAxisMode || 'span';
-		this.config.xIsSeries = options.axisOptions.xIsSeries || 0;
-		this.config.shortenYAxisNumbers = options.axisOptions.shortenYAxisNumbers || 0;
+        this.config.xAxisMode = xAxis ? xAxis.xAxisMode : axisOptions.xAxisMode || 'span';
 
-		this.config.formatTooltipX = options.tooltipOptions.formatTooltipX;
-		this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
+        // this will pass an array
+        // lets determine if we need two yAxis based on if there is length
+        // to the yAxis array
+        if (yAxis && yAxis.length) {
+            this.config.yAxisConfig = yAxis.map((item) => {
+                return {
+                    yAxisMode: item.yAxisMode,
+                    id: item.id,
+                    position: item.position,
+                    title: item.title
+                };
+            });
+        } else {
+            this.config.yAxisMode = axisOptions.yAxisMode || 'span';
+        }
 
-		this.config.valuesOverPoints = options.valuesOverPoints;
+        this.config.xIsSeries = axisOptions.xIsSeries || 0;
+        this.config.shortenYAxisNumbers = axisOptions.shortenYAxisNumbers || 0;
+
+        this.config.formatTooltipX = options.tooltipOptions.formatTooltipX;
+        this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
+
+        this.config.valuesOverPoints = options.valuesOverPoints;
 	}
 
 	prepareData(data=this.data) {
@@ -83,45 +100,106 @@ export default class AxisChart extends BaseChart {
 		};
 	}
 
-	calcYAxisParameters(dataValues, withMinimum = 'false') {
-		const yPts = calcChartIntervals(dataValues, withMinimum);
-		const scaleMultiplier = this.height / getValueRange(yPts);
-		const intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
-		const zeroLine = this.height - (getZeroIndex(yPts) * intervalHeight);
 
-		this.state.yAxis = {
-			labels: yPts,
-			positions: yPts.map(d => zeroLine - d * scaleMultiplier),
-			scaleMultiplier: scaleMultiplier,
-			zeroLine: zeroLine,
-		};
+    calcYAxisParameters(dataValues, withMinimum = 'false') {
+        let yPts, scaleMultiplier, intervalHeight, zeroLine, positions;
 
-		// Dependent if above changes
-		this.calcDatasetPoints();
-		this.calcYExtremes();
-		this.calcYRegions();
-	}
+        // if we have an object we have multiple yAxisParameters.
+        if (dataValues instanceof Array) {
+            yPts = calcChartIntervals(dataValues, withMinimum);
+            scaleMultiplier = this.height / getValueRange(yPts);
+            intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
+            zeroLine = this.height - getZeroIndex(yPts) * intervalHeight;
+            this.state.yAxis = {
+                labels: yPts,
+                positions: yPts.map((d) => zeroLine - d * scaleMultiplier),
+                scaleMultiplier: scaleMultiplier,
+                zeroLine: zeroLine
+            };
+        } else {
+            this.state.yAxis = [];
+            for (let key in dataValues) {
+                const dataValue = dataValues[key];
+                yPts = calcChartIntervals(dataValue, withMinimum);
+                scaleMultiplier = this.height / getValueRange(yPts);
+                intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
+                zeroLine = this.height - getZeroIndex(yPts) * intervalHeight;
+                positions = yPts.map((d) => zeroLine - d * scaleMultiplier);
 
-	calcDatasetPoints() {
-		let s = this.state;
-		let scaleAll = values => values.map(val => scale(val, s.yAxis));
+                const yAxisConfigObject =
+                    this.config.yAxisConfig.find((item) => key === item.id) || [];
+                const yAxisAlignment = yAxisConfigObject
+                    ? yAxisConfigObject.position
+                    : 'right';
 
-		s.datasets = this.data.datasets.map((d, i) => {
-			let values = d.values;
-			let cumulativeYs = d.cumulativeYs || [];
-			return {
-				name: d.name && d.name.replace(/<|>|&/g, (char) => char == '&' ? '&amp;' : char == '<' ? '&lt;' : '&gt;'),
-				index: i,
-				chartType: d.chartType,
+                if (this.state.yAxis.length) {
+                    const yPtsArray = [];
+                    const firstArr = this.state.yAxis[0];
+                    // we need to loop through original positions.
+                    firstArr.positions.forEach((pos) => {
+                        yPtsArray.push(Math.ceil(pos / scaleMultiplier));
+                    });
+                    yPts = yPtsArray.reverse();
+                    zeroLine = this.height - getZeroIndex(yPts) * intervalHeight;
+                    positions = firstArr.positions;
+                }
 
-				values: values,
-				yPositions: scaleAll(values),
+                this.state.yAxis.push({
+                    axisID: key || 'left-axis',
+                    labels: yPts,
+                    title: yAxisConfigObject.title,
+                    pos: yAxisAlignment,
+                    scaleMultiplier,
+                    zeroLine,
+                    positions
+                });
+            }
+        }
 
-				cumulativeYs: cumulativeYs,
-				cumulativeYPos: scaleAll(cumulativeYs),
-			};
-		});
-	}
+        // Dependent if above changes
+        this.calcDatasetPoints();
+        this.calcYExtremes();
+        this.calcYRegions();
+    }
+
+    calcDatasetPoints() {
+        let s = this.state;
+        let scaleAll = (values, id) => {
+            return values.map((val) => {
+                let { yAxis } = s;
+
+                if (yAxis instanceof Array) {
+					yAxis = yAxis.length > 1 ? yAxis.find((axis) => id === axis.axisID) : s.yAxis[0];
+                }
+
+                return scale(val, yAxis);
+            });
+        };
+
+        s.barChartIndex = 1;
+        s.datasets = this.data.datasets.map((d, i) => {
+            let values = d.values;
+            let cumulativeYs = d.cumulativeYs || [];
+
+            return {
+                name:
+                    d.name &&
+                    d.name.replace(/<|>|&/g, (char) =>
+                        char == '&' ? '&amp;' : char == '<' ? '&lt;' : '&gt;'
+                    ),
+                index: i,
+                barIndex: d.chartType === 'bar' ? s.barChartIndex++ : s.barChartIndex,
+                chartType: d.chartType,
+
+                values: values,
+                yPositions: scaleAll(values, d.axisID),
+                id: d.axisID,
+
+                cumulativeYs: cumulativeYs,
+                cumulativeYPos: scaleAll(cumulativeYs, d.axisID)
+            };
+        });
+    }
 
 	calcYExtremes() {
 		let s = this.state;
@@ -161,46 +239,73 @@ export default class AxisChart extends BaseChart {
 		}
 	}
 
-	getAllYValues() {
-		let key = 'values';
+    getAllYValues() {
+        let key = 'values';
+        let multiAxis = this.config.yAxisConfig ? true : false;
+        let allValueLists = multiAxis ? {} : [];
 
-		if(this.barOptions.stacked) {
-			key = 'cumulativeYs';
-			let cumulative = new Array(this.state.datasetLength).fill(0);
-			this.data.datasets.map((d, i) => {
-				let values = this.data.datasets[i].values;
-				d[key] = cumulative = cumulative.map((c, i) => c + values[i]);
-			});
-		}
+        let groupBy = (arr, property) => {
+            return arr.reduce((acc, cur) => {
+                acc[cur[property]] = [...(acc[cur[property]] || []), cur];
+                return acc;
+            }, {});
+        };
 
-		let allValueLists = this.data.datasets.map(d => d[key]);
-		if(this.data.yMarkers) {
-			allValueLists.push(this.data.yMarkers.map(d => d.value));
-		}
-		if(this.data.yRegions) {
-			this.data.yRegions.map(d => {
-				allValueLists.push([d.end, d.start]);
-			});
-		}
+        let generateCumulative = (arr) => {
+            let cumulative = new Array(this.state.datasetLength).fill(0);
+            arr.forEach((d, i) => {
+                let values = arr[i].values;
+                d[key] = cumulative = cumulative.map((c, i) => {
+                    return c + values[i];
+                });
+            });
+        };
 
-		return [].concat(...allValueLists);
-	}
+        if (this.barOptions.stacked) {
+            key = 'cumulativeYs';
+            // we need to filter out the different yAxis ID's here.
+            if (multiAxis) {
+                const groupedDataSets = groupBy(this.data.datasets, 'axisID');
+                // const dataSetsByAxis = this.data.dd
+                for (var axisID in groupedDataSets) {
+                    generateCumulative(groupedDataSets[axisID]);
+                }
+            } else {
+                generateCumulative(this.data.datasets);
+            }
+        }
+
+        // this is the trouble maker, we don't want to merge all
+        // datasets since we are trying to run two yAxis.
+        if (multiAxis) {
+            this.data.datasets.forEach((d) => {
+                // if the array exists already just push more data into it.
+                // otherwise create a new array into the object.
+                allValueLists[d.axisID || key]
+                    ? allValueLists[d.axisID || key].push(...d[key])
+                    : (allValueLists[d.axisID || key] = [...d[key]]);
+            });
+        } else {
+            allValueLists = this.data.datasets.map((d) => {
+                return d[key];
+            });
+        }
+
+        if (this.data.yMarkers && !multiAxis) {
+            allValueLists.push(this.data.yMarkers.map((d) => d.value));
+        }
+
+        if (this.data.yRegions && !multiAxis) {
+            this.data.yRegions.map((d) => {
+                allValueLists.push([d.end, d.start]);
+            });
+        }
+
+        return multiAxis ? allValueLists : [].concat(...allValueLists);
+    }
 
 	setupComponents() {
 		let componentConfigs = [
-			[
-				'yAxis',
-				{
-					mode: this.config.yAxisMode,
-					width: this.width,
-					shortenNumbers: this.config.shortenYAxisNumbers
-					// pos: 'right'
-				},
-				function() {
-					return this.state.yAxis;
-				}.bind(this)
-			],
-
 			[
 				'xAxis',
 				{
@@ -229,11 +334,43 @@ export default class AxisChart extends BaseChart {
 			],
 		];
 
+        // if we have multiple yAxisConfigs we need to update the yAxisDefault
+        // components to multiple yAxis components.
+        if (this.config.yAxisConfig && this.config.yAxisConfig.length) {
+            this.config.yAxisConfig.forEach((yAxis) => {
+                componentConfigs.push([
+                    'yAxis',
+                    {
+                        mode: this.config.yAxisMode,
+                        width: this.width,
+                        shortenNumbers: this.config.shortenYAxisNumbers,
+                        pos: yAxis.position || 'left'
+                    },
+                    function () {
+                        return this.state.yAxis;
+                    }.bind(this)
+                ]);
+            });
+        } else {
+            componentConfigs.push([
+                'yAxis',
+                {
+                    mode: this.config.yAxisMode,
+                    width: this.width,
+                    shortenNumbers: this.config.shortenYAxisNumbers
+                },
+                function () {
+                    return this.state.yAxis;
+                }.bind(this)
+            ]);
+        }
+
 		let barDatasets = this.state.datasets.filter(d => d.chartType === 'bar');
 		let lineDatasets = this.state.datasets.filter(d => d.chartType === 'line');
 
 		let barsConfigs = barDatasets.map(d => {
-			let index = d.index;
+            let index = d.index;
+            let barIndex = d.barIndex || index;
 			return [
 				'barGraph' + '-' + d.index,
 				{
@@ -246,32 +383,44 @@ export default class AxisChart extends BaseChart {
 					minHeight: this.height * MIN_BAR_PERCENT_HEIGHT,
 				},
 				function() {
-					let s = this.state;
-					let d = s.datasets[index];
-					let stacked = this.barOptions.stacked;
+                    let s = this.state;
+                    let { yAxis } = s;
+                    let d = s.datasets[index];
+                    let { id = 'left-axis' } = d;
+                    let stacked = this.barOptions.stacked;
 
-					let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
-					let barsWidth = s.unitWidth * (1 - spaceRatio);
-					let barWidth = barsWidth/(stacked ? 1 : barDatasets.length);
+                    let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
+                    let barsWidth = s.unitWidth * (1 - spaceRatio);
+                    let barWidth = barsWidth / (stacked ? 1 : barDatasets.length);
 
-					let xPositions = s.xAxis.positions.map(x => x - barsWidth/2);
-					if(!stacked) {
-						xPositions = xPositions.map(p => p + barWidth * index);
+                    // if there are multiple yAxis we need to return the yAxis with the
+                    // proper ID.
+					if (yAxis instanceof Array) {
+						// if the person only configured one yAxis in the array return the first.
+						yAxis = yAxis.length > 1 ? yAxis.find((axis) => id === axis.axisID) : s.yAxis[0];
 					}
 
-					let labels = new Array(s.datasetLength).fill('');
-					if(this.config.valuesOverPoints) {
-						if(stacked && d.index === s.datasets.length - 1) {
-							labels = d.cumulativeYs;
-						} else {
-							labels = d.values;
-						}
-					}
 
-					let offsets = new Array(s.datasetLength).fill(0);
-					if(stacked) {
-						offsets = d.yPositions.map((y, j) => y - d.cumulativeYPos[j]);
-					}
+                    let xPositions = s.xAxis.positions.map((x) => x - barsWidth / 2);
+
+                    if (!stacked) {
+                        xPositions = xPositions.map((p) => {
+                            return p + barWidth * barIndex - barWidth;
+                        });
+                    }
+
+                    let labels = new Array(s.datasetLength).fill('');
+                    if (this.config.valuesOverPoints) {
+                        if (stacked && d.index === s.datasets.length - 1) {
+                            labels = d.cumulativeYs;
+                        } else {
+                            labels = d.values;
+                        }
+                    }
+                    let offsets = new Array(s.datasetLength).fill(0);
+                    if (stacked) {
+                        offsets = d.yPositions.map((y, j) => y - d.cumulativeYPos[j]);
+                    }
 
 					return {
 						xPositions: xPositions,
@@ -280,7 +429,7 @@ export default class AxisChart extends BaseChart {
 						// values: d.values,
 						labels: labels,
 
-						zeroLine: s.yAxis.zeroLine,
+						zeroLine: yAxis.zeroLine,
 						barsWidth: barsWidth,
 						barWidth: barWidth,
 					};
@@ -288,41 +437,49 @@ export default class AxisChart extends BaseChart {
 			];
 		});
 
-		let lineConfigs = lineDatasets.map(d => {
-			let index = d.index;
-			return [
-				'lineGraph' + '-' + d.index,
-				{
-					index: index,
-					color: this.colors[index],
-					svgDefs: this.svgDefs,
-					heatline: this.lineOptions.heatline,
-					regionFill: this.lineOptions.regionFill,
-					spline: this.lineOptions.spline,
-					hideDots: this.lineOptions.hideDots,
-					hideLine: this.lineOptions.hideLine,
+        let lineConfigs = lineDatasets.map((d) => {
+            let index = d.index;
+            return [
+                'lineGraph' + '-' + d.index,
+                {
+                    index: index,
+                    color: this.colors[index],
+                    svgDefs: this.svgDefs,
+                    heatline: this.lineOptions.heatline,
+                    regionFill: this.lineOptions.regionFill,
+                    spline: this.lineOptions.spline,
+                    hideDots: this.lineOptions.hideDots,
+                    hideLine: this.lineOptions.hideLine,
 
-					// same for all datasets
-					valuesOverPoints: this.config.valuesOverPoints,
-				},
-				function() {
-					let s = this.state;
-					let d = s.datasets[index];
-					let minLine = s.yAxis.positions[0] < s.yAxis.zeroLine
-						? s.yAxis.positions[0] : s.yAxis.zeroLine;
+                    // same for all datasets
+                    valuesOverPoints: this.config.valuesOverPoints
+                },
+                function () {
+                    let s = this.state;
+                    let d = s.datasets[index];
 
-					return {
-						xPositions: s.xAxis.positions,
-						yPositions: d.yPositions,
+                    // if we have more than one yindex lets map the values
+                    const yAxis = s.yAxis.length
+                        ? s.yAxis.find((axis) => d.id === axis.axisID) || s.yAxis[0]
+                        : s.yAxis;
 
-						values: d.values,
+                    let minLine =
+                        yAxis.positions[0] < yAxis.zeroLine
+                            ? yAxis.positions[0]
+                            : yAxis.zeroLine;
 
-						zeroLine: minLine,
-						radius: this.lineOptions.dotSize || LINE_CHART_DOT_SIZE,
-					};
-				}.bind(this)
-			];
-		});
+                    return {
+                        xPositions: s.xAxis.positions,
+                        yPositions: d.yPositions,
+
+                        values: d.values,
+
+                        zeroLine: minLine,
+                        radius: this.lineOptions.dotSize || LINE_CHART_DOT_SIZE
+                    };
+                }.bind(this)
+            ];
+        });
 
 		let markerConfigs = [
 			[
