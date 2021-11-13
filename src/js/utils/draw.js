@@ -319,47 +319,50 @@ function makeVertLine(x, label, y1, y2, options={}) {
 	return line;
 }
 
-function makeHoriLine(y, label, x1, x2, options={}) {
-	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
-	if(!options.lineType) options.lineType = '';
-	if (options.shortenNumbers) label = shortenLargeNumber(label);
+function makeHoriLine(y, label, x1, x2, options = {}) {
+    if (!options.stroke) options.stroke = BASE_LINE_COLOR;
+    if (!options.lineType) options.lineType = '';
+    if (!options.alignment) options.alignment = 'left';
+    if (options.shortenNumbers) label = shortenLargeNumber(label);
 
-	let className = 'line-horizontal ' + options.className +
-		(options.lineType === "dashed" ? "dashed": "");
+    let className =
+        'line-horizontal ' +
+        options.className +
+        (options.lineType === 'dashed' ? 'dashed' : '');
 
-	let l = createSVG('line', {
-		className: className,
-		x1: x1,
-		x2: x2,
-		y1: 0,
-		y2: 0,
-		styles: {
-			stroke: options.stroke
-		}
-	});
+    let l = createSVG('line', {
+        className: className,
+        x1: x1,
+        x2: x2,
+        y1: 0,
+        y2: 0,
+        styles: {
+            stroke: options.stroke
+        }
+    });
 
-	let text = createSVG('text', {
-		x: x1 < x2 ? x1 - LABEL_MARGIN : x1 + LABEL_MARGIN,
-		y: 0,
-		dy: (FONT_SIZE / 2 - 2) + 'px',
-		'font-size': FONT_SIZE + 'px',
-		'text-anchor': x1 < x2 ? 'end' : 'start',
-		innerHTML: label+""
-	});
+    let text = createSVG('text', {
+        x: options.alignment === 'left' ? x1 - LABEL_MARGIN : x2 + LABEL_MARGIN * 4,
+        y: 0,
+        dy: FONT_SIZE / 2 - 2 + 'px',
+        'font-size': FONT_SIZE + 'px',
+        'text-anchor': x1 < x2 ? 'end' : 'start',
+        innerHTML: label + ''
+    });
 
-	let line = createSVG('g', {
-		transform: `translate(0, ${y})`,
-		'stroke-opacity': 1
-	});
+    let line = createSVG('g', {
+        transform: `translate(0, ${y})`,
+        'stroke-opacity': 1
+    });
 
-	if(text === 0 || text === '0') {
-		line.style.stroke = "rgba(27, 31, 35, 0.6)";
-	}
+    if (text === 0 || text === '0') {
+        line.style.stroke = 'rgba(27, 31, 35, 0.6)';
+    }
 
-	line.appendChild(l);
-	line.appendChild(text);
+    line.appendChild(l);
+    line.appendChild(text);
 
-	return line;
+    return line;
 }
 
 export function generateAxisLabel(options) {
@@ -386,34 +389,35 @@ export function generateAxisLabel(options) {
     return labelSvg;
 }
 
-export function yLine(y, label, width, options={}) {
-	if (!isValidNumber(y)) y = 0;
+export function yLine(y, label, width, options = {}) {
+    if (!isValidNumber(y)) y = 0;
 
-	if(!options.pos) options.pos = 'left';
-	if(!options.offset) options.offset = 0;
-	if(!options.mode) options.mode = 'span';
-	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
-	if(!options.className) options.className = '';
+    if (!options.pos) options.pos = 'left';
+    if (!options.offset) options.offset = 0;
+    if (!options.mode) options.mode = 'span';
+    if (!options.stroke) options.stroke = BASE_LINE_COLOR;
+    if (!options.className) options.className = '';
 
-	let x1 = -1 * AXIS_TICK_LENGTH;
-	let x2 = options.mode === 'span' ? width + AXIS_TICK_LENGTH : 0;
+    let x1 = -1 * AXIS_TICK_LENGTH;
+    let x2 = options.mode === 'span' ? width + AXIS_TICK_LENGTH : 0;
 
-	if(options.mode === 'tick' && options.pos === 'right') {
-		x1 = width + AXIS_TICK_LENGTH;
-		x2 = width;
-	}
+    if (options.mode === 'tick' && options.pos === 'right') {
+        x1 = width + AXIS_TICK_LENGTH;
+        x2 = width;
+    }
 
-	// let offset = options.pos === 'left' ? -1 * options.offset : options.offset;
+    let offset = options.pos === 'left' ? -1 * options.offset : options.offset;
 
-	x1 += options.offset;
-	x2 += options.offset;
+    x1 += offset;
+    x2 += offset;
 
-	return makeHoriLine(y, label, x1, x2, {
-		stroke: options.stroke,
-		className: options.className,
-		lineType: options.lineType,
-		shortenNumbers: options.shortenNumbers
-	});
+    return makeHoriLine(y, label, x1, x2, {
+        stroke: options.stroke,
+        className: options.className,
+        lineType: options.lineType,
+        alignment: options.pos,
+        shortenNumbers: options.shortenNumbers
+    });
 }
 
 export function xLine(x, label, height, options={}) {
