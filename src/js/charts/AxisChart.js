@@ -54,7 +54,7 @@ export default class AxisChart extends BaseChart {
             this.config.yAxisMode = yAxis ? yAxis.yAxisMode : axisOptions.yAxisMode || 'span';
 
 			// if we have yAxis config settings lets populate a yAxis config array.
-			if (yAxis.id && yAxis.position) {
+			if (yAxis && yAxis.id && yAxis.position) {
 				this.config.yAxisConfig = [yAxis]
 			}
         }
@@ -107,7 +107,8 @@ export default class AxisChart extends BaseChart {
 
 
     calcYAxisParameters(dataValues, withMinimum = 'false') {
-        let yPts, scaleMultiplier, intervalHeight, zeroLine, positions, yAxisConfigObject, yAxisAlignment;
+        let yPts, scaleMultiplier, intervalHeight, zeroLine, positions, yAxisConfigObject, yAxisAlignment, yKeys;
+		yKeys = [];
 		yAxisConfigObject = this.config.yAxisMode || {};	
 		yAxisAlignment = yAxisConfigObject.position ? yAxisConfigObject.position : 'left';	
 
@@ -137,11 +138,17 @@ export default class AxisChart extends BaseChart {
                 intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
                 zeroLine = this.height - getZeroIndex(yPts) * intervalHeight;
                 positions = yPts.map((d) => zeroLine - d * scaleMultiplier);
+				yKeys.push(key);
 
                 if (this.state.yAxis.length > 1) {
                     const yPtsArray = [];
                     const firstArr = this.state.yAxis[0];
+
+					// we need to calculate the scaleMultiplier.
+
+					// now that we have an accurate scaleMultiplier we can 
                     // we need to loop through original positions.
+					scaleMultiplier = this.height / getValueRange(yPts);
                     firstArr.positions.forEach((pos) => {
                         yPtsArray.push(Math.ceil(pos / scaleMultiplier));
                     });
@@ -160,6 +167,32 @@ export default class AxisChart extends BaseChart {
                     positions
                 });
             }
+
+			// the labels are not aligned in length between the two yAxis objects,
+			// we need to run some new calculations.
+			if (this.state.yAxis[1] && this.state.yAxis[0].labels.length !== this.state.yAxis[1].labels.length) {
+				const newYptsArr = [];
+				// find the shorter array
+				const shortest = this.state.yAxis.reduce((p,c) => { 
+					return p.length > c.labels.length ? c : p;
+				},
+				{ length: Infinity });
+				// return the longest
+				const longest = this.state.yAxis.reduce((p,c) => { 
+					return p.length < c.labels.length ? p : c;
+				},
+				{ length: Infinity });
+
+				// we now need to populate the shortest obj with the new scale multiplier
+				// with the positions of the longest obj.
+				longest.positions.forEach((pos) => {
+					// calculate a new yPts
+					newYptsArr.push(Math.ceil(pos / shortest.scaleMultiplier));
+				});
+
+				shortest.labels = newYptsArr.reverse();
+				shortest.positions = longest.positions;
+			}
         }
 
         // Dependent if above changes
