@@ -1,55 +1,75 @@
 import { makeSVGGroup } from '../utils/draw';
-import { makeText, generateAxisLabel, makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
+import {
+    makeText,
+    makePath,
+    xLine,
+    yLine,
+    generateAxisLabel,
+    yMarker,
+    yRegion,
+    datasetBar,
+    datasetDot,
+    percentageBar,
+    getPaths,
+    heatSquare
+} from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
-import { translateHoriLine, translateVertLine, animateRegion, animateBar,
-	animateDot, animatePath, animatePathStr } from '../utils/animate';
+import {
+    translateHoriLine,
+    translateVertLine,
+    animateRegion,
+    animateBar,
+    animateDot,
+    animatePath,
+    animatePathStr
+} from '../utils/animate';
 import { getMonthName } from '../utils/date-utils';
 
 class ChartComponent {
-	constructor({
-		layerClass = '',
-		layerTransform = '',
-		constants,
+    constructor({
+        layerClass = '',
+        layerTransform = '',
+        constants,
 
-		getData,
-		makeElements,
-		animateElements
-	}) {
-		this.layerTransform = layerTransform;
-		this.constants = constants;
+        getData,
+        makeElements,
+        animateElements
+    }) {
+        this.layerTransform = layerTransform;
+        this.constants = constants;
 
-		this.makeElements = makeElements;
-		this.getData = getData;
+        this.makeElements = makeElements;
+        this.getData = getData;
 
-		this.animateElements = animateElements;
+        this.animateElements = animateElements;
 
-		this.store = [];
-		this.labels = [];
+        this.store = [];
+        this.labels = [];
 
-		this.layerClass = layerClass;
-		this.layerClass = typeof(this.layerClass) === 'function'
-			? this.layerClass() : this.layerClass;
+        this.layerClass = layerClass;
+        this.layerClass =
+            typeof this.layerClass === 'function' ? this.layerClass() : this.layerClass;
 
-		this.refresh();
-	}
+        this.refresh();
+    }
 
-	refresh(data) {
-		this.data = data || this.getData();
-	}
+    refresh(data) {
+        this.data = data || this.getData();
+    }
 
-	setup(parent) {
-		this.layer = makeSVGGroup(this.layerClass, this.layerTransform, parent);
-	}
+    setup(parent) {
+        this.layer = makeSVGGroup(this.layerClass, this.layerTransform, parent);
+    }
 
-	make() {
-		this.render(this.data);
-		this.oldData = this.data;
-	}
+    make() {
+        this.render(this.data);
+        this.oldData = this.data;
+    }
 
-	render(data) {
-		this.store = this.makeElements(data);
+    render(data) {
+        this.store = this.makeElements(data);
 
-		this.layer.textContent = '';
+        this.layer.textContent = '';
         this.store.forEach((element) => {
             element.length
                 ? element.forEach((el) => {
@@ -57,12 +77,12 @@ class ChartComponent {
                   })
                 : this.layer.appendChild(element);
         });
-		this.labels.forEach(element => {
-			this.layer.appendChild(element);
-		});
-	}
+        this.labels.forEach((element) => {
+            this.layer.appendChild(element);
+        });
+    }
 
-	update(animate = true) {
+    update(animate = true) {
 		this.refresh();
 		let animateElements = [];
 		if(animate) {
@@ -122,7 +142,7 @@ let componentConfigs = {
         layerClass: 'y axis',
         makeElements(data) {
             let elements = [];
-
+			// will loop through each yaxis dataset if it exists 
             if (data.length) {
                 data.forEach((item, i) => {
                     item.positions.map((position, i) => {
@@ -150,13 +170,26 @@ let componentConfigs = {
                 return elements;
             }
 
-            return data.positions.map((position, i) => {
-                return yLine(position, data.labels[i], this.constants.width, {
+            data.positions.forEach((position, i) => {
+                elements.push(yLine(position, data.labels[i], this.constants.width, {
                     mode: this.constants.mode,
-                    pos: this.constants.pos,
+                    pos: data.pos || this.constants.pos,
                     shortenNumbers: this.constants.shortenNumbers
-                });
+                }));
             });
+
+			if (data.title) {
+				elements.push(
+					generateAxisLabel({
+						title: data.title,
+						position: data.pos,
+						height: data.zeroLine,
+						width: this.constants.width
+					})
+				);
+			}
+
+			return elements;
         },
 
         animateElements(newData) {
@@ -240,9 +273,12 @@ let componentConfigs = {
 	yMarkers: {
 		layerClass: 'y-markers',
 		makeElements(data) {
-			return data.map(m =>
-				yMarker(m.position, m.label, this.constants.width,
-					{labelPos: m.options.labelPos, mode: 'span', lineType: 'dashed'})
+			return data.map((m) => 
+				yMarker(m.position, m.label, this.constants.width, {
+					labelPos: m.options.labelPos,
+					mode: 'span',
+					lineType: 'dashed'
+				})
 			);
 		},
 		animateElements(newData) {
@@ -416,84 +452,95 @@ let componentConfigs = {
 		}
 	},
 
-	lineGraph: {
-		layerClass: function() { return 'dataset-units dataset-line dataset-' + this.constants.index; },
-		makeElements(data) {
-			let c = this.constants;
-			this.unitType = 'dot';
-			this.paths = {};
-			if(!c.hideLine) {
-				this.paths = getPaths(
-					data.xPositions,
-					data.yPositions,
-					c.color,
-					{
-						heatline: c.heatline,
-						regionFill: c.regionFill,
-						spline: c.spline
-					},
-					{
-						svgDefs: c.svgDefs,
-						zeroLine: data.zeroLine
-					}
-				);
-			}
+    lineGraph: {
+        layerClass: function () {
+            return 'dataset-units dataset-line dataset-' + this.constants.index;
+        },
+        makeElements(data) {
+            let c = this.constants;
+            this.unitType = 'dot';
+            this.paths = {};
+            if (!c.hideLine) {
+                this.paths = getPaths(
+                    data.xPositions,
+                    data.yPositions,
+                    c.color,
+                    {
+                        heatline: c.heatline,
+                        regionFill: c.regionFill,
+                        spline: c.spline
+                    },
+                    {
+                        svgDefs: c.svgDefs,
+                        zeroLine: data.zeroLine
+                    }
+                );
+            }
 
-			this.units = [];
-			if(!c.hideDots) {
-				this.units = data.yPositions.map((y, j) => {
-					return datasetDot(
-						data.xPositions[j],
-						y,
-						data.radius,
-						c.color,
-						(c.valuesOverPoints ? data.values[j] : ''),
-						j
-					);
-				});
-			}
+            this.units = [];
 
-			return Object.values(this.paths).concat(this.units);
-		},
-		animateElements(newData) {
-			let newXPos = newData.xPositions;
-			let newYPos = newData.yPositions;
-			let newValues = newData.values;
+            if (!c.hideDots) {
+                this.units = data.yPositions.map((y, j) => {
+                    return datasetDot(
+                        data.xPositions[j],
+                        y,
+                        data.radius,
+                        c.color,
+                        c.valuesOverPoints ? data.values[j] : '',
+                        j
+                    );
+                });
+            }
 
-			let oldXPos = this.oldData.xPositions;
-			let oldYPos = this.oldData.yPositions;
-			let oldValues = this.oldData.values;
+            return Object.values(this.paths).concat(this.units);
+        },
+        animateElements(newData) {
+            let newXPos = newData.xPositions;
+            let newYPos = newData.yPositions;
+            let newValues = newData.values;
 
-			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
-			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
-			[oldValues, newValues] = equilizeNoOfElements(oldValues, newValues);
+            let oldXPos = this.oldData.xPositions;
+            let oldYPos = this.oldData.yPositions;
+            let oldValues = this.oldData.values;
 
-			this.render({
-				xPositions: oldXPos,
-				yPositions: oldYPos,
-				values: newValues,
+            [oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
+            [oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
+            [oldValues, newValues] = equilizeNoOfElements(oldValues, newValues);
 
-				zeroLine: this.oldData.zeroLine,
-				radius: this.oldData.radius,
-			});
+            this.render({
+                xPositions: oldXPos,
+                yPositions: oldYPos,
+                values: newValues,
 
-			let animateElements = [];
+                zeroLine: this.oldData.zeroLine,
+                radius: this.oldData.radius
+            });
 
-			if(Object.keys(this.paths).length) {
-				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline));
-			}
+            let animateElements = [];
 
-			if(this.units.length) {
-				this.units.map((dot, i) => {
-					animateElements = animateElements.concat(animateDot(
-						dot, newXPos[i], newYPos[i]));
-				});
-			}
+            if (Object.keys(this.paths).length) {
+                animateElements = animateElements.concat(
+                    animatePath(
+                        this.paths,
+                        newXPos,
+                        newYPos,
+                        newData.zeroLine,
+                        this.constants.spline
+                    )
+                );
+            }
 
-			return animateElements;
-		}
-	}
+            if (this.units.length) {
+                this.units.map((dot, i) => {
+                    animateElements = animateElements.concat(
+                        animateDot(dot, newXPos[i], newYPos[i])
+                    );
+                });
+            }
+
+            return animateElements;
+        }
+    }
 };
 
 export function getComponent(name, constants, getData) {

@@ -51,7 +51,12 @@ export default class AxisChart extends BaseChart {
                 };
             });
         } else {
-            this.config.yAxisMode = axisOptions.yAxisMode || 'span';
+            this.config.yAxisMode = yAxis ? yAxis.yAxisMode : axisOptions.yAxisMode || 'span';
+
+			// if we have yAxis config settings lets populate a yAxis config array.
+			if (yAxis.id && yAxis.position) {
+				this.config.yAxisConfig = [yAxis]
+			}
         }
 
         this.config.xIsSeries = axisOptions.xIsSeries || 0;
@@ -102,7 +107,9 @@ export default class AxisChart extends BaseChart {
 
 
     calcYAxisParameters(dataValues, withMinimum = 'false') {
-        let yPts, scaleMultiplier, intervalHeight, zeroLine, positions;
+        let yPts, scaleMultiplier, intervalHeight, zeroLine, positions, yAxisConfigObject, yAxisAlignment;
+		yAxisConfigObject = this.config.yAxisMode || {};	
+		yAxisAlignment = yAxisConfigObject.position ? yAxisConfigObject.position : 'left';	
 
         // if we have an object we have multiple yAxisParameters.
         if (dataValues instanceof Array) {
@@ -110,9 +117,12 @@ export default class AxisChart extends BaseChart {
             scaleMultiplier = this.height / getValueRange(yPts);
             intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
             zeroLine = this.height - getZeroIndex(yPts) * intervalHeight;
+
             this.state.yAxis = {
                 labels: yPts,
                 positions: yPts.map((d) => zeroLine - d * scaleMultiplier),
+				title: yAxisConfigObject.title || null,
+				pos: yAxisAlignment,
                 scaleMultiplier: scaleMultiplier,
                 zeroLine: zeroLine
             };
@@ -120,19 +130,15 @@ export default class AxisChart extends BaseChart {
             this.state.yAxis = [];
             for (let key in dataValues) {
                 const dataValue = dataValues[key];
+				yAxisConfigObject = this.config.yAxisConfig.find((item) => key === item.id) || [];
+				yAxisAlignment = yAxisConfigObject.position ? yAxisConfigObject.position : 'left';	
                 yPts = calcChartIntervals(dataValue, withMinimum);
                 scaleMultiplier = this.height / getValueRange(yPts);
                 intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
                 zeroLine = this.height - getZeroIndex(yPts) * intervalHeight;
                 positions = yPts.map((d) => zeroLine - d * scaleMultiplier);
 
-                const yAxisConfigObject =
-                    this.config.yAxisConfig.find((item) => key === item.id) || [];
-                const yAxisAlignment = yAxisConfigObject
-                    ? yAxisConfigObject.position
-                    : 'right';
-
-                if (this.state.yAxis.length) {
+                if (this.state.yAxis.length > 1) {
                     const yPtsArray = [];
                     const firstArr = this.state.yAxis[0];
                     // we need to loop through original positions.
