@@ -160,7 +160,7 @@ let componentConfigs = {
                             generateAxisLabel({
                                 title: item.title,
                                 position: item.pos,
-                                height: item.zeroLine,
+								height: this.constants.height || data.zeroLine,
                                 width: this.constants.width
                             })
                         );
@@ -183,7 +183,7 @@ let componentConfigs = {
 					generateAxisLabel({
 						title: data.title,
 						position: data.pos,
-						height: data.zeroLine,
+						height: this.constants.height || data.zeroLine,
 						width: this.constants.width
 					})
 				);

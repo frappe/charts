@@ -6,6 +6,7 @@ import { lightenDarkenColor } from './colors';
 export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 const LABEL_MAX_CHARS = 15;
+const TOTAL_PADDING = 120;
 export const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
 const FONT_FILL = '#555b51';
@@ -368,25 +369,38 @@ function makeHoriLine(y, label, x1, x2, options = {}) {
 export function generateAxisLabel(options) {
     if (!options.title) return;
 
-    const x = options.position === 'left' ? LABEL_MARGIN : options.width;
-    // - getStringWidth(options.title, 5);
+    const y = options.position === 'left' ? 
+		(options.height - TOTAL_PADDING) / 2 + (getStringWidth(options.title, 5) / 2) : 
+		(options.height - TOTAL_PADDING) / 2 - (getStringWidth(options.title, 5) / 2) ;
+	const x = options.position === 'left' ? 0 : options.width;
+	const y2 = options.position === 'left' ? FONT_SIZE / 3 : FONT_SIZE / 3 * -1;
+
     const rotation =
         options.position === 'right'
-            ? `rotate(90, ${options.width}, ${options.height / 2})`
-            : `rotate(270, 0, ${options.height / 2})`;
+            ? `rotate(90)`
+            : `rotate(270)`;
 
     const labelSvg = createSVG('text', {
         className: 'chart-label',
-        x: x - getStringWidth(options.title, 5) / 2,
-        y: options.height / 2 - LABEL_MARGIN,
-        dy: FONT_SIZE / -2 + 'px',
-        'font-size': FONT_SIZE + 'px',
+        x: 0, // getStringWidth(options.title, 5) / 2,
+        y: 0, // y,
+        dy: `${y2}px`,
+        'font-size': `${FONT_SIZE}px`,
         'text-anchor': 'start',
-        transform: rotation,
-        innerHTML: options.title + ''
+        innerHTML: `${options.title} `
     });
 
-    return labelSvg;
+	let wrapper = createSVG('g', {
+		x: 0,
+		y: 0,
+		transformBox: 'fill-box',
+		transform: `translate(${x}, ${y}) ${rotation}`,
+		className: `test-${options.position}`
+	});
+
+	wrapper.appendChild(labelSvg);
+
+    return wrapper;
 }
 
 export function yLine(y, label, width, options = {}) {

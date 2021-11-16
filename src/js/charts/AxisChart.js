@@ -382,6 +382,7 @@ export default class AxisChart extends BaseChart {
                     {
                         mode: this.config.yAxisMode,
                         width: this.width,
+						height: this.baseHeight,
                         shortenNumbers: this.config.shortenYAxisNumbers,
                         pos: yAxis.position || 'left'
                     },
@@ -396,6 +397,7 @@ export default class AxisChart extends BaseChart {
                 {
                     mode: this.config.yAxisMode,
                     width: this.width,
+					height: this.baseHeight,
                     shortenNumbers: this.config.shortenYAxisNumbers
                 },
                 function () {
