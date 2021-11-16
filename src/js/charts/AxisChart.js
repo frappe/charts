@@ -380,7 +380,7 @@ export default class AxisChart extends BaseChart {
                 componentConfigs.push([
                     'yAxis',
                     {
-                        mode: this.config.yAxisMode,
+                        mode: yAxis.yAxisMode || 'span',
                         width: this.width,
 						height: this.baseHeight,
                         shortenNumbers: this.config.shortenYAxisNumbers,
