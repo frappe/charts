@@ -150,7 +150,8 @@ let componentConfigs = {
                             yLine(position, item.labels[i], this.constants.width, {
                                 mode: this.constants.mode,
                                 pos: item.pos || this.constants.pos,
-                                shortenNumbers: this.constants.shortenNumbers
+                                shortenNumbers: this.constants.shortenNumbers,
+								title: item.title
                             })
                         );
                     });

@@ -5,6 +5,7 @@ import { lightenDarkenColor } from './colors';
 
 export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
+const LABEL_WIDTH = 25;
 const LABEL_MAX_CHARS = 15;
 const TOTAL_PADDING = 120;
 export const FONT_SIZE = 10;
@@ -331,19 +332,25 @@ function makeHoriLine(y, label, x1, x2, options = {}) {
         options.className +
         (options.lineType === 'dashed' ? 'dashed' : '');
 
+	const textXPos = options.alignment === 'left' ? 
+		options.title ? (x1 - LABEL_MARGIN) + LABEL_WIDTH : x1 - LABEL_MARGIN : 
+		options.title ? (x2 + LABEL_MARGIN * 4) - LABEL_WIDTH : x2 + LABEL_MARGIN * 4;
+	const lineX1Post = options.title ? x1 + LABEL_WIDTH : x1;
+	const lineX2Post = options.title ? x2 - LABEL_WIDTH : x2;
+
     let l = createSVG('line', {
         className: className,
-        x1: x1,
-        x2: x2,
+        x1: lineX1Post,
+        x2: lineX2Post,
         y1: 0,
         y2: 0,
         styles: {
             stroke: options.stroke
         }
     });
-
+	
     let text = createSVG('text', {
-        x: options.alignment === 'left' ? x1 - LABEL_MARGIN : x2 + LABEL_MARGIN * 4,
+        x: textXPos,
         y: 0,
         dy: FONT_SIZE / 2 - 2 + 'px',
         'font-size': FONT_SIZE + 'px',
@@ -373,7 +380,7 @@ export function generateAxisLabel(options) {
 		(options.height - TOTAL_PADDING) / 2 + (getStringWidth(options.title, 5) / 2) : 
 		(options.height - TOTAL_PADDING) / 2 - (getStringWidth(options.title, 5) / 2) ;
 	const x = options.position === 'left' ? 0 : options.width;
-	const y2 = options.position === 'left' ? FONT_SIZE / 3 : FONT_SIZE / 3 * -1;
+	const y2 = options.position === 'left' ? FONT_SIZE - LABEL_WIDTH : FONT_SIZE + LABEL_WIDTH * -1;
 
     const rotation =
         options.position === 'right'
@@ -430,6 +437,7 @@ export function yLine(y, label, width, options = {}) {
         className: options.className,
         lineType: options.lineType,
         alignment: options.pos,
+		title: options.title,
         shortenNumbers: options.shortenNumbers
     });
 }
