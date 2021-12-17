@@ -40,7 +40,7 @@ let typeChartArgs = {
 	tooltipOptions: {
 		formatTooltipX: d => (d + '').toUpperCase(),
 		formatTooltipY: (d, i) => {
-			let suffix = (i === 0) ? ' pts' : (i === 1) ? ' $' : ' %';
+			const suffix = (i === 0) ? ' pts' : (i === 1) ? ' $' : ' %';
 			return d + suffix;
 		},
 	}
