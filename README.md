@@ -59,9 +59,9 @@ import 'frappe-charts/dist/frappe-charts.min.css'
 ##### or include within your HTML
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.1.0/dist/frappe-charts.min.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.6.1/dist/frappe-charts.min.umd.js"></script>
 <!-- or -->
-<script src="https://unpkg.com/frappe-charts@1.1.0/dist/frappe-charts.min.umd.js"></script>
+<script src="https://unpkg.com/frappe-charts@1.6.1/dist/frappe-charts.min.umd.js"></script>
 ```
 
 #### Usage
