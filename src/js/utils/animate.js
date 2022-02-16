@@ -1,4 +1,4 @@
-import { getBarHeightAndYAttr } from './draw-utils';
+import { getBarHeightAndYAttr, getSplineCurvePointsStr } from './draw-utils';
 
 export const UNIT_ANIM_DUR = 350;
 export const PATH_ANIM_DUR = 350;
@@ -74,13 +74,14 @@ export function animateDot(dot, x, y) {
 	// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
 }
 
-export function animatePath(paths, newXList, newYList, zeroLine) {
+export function animatePath(paths, newXList, newYList, zeroLine, spline) {
 	let pathComponents = [];
+	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y)).join("L");
 
-	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y));
-	let pathStr = pointsStr.join("L");
+	if (spline)
+		pointsStr = getSplineCurvePointsStr(newXList, newYList);
 
-	const animPath = [paths.path, {d:"M"+pathStr}, PATH_ANIM_DUR, STD_EASING];
+	const animPath = [paths.path, {d:"M" + pointsStr}, PATH_ANIM_DUR, STD_EASING];
 	pathComponents.push(animPath);
 
 	if(paths.region) {
@@ -89,7 +90,7 @@ export function animatePath(paths, newXList, newYList, zeroLine) {
 
 		const animRegion = [
 			paths.region,
-			{d:"M" + regStartPt + pathStr + regEndPt},
+			{d:"M" + regStartPt + pointsStr + regEndPt},
 			PATH_ANIM_DUR,
 			STD_EASING
 		];

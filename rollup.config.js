@@ -2,7 +2,7 @@ import pkg from './package.json';
 
 // Rollup plugins
 import babel from 'rollup-plugin-babel';
-import eslint from 'rollup-plugin-eslint';
+import { eslint } from 'rollup-plugin-eslint';
 import replace from 'rollup-plugin-replace';
 import uglify from 'rollup-plugin-uglify-es';
 import sass from 'node-sass';
@@ -20,9 +20,9 @@ import autoprefixer from 'autoprefixer';
 import fs from 'fs';
 
 fs.readFile('src/css/charts.scss', (err, css) => {
-    postcss([precss, autoprefixer])
-        .process(css, { from: 'src/css/charts.scss', to: 'src/css/charts.css' })
-        .then(result => {
+	postcss([precss, autoprefixer])
+		.process(css, { from: 'src/css/charts.scss', to: 'src/css/charts.css' })
+		.then(result => {
 			let options = {
 				level: {
 					1: {
@@ -33,8 +33,8 @@ fs.readFile('src/css/charts.scss', (err, css) => {
 			let output = new CleanCSS(options).minify(result.css);
 			let res = JSON.stringify(output.styles).replace(/"/g, "'");
 			let js = `export const CSSTEXT = "${res.slice(1, -1)}";`;
-            fs.writeFile('src/css/chartsCss.js', js);
-        });
+			fs.writeFile('src/css/chartsCss.js', js);
+		});
 });
 
 export default [
@@ -45,6 +45,10 @@ export default [
 			{
 				file: 'docs/assets/js/frappe-charts.min.js',
 				format: 'iife',
+			},
+			{
+				file: pkg.browser,
+				format: 'umd',
 			}
 		],
 		name: 'frappe',
@@ -54,7 +58,7 @@ export default [
 					const result = sass.renderSync({ file: id })
 					resolve({ code: result.css.toString() })
 				}),
-				extensions: [ '.scss' ],
+				extensions: ['.scss'],
 				plugins: [
 					nested(),
 					cssnext({ warnForDuplicates: false }),
@@ -93,7 +97,7 @@ export default [
 					const result = sass.renderSync({ file: id })
 					resolve({ code: result.css.toString() })
 				}),
-				extensions: [ '.scss' ],
+				extensions: ['.scss'],
 				plugins: [
 					nested(),
 					cssnext({ warnForDuplicates: false }),
@@ -133,7 +137,7 @@ export default [
 					const result = sass.renderSync({ file: id })
 					resolve({ code: result.css.toString() })
 				}),
-				extensions: [ '.scss' ],
+				extensions: ['.scss'],
 				plugins: [
 					nested(),
 					cssnext({ warnForDuplicates: false }),
@@ -169,7 +173,7 @@ export default [
 					const result = sass.renderSync({ file: id })
 					resolve({ code: result.css.toString() })
 				}),
-				extensions: [ '.scss' ],
+				extensions: ['.scss'],
 				extract: 'dist/frappe-charts.min.css',
 				plugins: [
 					nested(),

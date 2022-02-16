@@ -69,6 +69,20 @@ class ChartComponent {
 }
 
 let componentConfigs = {
+	donutSlices: {
+		layerClass: 'donut-slices',
+		makeElements(data) {
+			return data.sliceStrings.map((s, i) => {
+				let slice = makePath(s, 'donut-path', data.colors[i], 'none', data.strokeWidth);
+				slice.style.transition = 'transform .3s;';
+				return slice;
+			});
+		},
+
+		animateElements(newData) {
+			return this.store.map((slice, i) => animatePathStr(slice, newData.sliceStrings[i]));
+		},
+	},
 	pieSlices: {
 		layerClass: 'pie-slices',
 		makeElements(data) {
@@ -105,7 +119,7 @@ let componentConfigs = {
 		makeElements(data) {
 			return data.positions.map((position, i) =>
 				yLine(position, data.labels[i], this.constants.width,
-					{mode: this.constants.mode, pos: this.constants.pos})
+					{mode: this.constants.mode, pos: this.constants.pos, shortenNumbers: this.constants.shortenNumbers})
 			);
 		},
 
@@ -238,7 +252,7 @@ let componentConfigs = {
 	heatDomain: {
 		layerClass: function() { return 'heat-domain domain-' + this.constants.index; },
 		makeElements(data) {
-			let {index, colWidth, rowHeight, squareSize, xTranslate} = this.constants;
+			let {index, colWidth, rowHeight, squareSize, radius, xTranslate} = this.constants;
 			let monthNameHeight = -12;
 			let x = xTranslate, y = 0;
 
@@ -261,7 +275,7 @@ let componentConfigs = {
 							'data-value': day.dataValue,
 							'data-day': i
 						};
-						let square = heatSquare('day', x, y, squareSize, day.fill, data);
+						let square = heatSquare('day', x, y, squareSize, radius, day.fill, data);
 						this.serializedSubDomains.push(square);
 					}
 					y += rowHeight;
@@ -354,7 +368,8 @@ let componentConfigs = {
 					c.color,
 					{
 						heatline: c.heatline,
-						regionFill: c.regionFill
+						regionFill: c.regionFill,
+						spline: c.spline
 					},
 					{
 						svgDefs: c.svgDefs,
@@ -405,7 +420,7 @@ let componentConfigs = {
 
 			if(Object.keys(this.paths).length) {
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine));
+					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline));
 			}
 
 			if(this.units.length) {

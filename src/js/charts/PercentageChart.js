@@ -19,7 +19,7 @@ export default class PercentageChart extends AggregationChart {
 		b.depth = b.depth || PERCENTAGE_BAR_DEFAULT_DEPTH;
 
 		m.paddings.right = 30;
-		m.legendHeight = 80;
+		m.legendHeight = 60;
 		m.baseHeight = (b.height + b.depth * 0.5) * 8;
 	}
 

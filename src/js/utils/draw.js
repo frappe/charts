@@ -1,10 +1,11 @@
-import { getBarHeightAndYAttr } from './draw-utils';
-import { getStringWidth } from './helpers';
+import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getSplineCurvePointsStr } from './draw-utils';
+import { getStringWidth, isValidNumber } from './helpers';
 import { DOT_OVERLAY_SIZE_INCR, PERCENTAGE_BAR_DEFAULT_DEPTH } from './constants';
 import { lightenDarkenColor } from './colors';
 
 export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
+const LABEL_MAX_CHARS = 15;
 export const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
 const FONT_FILL = '#555b51';
@@ -98,25 +99,58 @@ export function wrapInSVGGroup(elements, className='') {
 	return g;
 }
 
-export function makePath(pathStr, className='', stroke='none', fill='none') {
+export function makePath(pathStr, className='', stroke='none', fill='none', strokeWidth=2) {
 	return createSVG('path', {
 		className: className,
 		d: pathStr,
 		styles: {
 			stroke: stroke,
-			fill: fill
+			fill: fill,
+			'stroke-width': strokeWidth
 		}
 	});
 }
 
-export function makeArcPathStr(startPosition, endPosition, center, radius, clockWise=1){
+export function makeArcPathStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
+	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
+	return `M${center.x} ${center.y}
+		L${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY} z`;
+}
+
+export function makeCircleStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
+	let [arcEndX, midArc, arcEndY] = [center.x + endPosition.x, center.y * 2, center.y + endPosition.y];
+	return `M${center.x} ${center.y}
+		L${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${midArc} z
+		L${arcStartX} ${midArc}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY} z`;
+}
+
+export function makeArcStrokePathStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
 	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
 	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
 
-	return `M${center.x} ${center.y}
-		L${arcStartX} ${arcStartY}
-		A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0}
-		${arcEndX} ${arcEndY} z`;
+	return `M${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY}`;
+}
+
+export function makeStrokeCircleStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
+	let [arcEndX, midArc, arcEndY] = [center.x + endPosition.x, radius * 2 + arcStartY, center.y + startPosition.y];
+
+	return `M${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${midArc}
+		M${arcStartX} ${midArc}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY}`;
 }
 
 export function makeGradient(svgDefElem, color, lighter = false) {
@@ -156,13 +190,14 @@ export function percentageBar(x, y, width, height,
 	return createSVG("rect", args);
 }
 
-export function heatSquare(className, x, y, size, fill='none', data={}) {
+export function heatSquare(className, x, y, size, radius, fill='none', data={}) {
 	let args = {
 		className: className,
 		x: x,
 		y: y,
 		width: size,
 		height: size,
+		rx: radius,
 		fill: fill
 	};
 
@@ -173,7 +208,9 @@ export function heatSquare(className, x, y, size, fill='none', data={}) {
 	return createSVG("rect", args);
 }
 
-export function legendBar(x, y, size, fill='none', label) {
+export function legendBar(x, y, size, fill='none', label, truncate=false) {
+	label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
+
 	let args = {
 		className: 'legend-bar',
 		x: 0,
@@ -202,7 +239,9 @@ export function legendBar(x, y, size, fill='none', label) {
 	return group;
 }
 
-export function legendDot(x, y, size, fill='none', label) {
+export function legendDot(x, y, size, fill='none', label, truncate=false) {
+	label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
+
 	let args = {
 		className: 'legend-dot',
 		cx: 0,
@@ -283,6 +322,8 @@ function makeVertLine(x, label, y1, y2, options={}) {
 function makeHoriLine(y, label, x1, x2, options={}) {
 	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	if(!options.lineType) options.lineType = '';
+	if (options.shortenNumbers) label = shortenLargeNumber(label);
+
 	let className = 'line-horizontal ' + options.className +
 		(options.lineType === "dashed" ? "dashed": "");
 
@@ -322,6 +363,8 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 }
 
 export function yLine(y, label, width, options={}) {
+	if (!isValidNumber(y)) y = 0;
+
 	if(!options.pos) options.pos = 'left';
 	if(!options.offset) options.offset = 0;
 	if(!options.mode) options.mode = 'span';
@@ -344,11 +387,14 @@ export function yLine(y, label, width, options={}) {
 	return makeHoriLine(y, label, x1, x2, {
 		stroke: options.stroke,
 		className: options.className,
-		lineType: options.lineType
+		lineType: options.lineType,
+		shortenNumbers: options.shortenNumbers
 	});
 }
 
 export function xLine(x, label, height, options={}) {
+	if (!isValidNumber(x)) x = 0;
+
 	if(!options.pos) options.pos = 'bottom';
 	if(!options.offset) options.offset = 0;
 	if(!options.mode) options.mode = 'span';
@@ -459,6 +505,12 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 		y -= meta.minHeight;
 	}
 
+	// Preprocess numbers to avoid svg building errors
+	if (!isValidNumber(x)) x = 0;
+	if (!isValidNumber(y)) y = 0;
+	if (!isValidNumber(height, true)) height = 0;
+	if (!isValidNumber(width, true)) width = 0;
+
 	let rect = createSVG('rect', {
 		className: `bar mini`,
 		style: `fill: ${color}`,
@@ -538,6 +590,11 @@ export function datasetDot(x, y, radius, color, label='', index=0) {
 export function getPaths(xList, yList, color, options={}, meta={}) {
 	let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
 	let pointsStr = pointsList.join("L");
+
+	// Spline
+	if (options.spline)
+		pointsStr = getSplineCurvePointsStr(xList, yList);
+
 	let path = makePath("M"+pointsStr, 'line-graph-path', color);
 
 	// HeatLine

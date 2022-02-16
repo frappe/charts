@@ -1,16 +1,17 @@
 import SvgTip from '../objects/SvgTip';
-import { $, isElementInViewport, getElementContentWidth } from '../utils/dom';
+import { $, isElementInViewport, getElementContentWidth, isHidden } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup, makeText } from '../utils/draw';
 import { BASE_MEASURES, getExtraHeight, getExtraWidth, getTopOffset, getLeftOffset,
 	INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS} from '../utils/constants';
 import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
 import { downloadFile, prepareForExport } from '../utils/export';
-
-let BOUND_DRAW_FN;
+import { deepClone } from  '../utils/helpers';
 
 export default class BaseChart {
 	constructor(parent, options) {
+		// deepclone options to avoid making changes to orignal object
+		options = deepClone(options);
 
 		this.parent = typeof parent === 'string'
 			? document.querySelector(parent)
@@ -34,7 +35,8 @@ export default class BaseChart {
 			showTooltip: 1, // calculate
 			showLegend: 1, // calculate
 			isNavigable: options.isNavigable || 0,
-			animate: 1
+			animate: (typeof options.animate !== 'undefined') ? options.animate : 1,
+			truncateLegends: options.truncateLegends || 1
 		};
 
 		this.measures = JSON.parse(JSON.stringify(BASE_MEASURES));
@@ -89,18 +91,19 @@ export default class BaseChart {
 		this.height = height - getExtraHeight(this.measures);
 
 		// Bind window events
-		BOUND_DRAW_FN = this.boundDrawFn.bind(this);
-		window.addEventListener('resize', BOUND_DRAW_FN);
-		window.addEventListener('orientationchange', this.boundDrawFn.bind(this));
+		this.boundDrawFn = () => this.draw(true);
+		if (ResizeObserver) {
+			this.resizeObserver = new ResizeObserver(this.boundDrawFn);
+			this.resizeObserver.observe(this.parent);
+		}
+		window.addEventListener('resize', this.boundDrawFn);
+		window.addEventListener('orientationchange', this.boundDrawFn);
 	}
 
-	boundDrawFn() {
-		this.draw(true);
-	}
-
-	unbindWindowEvents() {
-		window.removeEventListener('resize', BOUND_DRAW_FN);
-		window.removeEventListener('orientationchange', this.boundDrawFn.bind(this));
+	destroy() {
+		if (this.resizeObserver) this.resizeObserver.disconnect();
+		window.removeEventListener('resize', this.boundDrawFn);
+		window.removeEventListener('orientationchange', this.boundDrawFn);
 	}
 
 	// Has to be called manually
@@ -139,6 +142,10 @@ export default class BaseChart {
 	bindTooltip() {}
 
 	draw(onlyWidthChange=false, init=false) {
+		if (onlyWidthChange && isHidden(this.parent)) {
+			// Don't update anything if the chart is hidden
+			return;
+		}
 		this.updateWidth();
 
 		this.calc(onlyWidthChange);
@@ -230,7 +237,8 @@ export default class BaseChart {
 		}
 		this.data = this.prepareData(data);
 		this.calc(); // builds state
-		this.render();
+		this.render(this.components, this.config.animate);
+		this.renderLegend();
 	}
 
 	render(components=this.components, animate=true) {

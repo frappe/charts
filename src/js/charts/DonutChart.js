@@ -2,15 +2,15 @@ import AggregationChart from './AggregationChart';
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset } from '../utils/dom';
 import { getPositionByAngle } from '../utils/helpers';
-import { makeArcPathStr, makeCircleStr } from '../utils/draw';
+import { makeArcStrokePathStr, makeStrokeCircleStr } from '../utils/draw';
 import { lightenDarkenColor } from '../utils/colors';
 import { transform } from '../utils/animation';
 import { FULL_ANGLE } from '../utils/constants';
 
-export default class PieChart extends AggregationChart {
+export default class DonutChart extends AggregationChart {
 	constructor(parent, args) {
 		super(parent, args);
-		this.type = 'pie';
+		this.type = 'donut';
 		this.initTimeout = 0;
 		this.init = 1;
 
@@ -26,12 +26,16 @@ export default class PieChart extends AggregationChart {
 		this.config.startAngle = args.startAngle || 0;
 
 		this.clockWise = args.clockWise || false;
+		this.strokeWidth = args.strokeWidth || 30;
 	}
 
 	calc() {
 		super.calc();
 		let s = this.state;
-		this.radius = (this.height > this.width ? this.center.x : this.center.y);
+		this.radius =
+			this.height > this.width
+				? this.center.x - this.strokeWidth / 2
+				: this.center.y - this.strokeWidth / 2;
 
 		const { radius, clockWise } = this;
 
@@ -39,6 +43,7 @@ export default class PieChart extends AggregationChart {
 		s.sliceStrings = [];
 		s.slicesProperties = [];
 		let curAngle = 180 - this.config.startAngle;
+
 		s.sliceTotals.map((total, i) => {
 			const startAngle = curAngle;
 			const originDiffAngle = (total / s.grandTotal) * FULL_ANGLE;
@@ -60,8 +65,8 @@ export default class PieChart extends AggregationChart {
 			}
 			const curPath =
 				originDiffAngle === 360
-					? makeCircleStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc)
-					: makeArcPathStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc);
+					? makeStrokeCircleStr(curStart, curEnd, this.center, this.radius, this.clockWise, largeArc)
+					: makeArcStrokePathStr(curStart, curEnd, this.center, this.radius, this.clockWise, largeArc);
 
 			s.sliceStrings.push(curPath);
 			s.slicesProperties.push({
@@ -83,12 +88,13 @@ export default class PieChart extends AggregationChart {
 
 		let componentConfigs = [
 			[
-				'pieSlices',
+				'donutSlices',
 				{ },
 				function() {
 					return {
 						sliceStrings: s.sliceStrings,
-						colors: this.colors
+						colors: this.colors,
+						strokeWidth: this.strokeWidth,
 					};
 				}.bind(this)
 			]
@@ -102,7 +108,7 @@ export default class PieChart extends AggregationChart {
 	}
 
 	calTranslateByAngle(property){
-		const{radius,hoverRadio} = this;
+		const{ radius, hoverRadio } = this;
 		const position = getPositionByAngle(property.startAngle+(property.angle / 2),radius);
 		return `translate3d(${(position.x) * hoverRadio}px,${(position.y) * hoverRadio}px,0)`;
 	}
@@ -112,7 +118,7 @@ export default class PieChart extends AggregationChart {
 		const color = this.colors[i];
 		if(flag) {
 			transform(path, this.calTranslateByAngle(this.state.slicesProperties[i]));
-			path.style.fill = lightenDarkenColor(color, 50);
+			path.style.stroke = lightenDarkenColor(color, 50);
 			let g_off = getOffset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
@@ -124,7 +130,7 @@ export default class PieChart extends AggregationChart {
 		} else {
 			transform(path,'translate3d(0,0,0)');
 			this.tip.hideTip();
-			path.style.fill = color;
+			path.style.stroke = color;
 		}
 	}
 
@@ -135,7 +141,7 @@ export default class PieChart extends AggregationChart {
 
 	mouseMove(e){
 		const target = e.target;
-		let slices = this.components.get('pieSlices').store;
+		let slices = this.components.get('donutSlices').store;
 		let prevIndex = this.curActiveSliceIndex;
 		let prevAcitve = this.curActiveSlice;
 		if(slices.includes(target)) {

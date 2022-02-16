@@ -60,4 +60,8 @@ typings/
 # next.js build output
 .next
 
+# npm build output
+dist
+docs/assets/
+
 .DS_Store

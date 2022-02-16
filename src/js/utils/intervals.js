@@ -69,7 +69,15 @@ function getChartIntervals(maxValue, minValue=0) {
 	normalMaxValue = normalMaxValue.toFixed(6);
 
 	let intervals = getChartRangeIntervals(normalMaxValue, normalMinValue);
-	intervals = intervals.map(value => value * Math.pow(10, exponent));
+	intervals = intervals.map(value => {
+		// For negative exponents we want to divide by 10^-exponent to avoid
+		// floating point arithmetic bugs. For instance, in javascript
+		// 6 * 10^-1 == 0.6000000000000001, we instead want 6 / 10^1 == 0.6
+		if (exponent < 0) {
+			return value / Math.pow(10, -exponent);
+		}
+		return value * Math.pow(10, exponent);
+	});
 	return intervals;
 }
 
@@ -128,7 +136,7 @@ export function calcChartIntervals(values, withMinimum=false) {
 			// Mirror: maxValue => absMinValue, then change sign
 			exponent = normalize(absMinValue)[1];
 			let posIntervals = getPositiveFirstIntervals(absMinValue, maxValue);
-			intervals = posIntervals.map(d => d * (-1));
+			intervals = posIntervals.reverse().map(d => d * (-1));
 		}
 
 	}
@@ -212,7 +220,7 @@ export function isInRange2D(coord, minCoord, maxCoord) {
 export function getClosestInArray(goal, arr, index = false) {
 	let closest = arr.reduce(function(prev, curr) {
 		return (Math.abs(curr - goal) < Math.abs(prev - goal) ? curr : prev);
-	});
+	}, []);
 
 	return index ? arr.indexOf(closest) : closest;
 }

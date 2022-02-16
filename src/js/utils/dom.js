@@ -54,6 +54,13 @@ export function getOffset(element) {
 	};
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/offsetParent
+// an element's offsetParent property will return null whenever it, or any of its parents,
+// is hidden via the display style property.
+export function isHidden(el) {
+	return (el.offsetParent === null);
+}
+
 export function isElementInViewport(el) {
 	// Although straightforward: https://stackoverflow.com/a/7557433/6495043
 	var rect = el.getBoundingClientRect();

@@ -44,6 +44,13 @@ function getOffset(element) {
 	};
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/offsetParent
+// an element's offsetParent property will return null whenever it, or any of its parents,
+// is hidden via the display style property.
+function isHidden(el) {
+	return (el.offsetParent === null);
+}
+
 function isElementInViewport(el) {
 	// Although straightforward: https://stackoverflow.com/a/7557433/6495043
 	var rect = el.getBoundingClientRect();
@@ -128,7 +135,7 @@ const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
 const AXIS_LEGEND_BAR_SIZE = 100;
 
 const BAR_CHART_SPACE_RATIO = 0.5;
-const MIN_BAR_PERCENT_HEIGHT = 0.01;
+const MIN_BAR_PERCENT_HEIGHT = 0.00;
 
 const LINE_CHART_DOT_SIZE = 4;
 const DOT_OVERLAY_SIZE_INCR = 4;
@@ -156,7 +163,8 @@ const DEFAULT_COLORS = {
 	line: DEFAULT_CHART_COLORS,
 	pie: DEFAULT_CHART_COLORS,
 	percentage: DEFAULT_CHART_COLORS,
-	heatmap: HEATMAP_COLORS_GREEN
+	heatmap: HEATMAP_COLORS_GREEN,
+	donut: DEFAULT_CHART_COLORS
 };
 
 // Universal constants
@@ -288,6 +296,10 @@ class SvgTip {
 	}
 }
 
+/**
+ * Returns the value of a number upto 2 decimal places.
+ * @param {Number} d Any number
+ */
 function floatTwo(d) {
 	return parseFloat(d.toFixed(2));
 }
@@ -299,8 +311,8 @@ function floatTwo(d) {
  * @param {Object} element element to fill with
  * @param {Boolean} start fill at start?
  */
-function fillArray(array, count, element, start=false) {
-	if(!element) {
+function fillArray(array, count, element, start = false) {
+	if (!element) {
 		element = start ? array[0] : array[array.length - 1];
 	}
 	let fillerArray = new Array(Math.abs(count)).fill(element);
@@ -314,7 +326,7 @@ function fillArray(array, count, element, start=false) {
  * @param {Number} charWidth Width of single char in pixels
  */
 function getStringWidth(string, charWidth) {
-	return (string+"").length * charWidth;
+	return (string + "").length * charWidth;
 }
 
 function getPositionByAngle(angle, radius) {
@@ -322,6 +334,55 @@ function getPositionByAngle(angle, radius) {
 		x: Math.sin(angle * ANGLE_RATIO) * radius,
 		y: Math.cos(angle * ANGLE_RATIO) * radius,
 	};
+}
+
+/**
+ * Check if a number is valid for svg attributes
+ * @param {object} candidate Candidate to test
+ * @param {Boolean} nonNegative flag to treat negative number as invalid
+ */
+function isValidNumber(candidate, nonNegative = false) {
+	if (Number.isNaN(candidate)) return false;
+	else if (candidate === undefined) return false;
+	else if (!Number.isFinite(candidate)) return false;
+	else if (nonNegative && candidate < 0) return false;
+	else return true;
+}
+
+/**
+ * Round a number to the closes precision, max max precision 4
+ * @param {Number} d Any Number
+ */
+function round(d) {
+	// https://floating-point-gui.de/
+	// https://www.jacklmoore.com/notes/rounding-in-javascript/
+	return Number(Math.round(d + 'e4') + 'e-4');
+}
+
+/**
+ * Creates a deep clone of an object
+ * @param {Object} candidate Any Object
+ */
+function deepClone(candidate) {
+	let cloned, value, key;
+
+	if (candidate instanceof Date) {
+		return new Date(candidate.getTime());
+	}
+
+	if (typeof candidate !== "object" || candidate === null) {
+		return candidate;
+	}
+
+	cloned = Array.isArray(candidate) ? [] : {};
+
+	for (key in candidate) {
+		value = candidate[key];
+
+		cloned[key] = deepClone(value);
+	}
+
+	return cloned;
 }
 
 function getBarHeightAndYAttr(yTop, zeroLine) {
@@ -347,6 +408,79 @@ function equilizeNoOfElements(array1, array2,
 		array2 = fillArray(array2, extraCount);
 	}
 	return [array1, array2];
+}
+
+function truncateString(txt, len) {
+	if (!txt) {
+		return;
+	}
+	if (txt.length > len) {
+		return txt.slice(0, len-3) + '...';
+	} else {
+		return txt;
+	}
+}
+
+function shortenLargeNumber(label) {
+	let number;
+	if (typeof label === 'number') number = label;
+	else if (typeof label === 'string') {
+		number = Number(label);
+		if (Number.isNaN(number)) return label;
+	}
+
+	// Using absolute since log wont work for negative numbers
+	let p = Math.floor(Math.log10(Math.abs(number)));
+	if (p <= 2) return number; // Return as is for a 3 digit number of less
+	let	l = Math.floor(p / 3);
+	let shortened = (Math.pow(10, p - l * 3) * +(number / Math.pow(10, p)).toFixed(1));
+
+	// Correct for floating point error upto 2 decimal places
+	return Math.round(shortened*100)/100 + ' ' + ['', 'K', 'M', 'B', 'T'][l];
+}
+
+// cubic bezier curve calculation (from example by François Romain)
+function getSplineCurvePointsStr(xList, yList) {
+
+	let points=[];
+	for(let i=0;i<xList.length;i++){
+		points.push([xList[i], yList[i]]);
+	}
+
+	let smoothing = 0.2;
+	let line = (pointA, pointB) => {
+		let lengthX = pointB[0] - pointA[0];
+		let lengthY = pointB[1] - pointA[1];
+		return {
+			length: Math.sqrt(Math.pow(lengthX, 2) + Math.pow(lengthY, 2)),
+			angle: Math.atan2(lengthY, lengthX)
+		};
+	};
+    
+	let controlPoint = (current, previous, next, reverse) => {
+		let p = previous || current;
+		let n = next || current;
+		let o = line(p, n);
+		let angle = o.angle + (reverse ? Math.PI : 0);
+		let length = o.length * smoothing;
+		let x = current[0] + Math.cos(angle) * length;
+		let y = current[1] + Math.sin(angle) * length;
+		return [x, y];
+	};
+    
+	let bezierCommand = (point, i, a) => {
+		let cps = controlPoint(a[i - 1], a[i - 2], point);
+		let cpe = controlPoint(point, a[i - 1], a[i + 1], true);
+		return `C ${cps[0]},${cps[1]} ${cpe[0]},${cpe[1]} ${point[0]},${point[1]}`;
+	};
+    
+	let pointStr = (points, command) => {
+		return points.reduce((acc, point, i, a) => i === 0
+			? `${point[0]},${point[1]}`
+			: `${acc} ${command(point, i, a)}`, '');
+	};
+    
+	return pointStr(points, bezierCommand);
 }
 
 const PRESET_COLOR_MAP = {
@@ -387,16 +521,25 @@ function lightenDarkenColor(color, amt) {
 }
 
 function isValidColor(string) {
-	// https://stackoverflow.com/a/8027444/6495043
-	return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(string);
+	// https://stackoverflow.com/a/32685393
+	let HEX_RE = /(^\s*)(#)((?:[A-Fa-f0-9]{3}){1,2})$/i;
+	let RGB_RE = /(^\s*)(rgb|hsl)(a?)[(]\s*([\d.]+\s*%?)\s*,\s*([\d.]+\s*%?)\s*,\s*([\d.]+\s*%?)\s*(?:,\s*([\d.]+)\s*)?[)]$/i;
+	return HEX_RE.test(string) || RGB_RE.test(string);
 }
 
 const getColor = (color) => {
+	// When RGB color, convert to hexadecimal (alpha value is omitted)
+	if((/rgb[a]{0,1}\([\d, ]+\)/gim).test(color)) {
+		return (/\D+(\d*)\D+(\d*)\D+(\d*)/gim).exec(color)
+			.map((x, i) => (i !== 0 ? Number(x).toString(16) : '#'))
+			.reduce((c, ch) => `${c}${ch}`);
+	}
 	return PRESET_COLOR_MAP[color] || color;
 };
 
 const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
+const LABEL_MAX_CHARS = 15;
 const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#dadada';
 const FONT_FILL = '#555b51';
@@ -482,25 +625,58 @@ function makeSVGGroup(className, transform='', parent=undefined) {
 	return createSVG('g', args);
 }
 
-function makePath(pathStr, className='', stroke='none', fill='none') {
+function makePath(pathStr, className='', stroke='none', fill='none', strokeWidth=2) {
 	return createSVG('path', {
 		className: className,
 		d: pathStr,
 		styles: {
 			stroke: stroke,
-			fill: fill
+			fill: fill,
+			'stroke-width': strokeWidth
 		}
 	});
 }
 
-function makeArcPathStr(startPosition, endPosition, center, radius, clockWise=1){
+function makeArcPathStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
+	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
+	return `M${center.x} ${center.y}
+		L${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY} z`;
+}
+
+function makeCircleStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
+	let [arcEndX, midArc, arcEndY] = [center.x + endPosition.x, center.y * 2, center.y + endPosition.y];
+	return `M${center.x} ${center.y}
+		L${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${midArc} z
+		L${arcStartX} ${midArc}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY} z`;
+}
+
+function makeArcStrokePathStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
 	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
 	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
 
-	return `M${center.x} ${center.y}
-		L${arcStartX} ${arcStartY}
-		A ${radius} ${radius} 0 0 ${clockWise ? 1 : 0}
-		${arcEndX} ${arcEndY} z`;
+	return `M${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY}`;
+}
+
+function makeStrokeCircleStr(startPosition, endPosition, center, radius, clockWise=1, largeArc=0){
+	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
+	let [arcEndX, midArc, arcEndY] = [center.x + endPosition.x, radius * 2 + arcStartY, center.y + startPosition.y];
+
+	return `M${arcStartX} ${arcStartY}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${midArc}
+		M${arcStartX} ${midArc}
+		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
+		${arcEndX} ${arcEndY}`;
 }
 
 function makeGradient(svgDefElem, color, lighter = false) {
@@ -540,13 +716,14 @@ function percentageBar(x, y, width, height,
 	return createSVG("rect", args);
 }
 
-function heatSquare(className, x, y, size, fill='none', data={}) {
+function heatSquare(className, x, y, size, radius, fill='none', data={}) {
 	let args = {
 		className: className,
 		x: x,
 		y: y,
 		width: size,
 		height: size,
+		rx: radius,
 		fill: fill
 	};
 
@@ -557,7 +734,9 @@ function heatSquare(className, x, y, size, fill='none', data={}) {
 	return createSVG("rect", args);
 }
 
-function legendBar(x, y, size, fill='none', label) {
+function legendBar(x, y, size, fill='none', label, truncate=false) {
+	label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
+
 	let args = {
 		className: 'legend-bar',
 		x: 0,
@@ -586,7 +765,9 @@ function legendBar(x, y, size, fill='none', label) {
 	return group;
 }
 
-function legendDot(x, y, size, fill='none', label) {
+function legendDot(x, y, size, fill='none', label, truncate=false) {
+	label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
+
 	let args = {
 		className: 'legend-dot',
 		cx: 0,
@@ -667,6 +848,8 @@ function makeVertLine(x, label, y1, y2, options={}) {
 function makeHoriLine(y, label, x1, x2, options={}) {
 	if(!options.stroke) options.stroke = BASE_LINE_COLOR;
 	if(!options.lineType) options.lineType = '';
+	if (options.shortenNumbers) label = shortenLargeNumber(label);
+
 	let className = 'line-horizontal ' + options.className +
 		(options.lineType === "dashed" ? "dashed": "");
 
@@ -706,6 +889,8 @@ function makeHoriLine(y, label, x1, x2, options={}) {
 }
 
 function yLine(y, label, width, options={}) {
+	if (!isValidNumber(y)) y = 0;
+
 	if(!options.pos) options.pos = 'left';
 	if(!options.offset) options.offset = 0;
 	if(!options.mode) options.mode = 'span';
@@ -728,11 +913,14 @@ function yLine(y, label, width, options={}) {
 	return makeHoriLine(y, label, x1, x2, {
 		stroke: options.stroke,
 		className: options.className,
-		lineType: options.lineType
+		lineType: options.lineType,
+		shortenNumbers: options.shortenNumbers
 	});
 }
 
 function xLine(x, label, height, options={}) {
+	if (!isValidNumber(x)) x = 0;
+
 	if(!options.pos) options.pos = 'bottom';
 	if(!options.offset) options.offset = 0;
 	if(!options.mode) options.mode = 'span';
@@ -843,6 +1031,12 @@ function datasetBar(x, yTop, width, color, label='', index=0, offset=0, meta={})
 		y -= meta.minHeight;
 	}
 
+	// Preprocess numbers to avoid svg building errors
+	if (!isValidNumber(x)) x = 0;
+	if (!isValidNumber(y)) y = 0;
+	if (!isValidNumber(height, true)) height = 0;
+	if (!isValidNumber(width, true)) width = 0;
+
 	let rect = createSVG('rect', {
 		className: `bar mini`,
 		style: `fill: ${color}`,
@@ -922,6 +1116,11 @@ function datasetDot(x, y, radius, color, label='', index=0) {
 function getPaths(xList, yList, color, options={}, meta={}) {
 	let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
 	let pointsStr = pointsList.join("L");
+
+	// Spline
+	if (options.spline)
+		pointsStr = getSplineCurvePointsStr(xList, yList);
+
 	let path = makePath("M"+pointsStr, 'line-graph-path', color);
 
 	// HeatLine
@@ -1131,13 +1330,14 @@ function animateDot(dot, x, y) {
 	// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
 }
 
-function animatePath(paths, newXList, newYList, zeroLine) {
+function animatePath(paths, newXList, newYList, zeroLine, spline) {
 	let pathComponents = [];
+	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y)).join("L");
 
-	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y));
-	let pathStr = pointsStr.join("L");
+	if (spline)
+		pointsStr = getSplineCurvePointsStr(newXList, newYList);
 
-	const animPath = [paths.path, {d:"M"+pathStr}, PATH_ANIM_DUR, STD_EASING];
+	const animPath = [paths.path, {d:"M" + pointsStr}, PATH_ANIM_DUR, STD_EASING];
 	pathComponents.push(animPath);
 
 	if(paths.region) {
@@ -1146,7 +1346,7 @@ function animatePath(paths, newXList, newYList, zeroLine) {
 
 		const animRegion = [
 			paths.region,
-			{d:"M" + regStartPt + pathStr + regEndPt},
+			{d:"M" + regStartPt + pointsStr + regEndPt},
 			PATH_ANIM_DUR,
 			STD_EASING
 		];
@@ -1242,15 +1442,19 @@ function animateSVG(svgContainer, elements) {
 
 		newElements.push(newElement);
 		animElements.push([animElement, parent]);
-
-		parent.replaceChild(animElement, unit);
+		
+		if (parent) {
+			parent.replaceChild(animElement, unit);
+		}
 	});
 
 	let animSvg = svgContainer.cloneNode(true);
 
 	animElements.map((animElement, i) => {
-		animElement[1].replaceChild(newElements[i], animElement[0]);
-		elements[i][0] = newElements[i];
+		if (animElement[1]) {
+			animElement[1].replaceChild(newElements[i], animElement[0]);
+			elements[i][0] = newElements[i];
+		}
 	});
 
 	return animSvg;
@@ -1308,10 +1512,10 @@ function prepareForExport(svg) {
 	return container.innerHTML;
 }
 
-let BOUND_DRAW_FN;
-
 class BaseChart {
 	constructor(parent, options) {
+		// deepclone options to avoid making changes to orignal object
+		options = deepClone(options);
 
 		this.parent = typeof parent === 'string'
 			? document.querySelector(parent)
@@ -1335,7 +1539,8 @@ class BaseChart {
 			showTooltip: 1, // calculate
 			showLegend: 1, // calculate
 			isNavigable: options.isNavigable || 0,
-			animate: 1
+			animate: (typeof options.animate !== 'undefined') ? options.animate : 1,
+			truncateLegends: options.truncateLegends || 1
 		};
 
 		this.measures = JSON.parse(JSON.stringify(BASE_MEASURES));
@@ -1390,18 +1595,19 @@ class BaseChart {
 		this.height = height - getExtraHeight(this.measures);
 
 		// Bind window events
-		BOUND_DRAW_FN = this.boundDrawFn.bind(this);
-		window.addEventListener('resize', BOUND_DRAW_FN);
-		window.addEventListener('orientationchange', this.boundDrawFn.bind(this));
+		this.boundDrawFn = () => this.draw(true);
+		if (ResizeObserver) {
+			this.resizeObserver = new ResizeObserver(this.boundDrawFn);
+			this.resizeObserver.observe(this.parent);
+		}
+		window.addEventListener('resize', this.boundDrawFn);
+		window.addEventListener('orientationchange', this.boundDrawFn);
 	}
 
-	boundDrawFn() {
-		this.draw(true);
-	}
-
-	unbindWindowEvents() {
-		window.removeEventListener('resize', BOUND_DRAW_FN);
-		window.removeEventListener('orientationchange', this.boundDrawFn.bind(this));
+	destroy() {
+		if (this.resizeObserver) this.resizeObserver.disconnect();
+		window.removeEventListener('resize', this.boundDrawFn);
+		window.removeEventListener('orientationchange', this.boundDrawFn);
 	}
 
 	// Has to be called manually
@@ -1440,6 +1646,10 @@ class BaseChart {
 	bindTooltip() {}
 
 	draw(onlyWidthChange=false, init=false) {
+		if (onlyWidthChange && isHidden(this.parent)) {
+			// Don't update anything if the chart is hidden
+			return;
+		}
 		this.updateWidth();
 
 		this.calc(onlyWidthChange);
@@ -1531,7 +1741,8 @@ class BaseChart {
 		}
 		this.data = this.prepareData(data);
 		this.calc(); // builds state
-		this.render();
+		this.render(this.components, this.config.animate);
+		this.renderLegend();
 	}
 
 	render(components=this.components, animate=true) {
@@ -1624,6 +1835,7 @@ class AggregationChart extends BaseChart {
 	configure(args) {
 		super.configure(args);
 
+		this.config.formatTooltipY = (args.tooltipOptions || {}).formatTooltipY;
 		this.config.maxSlices = args.maxSlices || 20;
 		this.config.maxLegendPoints = args.maxLegendPoints || 20;
 	}
@@ -1657,7 +1869,7 @@ class AggregationChart extends BaseChart {
 
 		s.labels = [];
 		totals.map(d => {
-			s.sliceTotals.push(d[0]);
+			s.sliceTotals.push(round(d[0]));
 			s.labels.push(d[1]);
 		});
 
@@ -1677,21 +1889,27 @@ class AggregationChart extends BaseChart {
 		let count = 0;
 		let y = 0;
 		this.legendTotals.map((d, i) => {
-			let barWidth = 110;
+			let barWidth = 150;
 			let divisor = Math.floor(
 				(this.width - getExtraWidth(this.measures))/barWidth
 			);
+			if (this.legendTotals.length < divisor) {
+				barWidth = this.width/this.legendTotals.length;
+			}
 			if(count > divisor) {
 				count = 0;
 				y += 20;
 			}
 			let x = barWidth * count + 5;
+			let label = this.config.truncateLegends ? truncateString(s.labels[i], barWidth/10) : s.labels[i];
+			let formatted = this.config.formatTooltipY ? this.config.formatTooltipY(d) : d;
 			let dot = legendDot(
 				x,
 				y,
 				5,
 				this.colors[i],
-				`${s.labels[i]}: ${d}`
+				`${label}: ${formatted}`,
+				false
 			);
 			this.legendArea.appendChild(dot);
 			count++;
@@ -1843,6 +2061,20 @@ class ChartComponent {
 }
 
 let componentConfigs = {
+	donutSlices: {
+		layerClass: 'donut-slices',
+		makeElements(data) {
+			return data.sliceStrings.map((s, i) => {
+				let slice = makePath(s, 'donut-path', data.colors[i], 'none', data.strokeWidth);
+				slice.style.transition = 'transform .3s;';
+				return slice;
+			});
+		},
+
+		animateElements(newData) {
+			return this.store.map((slice, i) => animatePathStr(slice, newData.sliceStrings[i]));
+		},
+	},
 	pieSlices: {
 		layerClass: 'pie-slices',
 		makeElements(data) {
@@ -1879,7 +2111,7 @@ let componentConfigs = {
 		makeElements(data) {
 			return data.positions.map((position, i) =>
 				yLine(position, data.labels[i], this.constants.width,
-					{mode: this.constants.mode, pos: this.constants.pos})
+					{mode: this.constants.mode, pos: this.constants.pos, shortenNumbers: this.constants.shortenNumbers})
 			);
 		},
 
@@ -2012,7 +2244,7 @@ let componentConfigs = {
 	heatDomain: {
 		layerClass: function() { return 'heat-domain domain-' + this.constants.index; },
 		makeElements(data) {
-			let {index, colWidth, rowHeight, squareSize, xTranslate} = this.constants;
+			let {index, colWidth, rowHeight, squareSize, radius, xTranslate} = this.constants;
 			let monthNameHeight = -12;
 			let x = xTranslate, y = 0;
 
@@ -2035,7 +2267,7 @@ let componentConfigs = {
 							'data-value': day.dataValue,
 							'data-day': i
 						};
-						let square = heatSquare('day', x, y, squareSize, day.fill, data);
+						let square = heatSquare('day', x, y, squareSize, radius, day.fill, data);
 						this.serializedSubDomains.push(square);
 					}
 					y += rowHeight;
@@ -2128,7 +2360,8 @@ let componentConfigs = {
 					c.color,
 					{
 						heatline: c.heatline,
-						regionFill: c.regionFill
+						regionFill: c.regionFill,
+						spline: c.spline
 					},
 					{
 						svgDefs: c.svgDefs,
@@ -2179,7 +2412,7 @@ let componentConfigs = {
 
 			if(Object.keys(this.paths).length) {
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine));
+					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline));
 			}
 
 			if(this.units.length) {
@@ -2220,7 +2453,7 @@ class PercentageChart extends AggregationChart {
 		b.depth = b.depth || PERCENTAGE_BAR_DEFAULT_DEPTH;
 
 		m.paddings.right = 30;
-		m.legendHeight = 80;
+		m.legendHeight = 60;
 		m.baseHeight = (b.height + b.depth * 0.5) * 8;
 	}
 
@@ -2324,10 +2557,10 @@ class PieChart extends AggregationChart {
 		s.sliceStrings = [];
 		s.slicesProperties = [];
 		let curAngle = 180 - this.config.startAngle;
-
 		s.sliceTotals.map((total, i) => {
 			const startAngle = curAngle;
 			const originDiffAngle = (total / s.grandTotal) * FULL_ANGLE;
+			const largeArc = originDiffAngle > 180 ? 1: 0;
 			const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
 			const endAngle = curAngle = curAngle + diffAngle;
 			const startPosition = getPositionByAngle(startAngle, radius);
@@ -2343,7 +2576,10 @@ class PieChart extends AggregationChart {
 				curStart = startPosition;
 				curEnd = endPosition;
 			}
-			const curPath = makeArcPathStr(curStart, curEnd, this.center, this.radius, this.clockWise);
+			const curPath =
+				originDiffAngle === 360
+					? makeCircleStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc)
+					: makeArcPathStr(curStart, curEnd, this.center, this.radius, clockWise, largeArc);
 
 			s.sliceStrings.push(curPath);
 			s.slicesProperties.push({
@@ -2505,7 +2741,15 @@ function getChartIntervals(maxValue, minValue=0) {
 	normalMaxValue = normalMaxValue.toFixed(6);
 
 	let intervals = getChartRangeIntervals(normalMaxValue, normalMinValue);
-	intervals = intervals.map(value => value * Math.pow(10, exponent));
+	intervals = intervals.map(value => {
+		// For negative exponents we want to divide by 10^-exponent to avoid
+		// floating point arithmetic bugs. For instance, in javascript
+		// 6 * 10^-1 == 0.6000000000000001, we instead want 6 / 10^1 == 0.6
+		if (exponent < 0) {
+			return value / Math.pow(10, -exponent);
+		}
+		return value * Math.pow(10, exponent);
+	});
 	return intervals;
 }
 
@@ -2564,7 +2808,7 @@ function calcChartIntervals(values, withMinimum=false) {
 			// Mirror: maxValue => absMinValue, then change sign
 			exponent = normalize(absMinValue)[1];
 			let posIntervals = getPositiveFirstIntervals(absMinValue, maxValue);
-			intervals = posIntervals.map(d => d * (-1));
+			intervals = posIntervals.reverse().map(d => d * (-1));
 		}
 
 	}
@@ -2627,7 +2871,7 @@ function scale(val, yAxis) {
 function getClosestInArray(goal, arr, index = false) {
 	let closest = arr.reduce(function(prev, curr) {
 		return (Math.abs(curr - goal) < Math.abs(prev - goal) ? curr : prev);
-	});
+	}, []);
 
 	return index ? arr.indexOf(closest) : closest;
 }
@@ -2750,6 +2994,7 @@ class Heatmap extends BaseChart {
 				colWidth: COL_WIDTH,
 				rowHeight: ROW_HEIGHT,
 				squareSize: HEATMAP_SQUARE_SIZE,
+				radius: this.rawChartArgs.radius || 0,
 				xTranslate: s.domainConfigs
 					.filter((config, j) => j < i)
 					.map(config => config.cols.length - lessCol)
@@ -2826,6 +3071,7 @@ class Heatmap extends BaseChart {
 		this.legendArea.textContent = '';
 		let x = 0;
 		let y = ROW_HEIGHT;
+		let radius = this.rawChartArgs.radius || 0;
 
 		let lessText = makeText('subdomain-name', x, y, 'Less',
 			{
@@ -2838,7 +3084,7 @@ class Heatmap extends BaseChart {
 
 		this.colors.slice(0, HEATMAP_DISTRIBUTION_SIZE).map((color, i) => {
 			const square = heatSquare('heatmap-legend-unit', x + (COL_WIDTH + 3) * i,
-				y, HEATMAP_SQUARE_SIZE, color);
+				y, HEATMAP_SQUARE_SIZE, radius, color);
 			this.legendArea.appendChild(square);
 		});
 
@@ -2975,10 +3221,8 @@ function dataPrep(data, type) {
 			} else {
 				vals = fillArray(vals, datasetLength - vals.length, 0);
 			}
+			d.values = vals;
 		}
-
-		// Set labels
-		//
 
 		// Set type
 		if(!d.chartType ) {
@@ -3045,6 +3289,13 @@ function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
 	if(allowedSpace <= 0) allowedSpace = 1;
 	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
 
+	let seriesMultiple;
+	if(isSeries) {
+		// Find the maximum label length for spacing calculations
+		let maxLabelLength = Math.max(...labels.map(label => label.length));
+		seriesMultiple = Math.ceil(maxLabelLength/allowedLetters);
+	}
+
 	let calcLabels = labels.map((label, i) => {
 		label += "";
 		if(label.length > allowedLetters) {
@@ -3056,8 +3307,7 @@ function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
 					label = label.slice(0, allowedLetters) + '..';
 				}
 			} else {
-				let multiple = Math.ceil(label.length/allowedLetters);
-				if(i % multiple !== 0) {
+				if(i % seriesMultiple !== 0) {
 					label = "";
 				}
 			}
@@ -3097,6 +3347,7 @@ class AxisChart extends BaseChart {
 		this.config.xAxisMode = options.axisOptions.xAxisMode || 'span';
 		this.config.yAxisMode = options.axisOptions.yAxisMode || 'span';
 		this.config.xIsSeries = options.axisOptions.xIsSeries || 0;
+		this.config.shortenYAxisNumbers = options.axisOptions.shortenYAxisNumbers || 0;
 
 		this.config.formatTooltipX = options.tooltipOptions.formatTooltipX;
 		this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
@@ -3168,7 +3419,7 @@ class AxisChart extends BaseChart {
 			let values = d.values;
 			let cumulativeYs = d.cumulativeYs || [];
 			return {
-				name: d.name,
+				name: d.name && d.name.replace(/<|>|&/g, (char) => char == '&' ? '&amp;' : char == '<' ? '&lt;' : '&gt;'),
 				index: i,
 				chartType: d.chartType,
 
@@ -3251,6 +3502,7 @@ class AxisChart extends BaseChart {
 				{
 					mode: this.config.yAxisMode,
 					width: this.width,
+					shortenNumbers: this.config.shortenYAxisNumbers
 					// pos: 'right'
 				},
 				function() {
@@ -3355,6 +3607,7 @@ class AxisChart extends BaseChart {
 					svgDefs: this.svgDefs,
 					heatline: this.lineOptions.heatline,
 					regionFill: this.lineOptions.regionFill,
+					spline: this.lineOptions.spline,
 					hideDots: this.lineOptions.hideDots,
 					hideLine: this.lineOptions.hideLine,
 
@@ -3461,17 +3714,19 @@ class AxisChart extends BaseChart {
 		if(!s.yExtremes) return;
 
 		let index = getClosestInArray(relX, s.xAxis.positions, true);
-		let dbi = this.dataByIndex[index];
+		if (index >= 0) {
+			let dbi = this.dataByIndex[index];
 
-		this.tip.setValues(
-			dbi.xPos + this.tip.offset.x,
-			dbi.yExtreme + this.tip.offset.y,
-			{name: dbi.formattedLabel, value: ''},
-			dbi.values,
-			index
-		);
+			this.tip.setValues(
+				dbi.xPos + this.tip.offset.x,
+				dbi.yExtreme + this.tip.offset.y,
+				{name: dbi.formattedLabel, value: ''},
+				dbi.values,
+				index
+			);
 
-		this.tip.showTip();
+			this.tip.showTip();
+		}
 	}
 
 	renderLegend() {
@@ -3488,7 +3743,8 @@ class AxisChart extends BaseChart {
 					'0',
 					barWidth,
 					this.colors[i],
-					d.name);
+					d.name,
+					this.config.truncateLegends);
 				this.legendArea.appendChild(rect);
 			});
 		}
@@ -3642,13 +3898,167 @@ class AxisChart extends BaseChart {
 	// removeDataPoint(index = 0) {}
 }
 
+class DonutChart extends AggregationChart {
+	constructor(parent, args) {
+		super(parent, args);
+		this.type = 'donut';
+		this.initTimeout = 0;
+		this.init = 1;
+
+		this.setup();
+	}
+
+	configure(args) {
+		super.configure(args);
+		this.mouseMove = this.mouseMove.bind(this);
+		this.mouseLeave = this.mouseLeave.bind(this);
+
+		this.hoverRadio = args.hoverRadio || 0.1;
+		this.config.startAngle = args.startAngle || 0;
+
+		this.clockWise = args.clockWise || false;
+		this.strokeWidth = args.strokeWidth || 30;
+	}
+
+	calc() {
+		super.calc();
+		let s = this.state;
+		this.radius =
+			this.height > this.width
+				? this.center.x - this.strokeWidth / 2
+				: this.center.y - this.strokeWidth / 2;
+
+		const { radius, clockWise } = this;
+
+		const prevSlicesProperties = s.slicesProperties || [];
+		s.sliceStrings = [];
+		s.slicesProperties = [];
+		let curAngle = 180 - this.config.startAngle;
+
+		s.sliceTotals.map((total, i) => {
+			const startAngle = curAngle;
+			const originDiffAngle = (total / s.grandTotal) * FULL_ANGLE;
+			const largeArc = originDiffAngle > 180 ? 1: 0;
+			const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
+			const endAngle = curAngle = curAngle + diffAngle;
+			const startPosition = getPositionByAngle(startAngle, radius);
+			const endPosition = getPositionByAngle(endAngle, radius);
+
+			const prevProperty = this.init && prevSlicesProperties[i];
+
+			let curStart,curEnd;
+			if(this.init) {
+				curStart = prevProperty ? prevProperty.startPosition : startPosition;
+				curEnd = prevProperty ? prevProperty.endPosition : startPosition;
+			} else {
+				curStart = startPosition;
+				curEnd = endPosition;
+			}
+			const curPath =
+				originDiffAngle === 360
+					? makeStrokeCircleStr(curStart, curEnd, this.center, this.radius, this.clockWise, largeArc)
+					: makeArcStrokePathStr(curStart, curEnd, this.center, this.radius, this.clockWise, largeArc);
+
+			s.sliceStrings.push(curPath);
+			s.slicesProperties.push({
+				startPosition,
+				endPosition,
+				value: total,
+				total: s.grandTotal,
+				startAngle,
+				endAngle,
+				angle: diffAngle
+			});
+
+		});
+		this.init = 0;
+	}
+
+	setupComponents() {
+		let s = this.state;
+
+		let componentConfigs = [
+			[
+				'donutSlices',
+				{ },
+				function() {
+					return {
+						sliceStrings: s.sliceStrings,
+						colors: this.colors,
+						strokeWidth: this.strokeWidth,
+					};
+				}.bind(this)
+			]
+		];
+
+		this.components = new Map(componentConfigs
+			.map(args => {
+				let component = getComponent(...args);
+				return [args[0], component];
+			}));
+	}
+
+	calTranslateByAngle(property){
+		const{ radius, hoverRadio } = this;
+		const position = getPositionByAngle(property.startAngle+(property.angle / 2),radius);
+		return `translate3d(${(position.x) * hoverRadio}px,${(position.y) * hoverRadio}px,0)`;
+	}
+
+	hoverSlice(path,i,flag,e){
+		if(!path) return;
+		const color = this.colors[i];
+		if(flag) {
+			transform(path, this.calTranslateByAngle(this.state.slicesProperties[i]));
+			path.style.stroke = lightenDarkenColor(color, 50);
+			let g_off = getOffset(this.svg);
+			let x = e.pageX - g_off.left + 10;
+			let y = e.pageY - g_off.top - 10;
+			let title = (this.formatted_labels && this.formatted_labels.length > 0
+				? this.formatted_labels[i] : this.state.labels[i]) + ': ';
+			let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1);
+			this.tip.setValues(x, y, {name: title, value: percent + "%"});
+			this.tip.showTip();
+		} else {
+			transform(path,'translate3d(0,0,0)');
+			this.tip.hideTip();
+			path.style.stroke = color;
+		}
+	}
+
+	bindTooltip() {
+		this.container.addEventListener('mousemove', this.mouseMove);
+		this.container.addEventListener('mouseleave', this.mouseLeave);
+	}
+
+	mouseMove(e){
+		const target = e.target;
+		let slices = this.components.get('donutSlices').store;
+		let prevIndex = this.curActiveSliceIndex;
+		let prevAcitve = this.curActiveSlice;
+		if(slices.includes(target)) {
+			let i = slices.indexOf(target);
+			this.hoverSlice(prevAcitve, prevIndex,false);
+			this.curActiveSlice = target;
+			this.curActiveSliceIndex = i;
+			this.hoverSlice(target, i, true, e);
+		} else {
+			this.mouseLeave();
+		}
+	}
+
+	mouseLeave(){
+		this.hoverSlice(this.curActiveSlice,this.curActiveSliceIndex,false);
+	}
+}
+
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,
 	heatmap: Heatmap,
-	pie: PieChart
+	pie: PieChart,
+	donut: DonutChart,
 };
 
 function getChartByType(chartType = 'line', parent, options) {

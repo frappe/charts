@@ -5,6 +5,7 @@ import PercentageChart from './charts/PercentageChart';
 import PieChart from './charts/PieChart';
 import Heatmap from './charts/Heatmap';
 import AxisChart from './charts/AxisChart';
+import DonutChart from './charts/DonutChart';
 
 const chartTypes = {
 	bar: AxisChart,
@@ -12,7 +13,8 @@ const chartTypes = {
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,
 	heatmap: Heatmap,
-	pie: PieChart
+	pie: PieChart,
+	donut: DonutChart,
 };
 
 function getChartByType(chartType = 'line', parent, options) {

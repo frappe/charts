@@ -1,70 +1,97 @@
-.page-header {
-	width: 100%;
+body {
+	/* container styles */
+    max-width: 720px;
+    margin: auto;
+
+	font-family: "proxima-nova", sans-serif;
+	font-size: 15px;
+	color: #6c7680;
+	text-rendering: optimizeLegibility !important;
+	line-height: 1.5em;
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.lead,
+.page-sidebar,
+.breadcrumb,
+.label,
+.h6,
+.sans,
+blockquote {
+	font-family: "proxima-nova", sans-serif;
+	color: #36414C;
+}
+
+header {
+	margin: 4rem 0;  /* SAME 1 */
+	font-size: 1.6em;
+	font-weight: 300;
 	text-align: center;
-	color: #fff;
-	padding: 2em 0;
 }
-.jumbotron {
-    padding: 2rem 2rem;
+header .lead-text {
+	line-height: 3rem;
+	margin: 2rem 0;
 }
-.project-name {
-	padding-top: 1.8em;
-	font-size: 2.5em;
+.demo-tip {
+	margin-top: 1rem;   /* SAME 2 */
+	font-size: 1rem;
 }
-.project-tagline {
-	font-size: 1em;
-	opacity: 0.7;
-	padding: 2em;
+section {
+	margin: 4em 0;   /* SAME 1 */
 }
-.btn-transparent {
-	margin: 0 0.5em;
-	color: #fff;
-	background: rgba(255, 255, 255, 0.1);
-	border: 1px solid rgba(255, 255, 255, 0.4);
+h1 {
+	font-size: 3.5rem;
+    margin-bottom: 1.5rem;
 }
-.btn-transparent:hover {
-	color: #fff;
-	background: rgba(255, 255, 255, 0.3);
+h1, h6 {
+	font-weight: 700;
 }
-
-.main-content {
-	padding: 2em;
-}
-
-.main-content .row {
-	margin-bottom: 20px;
-}
-
-hr {
-	margin-bottom: 2rem;
-}
-
-.step-explain {
-	margin-top: 30px;
-}
-
-pre.highlight {
-	background: #f7f7f7;
-	border-radius: 3px;
-}
-
 .btn {
 	outline: none !important;
 }
-.dashboard-section h1 {
-	margin-left: -2px;
+.blue.button {
+	color: #fff;
+	background: #7575ff;
+	border: 0px;
+	border-bottom: 3px solid rgba(0, 0, 0, 0.2);
+}
+.blue.button:hover {
+	background: #5b5be5;
+}
+.large.button {
+	font-size: 1.33em;
+	padding: 12px 24px 10px;
+	border-bottom: 3px solid rgba(0, 0, 0, 0.2);
+}
+a {
+	color: #5E64FF;
+}
+a, a:focus, a:hover {
+	transition: color 0.3s, border 0.3s, background-color 0.3s;
 }
 
-.hero .gantt-container {
-	text-align: left;
+
+/* BaseCSS */
+.margin-top {
+	margin-top: 1rem; /* SAME 2 */
 }
-.hero {
-	/*font-size: 1.4rem;*/
+.mv1 {
+	margin: 2em 0 1em 0;
 }
-.data-container {
-	padding: 20px;
-	padding-bottom: 0px;
+.border {
+	border: 1px solid #ddd;
+	border-radius: 3px;
 }
+
+
+/* Moon images */
 .image-container {
 	padding: 3px;
 }
@@ -72,19 +99,12 @@ pre.highlight {
 	display: block;
     width: 100%;
 }
-.data p {
+.content-data p {
 	margin-bottom: 5px;
 	font-size: 12px;
 }
-.margin-vertical-px {
-	margin: 15px 0px;
-}
 
-.margin-vertical-rem {
-	margin: 2em 0 1em 0;
-}
 
-.border {
-	border: 1px solid #ddd;
-	border-radius: 3px;
+.text-center {
+	text-align: center;
 }
