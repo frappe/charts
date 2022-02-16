@@ -3125,8 +3125,8 @@ class Heatmap extends BaseChart {
 
 	getDomainConfig(startDate, endDate='') {
 		let [month, year] = [startDate.getMonth(), startDate.getFullYear()];
-		let startOfWeek = toMidnightUTC(setDayToSunday(startDate)); // TODO: Monday as well
-		endDate = toMidnightUTC(clone(endDate) || getLastDateInMonth(month, year));
+		let startOfWeek = setDayToSunday(startDate); // TODO: Monday as well
+		endDate = endDate ? clone(endDate) : toMidnightUTC(getLastDateInMonth(month, year));
 
 		let domainConfig = {
 			index: month,
@@ -3159,7 +3159,7 @@ class Heatmap extends BaseChart {
 		let s = this.state;
 
 		// startDate is the start of week
-		let currentDate = clone(toMidnightUTC(startDate));
+		let currentDate = clone(startDate);
 		let col = [];
 
 		for(var i = 0; i < NO_OF_DAYS_IN_WEEK; i++, addDays(currentDate, 1)) {
