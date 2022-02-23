@@ -160,7 +160,7 @@ export function calcChartIntervals(values, withMinimum=false) {
 		intervals = intervals.reverse().map(d => d * (-1));
 	}
 
-	return intervals;
+	return intervals.sort((a, b) => (a - b));
 }
 
 export function getZeroIndex(yPts) {
