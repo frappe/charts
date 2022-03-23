@@ -120,24 +120,24 @@ export function round(d) {
  * Creates a deep clone of an object
  * @param {Object} candidate Any Object
  */
- export function deepClone(candidate) {
+export function deepClone(candidate) {
 	let cloned, value, key;
   
 	if (candidate instanceof Date) {
-	  return new Date(candidate.getTime());
+		return new Date(candidate.getTime());
 	}
   
 	if (typeof candidate !== "object" || candidate === null) {
-	  return candidate;
+		return candidate;
 	}
   
 	cloned = Array.isArray(candidate) ? [] : {};
   
 	for (key in candidate) {
-	  value = candidate[key];
+		value = candidate[key];
   
-	  cloned[key] = deepClone(value);
+		cloned[key] = deepClone(value);
 	}
   
 	return cloned;
-  }
+}

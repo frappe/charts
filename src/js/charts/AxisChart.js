@@ -375,7 +375,7 @@ export default class AxisChart extends BaseChart {
 
 			this.dataByIndex[index] = {
 				label: label,
-				formattedLabel: formatX ? formatX(label) : label,
+				formattedLabel: formatX ? formatX(label, index) : label,
 				xPos: s.xAxis.positions[index],
 				values: values,
 				yExtreme: s.yExtremes[index],
