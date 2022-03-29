@@ -2,7 +2,7 @@ import BaseChart from './BaseChart';
 import { getComponent } from '../objects/ChartComponents';
 import { makeText, heatSquare } from '../utils/draw';
 import {
-	DAY_NAMES_SHORT, addDays, areInSameMonth, getLastDateInMonth, setDayToSunday, getYyyyMmDd, getWeeksBetween, getMonthName, clone,
+	DAY_NAMES_SHORT, toMidnightUTC, addDays, areInSameMonth, getLastDateInMonth, setDayToSunday, getYyyyMmDd, getWeeksBetween, getMonthName, clone,
 	NO_OF_MILLIS, NO_OF_YEAR_MONTHS, NO_OF_DAYS_IN_WEEK
 } from '../utils/date-utils';
 import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
@@ -62,7 +62,13 @@ export default class Heatmap extends BaseChart {
 			data.start = new Date();
 			data.start.setFullYear(data.start.getFullYear() - 1);
 		}
-		if (!data.end) { data.end = new Date(); }
+		data.start = toMidnightUTC(data.start);
+
+		if (!data.end) {
+			data.end = new Date();
+		}
+		data.end = toMidnightUTC(data.end);
+
 		data.dataPoints = data.dataPoints || {};
 
 		if (parseInt(Object.keys(data.dataPoints)[0]) > 100000) {
@@ -234,7 +240,7 @@ export default class Heatmap extends BaseChart {
 	getDomainConfig(startDate, endDate = '') {
 		let [month, year] = [startDate.getMonth(), startDate.getFullYear()];
 		let startOfWeek = setDayToSunday(startDate); // TODO: Monday as well
-		endDate = clone(endDate) || getLastDateInMonth(month, year);
+		endDate = endDate ? clone(endDate) : toMidnightUTC(getLastDateInMonth(month, year));
 
 		let domainConfig = {
 			index: month,
@@ -249,7 +255,7 @@ export default class Heatmap extends BaseChart {
 			col = this.getCol(startOfWeek, month);
 			cols.push(col);
 
-			startOfWeek = new Date(col[NO_OF_DAYS_IN_WEEK - 1].yyyyMmDd);
+			startOfWeek = toMidnightUTC(new Date(col[NO_OF_DAYS_IN_WEEK - 1].yyyyMmDd));
 			addDays(startOfWeek, 1);
 		}
 

@@ -39,7 +39,7 @@ export function dataPrep(data, type) {
 
 		// Set type
 		if (!d.chartType) {
-			if (!AXIS_DATASET_CHART_TYPES.includes(type)) type === DEFAULT_AXIS_CHART_TYPE;
+			if (!AXIS_DATASET_CHART_TYPES.includes(type)) type = DEFAULT_AXIS_CHART_TYPE;
 			d.chartType = type;
 		}
 

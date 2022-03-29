@@ -85,7 +85,7 @@ export function calcChartIntervals(values, withMinimum = false, range = {}) {
 	if (range.max !== undefined) {
 		maxValue = maxValue > range.max ? maxValue : range.max;
 	}
-	
+
 	if (range.min !== undefined) {
 		minValue = minValue < range.min ? minValue : range.min;
 	}
@@ -160,7 +160,7 @@ export function calcChartIntervals(values, withMinimum = false, range = {}) {
 		intervals = intervals.reverse().map(d => d * (-1));
 	}
 
-	return intervals;
+	return intervals.sort((a, b) => (a - b));
 }
 
 export function getZeroIndex(yPts) {
