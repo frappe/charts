@@ -13,8 +13,14 @@ export function getBarHeightAndYAttr(yTop, zeroLine) {
 	return [height, y];
 }
 
-export function equilizeNoOfElements(array1, array2,
-	extraCount = array2.length - array1.length) {
+export function getCandleAttr(candleInfo, zeroLine) {
+	// [open, high, low, close, volume]
+	let [open, high, low, close, volume] = candleInfo.map(val => getBarHeightAndYAttr(val, zeroLine)[1]);
+	let height = Math.abs(open - close);
+	return [open, high, low, close, volume, height];
+}
+
+export function equilizeNoOfElements(array1, array2, extraCount = array2.length - array1.length) {
 
 	// Doesn't work if either has zero elements.
 	if(extraCount > 0) {
@@ -71,7 +77,7 @@ export function getSplineCurvePointsStr(xList, yList) {
 			angle: Math.atan2(lengthY, lengthX)
 		};
 	};
-    
+
 	let controlPoint = (current, previous, next, reverse) => {
 		let p = previous || current;
 		let n = next || current;
@@ -82,18 +88,18 @@ export function getSplineCurvePointsStr(xList, yList) {
 		let y = current[1] + Math.sin(angle) * length;
 		return [x, y];
 	};
-    
+
 	let bezierCommand = (point, i, a) => {
 		let cps = controlPoint(a[i - 1], a[i - 2], point);
 		let cpe = controlPoint(point, a[i - 1], a[i + 1], true);
 		return `C ${cps[0]},${cps[1]} ${cpe[0]},${cpe[1]} ${point[0]},${point[1]}`;
 	};
-    
+
 	let pointStr = (points, command) => {
 		return points.reduce((acc, point, i, a) => i === 0
 			? `${point[0]},${point[1]}`
 			: `${acc} ${command(point, i, a)}`, '');
 	};
-    
+
 	return pointStr(points, bezierCommand);
 }

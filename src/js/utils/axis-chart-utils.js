@@ -25,6 +25,9 @@ export function dataPrep(data, type) {
 			let vals = d.values;
 			vals = vals.map(val => (!isNaN(val) ? val : 0));
 
+			let candles = d.candles;
+			candles = (candles || []).map(candle => (candle || []).map(val => (!isNaN(val) ? val : 0)));
+
 			// Trim or extend
 			if(vals.length > datasetLength) {
 				vals = vals.slice(0, datasetLength);
@@ -32,6 +35,13 @@ export function dataPrep(data, type) {
 				vals = fillArray(vals, datasetLength - vals.length, 0);
 			}
 			d.values = vals;
+
+			if(candles.length > datasetLength) {
+				candles = candles.slice(0, datasetLength);
+			} else {
+				candles = fillArray(candles, datasetLength - candles.length, [0, 0, 0, 0, 0]);
+			}
+			d.candles = candles;
 		}
 
 		// Set type
@@ -60,6 +70,7 @@ export function dataPrep(data, type) {
 export function zeroDataPrep(realData) {
 	let datasetLength = realData.labels.length;
 	let zeroArray = new Array(datasetLength).fill(0);
+	let zeroCandleArray = new Array(datasetLength).fill([0, 0, 0, 0, 0]);
 
 	let zeroData = {
 		labels: realData.labels.slice(0, -1),
@@ -67,6 +78,7 @@ export function zeroDataPrep(realData) {
 			return {
 				name: '',
 				values: zeroArray.slice(0, -1),
+				candles: zeroCandleArray.slice(0, -1),
 				chartType: d.chartType
 			};
 		}),

@@ -1,7 +1,8 @@
-export const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
+export const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'candle', 'percentage', 'heatmap', 'pie'];
 
 export const COMPATIBLE_CHARTS = {
 	bar: ['line', 'scatter', 'percentage', 'pie'],
+	candle: ['line', 'scatter', 'percentage', 'pie'],
 	line: ['scatter', 'bar', 'percentage', 'pie'],
 	pie: ['line', 'scatter', 'percentage', 'bar'],
 	percentage: ['bar', 'line', 'scatter', 'pie'],
@@ -11,6 +12,7 @@ export const COMPATIBLE_CHARTS = {
 export const DATA_COLOR_DIVISIONS = {
 	bar: 'datasets',
 	line: 'datasets',
+	candle: 'datasets',
 	pie: 'labels',
 	percentage: 'labels',
 	heatmap: HEATMAP_DISTRIBUTION_SIZE
@@ -63,12 +65,15 @@ export const INIT_CHART_UPDATE_TIMEOUT = 700;
 export const CHART_POST_ANIMATE_TIMEOUT = 400;
 
 export const DEFAULT_AXIS_CHART_TYPE = 'line';
-export const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
+export const AXIS_DATASET_CHART_TYPES = ['line', 'bar', 'candle'];
 
 export const AXIS_LEGEND_BAR_SIZE = 100;
 
 export const BAR_CHART_SPACE_RATIO = 0.5;
 export const MIN_BAR_PERCENT_HEIGHT = 0.00;
+
+export const CANDLE_CHART_SPACE_RATIO = 0.1;
+export const MIN_CANDLE_PERCENT_HEIGHT = 0.00;
 
 export const LINE_CHART_DOT_SIZE = 4;
 export const DOT_OVERLAY_SIZE_INCR = 4;
@@ -89,6 +94,7 @@ export const TOOLTIP_POINTER_TRIANGLE_HEIGHT = 5;
 
 const DEFAULT_CHART_COLORS = ['light-blue', 'blue', 'violet', 'red', 'orange',
 	'yellow', 'green', 'light-green', 'purple', 'magenta', 'light-grey', 'dark-grey'];
+const DEFAULT_CANDLE_COLORS = ['green', 'red'];
 const HEATMAP_COLORS_GREEN = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
 export const HEATMAP_COLORS_BLUE = ['#ebedf0', '#c0ddf9', '#73b3f3', '#3886e1', '#17459e'];
 export const HEATMAP_COLORS_YELLOW = ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'];
@@ -96,6 +102,7 @@ export const HEATMAP_COLORS_YELLOW = ['#ebedf0', '#fdf436', '#ffc700', '#ff9100'
 export const DEFAULT_COLORS = {
 	bar: DEFAULT_CHART_COLORS,
 	line: DEFAULT_CHART_COLORS,
+	candle: DEFAULT_CANDLE_COLORS,
 	pie: DEFAULT_CHART_COLORS,
 	percentage: DEFAULT_CHART_COLORS,
 	heatmap: HEATMAP_COLORS_GREEN,

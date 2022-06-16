@@ -1,5 +1,5 @@
 import { makeSVGGroup } from '../utils/draw';
-import { makeText, makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
+import { makeText, makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetCandle, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import { translateHoriLine, translateVertLine, animateRegion, animateBar,
 	animateDot, animatePath, animatePathStr } from '../utils/animate';
@@ -429,6 +429,72 @@ let componentConfigs = {
 						dot, newXPos[i], newYPos[i]));
 				});
 			}
+
+			return animateElements;
+		}
+	},
+
+	candleGraph: {
+		layerClass: function() { return 'dataset-units dataset-candles dataset-' + this.constants.index; },
+		makeElements(data) {
+			let c = this.constants;
+			this.unitType = 'candle';
+			// if (this.type === 'candle') {
+			alert('candleGraph = ' + JSON.stringify(data));
+			// }
+			this.units = data.candles.map((candle, j) => {
+				return datasetCandle(
+					data.xPositions[j],
+					candle,
+					data.candleWidth,
+					c.color,
+					data.labels[j],
+					j,
+					data.offsets[j],
+					{
+						zeroLine: data.zeroLine,
+						candlesWidth: data.candlesWidth,
+						minHeight: c.minHeight
+					}
+				);
+			});
+			return this.units;
+		},
+		animateElements(newData) {
+			let newXPos = newData.xPositions;
+			let newYPos = newData.yPositions;
+			let newOffsets = newData.offsets;
+			let newLabels = newData.labels;
+
+			let oldXPos = this.oldData.xPositions;
+			let oldYPos = this.oldData.yPositions;
+			let oldOffsets = this.oldData.offsets;
+			let oldLabels = this.oldData.labels;
+
+			[oldXPos, newXPos] = equilizeNoOfElements(oldXPos, newXPos);
+			[oldYPos, newYPos] = equilizeNoOfElements(oldYPos, newYPos);
+			[oldOffsets, newOffsets] = equilizeNoOfElements(oldOffsets, newOffsets);
+			[oldLabels, newLabels] = equilizeNoOfElements(oldLabels, newLabels);
+
+			this.render({
+				xPositions: oldXPos,
+				yPositions: oldYPos,
+				offsets: oldOffsets,
+				labels: newLabels,
+
+				zeroLine: this.oldData.zeroLine,
+				barsWidth: this.oldData.barsWidth,
+				barWidth: this.oldData.barWidth,
+			});
+
+			let animateElements = [];
+
+			this.store.map((candle, i) => {
+				animateElements = animateElements.concat(animateBar(
+					candle, newXPos[i], newYPos[i], newData.barWidth, newOffsets[i],
+					{zeroLine: newData.zeroLine}
+				));
+			});
 
 			return animateElements;
 		}

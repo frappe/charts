@@ -10,6 +10,7 @@ import DonutChart from './charts/DonutChart';
 const chartTypes = {
 	bar: AxisChart,
 	line: AxisChart,
+	candle: AxisChart,
 	// multiaxis: MultiAxisChart,
 	percentage: PercentageChart,
 	heatmap: Heatmap,
