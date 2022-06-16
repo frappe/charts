@@ -7,14 +7,18 @@ import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale
 import { floatTwo } from '../utils/helpers';
 import { makeOverlay, updateOverlay, legendBar } from '../utils/draw';
 import { getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
-	LINE_CHART_DOT_SIZE } from '../utils/constants';
+	LINE_CHART_DOT_SIZE, CANDLE_CHART_SPACE_RATIO, MIN_CANDLE_PERCENT_HEIGHT } from '../utils/constants';
 
 export default class AxisChart extends BaseChart {
 	constructor(parent, args) {
 		super(parent, args);
-
+		// TODO: remove
+		if (this.type === 'candle') {
+			alert('AxisChart = ' + JSON.stringify(args));
+		}
 		this.barOptions = args.barOptions || {};
 		this.lineOptions = args.lineOptions || {};
+		this.candleOptions = args.candleOptions || {};
 
 		this.type = args.type || 'line';
 		this.init = 1;
@@ -105,7 +109,7 @@ export default class AxisChart extends BaseChart {
 	calcDatasetPoints() {
 		let s = this.state;
 		let scaleAll = values => values.map(val => scale(val, s.yAxis));
-
+		let scaleCandles = values => values.map(list => list.map(val => scale(val, s.yAxis)));
 		s.datasets = this.data.datasets.map((d, i) => {
 			let values = d.values;
 			let cumulativeYs = d.cumulativeYs || [];
@@ -116,6 +120,7 @@ export default class AxisChart extends BaseChart {
 
 				values: values,
 				yPositions: scaleAll(values),
+				candles: scaleCandles(d.candles || []),
 
 				cumulativeYs: cumulativeYs,
 				cumulativeYPos: scaleAll(cumulativeYs),
@@ -231,6 +236,7 @@ export default class AxisChart extends BaseChart {
 
 		let barDatasets = this.state.datasets.filter(d => d.chartType === 'bar');
 		let lineDatasets = this.state.datasets.filter(d => d.chartType === 'line');
+		let candleDatasets = this.state.datasets.filter(d => d.chartType === 'candle');
 
 		let barsConfigs = barDatasets.map(d => {
 			let index = d.index;
@@ -324,6 +330,62 @@ export default class AxisChart extends BaseChart {
 			];
 		});
 
+		let candlesConfigs = candleDatasets.map(d => {
+			let index = d.index;
+			return [
+				'candleGraph' + '-' + d.index,
+				{
+					index: index,
+					color: this.colors[index],
+					stacked: this.candleOptions.stacked,
+
+					// same for all datasets
+					valuesOverPoints: this.config.valuesOverPoints,
+					minHeight: this.height * MIN_CANDLE_PERCENT_HEIGHT,
+				},
+				function() {
+					let s = this.state;
+					let d = s.datasets[index];
+					let stacked = this.candleOptions.stacked;
+
+					let spaceRatio = this.candleOptions.spaceRatio || CANDLE_CHART_SPACE_RATIO;
+					let candlesWidth = s.unitWidth * (1 - spaceRatio);
+					let candleWidth = candlesWidth/(stacked ? 1 : candleDatasets.length);
+
+					let xPositions = s.xAxis.positions.map(x => x - candlesWidth/2);
+					if(!stacked) {
+						xPositions = xPositions.map(p => p + candleWidth * index);
+					}
+
+					let labels = new Array(s.datasetLength).fill('');
+					if(this.config.valuesOverPoints) {
+						if(stacked && d.index === s.datasets.length - 1) {
+							labels = d.cumulativeYs;
+						} else {
+							labels = d.values;
+						}
+					}
+
+					let offsets = new Array(s.datasetLength).fill(0);
+					if(stacked) {
+						offsets = d.yPositions.map((y, j) => y - d.cumulativeYPos[j]);
+					}
+					return {
+						xPositions: xPositions,
+						yPositions: d.yPositions,
+						candles: d.candles,
+						offsets: offsets,
+						// values: d.values,
+						labels: labels,
+
+						zeroLine: s.yAxis.zeroLine,
+						candlesWidth: candlesWidth,
+						candleWidth: candleWidth,
+					};
+				}.bind(this)
+			];
+		});
+
 		let markerConfigs = [
 			[
 				'yMarkers',
@@ -337,7 +399,7 @@ export default class AxisChart extends BaseChart {
 			]
 		];
 
-		componentConfigs = componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
+		componentConfigs = componentConfigs.concat(barsConfigs, lineConfigs, candlesConfigs, markerConfigs);
 
 		let optionals = ['yMarkers', 'yRegions'];
 		this.dataUnitComponents = [];
@@ -346,7 +408,7 @@ export default class AxisChart extends BaseChart {
 			.filter(args => !optionals.includes(args[0]) || this.state[args[0]])
 			.map(args => {
 				let component = getComponent(...args);
-				if(args[0].includes('lineGraph') || args[0].includes('barGraph')) {
+				if(args[0].includes('lineGraph') || args[0].includes('barGraph') || args[0].includes('candleGraph')) {
 					this.dataUnitComponents.push(component);
 				}
 				return [args[0], component];

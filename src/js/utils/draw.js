@@ -1,4 +1,4 @@
-import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getSplineCurvePointsStr } from './draw-utils';
+import { getBarHeightAndYAttr, getCandleAttr, truncateString, shortenLargeNumber, getSplineCurvePointsStr } from './draw-utils';
 import { getStringWidth, isValidNumber } from './helpers';
 import { DOT_OVERLAY_SIZE_INCR, PERCENTAGE_BAR_DEFAULT_DEPTH } from './constants';
 import { lightenDarkenColor } from './colors';
@@ -525,6 +525,84 @@ export function datasetBar(x, yTop, width, color, label='', index=0, offset=0, m
 
 	if(!label && !label.length) {
 		return rect;
+	} else {
+		rect.setAttribute('y', 0);
+		rect.setAttribute('x', 0);
+		let text = createSVG('text', {
+			className: 'data-point-value',
+			x: width/2,
+			y: 0,
+			dy: (FONT_SIZE / 2 * -1) + 'px',
+			'font-size': FONT_SIZE + 'px',
+			'text-anchor': 'middle',
+			innerHTML: label
+		});
+
+		let group = createSVG('g', {
+			'data-point-index': index,
+			transform: `translate(${x}, ${y})`
+		});
+		group.appendChild(rect);
+		group.appendChild(text);
+
+		return group;
+	}
+}
+
+export function datasetCandle(x, candleInfo, width, color, label='', index=0, offset=0, meta={}) {
+	// if (this.type === 'candle') {
+	// alert('Draw candle = ' + JSON.stringify(candleInfo));
+	// }
+	let [open, high, low, close, , height] = getCandleAttr(candleInfo, meta.zeroLine);
+	// let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
+	let y = 0;
+	if (open < close) {
+		y = close;
+	} else {
+		y = open;
+	}
+	y -= offset;
+
+	if(height === 0) {
+		height = meta.minHeight;
+		y -= meta.minHeight;
+	}
+	// Preprocess numbers to avoid svg building errors
+	if (!isValidNumber(x)) x = 0;
+	if (!isValidNumber(y)) y = 0;
+	if (!isValidNumber(height, true)) height = 0;
+	if (!isValidNumber(width, true)) width = 0;
+
+	let rect = createSVG('rect', {
+		className: `candle mini`,
+		style: `fill: ${color}`,
+		'data-point-index': index,
+		x: 0,
+		y: 0,
+		width: width,
+		height: height
+	});
+
+	let rect_2 = createSVG('rect', {
+		className: `candle mini`,
+		style: `fill: ${color}`,
+		'data-point-index': index,
+		x: width/2,
+		y: y - high,
+		width: 1,
+		height: high - low
+	});
+
+	label += "";
+
+	if(!label && !label.length) {
+		let group = createSVG('g', {
+			'data-point-index': index,
+			transform: `translate(${x}, ${y})`
+		});
+		group.appendChild(rect);
+		group.appendChild(rect_2);
+		return group;
 	} else {
 		rect.setAttribute('y', 0);
 		rect.setAttribute('x', 0);

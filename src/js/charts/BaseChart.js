@@ -237,6 +237,10 @@ export default class BaseChart {
 		}
 		this.data = this.prepareData(data);
 		this.calc(); // builds state
+		// TODO: remove
+		if (this.type === 'candle') {
+			alert('update = ' + JSON.stringify(this.state));
+		}
 		this.render(this.components, this.config.animate);
 		this.renderLegend();
 	}
