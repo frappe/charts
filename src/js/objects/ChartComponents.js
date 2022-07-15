@@ -125,7 +125,12 @@ let componentConfigs = {
 		makeElements(data) {
 			return data.positions.map((position, i) =>
 				yLine(position, data.labels[i], this.constants.width,
-					{ mode: this.constants.mode, pos: this.constants.pos, shortenNumbers: this.constants.shortenNumbers })
+					{
+						mode: this.constants.mode,
+						pos: this.constants.pos,
+						shortenNumbers: this.constants.shortenNumbers,
+						numberFormatter: this.constants.numberFormatter
+					})
 			);
 		},
 
