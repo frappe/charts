@@ -33,7 +33,7 @@ export default class BaseChart {
 
 		this.config = {
 			showTooltip: 1, // calculate
-			showLegend: 1, // calculate
+			showLegend: options.showLegend || 1,
 			isNavigable: options.isNavigable || 0,
 			animate: (typeof options.animate !== 'undefined') ? options.animate : 1,
 			truncateLegends: options.truncateLegends || 1
