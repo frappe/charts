@@ -119,8 +119,7 @@ const data = {
 }
 
 
-const chart = new frappe.Chart("#chart", {  // or a DOM element,
-                                            // new Chart() in case of ES6 module with above usage
+const chart = new frappe.Chart("#chart", {
     title: "My Chart",
     data: data,
     type: 'line', // or 'bar', 'line', 'scatter', 'pie', 'percentage'
