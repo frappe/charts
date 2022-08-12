@@ -118,9 +118,8 @@ const data = {
     ]
 }
 
-
-const chart = new frappe.Chart("#chart", {  // or a DOM element,
-                                            // new Chart() in case of ES6 module with above usage
+// line chart
+const chart = new frappe.Chart("#chart", {
     title: "My Chart",
     data: data,
     type: 'line', // or 'bar', 'line', 'scatter', 'pie', 'percentage'
@@ -139,20 +138,6 @@ const chart = new frappe.Chart("#chart", {  // or a DOM element,
     fullscreen: 1 // cover entire width/height of container (default = 0)
 })
 ```
-
-Or for es-modules (replace `new frappe.Chart()` with `new Chart()`):
-```diff
-- const chart = new frappe.Chart("#chart", {
-+ const chart = new Chart("#chart", {  // or a DOM element,
-                                    // new Chart() in case of ES6 module with above usage
-    title: "My Awesome Chart",
-    data: data,
-    type: 'axis-mixed', // or 'bar', 'line', 'scatter', 'pie', 'percentage'
-    height: 250,
-    colors: ['#7cd6fd', '#743ee2']
-})
-```
-
 
 If you want to contribute:
 
