@@ -106,6 +106,39 @@ Or for es-modules (replace `new frappe.Chart()` with `new Chart()`):
 ```
 
 
+#### Grid Adjustments
+```js
+const data = {
+    labels: ["12am-3am", "3am-6pm", "6am-9am", "9am-12am"],
+    datasets: [
+        {
+            name: "Another Set", chartType: "line",
+            values: [25, 50, -10, 15, 18, 32, 27, 14]
+        }
+    ]
+}
+
+// line chart
+const chart = new frappe.Chart("#chart", {
+    title: "My Chart",
+    data: data,
+    type: 'line', // or 'bar', 'line', 'scatter', 'pie', 'percentage'
+    height: 250,
+    colors: ['#7cd6fd', '#743ee2']
+    xAxis:{
+        // labelHide:1,                     // default = 0
+        // lineHide:1,                      // default = 0
+        // lineColor:"#8798f8",             // default = '#dadada'
+    },
+    yAxis:{
+        // labelHide:1,                     // default = 0,
+        // lineHide:1,                      // default = 0
+        // lineColor:"#acffac",             // default = '#dadada'
+    },
+    fullscreen: 1 // cover entire width/height of container (default = 0)
+})
+```
+
 If you want to contribute:
 
 1. Clone this repo.

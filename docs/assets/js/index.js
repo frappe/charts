@@ -102,6 +102,13 @@ let updateData = {
 	datasets: [{
 		"values": getUpdateData(updateDataAllValues)
 	}],
+	// labels: ["12am-3am", "3am-6pm", "6am-9am", "9am-12am"],
+    // datasets: [
+    //     {
+    //         name: "Another Set", chartType: "line",
+    //         values: [25, 50, -10, 15, 18, 32, 27, 14]
+    //     }
+    // ],
 	yMarkers: [
 		{
 			label: "Altitude",
@@ -125,7 +132,8 @@ let updateChart = new Chart("#chart-update", {
 	colors: ['#ff6c03'],
 	lineOptions: {
 		// hideLine: 1,
-		regionFill: 1
+		// spline: 1,
+		// regionFill: 1
 	},
 });
 
@@ -167,6 +175,51 @@ chartUpdateButtons.querySelector('[data-update="add"]').addEventListener("click"
 
 chartUpdateButtons.querySelector('[data-update="remove"]').addEventListener("click", () => {
 	updateChart.removeDataPoint();
+});
+chartUpdateButtons.querySelector('[data-update="show-axis"]').addEventListener("click", () => {
+	updateChart.destroy();
+	updateChart = new Chart("#chart-update", {
+		data: updateData,
+		type: 'line',
+		height: 300,
+		colors: ['#ff6c03'],
+		axisOptions: {
+			xAxis: {
+				// lineHide: 1,
+				// labelHide: 1,
+				lineColor: '#8798f8',
+			},
+			yAxis: {
+				// lineHide: 1,
+				// labelHide: 1
+				lineColor:"#acffac",
+			}
+		},
+		fullscreen: 0, // default is 0
+	});
+});
+chartUpdateButtons.querySelector('[data-update="hide-axis"]').addEventListener("click", () => {
+	updateChart.destroy();
+	updateChart = new Chart("#chart-update", {
+		data: updateData,
+		type: 'line',
+		height: 300,
+		colors: ['#ff6c03'],
+		axisOptions: {
+			xAxis: {
+				lineHide: 1,
+				labelHide: 1,
+				// lineColor: '#ff6c03',
+			},
+			yAxis: {
+				lineHide: 1,
+				labelHide: 1
+				// lineColor:"green",
+			}
+		},
+		fullscreen: 1, // default is 0
+	});
+
 });
 
 document.querySelector('.export-update').addEventListener('click', () => {
@@ -373,3 +426,8 @@ Array.prototype.slice.call(
 document.querySelector('.export-heatmap').addEventListener('click', () => {
 	heatmapChart.export();
 });
+
+
+
+
+

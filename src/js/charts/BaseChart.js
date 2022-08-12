@@ -1,12 +1,14 @@
 import SvgTip from '../objects/SvgTip';
 import { $, isElementInViewport, getElementContentWidth, isHidden } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup, makeText } from '../utils/draw';
-import { BASE_MEASURES, getExtraHeight, getExtraWidth, getTopOffset, getLeftOffset,
-	INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS} from '../utils/constants';
+import {
+	BASE_MEASURES, getExtraHeight, getExtraWidth, getTopOffset, getLeftOffset,
+	INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS
+} from '../utils/constants';
 import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
 import { downloadFile, prepareForExport } from '../utils/export';
-import { deepClone } from  '../utils/helpers';
+import { deepClone } from '../utils/helpers';
 
 export default class BaseChart {
 	constructor(parent, options) {
@@ -39,11 +41,13 @@ export default class BaseChart {
 			truncateLegends: options.truncateLegends || 1
 		};
 
+		this.fullscreen = options.fullscreen || 0;
+
 		this.measures = JSON.parse(JSON.stringify(BASE_MEASURES));
 		let m = this.measures;
 		this.setMeasures(options);
-		if(!this.title.length) { m.titleHeight = 0; }
-		if(!this.config.showLegend) m.legendHeight = 0;
+		if (!this.title.length) { m.titleHeight = 0; }
+		if (!this.config.showLegend) m.legendHeight = 0;
 		this.argHeight = options.height || m.baseHeight;
 
 		this.state = {};
@@ -51,7 +55,7 @@ export default class BaseChart {
 
 		this.initTimeout = INIT_CHART_UPDATE_TIMEOUT;
 
-		if(this.config.isNavigable) {
+		if (this.config.isNavigable) {
 			this.overlays = [];
 		}
 
@@ -71,7 +75,7 @@ export default class BaseChart {
 		colors = (colors || []).concat(DEFAULT_COLORS[type]);
 		colors.forEach((string) => {
 			const color = getColor(string);
-			if(!isValidColor(color)) {
+			if (!isValidColor(color)) {
 				console.warn('"' + string + '" is not a valid color.');
 			} else {
 				validColors.push(color);
@@ -88,7 +92,9 @@ export default class BaseChart {
 	configure() {
 		let height = this.argHeight;
 		this.baseHeight = height;
-		this.height = height - getExtraHeight(this.measures);
+		this.height = (!this.fullscreen ? height - getExtraHeight(this.measures) :
+			height - 14 // to avoid line and points overflow in certain cases
+		);
 
 		// Bind window events
 		this.boundDrawFn = () => this.draw(true);
@@ -124,7 +130,7 @@ export default class BaseChart {
 			className: 'chart-container'
 		};
 
-		if(this.independentWidth) {
+		if (this.independentWidth) {
 			args.styles = { width: this.independentWidth + 'px' };
 		}
 
@@ -139,9 +145,9 @@ export default class BaseChart {
 		this.bindTooltip();
 	}
 
-	bindTooltip() {}
+	bindTooltip() { }
 
-	draw(onlyWidthChange=false, init=false) {
+	draw(onlyWidthChange = false, init = false) {
 		if (onlyWidthChange && isHidden(this.parent)) {
 			// Don't update anything if the chart is hidden
 			return;
@@ -156,9 +162,9 @@ export default class BaseChart {
 		// this.components.forEach(c => c.make());
 		this.render(this.components, false);
 
-		if(init) {
+		if (init) {
 			this.data = this.realData;
-			setTimeout(() => {this.update(this.data);}, this.initTimeout);
+			setTimeout(() => { this.update(this.data); }, this.initTimeout);
 		}
 
 		this.renderLegend();
@@ -166,15 +172,19 @@ export default class BaseChart {
 		this.setupNavigation(init);
 	}
 
-	calc() {} // builds state
+	calc() { } // builds state
 
 	updateWidth() {
 		this.baseWidth = getElementContentWidth(this.parent);
-		this.width = this.baseWidth - getExtraWidth(this.measures);
+		if (this.type === 'line' && this.fullscreen) {
+			this.width = this.baseWidth - 8; // to avoid line and points overflow in certain cases
+		} else {
+			this.width = this.baseWidth - getExtraWidth(this.measures);
+		}
 	}
 
 	makeChartArea() {
-		if(this.svg) {
+		if (this.svg) {
 			this.container.removeChild(this.svg);
 		}
 		let m = this.measures;
@@ -187,7 +197,7 @@ export default class BaseChart {
 		);
 		this.svgDefs = makeSVGDefs(this.svg);
 
-		if(this.title.length) {
+		if (this.title.length) {
 			this.titleEL = makeText(
 				'title',
 				m.margins.left,
@@ -202,12 +212,25 @@ export default class BaseChart {
 		}
 
 		let top = getTopOffset(m);
-		this.drawArea = makeSVGGroup(
-			this.type + '-chart chart-draw-area',
-			`translate(${getLeftOffset(m)}, ${top})`
-		);
+		if (!this.fullscreen && this.config.yAxis && this.config.yAxis.labelHide) {
+			this.drawArea = makeSVGGroup(
+				this.type + '-chart chart-draw-area',
+				`translate(${getLeftOffset(m) - 10}, ${top})`
+			);
+		} else if (!this.fullscreen) {
+			this.drawArea = makeSVGGroup(
+				this.type + '-chart chart-draw-area',
+				`translate(${getLeftOffset(m)}, ${top})`
+			);
+		}
+		else {
+			this.drawArea = makeSVGGroup(
+				this.type + '-chart chart-draw-area',
+				`translate(4, 7)` // to avoid line and points overflow in certain cases
+			);
+		}
 
-		if(this.config.showLegend) {
+		if (this.config.showLegend) {
 			top += this.height + m.paddings.bottom;
 			this.legendArea = makeSVGGroup(
 				'chart-legend',
@@ -215,11 +238,16 @@ export default class BaseChart {
 			);
 		}
 
-		if(this.title.length) { this.svg.appendChild(this.titleEL); }
+		if (this.title.length) { this.svg.appendChild(this.titleEL); }
 		this.svg.appendChild(this.drawArea);
-		if(this.config.showLegend) { this.svg.appendChild(this.legendArea); }
+		if (this.config.showLegend) { this.svg.appendChild(this.legendArea); }
 
-		this.updateTipOffset(getLeftOffset(m), getTopOffset(m));
+		if (this.fullscreen){
+			// 4 and 7 are the left and top space (to avoid line and points overflow in certain cases)
+			this.updateTipOffset(3, 7);
+		}else{
+			this.updateTipOffset(getLeftOffset(m), getTopOffset(m));
+		}
 	}
 
 	updateTipOffset(x, y) {
@@ -232,7 +260,7 @@ export default class BaseChart {
 	setupComponents() { this.components = new Map(); }
 
 	update(data) {
-		if(!data) {
+		if (!data) {
 			console.error('No data to update.');
 		}
 		this.data = this.prepareData(data);
@@ -241,8 +269,8 @@ export default class BaseChart {
 		this.renderLegend();
 	}
 
-	render(components=this.components, animate=true) {
-		if(this.config.isNavigable) {
+	render(components = this.components, animate = true) {
+		if (this.config.isNavigable) {
 			// Remove all existing overlays
 			this.overlays.map(o => o.parentNode.removeChild(o));
 			// ref.parentNode.insertBefore(element, ref);
@@ -252,7 +280,7 @@ export default class BaseChart {
 		components.forEach(c => {
 			elementsToAnimate = elementsToAnimate.concat(c.update(animate));
 		});
-		if(elementsToAnimate.length > 0) {
+		if (elementsToAnimate.length > 0) {
 			runSMILAnimation(this.container, this.svg, elementsToAnimate);
 			setTimeout(() => {
 				components.forEach(c => c.make());
@@ -265,18 +293,18 @@ export default class BaseChart {
 	}
 
 	updateNav() {
-		if(this.config.isNavigable) {
+		if (this.config.isNavigable) {
 			this.makeOverlay();
 			this.bindUnits();
 		}
 	}
 
-	renderLegend() {}
+	renderLegend() { }
 
-	setupNavigation(init=false) {
-		if(!this.config.isNavigable) return;
+	setupNavigation(init = false) {
+		if (!this.config.isNavigable) return;
 
-		if(init) {
+		if (init) {
 			this.bindOverlay();
 
 			this.keyActions = {
@@ -288,9 +316,9 @@ export default class BaseChart {
 			};
 
 			document.addEventListener('keydown', (e) => {
-				if(isElementInViewport(this.container)) {
+				if (isElementInViewport(this.container)) {
 					e = e || window.event;
-					if(this.keyActions[e.keyCode]) {
+					if (this.keyActions[e.keyCode]) {
 						this.keyActions[e.keyCode]();
 					}
 				}
@@ -298,24 +326,24 @@ export default class BaseChart {
 		}
 	}
 
-	makeOverlay() {}
-	updateOverlay() {}
-	bindOverlay() {}
-	bindUnits() {}
+	makeOverlay() { }
+	updateOverlay() { }
+	bindOverlay() { }
+	bindUnits() { }
 
-	onLeftArrow() {}
-	onRightArrow() {}
-	onUpArrow() {}
-	onDownArrow() {}
-	onEnterKey() {}
+	onLeftArrow() { }
+	onRightArrow() { }
+	onUpArrow() { }
+	onDownArrow() { }
+	onEnterKey() { }
 
-	addDataPoint() {}
-	removeDataPoint() {}
+	addDataPoint() { }
+	removeDataPoint() { }
 
-	getDataPoint() {}
-	setCurrentDataPoint() {}
+	getDataPoint() { }
+	setCurrentDataPoint() { }
 
-	updateDataset() {}
+	updateDataset() { }
 
 	export() {
 		let chartSvg = prepareForExport(this.svg);

@@ -48,7 +48,6 @@ class ChartComponent {
 
 	render(data) {
 		this.store = this.makeElements(data);
-
 		this.layer.textContent = '';
 		this.store.forEach(element => {
 			this.layer.appendChild(element);
@@ -118,7 +117,7 @@ let componentConfigs = {
 		layerClass: 'y axis',
 		makeElements(data) {
 			return data.positions.map((position, i) =>
-				yLine(position, data.labels[i], this.constants.width,
+				yLine(position, data.calcLabels ? data.calcLabels[i] : '', this.constants.width, this.constants.lineColor, this.constants.lineHide,
 					{mode: this.constants.mode, pos: this.constants.pos, shortenNumbers: this.constants.shortenNumbers})
 			);
 		},
@@ -149,7 +148,7 @@ let componentConfigs = {
 		layerClass: 'x axis',
 		makeElements(data) {
 			return data.positions.map((position, i) =>
-				xLine(position, data.calcLabels[i], this.constants.height,
+				xLine(position, data.calcLabels[i], this.constants.height, this.constants.lineColor, this.constants.lineHide,
 					{mode: this.constants.mode, pos: this.constants.pos})
 			);
 		},
