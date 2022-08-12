@@ -118,7 +118,7 @@ const data = {
     ]
 }
 
-
+// line chart
 const chart = new frappe.Chart("#chart", {
     title: "My Chart",
     data: data,
