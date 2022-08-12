@@ -102,6 +102,13 @@ let updateData = {
 	datasets: [{
 		"values": getUpdateData(updateDataAllValues)
 	}],
+	// labels: ["12am-3am", "3am-6pm", "6am-9am", "9am-12am"],
+    // datasets: [
+    //     {
+    //         name: "Another Set", chartType: "line",
+    //         values: [25, 50, -10, 15, 18, 32, 27, 14]
+    //     }
+    // ],
 	yMarkers: [
 		{
 			label: "Altitude",
