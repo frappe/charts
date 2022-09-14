@@ -6,6 +6,7 @@
   "module": "dist/frappe-charts.min.esm.js",
   "src": "dist/frappe-charts.esm.js",
   "browser": "dist/frappe-charts.min.umd.js",
+  "types": "index.d.ts",
   "directories": {
     "doc": "docs"
   },
