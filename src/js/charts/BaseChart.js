@@ -50,10 +50,14 @@ export default class BaseChart {
 
 		this.config = {
 			showTooltip: 1, // calculate
-			showLegend: 1, // calculate
+			showLegend:
+				typeof options.showLegend !== "undefined" ? options.showLegend : 1,
 			isNavigable: options.isNavigable || 0,
 			animate: typeof options.animate !== "undefined" ? options.animate : 1,
-			truncateLegends: options.truncateLegends || 1,
+			truncateLegends:
+				typeof options.truncateLegends !== "undefined"
+					? options.truncateLegends
+					: 1,
 		};
 
 		this.measures = JSON.parse(JSON.stringify(BASE_MEASURES));
