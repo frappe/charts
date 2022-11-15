@@ -33,7 +33,12 @@ fs.readFile("src/css/charts.scss", (err, css) => {
             let output = new CleanCSS(options).minify(result.css);
             let res = JSON.stringify(output.styles).replace(/"/g, "'");
             let js = `export const CSSTEXT = "${res.slice(1, -1)}";`;
-            fs.writeFile("src/css/chartsCss.js", js);
+            fs.writeFile("src/css/chartsCss.js", js, (err) => {
+                if (err) console.log(err);
+                else {
+                    console.log("File written successfully\n");
+                }
+            });
         });
 });
 
