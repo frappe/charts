@@ -81,6 +81,8 @@ export default class PieChart extends AggregationChart {
 	setupComponents() {
 		let s = this.state;
 
+		this.colors = this.colors.filter((color) => color);
+
 		let componentConfigs = [
 			[
 				'pieSlices',
