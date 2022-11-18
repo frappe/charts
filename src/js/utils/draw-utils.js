@@ -85,12 +85,15 @@ export function getSplineCurvePointsStr(xList, yList) {
     
 	let bezierCommand = (point, i, a) => {
 		let cps = controlPoint(a[i - 1], a[i - 2], point);
-		let cpe = controlPoint(point, a[i - 1], a[i + 1], true);
+		let cpe = controlPoint(point, a[i], a[i + 1], true);
+		if (isNaN(cpe[0]) || isNaN(cpe[1])) {
+			cpe = point;
+		}
 		return `C ${cps[0]},${cps[1]} ${cpe[0]},${cpe[1]} ${point[0]},${point[1]}`;
 	};
     
 	let pointStr = (points, command) => {
-		return points.reduce((acc, point, i, a) => i === 0
+		return points.filter(point => point[1] !== undefined).reduce((acc, point, i, a) => i === 0
 			? `${point[0]},${point[1]}`
 			: `${acc} ${command(point, i, a)}`, '');
 	};
