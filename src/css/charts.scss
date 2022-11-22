@@ -1,64 +1,87 @@
-$label-color: #313B44;
-$axis-line-color:  #E2E6E9;
+:root {
+	--charts-label-color: #313b44;
+	--charts-axis-line-color: #f4f5f6;
 
-$tooltip-title: $label-color;
-$tooltip-label: $label-color;
-$tooltip-value: #192734;
+	--charts-tooltip-title: var(--charts-label-color);
+	--charts-tooltip-label: var(--charts-label-color);
+	--charts-tooltip-value: #192734;
+	--charts-tooltip-bg: #ffffff;
+
+	--charts-stroke-width: 2px;
+	--charts-dataset-circle-stroke: #ffffff;
+	--charts-dataset-circle-stroke-width: var(--charts-stroke-width);
+
+	--charts-legend-label: var(--charts-label-color);
+	--charts-legend-value: var(--charts-label-color);
+}
 
 .chart-container {
-	position: relative; /* for absolutely positioned tooltip */
+	position: relative;
+	/* for absolutely positioned tooltip */
 
-	/* https://www.smashingmagazine.com/2015/11/using-system-ui-fonts-practical-guide/ */
-	font-family: -apple-system, BlinkMacSystemFont,
-		'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
-		'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+		"Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+		"Helvetica Neue", sans-serif;
 
-	.axis, .chart-label {
-		fill: $label-color;
+	.axis,
+	.chart-label {
+		fill: var(--charts-label-color);
 
 		line {
-			stroke: $axis-line-color;
+			stroke: var(--charts-axis-line-color);
 		}
 	}
+
 	.dataset-units {
 		circle {
-			stroke: #fff;
-			stroke-width: 2;
+			stroke: var(--charts-dataset-circle-stroke);
+			stroke-width: var(--charts-dataset-circle-stroke-width);
 		}
 
 		path {
 			fill: none;
 			stroke-opacity: 1;
-			stroke-width: 2px;
+			stroke-width: var(--charts-stroke-width);
 		}
 	}
+
 	.dataset-path {
-		stroke-width: 2px;
+		stroke-width: var(--charts-stroke-width);
 	}
+
 	.path-group {
 		path {
 			fill: none;
 			stroke-opacity: 1;
-			stroke-width: 2px;
+			stroke-width: var(--charts-stroke-width);
 		}
 	}
+
 	line.dashed {
 		stroke-dasharray: 5, 3;
 	}
+
 	.axis-line {
 		.specific-value {
 			text-anchor: start;
 		}
+
 		.y-line {
 			text-anchor: end;
 		}
+
 		.x-line {
 			text-anchor: middle;
 		}
 	}
-	.legend-dataset-text {
-		fill: #6c7680;
+
+	.legend-dataset-label {
+		fill: var(--charts-legend-label);
 		font-weight: 600;
+	}
+
+	.legend-dataset-value {
+		fill: var(--charts-legend-value);
 	}
 }
 
@@ -68,8 +91,10 @@ $tooltip-value: #192734;
 	padding: 10px;
 	font-size: 12px;
 	text-align: center;
-	background: #FFFFFF;
-	box-shadow: 0px 1px 4px rgba(17, 43, 66, 0.1), 0px 2px 6px rgba(17, 43, 66, 0.08), 0px 40px 30px -30px rgba(17, 43, 66, 0.1);
+	background: var(--charts-tooltip-bg);
+	box-shadow: 0px 1px 4px rgba(17, 43, 66, 0.1),
+		0px 2px 6px rgba(17, 43, 66, 0.08),
+		0px 40px 30px -30px rgba(17, 43, 66, 0.1);
 	border-radius: 6px;
 
 	ul {
@@ -94,7 +119,7 @@ $tooltip-value: #192734;
 		height: 12px;
 		width: 12px;
 		border-radius: 2px;
-		background: white;
+		background: var(--charts-tooltip-bg);
 		transform: rotate(45deg);
 		margin-top: -7px;
 		margin-left: -6px;
@@ -104,16 +129,20 @@ $tooltip-value: #192734;
 		text-align: left;
 		padding: 0px;
 		pointer-events: none;
-		
+
 		.title {
 			display: block;
 			padding: 16px;
 			margin: 0;
-			color: $tooltip-title;
+			color: var(--charts-tooltip-title);
 			font-weight: 600;
 			line-height: 1;
 			pointer-events: none;
 			text-transform: uppercase;
+
+			strong {
+				color: var(--charts-tooltip-value);
+			}
 		}
 
 		ul {
@@ -147,16 +176,15 @@ $tooltip-value: #192734;
 			.tooltip-label {
 				margin-top: 4px;
 				font-size: 11px;
-				max-width: 100px;
+				line-height: 1.25;
+				max-width: 150px;
+				white-space: normal;
 
-				color: $tooltip-label;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
+				color: var(--charts-tooltip-label);
 			}
 
 			.tooltip-value {
-				color: $tooltip-value;
+				color: var(--charts-tooltip-value);
 			}
 		}
 	}
