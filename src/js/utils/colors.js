@@ -1,18 +1,24 @@
 const PRESET_COLOR_MAP = {
-	'light-blue': '#7cd6fd',
-	'blue': '#5e64ff',
-	'violet': '#743ee2',
-	'red': '#ff5858',
-	'orange': '#ffa00a',
-	'yellow': '#feef72',
-	'green': '#28a745',
-	'light-green': '#98d85b',
-	'purple': '#b554ff',
-	'magenta': '#ffa3ef',
-	'black': '#36114C',
-	'grey': '#bdd3e6',
-	'light-grey': '#f0f4f7',
-	'dark-grey': '#b8c2cc'
+	'pink': '#F683AE',
+	'blue': '#2D95F0',
+	'green': '#48BB74',
+	'grey': '#A6B1B9',
+	'red': '#F56B6B',
+	'yellow': '#FACF7A',
+	'purple': '#44427B',
+	'teal': '#5FD8C4',
+	'cyan': '#15CCEF',
+	'orange': '#F8814F',
+	'light-pink': '#FED7E5',
+	'light-blue': '#EBF5FF',
+	'light-green': '#48BB74',
+	'light-grey': '#F4F5F6',
+	'light-red': '#F6DFDF',
+	'light-yellow': '#FEE9BF',
+	'light-purple': '#E8E8F7',
+	'light-teal': '#D3FDF6',
+	'light-cyan': '#DDF8FD',
+	'light-orange': '#FECDB8'
 };
 
 function limitColor(r){
