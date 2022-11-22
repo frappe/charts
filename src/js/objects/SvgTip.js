@@ -67,11 +67,11 @@ export default class SvgTip {
 			let value = set.formatted === 0 || set.formatted ? set.formatted : set.value;
 
 			let li = $.create('li', {
-				styles: {
-					'border-top': `3px solid ${color}`
-				},
-				innerHTML: `<strong style="display: block;">${ value === 0 || value ? value : '' }</strong>
-					${set.title ? set.title : '' }`
+				innerHTML: `<div class="tooltip-legend" style="background: ${color};"></div>
+					<div>
+						<div class="tooltip-value">${ value === 0 || value ? value : '' }</div>
+						<div class="tooltip-label">${set.title ? set.title : '' }</div>
+					</div>`
 			});
 
 			this.dataPointList.appendChild(li);

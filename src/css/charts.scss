@@ -60,57 +60,83 @@
 	z-index: 99999;
 	padding: 10px;
 	font-size: 12px;
-	color: #959da5;
 	text-align: center;
-	background: rgba(0, 0, 0, 0.8);
-	border-radius: 3px;
+	color: #192734;
+	background: #FFFFFF;
+	box-shadow: 0px 1px 4px rgba(17, 43, 66, 0.1), 0px 2px 6px rgba(17, 43, 66, 0.08), 0px 40px 30px -30px rgba(17, 43, 66, 0.1);
+	border-radius: 6px;
+
 	ul {
 		padding-left: 0;
 		display: flex;
 	}
+
 	ol {
 		padding-left: 0;
 		display: flex;
 	}
+
 	ul.data-point-list {
 		li {
 			min-width: 90px;
-			flex: 1;
 			font-weight: 600;
 		}
 	}
-	strong {
-		color: #dfe2e5;
-		font-weight: 600;
-	}
+
 	.svg-pointer {
 		position: absolute;
-		height: 5px;
-		margin: 0 0 0 -5px;
-		content: ' ';
-		border: 5px solid transparent;
-		border-top-color: rgba(0, 0, 0, 0.8);
+		height: 12px;
+		width: 12px;
+		border-radius: 2px;
+		background: white;
+		transform: rotate(45deg);
+		margin-top: -7px;
+		margin-left: -6px;
 	}
+
 	&.comparison {
-		padding: 0;
 		text-align: left;
+		padding: 0px;
 		pointer-events: none;
+
 		.title {
 			display: block;
-			padding: 10px;
+			padding: 16px;
 			margin: 0;
+			color: #313B44;
 			font-weight: 600;
 			line-height: 1;
 			pointer-events: none;
+			text-transform: uppercase;
 		}
+
 		ul {
 			margin: 0;
 			white-space: nowrap;
 			list-style: none;
 		}
+
 		li {
 			display: inline-block;
-			padding: 5px 10px;
+			display: flex;
+			flex-direction: row;
+			font-weight: 600;
+			line-height: 1;
+
+			padding: 5px 15px 15px 15px;
+
+			.tooltip-label {
+				margin-top: 4px;
+				font-size: 11px;
+				color: #313B44;
+			}
+		}
+
+		.tooltip-legend {
+			height: 12px;
+			width: 12px;
+			margin-right: 8px;
+			border-radius: 2px;
 		}
 	}
 }
