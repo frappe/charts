@@ -1,6 +1,10 @@
 $label-color: #313B44;
 $axis-line-color:  #E2E6E9;
 
+$tooltip-title: $label-color;
+$tooltip-label: $label-color;
+$tooltip-value: #192734;
+
 .chart-container {
 	position: relative; /* for absolutely positioned tooltip */
 
@@ -64,7 +68,6 @@ $axis-line-color:  #E2E6E9;
 	padding: 10px;
 	font-size: 12px;
 	text-align: center;
-	color: #192734;
 	background: #FFFFFF;
 	box-shadow: 0px 1px 4px rgba(17, 43, 66, 0.1), 0px 2px 6px rgba(17, 43, 66, 0.08), 0px 40px 30px -30px rgba(17, 43, 66, 0.1);
 	border-radius: 6px;
@@ -106,7 +109,7 @@ $axis-line-color:  #E2E6E9;
 			display: block;
 			padding: 16px;
 			margin: 0;
-			color: #313B44;
+			color: $tooltip-title;
 			font-weight: 600;
 			line-height: 1;
 			pointer-events: none;
@@ -134,25 +137,27 @@ $axis-line-color:  #E2E6E9;
 
 			padding: 5px 15px 15px 15px;
 
+			.tooltip-legend {
+				height: 12px;
+				width: 12px;
+				margin-right: 8px;
+				border-radius: 2px;
+			}
+
 			.tooltip-label {
 				margin-top: 4px;
 				font-size: 11px;
-				color: #313B44;
+				max-width: 100px;
+
+				color: $tooltip-label;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
 			}
-		}
 
-		.tooltip-legend {
-			height: 12px;
-			width: 12px;
-			margin-right: 8px;
-			border-radius: 2px;
-		}
-
-		.tooltip-label {
-			max-width: 100px;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
+			.tooltip-value {
+				color: $tooltip-value;
+			}
 		}
 	}
 }
