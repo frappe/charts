@@ -239,33 +239,49 @@ export function legendBar(x, y, size, fill='none', label, truncate=false) {
 	return group;
 }
 
-export function legendDot(x, y, size, fill='none', label, truncate=false) {
+export function legendDot(x, y, size, radius, fill='none', label, value, truncate=false) {
 	label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
 
 	let args = {
 		className: 'legend-dot',
-		cx: 0,
-		cy: 0,
-		r: size,
+		x: 0,
+		y: 4 - size,
+		height: size,
+		width: size,
+		rx: radius,
 		fill: fill
 	};
-	let text = createSVG('text', {
-		className: 'legend-dataset-text',
-		x: 0,
+
+	let textLabel = createSVG('text', {
+		className: 'legend-dataset-label',
+		x: size,
 		y: 0,
 		dx: (FONT_SIZE) + 'px',
 		dy: (FONT_SIZE/3) + 'px',
-		'font-size': (FONT_SIZE * 1.2) + 'px',
+		'font-size': (FONT_SIZE * 1.6) + 'px',
 		'text-anchor': 'start',
 		fill: FONT_FILL,
 		innerHTML: label
 	});
 
+	let textValue = createSVG('text', {
+		className: 'legend-dataset-value',
+		x: size,
+		y: FONT_SIZE + 10,
+		dx: (FONT_SIZE) + 'px',
+		dy: (FONT_SIZE/3) + 'px',
+		'font-size': (FONT_SIZE * 1.2) + 'px',
+		'text-anchor': 'start',
+		fill: FONT_FILL,
+		innerHTML: value
+	});
+
 	let group = createSVG('g', {
 		transform: `translate(${x}, ${y})`
 	});
-	group.appendChild(createSVG("circle", args));
-	group.appendChild(text);
+	group.appendChild(createSVG("rect", args));
+	group.appendChild(textLabel);
+	group.appendChild(textValue);
 
 	return group;
 }
