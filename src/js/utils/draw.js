@@ -7,8 +7,8 @@ export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
 const LABEL_MAX_CHARS = 15;
 export const FONT_SIZE = 10;
-const BASE_LINE_COLOR = '#dadada';
-const FONT_FILL = '#555b51';
+const BASE_LINE_COLOR = '#E2E6E9';
+const FONT_FILL = '#313B44';
 
 function $(expr, con) {
 	return typeof expr === "string"? (con || document).querySelector(expr) : expr || null;
