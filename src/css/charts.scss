@@ -176,11 +176,12 @@
       .tooltip-label {
         margin-top: 4px;
         font-size: 11px;
-        line-height: 1.25;
-        max-width: 150px;
-        white-space: normal;
+        max-width: 100px;
 
-        color: var(--charts-tooltip-label);
+        color: var(--fr-tooltip-label);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .tooltip-value {
