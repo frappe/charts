@@ -118,7 +118,7 @@ export function getShortenedLabels(chartWidth, labels=[], isSeries=true) {
 					label = label.slice(0, allowedLetters) + '..';
 				}
 			} else {
-				if(i % seriesMultiple !== 0) {
+				if(i % seriesMultiple !== 0 && i !== (labels.length - 1)) {
 					label = "";
 				}
 			}
