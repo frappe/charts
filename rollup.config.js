@@ -8,40 +8,40 @@ import bundleSize from "rollup-plugin-bundle-size";
 import { terser } from "rollup-plugin-terser";
 
 export default [
-	// browser-friendly UMD build
-	{
-		input: "src/js/index.js",
-		output: {
-			sourcemap: true,
-			name: "frappe",
-			file: pkg.browser,
-			format: "umd",
-		},
-		plugins: [
-			commonjs(),
-			babel({
-				exclude: ["node_modules/**"],
-			}),
-			terser(),
-			scss({ output: "dist/frappe-charts.min.css" }),
-			bundleSize(),
-		],
-	},
+  // browser-friendly UMD build
+  {
+    input: "src/js/index.js",
+    output: {
+      sourcemap: true,
+      name: "frappe",
+      file: pkg.browser,
+      format: "umd",
+    },
+    plugins: [
+      commonjs(),
+      babel({
+        exclude: ["node_modules/**"],
+      }),
+      terser(),
+      scss({ output: "dist/frappe-charts.min.css" }),
+      bundleSize(),
+    ],
+  },
 
-	// CommonJS (for Node) and ES module (for bundlers) build.
-	{
-		input: "src/js/chart.js",
-		output: [
-			{ file: pkg.common, format: "cjs", sourcemap: true },
-			{ file: pkg.module, format: "es", sourcemap: true },
-		],
-		plugins: [
-			babel({
-				exclude: ["node_modules/**"],
-			}),
-			terser(),
-			postcss(),
-			bundleSize(),
-		],
-	},
+  // CommonJS (for Node) and ES module (for bundlers) build.
+  {
+    input: "src/js/chart.js",
+    output: [
+      { file: pkg.common, format: "cjs", sourcemap: true },
+      { file: pkg.module, format: "es", sourcemap: true },
+    ],
+    plugins: [
+      babel({
+        exclude: ["node_modules/**"],
+      }),
+      terser(),
+      postcss(),
+      bundleSize(),
+    ],
+  },
 ];
