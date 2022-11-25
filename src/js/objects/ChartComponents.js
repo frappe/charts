@@ -224,6 +224,7 @@ let componentConfigs = {
       return data.map((m) =>
         yMarker(m.position, m.label, this.constants.width, {
           labelPos: m.options.labelPos,
+          stroke: m.options.stroke,
           mode: "span",
           lineType: "dashed",
         })
