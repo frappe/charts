@@ -307,7 +307,7 @@ export function heatSquare(
   return createSVG("rect", args);
 }
 
-export function legendBar(x, y, size, fill = "none", label, truncate = false) {
+export function legendBar(x, y, size, fill = "none", label, truncate = true) {
   label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
 
   let args = {
@@ -366,7 +366,7 @@ export function legendDot(
     y: 0,
     dx: FONT_SIZE + "px",
     dy: FONT_SIZE / 3 + "px",
-    "font-size": FONT_SIZE * 1.6 + "px",
+    "font-size": FONT_SIZE * 1.2 + "px",
     "text-anchor": "start",
     fill: FONT_FILL,
     innerHTML: label,
