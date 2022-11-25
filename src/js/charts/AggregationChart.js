@@ -15,6 +15,7 @@ export default class AggregationChart extends BaseChart {
     this.config.formatTooltipY = (args.tooltipOptions || {}).formatTooltipY;
     this.config.maxSlices = args.maxSlices || 20;
     this.config.maxLegendPoints = args.maxLegendPoints || 20;
+    this.config.legendRowHeight = 60;
   }
 
   calc() {
@@ -70,40 +71,24 @@ export default class AggregationChart extends BaseChart {
     let s = this.state;
     this.legendArea.textContent = "";
     this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
+    super.renderLegend(this.legendTotals);
+  }
 
-    let count = 0;
-    let y = 0;
-    this.legendTotals.map((d, i) => {
-      let barWidth = 150;
-      let divisor = Math.floor(
-        (this.width - getExtraWidth(this.measures)) / barWidth
-      );
-      if (this.legendTotals.length < divisor) {
-        barWidth = this.width / this.legendTotals.length;
-      }
-      if (count > divisor) {
-        count = 0;
-        y += 60;
-      }
-      let x = barWidth * count + 5;
-      let label = this.config.truncateLegends
-        ? truncateString(s.labels[i], barWidth / 10)
-        : s.labels[i];
-      let formatted = this.config.formatTooltipY
-        ? this.config.formatTooltipY(d)
-        : d;
-      let dot = legendDot(
-        x,
-        y,
-        12,
-        3,
-        this.colors[i],
-        `${label}: ${formatted}`,
-        d,
-        false
-      );
-      this.legendArea.appendChild(dot);
-      count++;
-    });
+  makeLegend(data, index, x_pos, y_pos) {
+    let formatted = this.config.formatTooltipY
+      ? this.config.formatTooltipY(data)
+      : data;
+
+    return legendDot(
+      x_pos,
+      y_pos,
+      12, // size
+      3, // dot radius
+      this.colors[index], // fill
+      this.state.labels[index], // label
+      formatted, // value
+      null, // base_font_size
+      this.config.truncateLegends // truncate_legends
+    );
   }
 }

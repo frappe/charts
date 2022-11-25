@@ -11,6 +11,7 @@ import {
   makeSVGGroup,
   makeText,
 } from "../utils/draw";
+import { LEGEND_ITEM_WIDTH } from "../utils/constants";
 import {
   BASE_MEASURES,
   getExtraHeight,
@@ -303,7 +304,25 @@ export default class BaseChart {
     }
   }
 
-  renderLegend() {}
+  renderLegend(dataset) {
+    this.legendArea.textContent = "";
+    let count = 0;
+    let y = 0;
+
+    dataset.map((data, index) => {
+      let divisor = Math.floor(this.width / LEGEND_ITEM_WIDTH);
+      if (count > divisor) {
+        count = 0;
+        y += this.config.legendRowHeight;
+      }
+      let x = LEGEND_ITEM_WIDTH * count;
+      let dot = this.makeLegend(data, index, x, y);
+      this.legendArea.appendChild(dot);
+      count++;
+    });
+  }
+
+  makeLegend() {}
 
   setupNavigation(init = false) {
     if (!this.config.isNavigable) return;

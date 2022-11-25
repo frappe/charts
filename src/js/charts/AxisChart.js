@@ -4,7 +4,6 @@ import {
   zeroDataPrep,
   getShortenedLabels,
 } from "../utils/axis-chart-utils";
-import { AXIS_LEGEND_BAR_SIZE } from "../utils/constants";
 import { getComponent } from "../objects/ChartComponents";
 import { getOffset, fire } from "../utils/dom";
 import {
@@ -16,7 +15,7 @@ import {
   getClosestInArray,
 } from "../utils/intervals";
 import { floatTwo } from "../utils/helpers";
-import { makeOverlay, updateOverlay, legendBar } from "../utils/draw";
+import { makeOverlay, updateOverlay, legendDot } from "../utils/draw";
 import {
   getTopOffset,
   getLeftOffset,
@@ -61,6 +60,7 @@ export default class AxisChart extends BaseChart {
     this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
 
     this.config.valuesOverPoints = options.valuesOverPoints;
+    this.config.legendRowHeight = 30;
   }
 
   prepareData(data = this.data) {
@@ -454,23 +454,22 @@ export default class AxisChart extends BaseChart {
   renderLegend() {
     let s = this.data;
     if (s.datasets.length > 1) {
-      this.legendArea.textContent = "";
-      s.datasets.map((d, i) => {
-        let barWidth = AXIS_LEGEND_BAR_SIZE;
-        // let rightEndPoint = this.baseWidth - this.measures.margins.left - this.measures.margins.right;
-        // let multiplier = s.datasets.length - i;
-        let rect = legendBar(
-          // rightEndPoint - multiplier * barWidth,	// To right align
-          barWidth * i,
-          "0",
-          barWidth,
-          this.colors[i],
-          d.name,
-          this.config.truncateLegends
-        );
-        this.legendArea.appendChild(rect);
-      });
+      super.renderLegend(s.datasets);
     }
+  }
+
+  makeLegend(data, index, x_pos, y_pos) {
+    return legendDot(
+      x_pos,
+      y_pos + 5, // Extra offset
+      12, // size
+      3, // dot radius
+      this.colors[index], // fill
+      data.name, //label
+      null, // value
+      8.75, // base_font_size
+      this.config.truncateLegends // truncate legends
+    );
   }
 
   // Overlay
