@@ -12,7 +12,6 @@ const LABEL_MARGIN = 4;
 const LABEL_MAX_CHARS = 18;
 export const FONT_SIZE = 10;
 const BASE_LINE_COLOR = "#E2E6E9";
-const FONT_FILL = "#313B44";
 
 function $(expr, con) {
   return typeof expr === "string"
@@ -339,7 +338,6 @@ export function legendDot(
     dy: font_size / 3 + "px",
     "font-size": font_size * 1.6 + "px",
     "text-anchor": "start",
-    fill: FONT_FILL,
     innerHTML: label,
   });
 
@@ -353,7 +351,6 @@ export function legendDot(
       dy: FONT_SIZE / 3 + "px",
       "font-size": FONT_SIZE * 1.2 + "px",
       "text-anchor": "start",
-      fill: FONT_FILL,
       innerHTML: value,
     });
   }
