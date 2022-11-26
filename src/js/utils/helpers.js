@@ -141,12 +141,3 @@ export function deepClone(candidate) {
 
   return cloned;
 }
-/**
- * Round a number to the closes precision, max max precision 4
- * @param {Number} d Any Number
- */
-export function round(d) {
-  // https://floating-point-gui.de/
-  // https://www.jacklmoore.com/notes/rounding-in-javascript/
-  return Number(Math.round(d + "e4") + "e-4");
-}
