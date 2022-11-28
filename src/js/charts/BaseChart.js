@@ -184,11 +184,13 @@ export default class BaseChart {
     if (init) {
       this.data = this.realData;
       setTimeout(() => {
-        this.update(this.data);
+        this.update(this.data, true);
       }, this.initTimeout);
     }
 
-    this.renderLegend();
+    if (this.config.showLegend) {
+      this.renderLegend();
+    }
 
     this.setupNavigation(init);
   }
@@ -264,14 +266,12 @@ export default class BaseChart {
     this.components = new Map();
   }
 
-  update(data) {
-    if (!data) {
-      console.error("No data to update.");
-    }
+  update(data, drawing = false) {
+    if (!data) console.error("No data to update.");
+    if (!drawing) data = deepClone(data);
     this.data = this.prepareData(data);
     this.calc(); // builds state
     this.render(this.components, this.config.animate);
-    this.renderLegend();
   }
 
   render(components = this.components, animate = true) {
