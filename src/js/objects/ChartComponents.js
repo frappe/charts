@@ -226,7 +226,7 @@ let componentConfigs = {
           labelPos: m.options.labelPos,
           stroke: m.options.stroke,
           mode: "span",
-          lineType: "dashed",
+          lineType: m.options.lineType,
         })
       );
     },
