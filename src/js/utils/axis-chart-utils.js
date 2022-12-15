@@ -6,7 +6,7 @@ import {
   SERIES_LABEL_SPACE_RATIO,
 } from "../utils/constants";
 
-export function dataPrep(data, type) {
+export function dataPrep(data, type, config) {
   data.labels = data.labels || [];
 
   let datasetLength = data.labels.length;
@@ -35,6 +35,8 @@ export function dataPrep(data, type) {
       // Trim or extend
       if (vals.length > datasetLength) {
         vals = vals.slice(0, datasetLength);
+      } if (config) {
+        vals = fillArray(vals, datasetLength - vals.length, null);
       } else {
         vals = fillArray(vals, datasetLength - vals.length, 0);
       }

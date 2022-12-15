@@ -46,9 +46,6 @@ export default class BaseChart {
 		this.title = options.title || "";
 		this.type = options.type || "";
 
-		this.realData = this.prepareData(options.data, options.config);
-		this.data = this.prepareFirstData(this.realData);
-
 		this.colors = this.validateColors(options.colors, this.type);
 
 		this.config = {
@@ -64,10 +61,18 @@ export default class BaseChart {
 				typeof options.truncateLegends !== "undefined"
 					? options.truncateLegends
 					: 1,
+			continuous:
+				typeof options.continuous !== "undefined"
+					? options.continuous
+					: 1,
 		};
 
 		this.measures = JSON.parse(JSON.stringify(BASE_MEASURES));
 		let m = this.measures;
+
+		this.realData = this.prepareData(options.data, this.config);
+		this.data = this.prepareFirstData(this.realData);
+
 		this.setMeasures(options);
 		if (!this.title.length) {
 			m.titleHeight = 0;
@@ -87,8 +92,8 @@ export default class BaseChart {
 		this.configure(options);
 	}
 
-	prepareData(data) {
-		return data;
+	prepareData(data, config) {
+		return data, config;
 	}
 
 	prepareFirstData(data) {
@@ -188,9 +193,11 @@ export default class BaseChart {
 
 		if (init) {
 			this.data = this.realData;
-			setTimeout(() => {
+			this.update(this.data, true);
+			// Not needed anymore since animate defaults to 0 and might potentially be refactored or deprecated
+			/* setTimeout(() => {
 				this.update(this.data, true);
-			}, this.initTimeout);
+			}, this.initTimeout); */
 		}
 
 		if (this.config.showLegend) {
@@ -271,10 +278,10 @@ export default class BaseChart {
 		this.components = new Map();
 	}
 
-	update(data, drawing = false) {
+	update(data, drawing = false, config) {
 		if (!data) console.error("No data to update.");
 		if (!drawing) data = deepClone(data);
-		this.data = this.prepareData(data);
+		this.data = this.prepareData(data, config);
 		this.calc(); // builds state
 		this.render(this.components, this.config.animate);
 	}

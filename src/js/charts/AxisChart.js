@@ -63,8 +63,8 @@ export default class AxisChart extends BaseChart {
     this.config.legendRowHeight = 30;
   }
 
-  prepareData(data = this.data) {
-    return dataPrep(data, this.type);
+  prepareData(data = this.data, config = this.config) {
+    return dataPrep(data, this.type, config.continuous);
   }
 
   prepareFirstData(data = this.data) {
