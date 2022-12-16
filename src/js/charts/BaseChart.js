@@ -92,8 +92,8 @@ export default class BaseChart {
 		this.configure(options);
 	}
 
-	prepareData(data, config) {
-		return data, config;
+	prepareData(data) {
+		return data;
 	}
 
 	prepareFirstData(data) {
