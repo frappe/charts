@@ -62,6 +62,7 @@ typings/
 
 # npm build output
 dist
+docs
 docs/assets/
 
 .DS_Store

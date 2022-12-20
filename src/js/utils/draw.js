@@ -5,7 +5,12 @@ import {
 	getSplineCurvePointsStr,
 } from "./draw-utils";
 import { getStringWidth, isValidNumber, round } from "./helpers";
-import { DOT_OVERLAY_SIZE_INCR } from "./constants";
+
+import {
+	DOT_OVERLAY_SIZE_INCR,
+	PERCENTAGE_BAR_DEFAULT_DEPTH,
+} from "./constants";
+import { lightenDarkenColor } from "./colors";
 
 export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
@@ -379,7 +384,8 @@ export function legendDot(
 export function makeText(className, x, y, content, options = {}) {
 	let fontSize = options.fontSize || FONT_SIZE;
 	let dy = options.dy !== undefined ? options.dy : fontSize / 2;
-	let fill = options.fill || "var(--charts-label-color)";
+	//let fill = options.fill || "var(--charts-label-color)";
+	let fill = options.fill || FONT_FILL;
 	let textAnchor = options.textAnchor || "start";
 	return createSVG("text", {
 		className: className,
@@ -394,6 +400,7 @@ export function makeText(className, x, y, content, options = {}) {
 }
 
 function makeVertLine(x, label, y1, y2, options = {}) {
+	if (!options.stroke) options.stroke = BASE_LINE_COLOR;
 	let l = createSVG("line", {
 		className: "line-vertical " + options.className,
 		x1: 0,
@@ -448,8 +455,8 @@ function makeHoriLine(y, label, x1, x2, options = {}) {
 
 	let l = createSVG("line", {
 		className: className,
-		x1: x1,
-		x2: x2,
+		x1: lineX1Post,
+		x2: lineX2Post,
 		y1: 0,
 		y2: 0,
 		styles: {
@@ -458,7 +465,7 @@ function makeHoriLine(y, label, x1, x2, options = {}) {
 	});
 
 	let text = createSVG("text", {
-		x: x1 < x2 ? x1 - LABEL_MARGIN : x1 + LABEL_MARGIN,
+		x: textXPos,
 		y: 0,
 		dy: FONT_SIZE / 2 - 2 + "px",
 		"font-size": FONT_SIZE + "px",
@@ -539,7 +546,7 @@ export function yLine(y, label, width, options = {}) {
 		x2 = width;
 	}
 
-	// let offset = options.pos === 'left' ? -1 * options.offset : options.offset;
+	let offset = options.pos === "left" ? -1 * options.offset : options.offset;
 
 	// pr_366
 	//x1 += offset;
@@ -565,6 +572,7 @@ export function xLine(x, label, height, options = {}) {
 	if (!options.pos) options.pos = "bottom";
 	if (!options.offset) options.offset = 0;
 	if (!options.mode) options.mode = "span";
+	if (!options.stroke) options.stroke = BASE_LINE_COLOR;
 	if (!options.className) options.className = "";
 
 	// Draw X axis line in span/tick mode with optional label
@@ -588,6 +596,7 @@ export function xLine(x, label, height, options = {}) {
 	}
 
 	return makeVertLine(x, label, y1, y2, {
+		stroke: options.stroke,
 		className: options.className,
 		lineType: options.lineType,
 	});
