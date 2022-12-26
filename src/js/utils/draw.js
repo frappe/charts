@@ -8,9 +8,7 @@ import { getStringWidth, isValidNumber, round } from "./helpers";
 
 import {
 	DOT_OVERLAY_SIZE_INCR,
-	PERCENTAGE_BAR_DEFAULT_DEPTH,
 } from "./constants";
-import { lightenDarkenColor } from "./colors";
 
 export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
@@ -385,7 +383,7 @@ export function makeText(className, x, y, content, options = {}) {
 	let fontSize = options.fontSize || FONT_SIZE;
 	let dy = options.dy !== undefined ? options.dy : fontSize / 2;
 	//let fill = options.fill || "var(--charts-label-color)";
-	let fill = options.fill || FONT_FILL;
+	let fill = options.fill || "var(--charts-label-color)";
 	let textAnchor = options.textAnchor || "start";
 	return createSVG("text", {
 		className: className,
