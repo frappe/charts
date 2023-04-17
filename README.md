@@ -111,7 +111,8 @@ If you want to contribute:
 1. Clone this repo.
 2. `cd` into project directory
 3. `npm install`
-4. `npm run dev`
+4. `npm i npm-run-all -D` (*optional --> might be required for some developers*)
+5. `npm run dev`
 
 #### License
 This repository has been released under the [MIT License](LICENSE)
