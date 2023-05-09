@@ -147,11 +147,11 @@ The X axis (often the time axis) is usually continuous. That means we can reduce
  - Type: `Object`
  - Default: `{}`
 
-Customizing options for the format of the label and value displayed on hover tooltips.
+#### formatTooltipX and formatTooltipY
+ - Type: `Function`
+ - Default: `undefined`
 
-####
- - Type: `function`
- - Default: `{}`
+Customizing options for the format of the label and value displayed on hover tooltips. This function takes a value as an argument. By default, it displays the value itself.
 
 ---
 
