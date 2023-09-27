@@ -4,7 +4,7 @@ import {
 	shortenLargeNumber,
 	getSplineCurvePointsStr,
 } from "./draw-utils";
-import { getStringWidth, isValidNumber, round } from "./helpers";
+import { getStringWidth, isValidNumber, round, getPositionByAngle } from "./helpers";
 
 import {
 	DOT_OVERLAY_SIZE_INCR,
@@ -124,6 +124,25 @@ export function makePath(
 			fill: fill,
 			"stroke-width": strokeWidth,
 		},
+	});
+}
+
+// the polygon will automatically close
+export function makePolygon(
+	points, // e.g. "0,100 50,25 50,75 100,0"
+	className = "",
+	stroke = "none",
+	fill = "none",
+	opacity = 1,
+	strokeWidth = 2
+) {
+	return createSVG("polygon", {
+		className: className,
+		points: points,
+		stroke: stroke,
+		fill: fill,
+		opacity: opacity,
+		"stroke-width": strokeWidth,
 	});
 }
 
@@ -486,6 +505,66 @@ function makeHoriLine(y, label, x1, x2, options = {}) {
 	return line;
 }
 
+function makeCircleLine(r, label, center, options = {}) {
+	if (!options.stroke) options.stroke = BASE_LINE_COLOR;
+	if (!options.lineType) options.lineType = "";
+	// our 0 degrees is up
+	if (!options.axisAngle) options.axisAngle = 90;
+	if (!options.alignment) options.alignment = "outside";
+	if (options.shortenNumbers) label = shortenLargeNumber(label);
+
+	let className =
+		"line-circle " +
+		options.className +
+		(options.lineType.toLowerCase() === "dashed" ? " dashed" : "");
+
+	const labelRadius = options.alignment === "outside" ? r + LABEL_MARGIN : r - LABEL_MARGIN;
+
+	let labelPoint = getPositionByAngle(options.axisAngle, labelRadius);
+	// convert to 0 degrees = up
+	labelPoint.y = -labelPoint.y;
+
+	const labelAnchor =
+		options.alignment === "outside"
+		? (labelPoint.x >= 0)
+			? "start"
+			: "end"
+		: (labelPoint.x >= 0)
+			? "end"
+			: "start";
+
+	labelPoint.x += center.x;
+	labelPoint.y += center.y;
+
+	let line = createSVG("circle", {
+		className: className,
+		styles: {
+			stroke: options.stroke,
+		},
+		cx: center.x,
+		cy: center.y,
+		r: r,
+		fill: "none",
+	});
+
+	let text = createSVG("text", {
+		x: labelPoint.x,
+		y: labelPoint.y,
+		"font-size": FONT_SIZE + "px",
+		"text-anchor": labelAnchor,
+		innerHTML: label + "",
+	});
+
+	let group = createSVG("g", {
+		"stroke-opacity": 1,
+	});
+
+	group.appendChild(line);
+	group.appendChild(text);
+
+	return group;
+}
+
 export function generateAxisLabel(options) {
 	if (!options.title) return;
 
@@ -598,6 +677,68 @@ export function xLine(x, label, height, options = {}) {
 		className: options.className,
 		lineType: options.lineType,
 	});
+}
+
+export function rAxis(radius, maxValue, center, options = {}) {
+	if (!options.stroke) options.stroke = BASE_LINE_COLOR;
+	// our 0 degrees is up
+	if (!options.axisAngle) options.axisAngle = 90;
+	if (!options.alignment) options.alignment = "outside";
+	if (!options.className) options.className = "";
+
+	let group = createSVG("g", {});
+
+	const full = makeCircleLine(radius, maxValue.toString(), center, {
+		stroke: options.stroke,
+		axisAngle: options.axisAngle,
+		alignment: options.alignment,
+		className: options.className,
+	});
+
+	const half = makeCircleLine(radius/2, (maxValue / 2).toString(), center, {
+		stroke: options.stroke,
+		axisAngle: options.axisAngle,
+		alignment: options.alignment,
+		className: options.className,
+		lineType: "dashed",
+	});
+
+	group.appendChild(full);
+	group.appendChild(half);
+
+	return group;
+}
+
+export function thetaAxis(points, labels, center, options = {}) {
+	if (!options.color) options.color = BASE_LINE_COLOR;
+	if (!options.radius) options.radius = 4;
+
+	let group = createSVG("g", {});
+
+	let dot;
+	points.map((point, index) => {
+		dot = datasetDot(
+			point.x,
+			point.y,
+			options.radius,
+			options.color,
+			labels[index],
+			index
+		);
+		group.appendChild(dot);
+	});
+
+	dot = datasetDot(
+		center.x,
+		center.y,
+		options.radius,
+		options.color,
+		"",
+		-1
+	);
+	group.appendChild(dot);
+
+	return group;
 }
 
 export function yMarker(y, label, width, options = {}) {

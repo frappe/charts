@@ -2,9 +2,12 @@ import { makeSVGGroup } from "../utils/draw";
 import {
 	makeText,
 	makePath,
+	makePolygon,
 	xLine,
 	yLine,
 	generateAxisLabel,
+	rAxis,
+	thetaAxis,
 	yMarker,
 	yRegion,
 	datasetBar,
@@ -304,6 +307,36 @@ let componentConfigs = {
 		},
 	},
 
+	rAxis: {
+		layerClass: "r axis",
+		makeElements(data) {
+			return [rAxis(
+				this.constants.radius,
+				data.maxValue,
+				this.constants.center,
+				this.constants
+			)];
+		},
+		animateElements(newData) {
+			if (newData) return [];
+		},
+	},
+
+	thetaAxis: {
+		layerClass: "theta axis",
+		makeElements(data) {
+			return [thetaAxis(
+				data.points,
+				data.labels,
+				this.constants.center,
+				this.constants
+			)];
+		},
+		animateElements(newData) {
+			if (newData) return [];
+		},
+	},
+
 	yMarkers: {
 		layerClass: "y-markers",
 		makeElements(data) {
@@ -387,6 +420,30 @@ let componentConfigs = {
 			});
 
 			return animateElements;
+		},
+	},
+
+// ChartComponent constructed with: layerClass, layerTransform,
+// constants, getData, makeElements, animateElements
+	radarChart: {
+		layerClass: function () {
+			return "radar-chart radar-" + this.constants.index;
+		},
+		makeElements(data) {
+			const { index, hasStroke, colour, opacity } = this.constants;
+			let elements = [];
+			elements.push(makePolygon(
+				data.points.map(point => `${point.x},${point.y}`).join(" "),
+				"radar-area",
+				hasStroke ? colour : "none",
+				colour,
+				opacity
+			));
+
+			return elements;
+		},
+		animateElements(newData) {
+			if (newData) return [];
 		},
 	},
 
