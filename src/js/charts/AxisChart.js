@@ -147,7 +147,7 @@ export default class AxisChart extends BaseChart {
 
 		// if we have an object we have multiple yAxisParameters.
 		if (dataValues instanceof Array) {
-			yPts = calcChartIntervals(dataValues, withMinimum);
+			yPts = calcChartIntervals(dataValues, withMinimum, this.config.overrideCeiling, this.config.overrideFloor);
 			scaleMultiplier = this.height / getValueRange(yPts);
 			intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
 			zeroLine = this.height - getZeroIndex(yPts) * intervalHeight;
@@ -170,7 +170,7 @@ export default class AxisChart extends BaseChart {
 				yAxisAlignment = yAxisConfigObject.position
 					? yAxisConfigObject.position
 					: "left";
-				yPts = calcChartIntervals(dataValue, withMinimum);
+				yPts = calcChartIntervals(dataValue, withMinimum, this.config.overrideCeiling, this.config.overrideFloor);
 				scaleMultiplier = this.height / getValueRange(yPts);
 				intervalHeight = getIntervalSize(yPts) * scaleMultiplier;
 				zeroLine = this.height - getZeroIndex(yPts) * intervalHeight;

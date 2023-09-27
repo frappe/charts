@@ -56,6 +56,8 @@ export default class BaseChart {
 					: 1,
 			isNavigable: options.isNavigable || 0,
 			animate: 0,
+			overrideCeiling: options.overrideCeiling || false,
+			overrideFloor: options.overrideFloor || false,
 			truncateLegends:
 				typeof options.truncateLegends !== "undefined"
 					? options.truncateLegends

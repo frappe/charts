@@ -81,7 +81,7 @@ function getChartIntervals(maxValue, minValue = 0) {
   return intervals;
 }
 
-export function calcChartIntervals(values, withMinimum = false) {
+export function calcChartIntervals(values, withMinimum = true, overrideCeiling=false, overrideFloor=false) {
   //*** Where the magic happens ***
 
   // Calculates best-fit y intervals from given values
@@ -89,6 +89,14 @@ export function calcChartIntervals(values, withMinimum = false) {
 
   let maxValue = Math.max(...values);
   let minValue = Math.min(...values);
+
+  if (overrideCeiling) {
+    maxValue = overrideCeiling
+  } 
+
+  if (overrideFloor) {
+    minValue = overrideFloor
+  }
 
   // Exponent to be used for pretty print
   let exponent = 0,
