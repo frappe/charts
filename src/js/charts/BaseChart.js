@@ -55,8 +55,7 @@ export default class BaseChart {
 					? options.showLegend
 					: 1,
 			isNavigable: options.isNavigable || 0,
-			animate:
-				typeof options.animate !== "undefined" ? options.animate : 0,
+			animate: 0,
 			truncateLegends:
 				typeof options.truncateLegends !== "undefined"
 					? options.truncateLegends
