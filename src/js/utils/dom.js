@@ -86,10 +86,10 @@ export function getElementContentWidth(element) {
   if (!element) {
     throw new Error("Error does not exist");
   }
-
+  
   var styles = window.getComputedStyle(element);
   var padding =
-    parseFloat(styles.paddingLeft || 0) + parseFloat(styles.paddingRight || 0);
+    parseFloat(styles.paddingLeft || '0') + parseFloat(styles.paddingRight || '0');
 
   return element.clientWidth - padding;
 }
