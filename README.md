@@ -35,35 +35,28 @@ ERPNext needed a simple sales history graph for its user company master to help 
 - **Dynamic data handling**: Add, remove, or update individual data points in place, or refresh the entire dataset to reflect changes.
 - **Customizable configurations**: Flexible options like colors, animations, and custom titles allow for a highly personalized chart experience.
 
-## Installation
-
-Install via [`npm`](https://www.npmjs.com/get-npm):
+## Usage
 
 ```sh
-$ npm install frappe-charts
+npm install frappe-charts
 ```
 
-and include in your project:
+Import in your project:
 ```js
-import { Chart } from "frappe-charts"
-```
-
-Or include following for es-modules(eg:vuejs):
-```js
+import { Chart } from 'frappe-charts'
+// or esm import
 import { Chart } from 'frappe-charts/dist/frappe-charts.esm.js'
 // import css
 import 'frappe-charts/dist/frappe-charts.min.css'
 ```
 
-or include within your HTML
+Or directly include script in your HTML
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.6.1/dist/frappe-charts.min.umd.js"></script>
-<!-- or -->
 <script src="https://unpkg.com/frappe-charts@1.6.1/dist/frappe-charts.min.umd.js"></script>
 ```
 
-## Usage
+
 ```js
 const data = {
     labels: ["12am-3am", "3am-6pm", "6am-9am", "9am-12am",
@@ -90,20 +83,6 @@ const chart = new frappe.Chart("#chart", {  // or a DOM element,
     colors: ['#7cd6fd', '#743ee2']
 })
 ```
-
-Or for es-modules (replace `new frappe.Chart()` with `new Chart()`):
-```diff
-- const chart = new frappe.Chart("#chart", {
-+ const chart = new Chart("#chart", {  // or a DOM element,
-                                    // new Chart() in case of ES6 module with above usage
-    title: "My Awesome Chart",
-    data: data,
-    type: 'axis-mixed', // or 'bar', 'line', 'scatter', 'pie', 'percentage'
-    height: 250,
-    colors: ['#7cd6fd', '#743ee2']
-})
-```
-
 
 ## Contributing
 
