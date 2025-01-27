@@ -5,6 +5,7 @@ import PieChart from "./charts/PieChart";
 import Heatmap from "./charts/Heatmap";
 import AxisChart from "./charts/AxisChart";
 import DonutChart from "./charts/DonutChart";
+import RadarChart from "./charts/RadarChart";
 
 const chartTypes = {
   bar: AxisChart,
@@ -13,6 +14,7 @@ const chartTypes = {
   heatmap: Heatmap,
   pie: PieChart,
   donut: DonutChart,
+  radar: RadarChart,
 };
 
 function getChartByType(chartType = "line", parent, options) {
@@ -31,8 +33,13 @@ function getChartByType(chartType = "line", parent, options) {
 
 class Chart {
   constructor(parent, options) {
-    return getChartByType(options.type, parent, options);
+    const chart = getChartByType(options.type, parent, options);
+    if (!frappe.charts) {
+      frappe.charts = [];
+    }
+    frappe.charts.push(chart);
+    return chart;
   }
 }
 
-export { Chart, PercentageChart, PieChart, Heatmap, AxisChart };
+export { Chart, PercentageChart, PieChart, DonutChart, Heatmap, AxisChart, RadarChart };
