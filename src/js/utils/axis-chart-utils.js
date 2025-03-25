@@ -97,8 +97,8 @@ export function zeroDataPrep(realData) {
 	return zeroData;
 }
 
-export function getShortenedLabels(chartWidth, labels = [], isSeries = true, series_label_space_ratio) {
-	let allowedSpace = (chartWidth / labels.length) * (series_label_space_ratio || SERIES_LABEL_SPACE_RATIO);
+export function getShortenedLabels(chartWidth, labels = [], isSeries = true, seriesLabelSpaceRatio) {
+	let allowedSpace = (chartWidth / labels.length) * (seriesLabelSpaceRatio || SERIES_LABEL_SPACE_RATIO);
 	if (allowedSpace <= 0) allowedSpace = 1;
 	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
 

@@ -217,7 +217,7 @@ export default class AxisChart extends BaseChart {
 				function () {
 					let s = this.state;
 					s.xAxis.calcLabels = getShortenedLabels(this.width,
-						s.xAxis.labels, this.config.xIsSeries,this.config.series_label_space_ratio);
+						s.xAxis.labels, this.config.xIsSeries,this.config.seriesLabelSpaceRatio);
 
 					return s.xAxis;
 				}.bind(this)
