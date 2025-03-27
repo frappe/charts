@@ -24,7 +24,7 @@ export default [
 				exclude: ['node_modules/**']
 			}),
 			terser(),
-			scss({ output: 'dist/frappe-charts.min.css' }),
+			scss({ fileName: 'frappe-charts.min.css' }),
 			bundleSize()
 		]
 	},
