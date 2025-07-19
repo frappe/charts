@@ -163,7 +163,7 @@ export default class BaseChart {
 			this.data = this.realData;
 			setTimeout(() => { this.update(this.data, true); }, this.initTimeout);
 		}
-		
+
 		if (this.config.showLegend) {
 			this.renderLegend();
 		}
@@ -180,7 +180,7 @@ export default class BaseChart {
 
 	makeChartArea() {
 		if (this.svg) {
-			this.container.removeChild(this.svg);
+			this.svg.remove();
 		}
 		let m = this.measures;
 
@@ -240,7 +240,7 @@ export default class BaseChart {
 		if (!data) console.error('No data to update.');
 		if (!drawing) data = deepClone(data);
 		const animate = drawing ? !this.config.disableEntryAnimation : this.config.animate;
-		
+
 		this.data = this.prepareData(data);
 		this.calc(); // builds state
 		this.render(this.components, animate);
@@ -249,7 +249,7 @@ export default class BaseChart {
 	render(components = this.components, animate = true) {
 		if (this.config.isNavigable) {
 			// Remove all existing overlays
-			this.overlays.map(o => o.parentNode.removeChild(o));
+			this.overlays.map(o => o.remove());
 			// ref.parentNode.insertBefore(element, ref);
 		}
 		let elementsToAnimate = [];
