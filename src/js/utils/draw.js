@@ -399,7 +399,7 @@ export function makeText(className, x, y, content, options = {}) {
 
 function makeVertLine(x, label, y1, y2, options = {}) {
 	if (!options.stroke) options.stroke = BASE_LINE_COLOR;
-	let l = createSVG("line", {
+	const l = createSVG("line", {
 		className: "line-vertical " + options.className,
 		x1: 0,
 		x2: 0,
@@ -410,16 +410,18 @@ function makeVertLine(x, label, y1, y2, options = {}) {
 		},
 	});
 
-	let text = createSVG("text", {
+	const textY = y1 > y2 ? y1 + LABEL_MARGIN : y1 - LABEL_MARGIN - FONT_SIZE;
+	const text = createSVG("text", {
 		x: 0,
-		y: y1 > y2 ? y1 + LABEL_MARGIN : y1 - LABEL_MARGIN - FONT_SIZE,
+		y: textY,
 		dy: FONT_SIZE + "px",
 		"font-size": FONT_SIZE + "px",
-		"text-anchor": "middle",
+		"text-anchor": "end",
+		transform: `rotate(-45, 0, ${textY})`,
 		innerHTML: label + "",
 	});
 
-	let line = createSVG("g", {
+	const line = createSVG("g", {
 		transform: `translate(${x}, 0)`,
 	});
 

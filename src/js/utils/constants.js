@@ -26,7 +26,7 @@ export const DATA_COLOR_DIVISIONS = {
 export const BASE_MEASURES = {
   margins: {
     top: 10,
-    bottom: 10,
+    bottom: 60,
     left: 20,
     right: 20,
   },
@@ -37,7 +37,7 @@ export const BASE_MEASURES = {
     right: 10,
   },
 
-  baseHeight: 240,
+  baseHeight: 300,
   titleHeight: 20,
   legendHeight: 30,
 

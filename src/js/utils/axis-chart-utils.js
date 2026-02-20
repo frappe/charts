@@ -106,32 +106,13 @@ export function zeroDataPrep(realData) {
 	return zeroData;
 }
 
-export function getShortenedLabels(chartWidth, labels = [], isSeries = true) {
-	let allowedSpace = (chartWidth / labels.length) * SERIES_LABEL_SPACE_RATIO;
-	if (allowedSpace <= 0) allowedSpace = 1;
-	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
-
-	let seriesMultiple;
-	if (isSeries) {
-		// Find the maximum label length for spacing calculations
-		let maxLabelLength = Math.max(...labels.map((label) => label.length));
-		seriesMultiple = Math.ceil(maxLabelLength / allowedLetters);
-	}
-
-	let calcLabels = labels.map((label, i) => {
+export function getShortenedLabels(labels = []) {
+	const MAX_LABEL_LENGTH = 20;
+	
+	const calcLabels = labels.map((label) => {
 		label += "";
-		if (label.length > allowedLetters) {
-			if (!isSeries) {
-				if (allowedLetters - 3 > 0) {
-					label = label.slice(0, allowedLetters - 3) + " ...";
-				} else {
-					label = label.slice(0, allowedLetters) + "..";
-				}
-			} else {
-				if (i % seriesMultiple !== 0 && i !== labels.length - 1) {
-					label = "";
-				}
-			}
+		if (label.length > MAX_LABEL_LENGTH) {
+			label = label.slice(0, MAX_LABEL_LENGTH - 3) + "...";
 		}
 		return label;
 	});
