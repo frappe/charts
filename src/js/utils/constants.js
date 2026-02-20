@@ -95,7 +95,7 @@ export const HEATMAP_SQUARE_SIZE = 10;
 export const HEATMAP_GUTTER_SIZE = 2;
 
 export const DEFAULT_CHAR_WIDTH = 7;
-
+export const MAX_LABEL_LENGTH = 20;
 export const TOOLTIP_POINTER_TRIANGLE_HEIGHT = 7.48;
 const DEFAULT_CHART_COLORS = [
   "pink",

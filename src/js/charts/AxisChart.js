@@ -404,7 +404,11 @@ export default class AxisChart extends BaseChart {
 				},
 				function () {
 					let s = this.state;
-					s.xAxis.calcLabels = getShortenedLabels(s.xAxis.labels);
+					s.xAxis.calcLabels = getShortenedLabels(
+						this.width,
+						s.xAxis.labels,
+						this.config.xIsSeries
+					);
 
 					return s.xAxis;
 				}.bind(this),

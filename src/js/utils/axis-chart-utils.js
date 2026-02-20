@@ -4,6 +4,7 @@ import {
 	AXIS_DATASET_CHART_TYPES,
 	DEFAULT_CHAR_WIDTH,
 	SERIES_LABEL_SPACE_RATIO,
+	MAX_LABEL_LENGTH,
 } from "../utils/constants";
 
 export function dataPrep(data, type, config) {
@@ -106,14 +107,28 @@ export function zeroDataPrep(realData) {
 	return zeroData;
 }
 
-export function getShortenedLabels(labels = []) {
-	const MAX_LABEL_LENGTH = 20;
+export function getShortenedLabels(chartWidth, labels = [], isSeries = true) {
+	let allowedSpace = (chartWidth / labels.length) * SERIES_LABEL_SPACE_RATIO;
+	if (allowedSpace <= 0) allowedSpace = 1;
+	const allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
 	
-	const calcLabels = labels.map((label) => {
+	let skipFactor = 1;
+	if (isSeries || labels.length > 15) {
+		const maxLength = Math.max(...labels.map(l => (l + "").length));
+		skipFactor = Math.max(1, Math.ceil(maxLength / allowedLetters / 2));
+	}
+	
+	const calcLabels = labels.map((label, i) => {
 		label += "";
+		
+		if (skipFactor > 1 && i % skipFactor !== 0 && i !== labels.length - 1) {
+			return "";
+		}
+		
 		if (label.length > MAX_LABEL_LENGTH) {
 			label = label.slice(0, MAX_LABEL_LENGTH - 3) + "...";
 		}
+		
 		return label;
 	});
 
