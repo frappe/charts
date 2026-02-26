@@ -1,4 +1,4 @@
-import { fillArray } from "../utils/helpers";
+import { fillArray, getStringWidth } from "../utils/helpers";
 import {
 	DEFAULT_AXIS_CHART_TYPE,
 	AXIS_DATASET_CHART_TYPES,
@@ -107,15 +107,33 @@ export function zeroDataPrep(realData) {
 	return zeroData;
 }
 
+export function shouldUseDiagonalLabels(unitWidth, labels) {
+	if (!labels?.length) return false;
+	
+	const maxLabelWidth = labels.reduce((max, label) => {
+		const width = getStringWidth(label + "", 5);
+		return Math.max(max, width);
+	}, 0);
+	
+	return maxLabelWidth + 10 > unitWidth;
+}
+
 export function getShortenedLabels(chartWidth, labels = [], isSeries = true) {
 	let allowedSpace = (chartWidth / labels.length) * SERIES_LABEL_SPACE_RATIO;
 	if (allowedSpace <= 0) allowedSpace = 1;
-	const allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
+	
+	const unitWidth = chartWidth / labels.length;
+	const needsDiagonal = shouldUseDiagonalLabels(unitWidth, labels);
+	
+	const spaceFactor = needsDiagonal ? 2 : 1;
+	const effectiveAllowedSpace = allowedSpace * spaceFactor;
+	const allowedLetters = effectiveAllowedSpace / DEFAULT_CHAR_WIDTH;
 	
 	let skipFactor = 1;
 	if (isSeries || labels.length > 15) {
 		const maxLength = Math.max(...labels.map(l => (l + "").length));
-		skipFactor = Math.max(1, Math.ceil(maxLength / allowedLetters / 2));
+		const divisor = needsDiagonal ? 3 : 2;
+		skipFactor = Math.max(1, Math.ceil(maxLength / allowedLetters / divisor));
 	}
 	
 	const calcLabels = labels.map((label, i) => {
