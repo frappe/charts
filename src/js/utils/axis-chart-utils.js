@@ -1,9 +1,10 @@
-import { fillArray } from "../utils/helpers";
+import { fillArray, getStringWidth } from "../utils/helpers";
 import {
 	DEFAULT_AXIS_CHART_TYPE,
 	AXIS_DATASET_CHART_TYPES,
 	DEFAULT_CHAR_WIDTH,
 	SERIES_LABEL_SPACE_RATIO,
+	MAX_LABEL_LENGTH,
 } from "../utils/constants";
 
 export function dataPrep(data, type, config) {
@@ -106,33 +107,46 @@ export function zeroDataPrep(realData) {
 	return zeroData;
 }
 
+export function shouldUseDiagonalLabels(unitWidth, labels) {
+	if (!labels?.length) return false;
+	
+	const maxLabelWidth = labels.reduce((max, label) => {
+		const width = getStringWidth(label + "", 5);
+		return Math.max(max, width);
+	}, 0);
+	
+	return maxLabelWidth + 10 > unitWidth;
+}
+
 export function getShortenedLabels(chartWidth, labels = [], isSeries = true) {
 	let allowedSpace = (chartWidth / labels.length) * SERIES_LABEL_SPACE_RATIO;
 	if (allowedSpace <= 0) allowedSpace = 1;
-	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
-
-	let seriesMultiple;
-	if (isSeries) {
-		// Find the maximum label length for spacing calculations
-		let maxLabelLength = Math.max(...labels.map((label) => label.length));
-		seriesMultiple = Math.ceil(maxLabelLength / allowedLetters);
+	
+	const unitWidth = chartWidth / labels.length;
+	const needsDiagonal = shouldUseDiagonalLabels(unitWidth, labels);
+	
+	const spaceFactor = needsDiagonal ? 2 : 1;
+	const effectiveAllowedSpace = allowedSpace * spaceFactor;
+	const allowedLetters = effectiveAllowedSpace / DEFAULT_CHAR_WIDTH;
+	
+	let skipFactor = 1;
+	if (isSeries || labels.length > 15 || needsDiagonal) {
+		const maxLength = Math.max(...labels.map(l => (l + "").length));
+		const divisor = needsDiagonal ? 3 : 2;
+		skipFactor = Math.max(1, Math.ceil(maxLength / allowedLetters / divisor));
 	}
-
-	let calcLabels = labels.map((label, i) => {
+	
+	const calcLabels = labels.map((label, i) => {
 		label += "";
-		if (label.length > allowedLetters) {
-			if (!isSeries) {
-				if (allowedLetters - 3 > 0) {
-					label = label.slice(0, allowedLetters - 3) + " ...";
-				} else {
-					label = label.slice(0, allowedLetters) + "..";
-				}
-			} else {
-				if (i % seriesMultiple !== 0 && i !== labels.length - 1) {
-					label = "";
-				}
-			}
+		
+		if (skipFactor > 1 && i % skipFactor !== 0) {
+			return "";
 		}
+		
+		if (label.length > MAX_LABEL_LENGTH) {
+			label = label.slice(0, MAX_LABEL_LENGTH - 3) + "...";
+		}
+		
 		return label;
 	});
 

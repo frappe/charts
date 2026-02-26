@@ -24,6 +24,7 @@ import {
 	animatePathStr,
 } from "../utils/animate";
 import { getMonthName } from "../utils/date-utils";
+import { shouldUseDiagonalLabels } from "../utils/axis-chart-utils";
 
 class ChartComponent {
 	constructor({
@@ -276,10 +277,13 @@ let componentConfigs = {
 	xAxis: {
 		layerClass: "x axis",
 		makeElements(data) {
+			const unitWidth = data.unitWidth || 0;
+		const needsDiagonal = shouldUseDiagonalLabels(unitWidth, data.calcLabels);
 			return data.positions.map((position, i) =>
 				xLine(position, data.calcLabels[i], this.constants.height, {
 					mode: this.constants.mode,
 					pos: this.constants.pos,
+					useDiagonal: needsDiagonal,
 				})
 			);
 		},

@@ -26,7 +26,7 @@ export const DATA_COLOR_DIVISIONS = {
 export const BASE_MEASURES = {
   margins: {
     top: 10,
-    bottom: 10,
+    bottom: 60,
     left: 20,
     right: 20,
   },
@@ -37,7 +37,7 @@ export const BASE_MEASURES = {
     right: 10,
   },
 
-  baseHeight: 240,
+  baseHeight: 300,
   titleHeight: 20,
   legendHeight: 30,
 
@@ -95,7 +95,7 @@ export const HEATMAP_SQUARE_SIZE = 10;
 export const HEATMAP_GUTTER_SIZE = 2;
 
 export const DEFAULT_CHAR_WIDTH = 7;
-
+export const MAX_LABEL_LENGTH = 20;
 export const TOOLTIP_POINTER_TRIANGLE_HEIGHT = 7.48;
 const DEFAULT_CHART_COLORS = [
   "pink",
