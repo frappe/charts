@@ -130,7 +130,7 @@ export function getShortenedLabels(chartWidth, labels = [], isSeries = true) {
 	const allowedLetters = effectiveAllowedSpace / DEFAULT_CHAR_WIDTH;
 	
 	let skipFactor = 1;
-	if (isSeries || labels.length > 15) {
+	if (isSeries || labels.length > 15 || needsDiagonal) {
 		const maxLength = Math.max(...labels.map(l => (l + "").length));
 		const divisor = needsDiagonal ? 3 : 2;
 		skipFactor = Math.max(1, Math.ceil(maxLength / allowedLetters / divisor));
@@ -139,7 +139,7 @@ export function getShortenedLabels(chartWidth, labels = [], isSeries = true) {
 	const calcLabels = labels.map((label, i) => {
 		label += "";
 		
-		if (skipFactor > 1 && i % skipFactor !== 0 && i !== labels.length - 1) {
+		if (skipFactor > 1 && i % skipFactor !== 0) {
 			return "";
 		}
 		
