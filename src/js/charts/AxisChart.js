@@ -126,6 +126,7 @@ export default class AxisChart extends BaseChart {
 			positions: labels.map((d, i) =>
 				floatTwo(s.xOffset + i * s.unitWidth)
 			),
+			unitWidth: s.unitWidth,
 		};
 	}
 

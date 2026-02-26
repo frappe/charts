@@ -411,15 +411,22 @@ function makeVertLine(x, label, y1, y2, options = {}) {
 	});
 
 	const textY = y1 > y2 ? y1 + LABEL_MARGIN : y1 - LABEL_MARGIN - FONT_SIZE;
-	const text = createSVG("text", {
+	const textAttrs = {
 		x: 0,
 		y: textY,
 		dy: FONT_SIZE + "px",
 		"font-size": FONT_SIZE + "px",
-		"text-anchor": "end",
-		transform: `rotate(-45, 0, ${textY})`,
 		innerHTML: label + "",
-	});
+	};
+	
+	if (options.useDiagonal) {
+		textAttrs["text-anchor"] = "end";
+		textAttrs.transform = `rotate(-45, 0, ${textY})`;
+	} else {
+		textAttrs["text-anchor"] = "middle";
+	}
+	
+	const text = createSVG("text", textAttrs);
 
 	const line = createSVG("g", {
 		transform: `translate(${x}, 0)`,
@@ -598,6 +605,7 @@ export function xLine(x, label, height, options = {}) {
 	return makeVertLine(x, label, y1, y2, {
 		stroke: options.stroke,
 		className: options.className,
+		useDiagonal: options.useDiagonal,
 		lineType: options.lineType,
 	});
 }
