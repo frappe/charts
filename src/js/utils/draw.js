@@ -305,7 +305,7 @@ function makeVertLine(x, label, y1, y2, options = {}) {
 
 	let text = createSVG('text', {
 		x: 0,
-		y: y1 > y2 ? y1 + LABEL_MARGIN : y1 - LABEL_MARGIN - FONT_SIZE,
+		y: y1 >= y2 ? y1 + LABEL_MARGIN : y1 - LABEL_MARGIN - FONT_SIZE,
 		dy: FONT_SIZE + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': 'middle',
@@ -423,6 +423,10 @@ export function xLine(x, label, height, options = {}) {
 
 	let y1 = height + AXIS_TICK_LENGTH;
 	let y2 = options.mode === 'span' ? -1 * AXIS_TICK_LENGTH : height;
+
+	if (options.mode === 'none') {
+		y2 = y1;
+	}
 
 	if (options.mode === 'tick' && options.pos === 'top') {
 		// top axis ticks
