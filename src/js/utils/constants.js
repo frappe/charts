@@ -93,6 +93,7 @@ export const HEATMAP_GUTTER_SIZE = 2;
 export const DEFAULT_CHAR_WIDTH = 7;
 
 export const TOOLTIP_POINTER_TRIANGLE_HEIGHT = 7.48;
+export const TOOLTIP_SIDE_GAP = 8;
 const DEFAULT_CHART_COLORS = ['pink', 'blue', 'green', 'grey', 'red', 'yellow', 'purple', 'teal', 'cyan', 'orange'];
 const HEATMAP_COLORS_GREEN = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
 export const HEATMAP_COLORS_BLUE = ['#ebedf0', '#c0ddf9', '#73b3f3', '#3886e1', '#17459e'];

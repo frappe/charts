@@ -4,11 +4,11 @@ import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
 import { floatTwo, getStringWidth } from '../utils/helpers';
-import { makeOverlay, updateOverlay, legendDot } from '../utils/draw';
+import { makeOverlay, updateOverlay, legendDot, makeHoverBand } from '../utils/draw';
 import {
 	getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
 	BAR_CHART_RADIUS, BAR_CHART_GAP, BAR_CHART_MAX_WIDTH, LINE_CHART_DOT_SIZE, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE,
-	LEGEND_CHAR_WIDTH, LEGEND_ITEM_GAP
+	LEGEND_CHAR_WIDTH, LEGEND_ITEM_GAP, TOOLTIP_SIDE_GAP
 } from '../utils/constants';
 import { shortenLargeNumber } from '../utils/draw-utils';
 
@@ -49,6 +49,7 @@ export default class AxisChart extends BaseChart {
 
 		this.config.formatTooltipX = options.tooltipOptions.formatTooltipX;
 		this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
+		this.config.tooltipPlacement = options.tooltipOptions.placement || 'side';
 
 		this.config.valuesOverPoints = options.valuesOverPoints;
 		this.config.legendRowHeight = 30;
@@ -397,12 +398,17 @@ export default class AxisChart extends BaseChart {
 
 			this.dataByIndex[index] = {
 				label: label,
-				formattedLabel: formatX ? formatX(label) : label,
+				formattedLabel: formatX ? formatX(label, index) : label,
 				xPos: s.xAxis.positions[index],
 				values: values,
 				yExtreme: s.yExtremes[index],
 			};
 		});
+	}
+
+	makeTooltip() {
+		super.makeTooltip();
+		this.tip.placement = this.config.tooltipPlacement;
 	}
 
 	bindTooltip() {
@@ -415,26 +421,35 @@ export default class AxisChart extends BaseChart {
 
 			if (!this.config.valuesOverPoints && relY < this.height + getTopOffset(m)
 				&& relY > getTopOffset(m)) {
-				this.mapTooltipXPosition(relX);
+				this.mapTooltipXPosition(relX, 0, relY);
 			} else if (this.config.valuesOverPoints && e.target.getAttribute("class") == "data-point-value"){
-				this.mapTooltipXPosition(relX, -20)
+				this.mapTooltipXPosition(relX, -20, relY);
 			}else {
-				this.tip.hideTip();
+				this.hideTooltip();
 			}
 		});
+		this.container.addEventListener('mouseleave', () => this.hideTooltip());
 	}
 
-	mapTooltipXPosition(relX, y=0) {
+	hideTooltip() {
+		this.tip.hideTip();
+		if (this.hoverBand) this.hoverBand.style.display = 'none';
+	}
+
+	mapTooltipXPosition(relX, y = 0, pointerY = null) {
 		let s = this.state;
 		if (!s.yExtremes) return;
 
 		let index = getClosestInArray(relX, s.xAxis.positions, true);
 		if (index >= 0) {
 			let dbi = this.dataByIndex[index];
+			let side = this.tip.placement === 'side';
+			this.showHoverBand(dbi.xPos);
+			this.tip.sideOffset = side ? this.hoverBandWidth() / 2 + TOOLTIP_SIDE_GAP : 0;
 
 			this.tip.setValues(
 				dbi.xPos + this.tip.offset.x,
-				dbi.yExtreme + this.tip.offset.y + y,
+				side && pointerY !== null ? pointerY : dbi.yExtreme + this.tip.offset.y + y,
 				{ name: dbi.formattedLabel, value: '' },
 				dbi.values,
 				index
@@ -442,6 +457,23 @@ export default class AxisChart extends BaseChart {
 
 			this.tip.showTip();
 		}
+	}
+
+	hoverBandWidth() {
+		let hasBars = this.state.datasets.some(d => d.chartType === 'bar');
+		return hasBars ? this.state.unitWidth : 1;
+	}
+
+	showHoverBand(xPos) {
+		if (!this.hoverBand || !this.drawArea.contains(this.hoverBand)) {
+			this.hoverBand = makeHoverBand(this.height);
+			this.drawArea.insertBefore(this.hoverBand, this.drawArea.firstChild);
+		}
+		let width = this.hoverBandWidth();
+		this.hoverBand.setAttribute('x', xPos - width / 2);
+		this.hoverBand.setAttribute('width', width);
+		this.hoverBand.setAttribute('height', this.height);
+		this.hoverBand.style.display = '';
 	}
 
 	renderLegend() {

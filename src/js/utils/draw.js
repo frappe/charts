@@ -511,6 +511,16 @@ export function yRegion(y1, y2, width, label, options = {}) {
 	return region;
 }
 
+export function makeHoverBand(height) {
+	return createSVG('rect', {
+		className: 'hover-band',
+		x: 0,
+		y: 0,
+		width: 0,
+		height: height
+	});
+}
+
 export function barPathStr(x, y, width, height, radius = 0, roundBottom = false) {
 	let r = Math.max(0, Math.min(radius, width / 2, height));
 	let [right, bottom] = [x + width, y + height];
