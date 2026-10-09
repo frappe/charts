@@ -511,77 +511,71 @@ export function yRegion(y1, y2, width, label, options = {}) {
 	return region;
 }
 
-export function datasetBar(x, yTop, width, color, label = '', index = 0, offset = 0, meta = {}) {
+export function barPathStr(x, y, width, height, radius = 0, roundBottom = false) {
+	let r = Math.max(0, Math.min(radius, width / 2, height));
+	let [right, bottom] = [x + width, y + height];
+
+	if (roundBottom) {
+		return `M${x},${y} V${bottom - r} Q${x},${bottom} ${x + r},${bottom} `
+			+ `H${right - r} Q${right},${bottom} ${right},${bottom - r} V${y} Z`;
+	}
+	return `M${x},${bottom} V${y + r} Q${x},${y} ${x + r},${y} `
+		+ `H${right - r} Q${right},${y} ${right},${y + r} V${bottom} Z`;
+}
+
+export function getBarGeometry(x, yTop, width, offset = 0, meta = {}) {
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
 	y -= offset;
 
 	if (height === 0) {
-		height = meta.minHeight;
-		y -= meta.minHeight;
+		height = meta.minHeight || 0;
+		y -= height;
 	}
 
-	// Preprocess numbers to avoid svg building errors
 	if (!isValidNumber(x)) x = 0;
 	if (!isValidNumber(y)) y = 0;
 	if (!isValidNumber(height, true)) height = 0;
 	if (!isValidNumber(width, true)) width = 0;
 
-	// x y h w
+	return { x, y, width, height, roundBottom: yTop > meta.zeroLine };
+}
 
-	// M{x},{y+r}
-	// q0,-{r} {r},-{r}
-	// q{r},0 {r},{r}
-	// v{h-r}
-	// h-{w}z
+export function datasetBar(x, yTop, width, color, label = '', index = 0, offset = 0, meta = {}) {
+	let bar = getBarGeometry(x, yTop, width, offset, meta);
 
-	// let radius = width/2;
-	// let pathStr = `M${x},${y+radius} q0,-${radius} ${radius},-${radius} q${radius},0 ${radius},${radius} v${height-radius} h-${width}z`
+	label += "";
+	let hasLabel = label && label.length;
+	let origin = hasLabel ? [0, 0] : [bar.x, bar.y];
 
-	// let rect = createSVG('path', {
-	// 	className: 'bar mini',
-	// 	d: pathStr,
-	// 	styles: { fill: color },
-	// 	x: x,
-	// 	y: y,
-	// 	'data-point-index': index,
-	// });
-
-	let rect = createSVG('rect', {
+	let path = createSVG('path', {
 		className: `bar mini`,
 		style: `fill: ${color}`,
 		'data-point-index': index,
-		x: x,
-		y: y,
-		width: width,
-		height: height
+		d: barPathStr(origin[0], origin[1], bar.width, bar.height, meta.radius, bar.roundBottom)
 	});
 
-	label += "";
-
-	if (!label && !label.length) {
-		return rect;
-	} else {
-		rect.setAttribute('y', 0);
-		rect.setAttribute('x', 0);
-		let text = createSVG('text', {
-			className: 'data-point-value',
-			x: width / 2,
-			y: 0,
-			dy: (FONT_SIZE / 2 * -1) + 'px',
-			'font-size': FONT_SIZE + 'px',
-			'text-anchor': 'middle',
-			innerHTML: label
-		});
-
-		let group = createSVG('g', {
-			'data-point-index': index,
-			transform: `translate(${x}, ${y})`
-		});
-		group.appendChild(rect);
-		group.appendChild(text);
-
-		return group;
+	if (!hasLabel) {
+		return path;
 	}
+
+	let text = createSVG('text', {
+		className: 'data-point-value',
+		x: bar.width / 2,
+		y: 0,
+		dy: (FONT_SIZE / 2 * -1) + 'px',
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'middle',
+		innerHTML: label
+	});
+
+	let group = createSVG('g', {
+		'data-point-index': index,
+		transform: `translate(${bar.x}, ${bar.y})`
+	});
+	group.appendChild(path);
+	group.appendChild(text);
+
+	return group;
 }
 
 export function datasetDot(x, y, radius, color, label = '', index = 0, hideDotBorder = false) {
@@ -656,7 +650,7 @@ export function getPaths(xList, yList, color, options = {}, meta = {}) {
 export let makeOverlay = {
 	'bar': (unit) => {
 		let transformValue;
-		if (unit.nodeName !== 'rect') {
+		if (unit.nodeName === 'g') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];
 		}
@@ -712,11 +706,11 @@ export let makeOverlay = {
 export let updateOverlay = {
 	'bar': (unit, overlay) => {
 		let transformValue;
-		if (unit.nodeName !== 'rect') {
+		if (unit.nodeName === 'g') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];
 		}
-		let attributes = ['x', 'y', 'width', 'height'];
+		let attributes = ['d'];
 		Object.values(unit.attributes)
 			.filter(attr => attributes.includes(attr.name) && attr.specified)
 			.map(attr => {

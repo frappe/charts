@@ -69,6 +69,9 @@ export const LEGEND_ITEM_WIDTH = 150;
 export const SERIES_LABEL_SPACE_RATIO = 0.6;
 
 export const BAR_CHART_SPACE_RATIO = 0.5;
+export const BAR_CHART_RADIUS = 3;
+export const BAR_CHART_GAP = 2;
+export const BAR_CHART_MAX_WIDTH = 32;
 export const MIN_BAR_PERCENT_HEIGHT = 0.00;
 
 export const LINE_CHART_DOT_SIZE = 4;

@@ -7,7 +7,7 @@ import { floatTwo } from '../utils/helpers';
 import { makeOverlay, updateOverlay, legendDot } from '../utils/draw';
 import {
 	getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
-	LINE_CHART_DOT_SIZE
+	BAR_CHART_RADIUS, BAR_CHART_GAP, BAR_CHART_MAX_WIDTH, LINE_CHART_DOT_SIZE
 } from '../utils/constants';
 import { shortenLargeNumber } from '../utils/draw-utils';
 
@@ -247,6 +247,7 @@ export default class AxisChart extends BaseChart {
 					index: index,
 					color: this.colors[index],
 					stacked: this.barOptions.stacked,
+					radius: this.barOptions.stacked ? 0 : (this.barOptions.radius ?? BAR_CHART_RADIUS),
 
 					// same for all datasets
 					valuesOverPoints: this.config.valuesOverPoints,
@@ -259,11 +260,18 @@ export default class AxisChart extends BaseChart {
 
 					let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
 					let barsWidth = s.unitWidth * (1 - spaceRatio);
-					let barWidth = barsWidth / (stacked ? 1 : barDatasets.length);
+					let barCount = stacked ? 1 : barDatasets.length;
+					let barWidth = barsWidth / barCount;
+					let gap = barCount < 2 ? 0 : Math.min(this.barOptions.gap ?? BAR_CHART_GAP, barWidth / 2);
+					let maxWidth = this.barOptions.maxWidth ?? BAR_CHART_MAX_WIDTH;
+					if (maxWidth && barWidth - gap > maxWidth) {
+						barWidth = maxWidth + gap;
+						barsWidth = barWidth * barCount;
+					}
 
 					let xPositions = s.xAxis.positions.map(x => x - barsWidth / 2);
 					if (!stacked) {
-						xPositions = xPositions.map(p => p + barWidth * index);
+						xPositions = xPositions.map(p => p + barWidth * index + gap / 2);
 					}
 
 					let labels = new Array(s.datasetLength).fill('');
@@ -289,7 +297,7 @@ export default class AxisChart extends BaseChart {
 
 						zeroLine: s.yAxis.zeroLine,
 						barsWidth: barsWidth,
-						barWidth: barWidth,
+						barWidth: barWidth - gap,
 					};
 				}.bind(this)
 			];
