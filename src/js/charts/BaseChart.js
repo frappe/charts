@@ -179,9 +179,12 @@ export default class BaseChart {
 	}
 
 	makeChartArea() {
-		if (this.svg) {
-			this.container.removeChild(this.svg);
-		}
+		// While an update animates (runSMILAnimation), an animated copy of the svg stands in for
+		// it, so this.svg is briefly not in the container. Remove whichever is there: removing
+		// this.svg alone would throw, and the copy would otherwise stay next to the new svg.
+		this.container
+			.querySelectorAll(":scope > svg.frappe-chart")
+			.forEach((svg) => svg.remove());
 		let m = this.measures;
 
 		this.svg = makeSVGContainer(
