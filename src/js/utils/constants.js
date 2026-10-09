@@ -66,6 +66,10 @@ export const DEFAULT_AXIS_CHART_TYPE = 'line';
 export const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
 
 export const LEGEND_ITEM_WIDTH = 150;
+export const LEGEND_DOT_SIZE = 8;
+export const LEGEND_FONT_SIZE = 8.125;
+export const LEGEND_CHAR_WIDTH = 7;
+export const LEGEND_ITEM_GAP = 20;
 export const SERIES_LABEL_SPACE_RATIO = 0.6;
 
 export const BAR_CHART_SPACE_RATIO = 0.5;

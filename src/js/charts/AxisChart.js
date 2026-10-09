@@ -3,11 +3,12 @@ import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
-import { floatTwo } from '../utils/helpers';
+import { floatTwo, getStringWidth } from '../utils/helpers';
 import { makeOverlay, updateOverlay, legendDot } from '../utils/draw';
 import {
 	getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
-	BAR_CHART_RADIUS, BAR_CHART_GAP, BAR_CHART_MAX_WIDTH, LINE_CHART_DOT_SIZE
+	BAR_CHART_RADIUS, BAR_CHART_GAP, BAR_CHART_MAX_WIDTH, LINE_CHART_DOT_SIZE, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE,
+	LEGEND_CHAR_WIDTH, LEGEND_ITEM_GAP
 } from '../utils/constants';
 import { shortenLargeNumber } from '../utils/draw-utils';
 
@@ -444,23 +445,50 @@ export default class AxisChart extends BaseChart {
 	}
 
 	renderLegend() {
-		let s = this.data;
-		if (s.datasets.length > 1) {
-			super.renderLegend(s.datasets);
-		}
+		let datasets = this.data.datasets;
+		if (datasets.length <= 1) return;
+
+		this.legendArea.textContent = '';
+		let items = datasets.map((data, index) => ({
+			data,
+			index,
+			width: LEGEND_DOT_SIZE + LEGEND_DOT_SIZE + getStringWidth(data.name || '', LEGEND_CHAR_WIDTH),
+		}));
+
+		let rows = [[]];
+		let rowWidth = 0;
+		items.forEach(item => {
+			let width = item.width + (rowWidth ? LEGEND_ITEM_GAP : 0);
+			if (rowWidth && rowWidth + width > this.width) {
+				rows.push([]);
+				rowWidth = 0;
+				width = item.width;
+			}
+			rows[rows.length - 1].push(item);
+			rowWidth += width;
+		});
+
+		rows.forEach((row, i) => {
+			let total = row.reduce((sum, item) => sum + item.width, 0) + LEGEND_ITEM_GAP * (row.length - 1);
+			let x = Math.max(0, (this.width - total) / 2);
+			row.forEach(item => {
+				this.legendArea.appendChild(this.makeLegend(item.data, item.index, x, i * this.config.legendRowHeight));
+				x += item.width + LEGEND_ITEM_GAP;
+			});
+		});
 	}
 
 	makeLegend(data, index, x_pos, y_pos) {
 		return legendDot(
 			x_pos,
-			y_pos + 5, // Extra offset
-			12, // size
-			3, // dot radius
-			this.colors[index], // fill
-			data.name, //label
-			null, // value
-			8.75, // base_font_size
-			this.config.truncateLegends // truncate legends
+			y_pos + 5,
+			LEGEND_DOT_SIZE,
+			LEGEND_DOT_SIZE / 2,
+			this.colors[index],
+			data.name,
+			null,
+			LEGEND_FONT_SIZE,
+			this.config.truncateLegends
 		);
 	}
 
