@@ -320,7 +320,8 @@ let componentConfigs = {
 					{
 						zeroLine: data.zeroLine,
 						barsWidth: data.barsWidth,
-						minHeight: c.minHeight
+						minHeight: c.minHeight,
+						radius: c.radius
 					}
 				);
 			});
@@ -358,7 +359,7 @@ let componentConfigs = {
 			this.store.map((bar, i) => {
 				animateElements = animateElements.concat(animateBar(
 					bar, newXPos[i], newYPos[i], newData.barWidth, newOffsets[i],
-					{ zeroLine: newData.zeroLine }
+					{ zeroLine: newData.zeroLine, minHeight: this.constants.minHeight, radius: this.constants.radius }
 				));
 			});
 

@@ -1,4 +1,5 @@
-import { getBarHeightAndYAttr, getSplineCurvePointsStr } from './draw-utils';
+import { getSplineCurvePointsStr } from './draw-utils';
+import { barPathStr, getBarGeometry } from './draw';
 
 export const UNIT_ANIM_DUR = 350;
 export const PATH_ANIM_DUR = 350;
@@ -43,24 +44,26 @@ export function animateRegion(rectGroup, newY1, newY2, oldY2) {
 }
 
 export function animateBar(bar, x, yTop, width, offset = 0, meta = {}) {
-	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
-	y -= offset;
-	if (bar.nodeName !== 'rect') {
-		let rect = bar.childNodes[0];
-		let rectAnim = [
-			rect,
-			{ width: width, height: height },
+	let geometry = getBarGeometry(x, yTop, width, offset, meta);
+	if (bar.nodeName === 'g') {
+		let barPath = bar.childNodes[0];
+		let pathAnim = [
+			barPath,
+			{ d: barPathStr(0, 0, geometry.width, geometry.height, meta.radius, geometry.roundBottom) },
 			UNIT_ANIM_DUR,
 			STD_EASING
 		];
 
 		let oldCoordStr = bar.getAttribute("transform").split("(")[1].slice(0, -1);
-		let groupAnim = translate(bar, oldCoordStr, [x, y], MARKER_LINE_ANIM_DUR);
-		return [rectAnim, groupAnim];
-	} else {
-		return [[bar, { width: width, height: height, x: x, y: y }, UNIT_ANIM_DUR, STD_EASING]];
+		let groupAnim = translate(bar, oldCoordStr, [geometry.x, geometry.y], MARKER_LINE_ANIM_DUR);
+		return [pathAnim, groupAnim];
 	}
-	// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
+	return [[
+		bar,
+		{ d: barPathStr(geometry.x, geometry.y, geometry.width, geometry.height, meta.radius, geometry.roundBottom) },
+		UNIT_ANIM_DUR,
+		STD_EASING
+	]];
 }
 
 export function animateDot(dot, x, y) {

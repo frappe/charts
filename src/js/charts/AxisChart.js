@@ -3,11 +3,12 @@ import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
-import { floatTwo } from '../utils/helpers';
-import { makeOverlay, updateOverlay, legendDot } from '../utils/draw';
+import { floatTwo, getStringWidth } from '../utils/helpers';
+import { makeOverlay, updateOverlay, legendDot, makeHoverBand } from '../utils/draw';
 import {
 	getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
-	LINE_CHART_DOT_SIZE
+	BAR_CHART_RADIUS, BAR_CHART_GAP, BAR_CHART_MAX_WIDTH, LINE_CHART_DOT_SIZE, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE,
+	LEGEND_CHAR_WIDTH, LEGEND_ITEM_GAP, TOOLTIP_SIDE_GAP
 } from '../utils/constants';
 import { shortenLargeNumber } from '../utils/draw-utils';
 
@@ -48,6 +49,7 @@ export default class AxisChart extends BaseChart {
 
 		this.config.formatTooltipX = options.tooltipOptions.formatTooltipX;
 		this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
+		this.config.tooltipPlacement = options.tooltipOptions.placement || 'side';
 
 		this.config.valuesOverPoints = options.valuesOverPoints;
 		this.config.legendRowHeight = 30;
@@ -247,6 +249,7 @@ export default class AxisChart extends BaseChart {
 					index: index,
 					color: this.colors[index],
 					stacked: this.barOptions.stacked,
+					radius: this.barOptions.stacked ? 0 : (this.barOptions.radius ?? BAR_CHART_RADIUS),
 
 					// same for all datasets
 					valuesOverPoints: this.config.valuesOverPoints,
@@ -259,11 +262,18 @@ export default class AxisChart extends BaseChart {
 
 					let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
 					let barsWidth = s.unitWidth * (1 - spaceRatio);
-					let barWidth = barsWidth / (stacked ? 1 : barDatasets.length);
+					let barCount = stacked ? 1 : barDatasets.length;
+					let barWidth = barsWidth / barCount;
+					let gap = barCount < 2 ? 0 : Math.min(this.barOptions.gap ?? BAR_CHART_GAP, barWidth / 2);
+					let maxWidth = this.barOptions.maxWidth ?? BAR_CHART_MAX_WIDTH;
+					if (maxWidth && barWidth - gap > maxWidth) {
+						barWidth = maxWidth + gap;
+						barsWidth = barWidth * barCount;
+					}
 
 					let xPositions = s.xAxis.positions.map(x => x - barsWidth / 2);
 					if (!stacked) {
-						xPositions = xPositions.map(p => p + barWidth * index);
+						xPositions = xPositions.map(p => p + barWidth * index + gap / 2);
 					}
 
 					let labels = new Array(s.datasetLength).fill('');
@@ -289,7 +299,7 @@ export default class AxisChart extends BaseChart {
 
 						zeroLine: s.yAxis.zeroLine,
 						barsWidth: barsWidth,
-						barWidth: barWidth,
+						barWidth: barWidth - gap,
 					};
 				}.bind(this)
 			];
@@ -388,12 +398,17 @@ export default class AxisChart extends BaseChart {
 
 			this.dataByIndex[index] = {
 				label: label,
-				formattedLabel: formatX ? formatX(label) : label,
+				formattedLabel: formatX ? formatX(label, index) : label,
 				xPos: s.xAxis.positions[index],
 				values: values,
 				yExtreme: s.yExtremes[index],
 			};
 		});
+	}
+
+	makeTooltip() {
+		super.makeTooltip();
+		this.tip.placement = this.config.tooltipPlacement;
 	}
 
 	bindTooltip() {
@@ -406,26 +421,35 @@ export default class AxisChart extends BaseChart {
 
 			if (!this.config.valuesOverPoints && relY < this.height + getTopOffset(m)
 				&& relY > getTopOffset(m)) {
-				this.mapTooltipXPosition(relX);
+				this.mapTooltipXPosition(relX, 0, relY);
 			} else if (this.config.valuesOverPoints && e.target.getAttribute("class") == "data-point-value"){
-				this.mapTooltipXPosition(relX, -20)
+				this.mapTooltipXPosition(relX, -20, relY);
 			}else {
-				this.tip.hideTip();
+				this.hideTooltip();
 			}
 		});
+		this.container.addEventListener('mouseleave', () => this.hideTooltip());
 	}
 
-	mapTooltipXPosition(relX, y=0) {
+	hideTooltip() {
+		this.tip.hideTip();
+		if (this.hoverBand) this.hoverBand.style.display = 'none';
+	}
+
+	mapTooltipXPosition(relX, y = 0, pointerY = null) {
 		let s = this.state;
 		if (!s.yExtremes) return;
 
 		let index = getClosestInArray(relX, s.xAxis.positions, true);
 		if (index >= 0) {
 			let dbi = this.dataByIndex[index];
+			let side = this.tip.placement === 'side';
+			this.showHoverBand(dbi.xPos);
+			this.tip.sideOffset = side ? this.hoverBandWidth() / 2 + TOOLTIP_SIDE_GAP : 0;
 
 			this.tip.setValues(
 				dbi.xPos + this.tip.offset.x,
-				dbi.yExtreme + this.tip.offset.y + y,
+				side && pointerY !== null ? pointerY : dbi.yExtreme + this.tip.offset.y + y,
 				{ name: dbi.formattedLabel, value: '' },
 				dbi.values,
 				index
@@ -435,24 +459,68 @@ export default class AxisChart extends BaseChart {
 		}
 	}
 
-	renderLegend() {
-		let s = this.data;
-		if (s.datasets.length > 1) {
-			super.renderLegend(s.datasets);
+	hoverBandWidth() {
+		let hasBars = this.state.datasets.some(d => d.chartType === 'bar');
+		return hasBars ? this.state.unitWidth : 1;
+	}
+
+	showHoverBand(xPos) {
+		if (!this.hoverBand || !this.drawArea.contains(this.hoverBand)) {
+			this.hoverBand = makeHoverBand(this.height);
+			this.drawArea.insertBefore(this.hoverBand, this.drawArea.firstChild);
 		}
+		let width = this.hoverBandWidth();
+		this.hoverBand.setAttribute('x', xPos - width / 2);
+		this.hoverBand.setAttribute('width', width);
+		this.hoverBand.setAttribute('height', this.height);
+		this.hoverBand.style.display = '';
+	}
+
+	renderLegend() {
+		let datasets = this.data.datasets;
+		if (datasets.length <= 1) return;
+
+		this.legendArea.textContent = '';
+		let items = datasets.map((data, index) => ({
+			data,
+			index,
+			width: LEGEND_DOT_SIZE + LEGEND_DOT_SIZE + getStringWidth(data.name || '', LEGEND_CHAR_WIDTH),
+		}));
+
+		let rows = [[]];
+		let rowWidth = 0;
+		items.forEach(item => {
+			let width = item.width + (rowWidth ? LEGEND_ITEM_GAP : 0);
+			if (rowWidth && rowWidth + width > this.width) {
+				rows.push([]);
+				rowWidth = 0;
+				width = item.width;
+			}
+			rows[rows.length - 1].push(item);
+			rowWidth += width;
+		});
+
+		rows.forEach((row, i) => {
+			let total = row.reduce((sum, item) => sum + item.width, 0) + LEGEND_ITEM_GAP * (row.length - 1);
+			let x = Math.max(0, (this.width - total) / 2);
+			row.forEach(item => {
+				this.legendArea.appendChild(this.makeLegend(item.data, item.index, x, i * this.config.legendRowHeight));
+				x += item.width + LEGEND_ITEM_GAP;
+			});
+		});
 	}
 
 	makeLegend(data, index, x_pos, y_pos) {
 		return legendDot(
 			x_pos,
-			y_pos + 5, // Extra offset
-			12, // size
-			3, // dot radius
-			this.colors[index], // fill
-			data.name, //label
-			null, // value
-			8.75, // base_font_size
-			this.config.truncateLegends // truncate legends
+			y_pos + 5,
+			LEGEND_DOT_SIZE,
+			LEGEND_DOT_SIZE / 2,
+			this.colors[index],
+			data.name,
+			null,
+			LEGEND_FONT_SIZE,
+			this.config.truncateLegends
 		);
 	}
 

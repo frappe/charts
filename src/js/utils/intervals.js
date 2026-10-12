@@ -23,53 +23,32 @@ function normalize(x) {
 	return [sig * man, exp];
 }
 
-function getChartRangeIntervals(max, min = 0) {
-	let upperBound = Math.ceil(max);
-	let lowerBound = Math.floor(min);
-	let range = upperBound - lowerBound;
+const NICE_STEPS = [1, 2, 2.5, 5, 10];
+const TARGET_INTERVALS = 5;
 
-	let noOfParts = range;
-	let partSize = 1;
-
-	// To avoid too many partitions
-	if (range > 5) {
-		if (range % 2 !== 0) {
-			upperBound++;
-			// Recalc range
-			range = upperBound - lowerBound;
-		}
-		noOfParts = range / 2;
-		partSize = 2;
-	}
-
-	// Special case: 1 and 2
-	if (range <= 2) {
-		noOfParts = 4;
-		partSize = range / noOfParts;
-	}
-
-	// Special case: 0
-	if (range === 0) {
-		noOfParts = 5;
-		partSize = 1;
-	}
-
-	let intervals = [];
-	for (var i = 0; i <= noOfParts; i++) {
-		intervals.push(lowerBound + partSize * i);
-	}
-	return intervals;
+function getNiceStep(range) {
+	let roughStep = range / TARGET_INTERVALS;
+	let magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+	let niceStep = NICE_STEPS.find(step => step * magnitude >= roughStep);
+	return niceStep * magnitude;
 }
 
 function getChartIntervals(maxValue, minValue = 0) {
-	let [normalMaxValue, exponent] = normalize(maxValue);
-	let normalMinValue = minValue ? minValue / Math.pow(10, exponent) : 0;
+	let magnitude = Math.pow(10, normalize(maxValue)[1]);
+	let lowerBound = Math.floor(minValue / magnitude) * magnitude;
+	let step = magnitude;
+	let noOfParts = 5;
 
-	// Allow only 7 significant digits
-	normalMaxValue = normalMaxValue.toFixed(6);
+	if (maxValue > lowerBound) {
+		step = getNiceStep(maxValue - lowerBound);
+		lowerBound = Math.floor(lowerBound / step) * step;
+		noOfParts = Math.ceil((maxValue - lowerBound) / step);
+	}
 
-	let intervals = getChartRangeIntervals(normalMaxValue, normalMinValue);
-	intervals = intervals.map(value => value * Math.pow(10, exponent));
+	let intervals = [];
+	for (let i = 0; i <= noOfParts; i++) {
+		intervals.push(parseFloat((lowerBound + step * i).toPrecision(12)));
+	}
 	return intervals;
 }
 

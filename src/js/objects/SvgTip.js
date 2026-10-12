@@ -19,6 +19,9 @@ export default class SvgTip {
 		this.top = 0;
 		this.left = 0;
 
+		this.placement = 'top';
+		this.sideOffset = 0;
+
 		this.setup();
 	}
 
@@ -75,10 +78,8 @@ export default class SvgTip {
 			let value = set.formatted === 0 || set.formatted ? set.formatted : set.value;
 			let li = $.create('li', {
 				innerHTML: `<div class="tooltip-legend" style="background: ${color};"></div>
-					<div>
-						<div class="tooltip-value">${value === 0 || value ? value : ''}</div>
-						<div class="tooltip-label">${set.title ? set.title : ''}</div>
-					</div>`
+					<div class="tooltip-label">${set.title ? set.title : ''}</div>
+					<div class="tooltip-value">${value === 0 || value ? value : ''}</div>`
 			});
 
 			this.dataPointList.appendChild(li);
@@ -87,6 +88,12 @@ export default class SvgTip {
 
 	calcPosition() {
 		let width = this.container.offsetWidth;
+		this.container.classList.toggle('side', this.placement === 'side');
+
+		if (this.placement === 'side') {
+			this.calcSidePosition(width);
+			return;
+		}
 
 		this.top = this.y - this.container.offsetHeight
 			- TOOLTIP_POINTER_TRIANGLE_HEIGHT;
@@ -107,6 +114,19 @@ export default class SvgTip {
 		} else {
 			pointer.style.left = `50%`;
 		}
+	}
+
+	calcSidePosition(width) {
+		let height = this.container.offsetHeight;
+		let maxLeft = this.parent.offsetWidth - width;
+		let maxTop = this.parent.offsetHeight - height;
+
+		this.left = this.x + this.sideOffset;
+		if (this.left > maxLeft) {
+			this.left = this.x - this.sideOffset - width;
+		}
+		this.left = Math.max(0, Math.min(this.left, maxLeft));
+		this.top = Math.max(0, Math.min(this.y - height / 2, maxTop));
 	}
 
 	setValues(x, y, title = {}, listValues = [], index = -1) {
