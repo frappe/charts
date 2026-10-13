@@ -533,7 +533,7 @@ export default class AxisChart extends BaseChart {
 		if (this.overlayGuides) {
 			this.overlayGuides.forEach(g => {
 				let o = g.overlay;
-				o.parentNode.removeChild(o);
+				o.remove();
 			});
 		}
 
@@ -562,7 +562,7 @@ export default class AxisChart extends BaseChart {
 		if (this.overlayGuides) {
 			this.overlayGuides.forEach(g => {
 				let o = g.overlay;
-				o.parentNode.removeChild(o);
+				o.remove();
 			});
 		}
 	}
