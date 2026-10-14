@@ -3,7 +3,7 @@ import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
-import { floatTwo, getStringWidth } from '../utils/helpers';
+import { floatTwo, getStringWidth, getLegendRows } from '../utils/helpers';
 import { makeOverlay, updateOverlay, legendDot, makeHoverBand } from '../utils/draw';
 import {
 	getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
@@ -481,31 +481,10 @@ export default class AxisChart extends BaseChart {
 		if (datasets.length <= 1) return;
 
 		this.legendArea.textContent = '';
-		let items = datasets.map((data, index) => ({
-			data,
-			index,
-			width: LEGEND_DOT_SIZE + LEGEND_DOT_SIZE + getStringWidth(data.name || '', LEGEND_CHAR_WIDTH),
-		}));
-
-		let rows = [[]];
-		let rowWidth = 0;
-		items.forEach(item => {
-			let width = item.width + (rowWidth ? LEGEND_ITEM_GAP : 0);
-			if (rowWidth && rowWidth + width > this.width) {
-				rows.push([]);
-				rowWidth = 0;
-				width = item.width;
-			}
-			rows[rows.length - 1].push(item);
-			rowWidth += width;
-		});
-
-		rows.forEach((row, i) => {
-			let total = row.reduce((sum, item) => sum + item.width, 0) + LEGEND_ITEM_GAP * (row.length - 1);
-			let x = Math.max(0, (this.width - total) / 2);
-			row.forEach(item => {
-				this.legendArea.appendChild(this.makeLegend(item.data, item.index, x, i * this.config.legendRowHeight));
-				x += item.width + LEGEND_ITEM_GAP;
+		let widths = datasets.map(data => LEGEND_DOT_SIZE * 2 + getStringWidth(data.name || '', LEGEND_CHAR_WIDTH));
+		getLegendRows(widths, this.width, LEGEND_ITEM_GAP).forEach((row, i) => {
+			row.forEach(({ index, x }) => {
+				this.legendArea.appendChild(this.makeLegend(datasets[index], index, x, i * this.config.legendRowHeight));
 			});
 		});
 	}

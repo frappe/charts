@@ -71,10 +71,11 @@ export default class SvgTip {
 		}
 
 		this.title.innerHTML = title;
+		this.title.style.display = this.titleName || this.titleValue ? '' : 'none';
 		this.dataPointList.innerHTML = '';
 
 		this.listValues.map((set, i) => {
-			const color = this.colors[i] || 'black';
+			const color = set.color || this.colors[i] || 'black';
 			let value = set.formatted === 0 || set.formatted ? set.formatted : set.value;
 			let li = $.create('li', {
 				innerHTML: `<div class="tooltip-legend" style="background: ${color};"></div>

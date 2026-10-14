@@ -78,6 +78,13 @@ export const BAR_CHART_GAP = 2;
 export const BAR_CHART_MAX_WIDTH = 32;
 export const MIN_BAR_PERCENT_HEIGHT = 0.00;
 
+export const DONUT_GAP_ANGLE = 0.03;
+export const DONUT_LIFT_RATIO = 0.04;
+export const DONUT_THICKNESS_RATIO = 0.3;
+export const DONUT_CORNER_RATIO = 0.15;
+export const DONUT_VALUE_FONT_SIZE = 20;
+export const DONUT_LABEL_FONT_SIZE = 12;
+
 export const LINE_CHART_DOT_SIZE = 4;
 export const DOT_OVERLAY_SIZE_INCR = 4;
 

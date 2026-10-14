@@ -83,6 +83,33 @@
 		}
 	}
 
+	.donut-path {
+		fill-rule: evenodd;
+		transition: opacity 150ms ease;
+
+		&.is-dim {
+			opacity: 0.75;
+		}
+	}
+
+	.donut-center-value {
+		fill: var(--charts-label-color);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		pointer-events: none;
+	}
+
+	.donut-center-label,
+	.donut-legend-value {
+		fill: var(--charts-label-color);
+		fill-opacity: 0.6;
+		pointer-events: none;
+	}
+
+	.donut-legend-value {
+		font-variant-numeric: tabular-nums;
+	}
+
 	.legend-dataset-label {
 		fill: var(--charts-legend-label);
 	}
