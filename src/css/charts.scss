@@ -1,5 +1,6 @@
 :root {
 	--charts-label-color: #313b44;
+	--charts-muted-color: #7c7c7c;
 	--charts-axis-line-color: #f4f5f6;
 	--charts-grid-dasharray: 2, 3;
 	--charts-hover-band: rgba(0, 0, 0, 0.04);
@@ -92,21 +93,29 @@
 		}
 	}
 
+	.donut-legend-item {
+		outline: none;
+		transition: opacity 150ms ease;
+
+		&.is-dim {
+			opacity: 0.5;
+		}
+	}
+
 	.donut-center-value {
-		fill: var(--charts-label-color);
+		fill: var(--charts-legend-label);
 		font-weight: 600;
 		font-variant-numeric: tabular-nums;
 		pointer-events: none;
 	}
 
-	.donut-center-label,
-	.donut-legend-value {
-		fill: var(--charts-label-color);
-		fill-opacity: 0.6;
+	.donut-center-label {
+		fill: var(--charts-muted-color);
 		pointer-events: none;
 	}
 
 	.donut-legend-value {
+		fill: var(--charts-muted-color);
 		font-variant-numeric: tabular-nums;
 	}
 

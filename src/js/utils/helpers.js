@@ -89,7 +89,7 @@ export function getLegendRows(widths, maxWidth, gap) {
 		let total = row.reduce((sum, item) => sum + item.width, 0) + gap * (row.length - 1);
 		let x = Math.max(0, (maxWidth - total) / 2);
 		return row.map(item => {
-			let position = { index: item.index, x };
+			let position = { index: item.index, x, width: item.width };
 			x += item.width + gap;
 			return position;
 		});

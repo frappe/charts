@@ -157,6 +157,7 @@ export default class DonutChart extends AggregationChart {
 
 	placeCenter() {
 		let { x, y } = this.center;
+		if (this.centerLabel.textContent) y -= (DONUT_LABEL_FONT_SIZE + DONUT_VALUE_FONT_SIZE * 0.35) / 2 + 1;
 		[this.centerValue, this.centerLabel].forEach(text => {
 			text.setAttribute('transform', `translate(${x}, ${y})`);
 		});
@@ -164,16 +165,19 @@ export default class DonutChart extends AggregationChart {
 
 	render(components, animate) {
 		this.clearHover();
-		this.setCenter(this.config.center.value, this.config.center.label);
+		this.setCenter();
 		this.svg.setAttribute('aria-label', this.state.labels
 			.map((label, i) => `${label}: ${this.formatValue(this.state.sliceTotals[i])} (${this.state.percentages[i]}%)`)
 			.join(', '));
 		super.render(components, animate);
 	}
 
-	setCenter(value, label) {
-		this.centerValue.textContent = value == null ? '' : value;
+	setCenter() {
+		let { value, label } = this.config.center;
+		if (value == null) value = this.formatValue(this.state.grandTotal);
+		this.centerValue.textContent = value;
 		this.centerLabel.textContent = label == null ? '' : label;
+		this.placeCenter();
 	}
 
 	formatValue(value) {
@@ -189,8 +193,17 @@ export default class DonutChart extends AggregationChart {
 		let totals = this.state.sliceTotals;
 		this.legendArea.textContent = '';
 		this.legendRows.forEach((row, r) => {
-			row.forEach(({ index, x }) => {
-				this.legendArea.appendChild(this.makeLegend(totals[index], index, x, r * this.config.legendRowHeight));
+			row.forEach(({ index, x, width }) => {
+				let item = this.makeLegend(totals[index], index, x, r * this.config.legendRowHeight);
+				item.insertBefore(createSVG('rect', {
+					className: 'donut-legend-hit',
+					x: -LEGEND_DOT_SIZE / 2,
+					y: -this.config.legendRowHeight / 2,
+					width: width + LEGEND_DOT_SIZE,
+					height: this.config.legendRowHeight,
+					fill: 'transparent'
+				}), item.firstChild);
+				this.legendArea.appendChild(item);
 			});
 		});
 	}
@@ -248,11 +261,10 @@ export default class DonutChart extends AggregationChart {
 		this.clearHover();
 		this.activeIndex = i;
 
-		let s = this.state;
 		let slices = this.components.get(this.sliceName).store;
 		slices.forEach((slice, j) => slice.classList.toggle('is-dim', j !== i));
 		slices[i].setAttribute('d', this.slicePath(i, this.radii.ro + this.radii.lift));
-		this.setCenter(this.formatValue(s.sliceTotals[i]), `${s.labels[i]} · ${s.percentages[i]}%`);
+		this.legendItems().forEach((item, j) => item.classList.toggle('is-dim', j !== i));
 	}
 
 	clearHover() {
@@ -262,8 +274,8 @@ export default class DonutChart extends AggregationChart {
 		let slices = this.components.get(this.sliceName).store;
 		slices[this.activeIndex].setAttribute('d', this.slicePath(this.activeIndex, this.radii.ro));
 		slices.forEach(slice => slice.classList.remove('is-dim'));
+		this.legendItems().forEach(item => item.classList.remove('is-dim'));
 		this.activeIndex = -1;
-		this.setCenter(this.config.center.value, this.config.center.label);
 	}
 
 	showSliceTip(i, e) {
@@ -280,5 +292,9 @@ export default class DonutChart extends AggregationChart {
 			}]
 		);
 		this.tip.showTip();
+	}
+
+	legendItems() {
+		return this.legendArea ? Array.from(this.legendArea.children) : [];
 	}
 }
