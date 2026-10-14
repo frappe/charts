@@ -1,10 +1,10 @@
 import AggregationChart from './AggregationChart';
 import { getComponent } from '../objects/ChartComponents';
-import { getOffset } from '../utils/dom';
+import { getOffset, getTextWidth } from '../utils/dom';
 import { createSVG, legendDot, makeText, makeDonutSectorStr, makeDonutRingStr } from '../utils/draw';
-import { getStringWidth, getLegendRows, wholePercentages } from '../utils/helpers';
+import { getLegendRows, wholePercentages } from '../utils/helpers';
 import {
-	ANGLE_RATIO, getExtraHeight, getLeftOffset, getTopOffset, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE, LEGEND_CHAR_WIDTH, LEGEND_ITEM_GAP,
+	ANGLE_RATIO, getExtraHeight, getLeftOffset, getTopOffset, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE, LEGEND_ITEM_GAP,
 	TOOLTIP_SIDE_GAP, DONUT_GAP_ANGLE, DONUT_LIFT_RATIO, DONUT_THICKNESS_RATIO, DONUT_CORNER_RATIO,
 	DONUT_VALUE_FONT_SIZE, DONUT_LABEL_FONT_SIZE
 } from '../utils/constants';
@@ -32,7 +32,7 @@ export default class DonutChart extends AggregationChart {
 		this.config.clockWise = args.clockWise !== undefined ? args.clockWise : 1;
 		this.config.strokeWidth = args.strokeWidth;
 		this.config.center = args.center || {};
-		this.config.legendRowHeight = 24;
+		this.config.legendRowHeight = 32;
 	}
 
 	calc() {
@@ -53,9 +53,10 @@ export default class DonutChart extends AggregationChart {
 
 	calcLegend() {
 		if (!this.config.showLegend) return;
+		let font = `${LEGEND_FONT_SIZE * 1.6}px ${getComputedStyle(this.container).fontFamily}`;
 		let widths = this.state.sliceTotals
 			.slice(0, this.config.maxLegendPoints)
-			.map((total, i) => LEGEND_DOT_SIZE * 2 + getStringWidth(this.legendText(i), LEGEND_CHAR_WIDTH));
+			.map((total, i) => LEGEND_DOT_SIZE + LEGEND_FONT_SIZE + 6 + getTextWidth(this.legendText(i), font));
 
 		this.legendRows = getLegendRows(widths, this.width, LEGEND_ITEM_GAP);
 		this.measures.legendHeight = this.legendRows.length * this.config.legendRowHeight;
