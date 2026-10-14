@@ -125,6 +125,7 @@ export default class DonutChart extends AggregationChart {
 	}
 
 	makeChartArea() {
+		this.activeIndex = -1;
 		super.makeChartArea();
 		this.svg.setAttribute('role', 'img');
 
