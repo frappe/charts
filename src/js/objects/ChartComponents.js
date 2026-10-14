@@ -74,15 +74,13 @@ let componentConfigs = {
 	donutSlices: {
 		layerClass: 'donut-slices',
 		makeElements(data) {
-			return data.sliceStrings.map((s, i) => {
-				let slice = makePath(s, 'donut-path', data.colors[i], 'none', data.strokeWidth);
-				slice.style.transition = 'transform .3s;';
-				return slice;
-			});
+			return data.sliceStrings.map((s, i) => makePath(s, 'donut-path', 'none', data.colors[i]));
 		},
 
 		animateElements(newData) {
-			return this.store.map((slice, i) => animatePathStr(slice, newData.sliceStrings[i]));
+			return this.store
+				.filter((slice, i) => newData.sliceStrings[i])
+				.map((slice, i) => animatePathStr(slice, newData.sliceStrings[i]));
 		},
 	},
 	pieSlices: {

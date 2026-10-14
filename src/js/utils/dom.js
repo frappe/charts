@@ -53,6 +53,14 @@ export function getOffset(element) {
 	};
 }
 
+let measureContext;
+
+export function getTextWidth(text, font) {
+	measureContext = measureContext || document.createElement('canvas').getContext('2d');
+	measureContext.font = font;
+	return measureContext.measureText(text).width;
+}
+
 // https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/offsetParent
 // an element's offsetParent property will return null whenever it, or any of its parents,
 // is hidden via the display style property.

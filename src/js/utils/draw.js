@@ -130,29 +130,46 @@ export function makeCircleStr(startPosition, endPosition, center, radius, clockW
 		${arcEndX} ${arcEndY} z`;
 }
 
-export function makeArcStrokePathStr(startPosition, endPosition, center, radius, clockWise = 1, largeArc = 0) {
-	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
-	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
+export function makeDonutSectorStr(center, innerRadius, outerRadius, startAngle, endAngle, cornerRadius) {
+	let span = endAngle - startAngle;
+	let cr = Math.min(cornerRadius, (outerRadius - innerRadius) / 2, (span * innerRadius) / 2.2);
+	let outerInset = cr / outerRadius;
+	let innerInset = cr / innerRadius;
+	let largeOuter = span - 2 * outerInset > Math.PI ? 1 : 0;
+	let largeInner = span - 2 * innerInset > Math.PI ? 1 : 0;
+	let point = (r, a) => `${center.x + r * Math.cos(a)} ${center.y + r * Math.sin(a)}`;
 
-	return `M${arcStartX} ${arcStartY}
-		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
-		${arcEndX} ${arcEndY}`;
+	return [
+		`M ${point(outerRadius, startAngle + outerInset)}`,
+		`A ${outerRadius} ${outerRadius} 0 ${largeOuter} 1 ${point(outerRadius, endAngle - outerInset)}`,
+		`Q ${point(outerRadius, endAngle)} ${point(outerRadius - cr, endAngle)}`,
+		`L ${point(innerRadius + cr, endAngle)}`,
+		`Q ${point(innerRadius, endAngle)} ${point(innerRadius, endAngle - innerInset)}`,
+		`A ${innerRadius} ${innerRadius} 0 ${largeInner} 0 ${point(innerRadius, startAngle + innerInset)}`,
+		`Q ${point(innerRadius, startAngle)} ${point(innerRadius + cr, startAngle)}`,
+		`L ${point(outerRadius - cr, startAngle)}`,
+		`Q ${point(outerRadius, startAngle)} ${point(outerRadius, startAngle + outerInset)}`,
+		'Z'
+	].join(' ');
 }
 
-export function makeStrokeCircleStr(startPosition, endPosition, center, radius, clockWise = 1, largeArc = 0) {
-	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
-	let [arcEndX, midArc, arcEndY] = [center.x + endPosition.x, radius * 2 + arcStartY, center.y + startPosition.y];
+export function makeDonutRingStr(center, innerRadius, outerRadius) {
+	let { x, y } = center;
+	let arc = (r, sweep, toX) => `A ${r} ${r} 0 1 ${sweep} ${toX} ${y}`;
 
-	return `M${arcStartX} ${arcStartY}
-		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
-		${arcEndX} ${midArc}
-		M${arcStartX} ${midArc}
-		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
-		${arcEndX} ${arcEndY}`;
+	return [
+		`M ${x + outerRadius} ${y}`,
+		arc(outerRadius, 1, x - outerRadius),
+		arc(outerRadius, 1, x + outerRadius),
+		`M ${x + innerRadius} ${y}`,
+		arc(innerRadius, 0, x - innerRadius),
+		arc(innerRadius, 0, x + innerRadius),
+		'Z'
+	].join(' ');
 }
 
 export function makeGradient(svgDefElem, color, lighter = false) {
-	let gradientId = 'path-fill-gradient' + '-' + color + '-' + (lighter ? 'lighter' : 'default');
+	let gradientId = ('path-fill-gradient-' + color + '-' + (lighter ? 'lighter' : 'default')).replace(/[^\w-]/g, '');
 	let gradientDef = renderVerticalGradient(svgDefElem, gradientId);
 	let opacities = [1, 0.6, 0.2];
 	if (lighter) {

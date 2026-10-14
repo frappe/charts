@@ -64,6 +64,55 @@ export function getStringWidth(string, charWidth) {
 	return (string+"").length * charWidth;
 }
 
+/**
+ * Lays out legend items in centred rows that wrap at maxWidth
+ * @param {Number[]} widths Width of each item
+ * @param {Number} maxWidth Width of a row
+ * @param {Number} gap Space between items in a row
+ */
+export function getLegendRows(widths, maxWidth, gap) {
+	if (!widths.length) return [];
+	let rows = [[]];
+	let rowWidth = 0;
+	widths.forEach((width, index) => {
+		let needed = width + (rowWidth ? gap : 0);
+		if (rowWidth && rowWidth + needed > maxWidth) {
+			rows.push([]);
+			rowWidth = 0;
+			needed = width;
+		}
+		rows[rows.length - 1].push({ index, width });
+		rowWidth += needed;
+	});
+
+	return rows.map(row => {
+		let total = row.reduce((sum, item) => sum + item.width, 0) + gap * (row.length - 1);
+		let x = Math.max(0, (maxWidth - total) / 2);
+		return row.map(item => {
+			let position = { index: item.index, x, width: item.width };
+			x += item.width + gap;
+			return position;
+		});
+	});
+}
+
+/**
+ * Rounds fractions to whole percentages that add up to exactly 100
+ * (largest remainder method)
+ * @param {Number[]} fractions Fractions of a whole, summing to 1
+ */
+export function wholePercentages(fractions) {
+	let raw = fractions.map(f => f * 100);
+	let out = raw.map(Math.floor);
+	let short = 100 - out.reduce((a, b) => a + b, 0);
+	raw.map((r, i) => [r - out[i], i])
+		.sort((a, b) => b[0] - a[0])
+		.forEach(([, i]) => {
+			if (short-- > 0) out[i] += 1;
+		});
+	return out;
+}
+
 export function bindChange(obj, getFn, setFn) {
 	return new Proxy(obj, {
 		set: function(target, prop, value) {

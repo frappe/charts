@@ -1,5 +1,6 @@
 :root {
 	--charts-label-color: #313b44;
+	--charts-muted-color: #7c7c7c;
 	--charts-axis-line-color: #f4f5f6;
 	--charts-grid-dasharray: 2, 3;
 	--charts-hover-band: rgba(0, 0, 0, 0.04);
@@ -8,6 +9,7 @@
 	--charts-tooltip-label: var(--charts-label-color);
 	--charts-tooltip-value: #192734;
 	--charts-tooltip-bg: #ffffff;
+	--charts-tooltip-border: transparent;
 
 	--charts-stroke-width: 2px;
 	--charts-dataset-circle-stroke: #ffffff;
@@ -83,6 +85,41 @@
 		}
 	}
 
+	.donut-path {
+		fill-rule: evenodd;
+		transition: opacity 150ms ease;
+
+		&.is-dim {
+			opacity: 0.75;
+		}
+	}
+
+	.donut-legend-item {
+		outline: none;
+		transition: opacity 150ms ease;
+
+		&.is-dim {
+			opacity: 0.5;
+		}
+	}
+
+	.donut-center-value {
+		fill: var(--charts-tooltip-value);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		pointer-events: none;
+	}
+
+	.donut-center-label {
+		fill: var(--charts-muted-color);
+		pointer-events: none;
+	}
+
+	.donut-legend-value {
+		fill: var(--charts-muted-color);
+		font-variant-numeric: tabular-nums;
+	}
+
 	.legend-dataset-label {
 		fill: var(--charts-legend-label);
 	}
@@ -99,6 +136,7 @@
 	font-size: 12px;
 	text-align: center;
 	background: var(--charts-tooltip-bg);
+	border: 1px solid var(--charts-tooltip-border);
 	box-shadow: 0px 1px 4px rgba(17, 43, 66, 0.1),
 		0px 2px 6px rgba(17, 43, 66, 0.08),
 		0px 40px 30px -30px rgba(17, 43, 66, 0.1);
@@ -191,6 +229,12 @@
 				margin-left: 16px;
 				font-weight: 600;
 				color: var(--charts-tooltip-value);
+
+				.tooltip-muted {
+					margin-left: 4px;
+					font-weight: normal;
+					color: var(--charts-muted-color);
+				}
 			}
 		}
 	}
