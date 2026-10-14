@@ -287,7 +287,7 @@ export default class DonutChart extends AggregationChart {
 			{ name: '', value: '' },
 			[{
 				title: s.labels[i],
-				formatted: `${this.formatValue(s.sliceTotals[i])} · ${s.percentages[i]}%`,
+				formatted: `${this.formatValue(s.sliceTotals[i])} <span class="tooltip-muted">${s.percentages[i]}%</span>`,
 				color: this.colors[i]
 			}]
 		);
