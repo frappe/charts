@@ -576,7 +576,7 @@ export function datasetBar(x, yTop, width, color, label = '', index = 0, offset 
 
 	let path = createSVG('path', {
 		className: `bar mini`,
-		style: `fill: ${color}`,
+		style: `fill: ${color}; stroke: none`,
 		'data-point-index': index,
 		d: barPathStr(origin[0], origin[1], bar.width, bar.height, meta.radius, bar.roundBottom)
 	});
