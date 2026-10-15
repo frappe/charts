@@ -2,7 +2,7 @@ import AggregationChart from './AggregationChart';
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, getTextWidth } from '../utils/dom';
 import { createSVG, legendDot, makeText, makeDonutSectorStr, makeDonutRingStr } from '../utils/draw';
-import { getLegendRows, wholePercentages } from '../utils/helpers';
+import { escapeHTML, getLegendRows, wholePercentages } from '../utils/helpers';
 import {
 	ANGLE_RATIO, getExtraHeight, getLeftOffset, getTopOffset, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE, LEGEND_ITEM_GAP,
 	TOOLTIP_SIDE_GAP, DONUT_GAP_ANGLE, DONUT_LIFT_RATIO, DONUT_THICKNESS_RATIO, DONUT_CORNER_RATIO,
@@ -286,8 +286,8 @@ export default class DonutChart extends AggregationChart {
 			e.pageY - offset.top,
 			{ name: '', value: '' },
 			[{
-				title: s.labels[i],
-				formatted: `${this.formatValue(s.sliceTotals[i])} <span class="tooltip-muted">${s.percentages[i]}%</span>`,
+				title: escapeHTML(s.labels[i]),
+				formatted: `${escapeHTML(this.formatValue(s.sliceTotals[i]))} <span class="tooltip-muted">${s.percentages[i]}%</span>`,
 				color: this.colors[i]
 			}]
 		);

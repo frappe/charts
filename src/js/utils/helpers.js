@@ -113,6 +113,12 @@ export function wholePercentages(fractions) {
 	return out;
 }
 
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+export function escapeHTML(value) {
+	return String(value == null ? '' : value).replace(/[&<>"']/g, char => HTML_ESCAPES[char]);
+}
+
 export function bindChange(obj, getFn, setFn) {
 	return new Proxy(obj, {
 		set: function(target, prop, value) {
