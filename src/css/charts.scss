@@ -85,6 +85,25 @@
 		}
 	}
 
+	.horizontal-bar-grid {
+		stroke: var(--charts-axis-line-color);
+		stroke-dasharray: var(--charts-grid-dasharray);
+	}
+
+	.horizontal-bar-label,
+	.horizontal-bar-tick {
+		fill: var(--charts-muted-color);
+	}
+
+	.horizontal-bar-value {
+		fill: var(--charts-legend-label);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.horizontal-bar-tick {
+		font-variant-numeric: tabular-nums;
+	}
+
 	.donut-path {
 		fill-rule: evenodd;
 		transition: opacity 150ms ease;
