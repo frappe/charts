@@ -93,6 +93,7 @@ export const HBAR_VALUE_GAP = 8;
 export const HBAR_AXIS_HEIGHT = 28;
 export const HBAR_FONT_SIZE = 13;
 export const HBAR_TICK_FONT_SIZE = 12;
+export const HBAR_LEGEND_ROW_HEIGHT = 30;
 
 export const LINE_CHART_DOT_SIZE = 4;
 export const DOT_OVERLAY_SIZE_INCR = 4;
