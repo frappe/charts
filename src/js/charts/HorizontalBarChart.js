@@ -7,7 +7,7 @@ import { getTopOffset, getLeftOffset, getExtraHeight } from '../utils/constants'
 import {
 	BAR_CHART_RADIUS, BAR_CHART_GAP, TOOLTIP_SIDE_GAP, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE, LEGEND_ITEM_GAP,
 	HBAR_ROW_HEIGHT, HBAR_BAR_HEIGHT, HBAR_LABEL_WIDTH, HBAR_LABEL_GAP, HBAR_VALUE_GAP, HBAR_AXIS_HEIGHT,
-	HBAR_FONT_SIZE, HBAR_TICK_FONT_SIZE, HBAR_LEGEND_ROW_HEIGHT
+	HBAR_FONT_SIZE, HBAR_TICK_FONT_SIZE, HBAR_LEGEND_ROW_HEIGHT, HBAR_GROUP_BAR_HEIGHT
 } from '../utils/constants';
 
 export default class HorizontalBarChart extends BaseChart {
@@ -20,12 +20,13 @@ export default class HorizontalBarChart extends BaseChart {
 		let m = this.measures;
 		let data = options.data || {};
 		let rows = (data.labels || []).length;
+		this.config.legendEnabled = this.config.showLegend;
 		let showLegend = (data.datasets || []).length > 1 && this.config.showLegend;
 		this.config.showLegend = showLegend ? 1 : 0;
 		m.legendHeight = showLegend ? HBAR_LEGEND_ROW_HEIGHT : 0;
 		m.margins = { top: 0, bottom: 0, left: 0, right: 0 };
 		m.paddings = { top: 4, bottom: HBAR_AXIS_HEIGHT, left: 0, right: 0 };
-		m.baseHeight = rows * HBAR_ROW_HEIGHT + m.paddings.top + m.paddings.bottom + m.legendHeight
+		m.baseHeight = rows * rowHeightFor((data.datasets || []).length, (options.barOptions || {}).stacked) + m.paddings.top + m.paddings.bottom + m.legendHeight
 			+ (options.title ? m.titleHeight : 0);
 	}
 
@@ -34,6 +35,7 @@ export default class HorizontalBarChart extends BaseChart {
 
 		let barOptions = args.barOptions || {};
 		this.type = 'horizontal-bar';
+		this.config.autoHeight = !args.height;
 		this.config.stacked = barOptions.stacked ? 1 : 0;
 		this.config.labelWidth = barOptions.labelWidth || HBAR_LABEL_WIDTH;
 		this.config.radius = barOptions.radius !== undefined ? barOptions.radius : BAR_CHART_RADIUS;
@@ -60,7 +62,10 @@ export default class HorizontalBarChart extends BaseChart {
 		s.font = `${HBAR_FONT_SIZE}px ${getComputedStyle(this.container).fontFamily}`;
 
 		this.calcLegend();
-		this.height = this.baseHeight - getExtraHeight(this.measures);
+		if (this.config.autoHeight) {
+			this.baseHeight = s.labels.length * rowHeightFor(s.datasets.length, s.stacked) + getExtraHeight(this.measures);
+		}
+		this.height = Math.max(this.baseHeight - getExtraHeight(this.measures), 0);
 
 		let ends = s.stacked
 			? s.labels.flatMap((label, i) => this.stackTotals(i))
@@ -81,7 +86,11 @@ export default class HorizontalBarChart extends BaseChart {
 	}
 
 	calcLegend() {
-		if (!this.config.showLegend) return;
+		this.config.showLegend = this.config.legendEnabled && this.state.datasets.length > 1 ? 1 : 0;
+		if (!this.config.showLegend) {
+			this.measures.legendHeight = 0;
+			return;
+		}
 		let font = `${LEGEND_FONT_SIZE * 1.6}px ${getComputedStyle(this.container).fontFamily}`;
 		let widths = this.state.datasets.map(d => LEGEND_DOT_SIZE * 2 + getTextWidth(d.name, font));
 		this.legendRows = getLegendRows(widths, this.width, LEGEND_ITEM_GAP);
@@ -113,6 +122,12 @@ export default class HorizontalBarChart extends BaseChart {
 
 	setupComponents() {
 		this.components = new Map();
+	}
+
+	update(data) {
+		if (!data) return;
+		this.data = this.prepareData(data);
+		this.draw();
 	}
 
 	render() {
@@ -280,6 +295,12 @@ export default class HorizontalBarChart extends BaseChart {
 		this.tip.hideTip();
 		if (this.hoverBand) this.hoverBand.style.display = 'none';
 	}
+}
+
+function rowHeightFor(datasetCount, stacked) {
+	if (stacked || datasetCount <= 1) return HBAR_ROW_HEIGHT;
+	let bars = datasetCount * HBAR_GROUP_BAR_HEIGHT + (datasetCount - 1) * BAR_CHART_GAP;
+	return Math.max(HBAR_ROW_HEIGHT, Math.ceil(bars / 0.8));
 }
 
 function horizontalBarPathStr(x0, x1, y, height, radius) {
