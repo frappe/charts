@@ -75,6 +75,10 @@ export function zeroDataPrep(realData) {
 		}),
 	};
 
+	if (realData.xMarkers) {
+		zeroData.xMarkers = [];
+	}
+
 	if (realData.yMarkers) {
 		zeroData.yMarkers = [
 			{

@@ -99,3 +99,28 @@ export function getSplineCurvePointsStr(xList, yList) {
 
 	return pointStr(points, bezierCommand);
 }
+
+// One subpath per run of points; a gap (gaps[i] true) breaks the line and its region
+export function getLinePathStrs(xList, yList, options = {}) {
+	let runs = [[]];
+	yList.forEach((y, i) => {
+		if (options.gaps && options.gaps[i]) {
+			if (runs[runs.length - 1].length) runs.push([]);
+		} else {
+			runs[runs.length - 1].push(i);
+		}
+	});
+
+	let line = '';
+	let region = '';
+	runs.filter(run => run.length).forEach(run => {
+		let xs = run.map(i => xList[i]);
+		let ys = run.map(i => yList[i]);
+		let pointsStr = options.spline
+			? getSplineCurvePointsStr(xs, ys)
+			: ys.map((y, i) => xs[i] + ',' + y).join('L');
+		line += 'M' + pointsStr;
+		region += `M${xs[0]},${options.zeroLine}L${pointsStr}L${xs[xs.length - 1]},${options.zeroLine}`;
+	});
+	return { line, region };
+}

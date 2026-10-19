@@ -1,5 +1,5 @@
 import { makeSVGGroup } from '../utils/draw';
-import { makeText, makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
+import { makeText, makePath, xLine, yLine, xMarker, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import {
 	translateHoriLine, translateVertLine, animateRegion, animateBar,
@@ -218,6 +218,19 @@ let componentConfigs = {
 		}
 	},
 
+	xMarkers: {
+		layerClass: 'x-markers',
+		makeElements(data) {
+			return data.map(m =>
+				xMarker(m.position, m.label, this.constants.height,
+					{ stroke: m.options.stroke, lineType: m.options.lineType })
+			);
+		},
+		animateElements() {
+			return [];
+		}
+	},
+
 	yRegions: {
 		layerClass: 'y-regions',
 		makeElements(data) {
@@ -371,6 +384,7 @@ let componentConfigs = {
 			let c = this.constants;
 			this.unitType = 'dot';
 			this.paths = {};
+			let gaps = c.showGaps ? data.values.map(v => v === null) : null;
 			if (!c.hideLine) {
 				this.paths = getPaths(
 					data.xPositions,
@@ -379,7 +393,9 @@ let componentConfigs = {
 					{
 						heatline: c.heatline,
 						regionFill: c.regionFill,
-						spline: c.spline
+						spline: c.spline,
+						dashed: c.dashed,
+						gaps: gaps
 					},
 					{
 						svgDefs: c.svgDefs,
@@ -391,7 +407,7 @@ let componentConfigs = {
 						this.units = [];
 			if (c.showDots) {
 				this.units = data.yPositions.map((y, j) => {
-					return datasetDot(
+					let dot = datasetDot(
 						data.xPositions[j],
 						y,
 						data.radius,
@@ -400,11 +416,13 @@ let componentConfigs = {
 						j,
 						c.hideDotBorder
 					);
+					if (gaps && gaps[j]) dot.setAttribute('visibility', 'hidden');
+					return dot;
 				});
 			}
 
-			if (c.trailingDot && !c.showDots) {
-				const lastIndex = data.yPositions.length - 1;
+			const lastIndex = gaps ? gaps.lastIndexOf(false) : data.yPositions.length - 1;
+			if (c.trailingDot && !c.showDots && lastIndex >= 0) {
 				const dot = datasetDot(
 					data.xPositions[lastIndex],
 					data.yPositions[lastIndex],
@@ -445,8 +463,9 @@ let componentConfigs = {
 			let animateElements = [];
 
 			if (Object.keys(this.paths).length) {
+				let gaps = this.constants.showGaps ? newValues.map(v => v === null) : null;
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline));
+					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline, gaps));
 			}
 
 			if (this.units.length) {

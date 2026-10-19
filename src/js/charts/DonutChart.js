@@ -227,6 +227,15 @@ export default class DonutChart extends AggregationChart {
 		}));
 		item.setAttribute('class', 'donut-legend-item');
 		item.setAttribute('tabindex', 0);
+		if (this.config.onClick) {
+			item.setAttribute('role', 'button');
+			item.addEventListener('click', () => this.selectSlice(index));
+			item.addEventListener('keydown', (e) => {
+				if (e.key !== 'Enter' && e.key !== ' ') return;
+				e.preventDefault();
+				this.selectSlice(index);
+			});
+		}
 
 		['mouseenter', 'focus'].forEach(event => item.addEventListener(event, () => {
 			this.highlight(index);
@@ -254,6 +263,17 @@ export default class DonutChart extends AggregationChart {
 			this.showSliceTip(i, e);
 		});
 		this.container.addEventListener('mouseleave', () => this.clearHover());
+		this.container.addEventListener('click', (e) => {
+			let i = this.components.get(this.sliceName).store.indexOf(e.target);
+			if (i !== -1) this.selectSlice(i);
+		});
+	}
+
+	// `index` is the slice's position, which follows data.labels unless maxSlices folds the smallest into 'Rest'
+	selectSlice(i) {
+		if (!this.config.onClick) return;
+		let s = this.state;
+		this.config.onClick({ index: i, label: s.labels[i], value: s.sliceTotals[i] });
 	}
 
 	highlight(i) {

@@ -65,6 +65,7 @@ export default class AxisChart extends BaseChart {
 
 	calc(onlyWidthChange = false) {
 		this.calcXPositions();
+		this.calcXMarkers();
 		if (!onlyWidthChange) {
 			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
 		}
@@ -90,6 +91,17 @@ export default class AxisChart extends BaseChart {
 				floatTwo(s.xOffset + i * s.unitWidth)
 			)
 		};
+	}
+
+	calcXMarkers() {
+		if (!this.data.xMarkers) return;
+		let s = this.state;
+		s.xMarkers = this.data.xMarkers
+			.map(d => Object.assign({}, d, {
+				position: s.xAxis.positions[this.data.labels.indexOf(d.value)],
+				options: d.options || {}
+			}))
+			.filter(d => d.position !== undefined);
 	}
 
 	calcYAxisParameters(dataValues, withMinimum = 'false') {
@@ -307,19 +319,23 @@ export default class AxisChart extends BaseChart {
 
 		let lineConfigs = lineDatasets.map(d => {
 			let index = d.index;
+			let lineOptions = Object.assign({}, this.lineOptions,
+				(this.realData.datasets[index] || {}).lineOptions);
 			return [
 				'lineGraph' + '-' + d.index,
 				{
 					index: index,
 					color: this.colors[index],
 					svgDefs: this.svgDefs,
-					heatline: this.lineOptions.heatline,
-					regionFill: this.lineOptions.regionFill,
-					spline: this.lineOptions.spline,
-					showDots: this.lineOptions.showDots,
-					trailingDot: this.lineOptions.trailingDot,
-					hideDotBorder: this.lineOptions.hideDotBorder,
-					hideLine: this.lineOptions.hideLine,
+					heatline: lineOptions.heatline,
+					regionFill: lineOptions.regionFill,
+					spline: lineOptions.spline,
+					showDots: lineOptions.showDots,
+					trailingDot: lineOptions.trailingDot,
+					hideDotBorder: lineOptions.hideDotBorder,
+					hideLine: lineOptions.hideLine,
+					dashed: lineOptions.dashed,
+					showGaps: lineOptions.showGaps,
 
 					// same for all datasets
 					valuesOverPoints: this.config.valuesOverPoints,
@@ -337,13 +353,22 @@ export default class AxisChart extends BaseChart {
 						values: d.values,
 
 						zeroLine: minLine,
-						radius: this.lineOptions.dotSize || LINE_CHART_DOT_SIZE,
+						radius: lineOptions.dotSize || LINE_CHART_DOT_SIZE,
 					};
 				}.bind(this)
 			];
 		});
 
 		let markerConfigs = [
+			[
+				'xMarkers',
+				{
+					height: this.height
+				},
+				function () {
+					return this.state.xMarkers;
+				}.bind(this)
+			],
 			[
 				'yMarkers',
 				{
@@ -358,7 +383,7 @@ export default class AxisChart extends BaseChart {
 
 		componentConfigs = componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
 
-		let optionals = ['yMarkers', 'yRegions'];
+		let optionals = ['xMarkers', 'yMarkers', 'yRegions'];
 		this.dataUnitComponents = [];
 
 		this.components = new Map(componentConfigs
@@ -429,6 +454,20 @@ export default class AxisChart extends BaseChart {
 			}
 		});
 		this.container.addEventListener('mouseleave', () => this.hideTooltip());
+		this.container.addEventListener('click', (e) => {
+			if (!this.config.onClick) return;
+			let index = this.pointerIndex(e);
+			if (index >= 0) this.config.onClick(this.getDataPoint(index));
+		});
+	}
+
+	// the column under the pointer, or -1 outside the plot
+	pointerIndex(e) {
+		let m = this.measures;
+		let o = getOffset(this.container);
+		let relY = e.pageY - o.top;
+		if (relY < getTopOffset(m) || relY > this.height + getTopOffset(m)) return -1;
+		return getClosestInArray(e.pageX - o.left - getLeftOffset(m), this.state.xAxis.positions, true);
 	}
 
 	hideTooltip() {
