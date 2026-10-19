@@ -1,5 +1,5 @@
 import { makeSVGGroup } from '../utils/draw';
-import { makeText, makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
+import { makeText, makePath, xLine, yLine, xMarker, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import {
 	translateHoriLine, translateVertLine, animateRegion, animateBar,
@@ -218,6 +218,19 @@ let componentConfigs = {
 		}
 	},
 
+	xMarkers: {
+		layerClass: 'x-markers',
+		makeElements(data) {
+			return data.map(m =>
+				xMarker(m.position, m.label, this.constants.height,
+					{ stroke: m.options.stroke, lineType: m.options.lineType })
+			);
+		},
+		animateElements() {
+			return [];
+		}
+	},
+
 	yRegions: {
 		layerClass: 'y-regions',
 		makeElements(data) {
@@ -369,17 +382,21 @@ let componentConfigs = {
 		layerClass: function () { return 'dataset-units dataset-line dataset-' + this.constants.index; },
 		makeElements(data) {
 			let c = this.constants;
+			let o = data.lineOptions || {};
 			this.unitType = 'dot';
 			this.paths = {};
-			if (!c.hideLine) {
+			let gaps = o.showGaps ? data.values.map(v => v === null) : null;
+			if (!o.hideLine) {
 				this.paths = getPaths(
 					data.xPositions,
 					data.yPositions,
 					c.color,
 					{
-						heatline: c.heatline,
-						regionFill: c.regionFill,
-						spline: c.spline
+						heatline: o.heatline,
+						regionFill: o.regionFill,
+						spline: o.spline,
+						dashed: o.dashed,
+						gaps: gaps
 					},
 					{
 						svgDefs: c.svgDefs,
@@ -389,22 +406,24 @@ let componentConfigs = {
 			}
 
 						this.units = [];
-			if (c.showDots) {
+			if (o.showDots) {
 				this.units = data.yPositions.map((y, j) => {
-					return datasetDot(
+					let dot = datasetDot(
 						data.xPositions[j],
 						y,
 						data.radius,
 						c.color,
 						(c.valuesOverPoints ? data.values[j] : ''),
 						j,
-						c.hideDotBorder
+						o.hideDotBorder
 					);
+					if (gaps && gaps[j]) dot.setAttribute('visibility', 'hidden');
+					return dot;
 				});
 			}
 
-			if (c.trailingDot && !c.showDots) {
-				const lastIndex = data.yPositions.length - 1;
+			const lastIndex = gaps ? gaps.lastIndexOf(false) : data.yPositions.length - 1;
+			if (o.trailingDot && !o.showDots && lastIndex >= 0) {
 				const dot = datasetDot(
 					data.xPositions[lastIndex],
 					data.yPositions[lastIndex],
@@ -412,7 +431,7 @@ let componentConfigs = {
 					c.color,
 					(c.valuesOverPoints ? data.values[lastIndex] : ''),
 					lastIndex,
-					c.hideDotBorder
+					o.hideDotBorder
 				);
 
 				this.units.push(dot);
@@ -437,6 +456,7 @@ let componentConfigs = {
 				xPositions: oldXPos,
 				yPositions: oldYPos,
 				values: newValues,
+				lineOptions: newData.lineOptions,
 
 				zeroLine: this.oldData.zeroLine,
 				radius: this.oldData.radius,
@@ -445,8 +465,10 @@ let componentConfigs = {
 			let animateElements = [];
 
 			if (Object.keys(this.paths).length) {
+				let o = newData.lineOptions || {};
+				let gaps = o.showGaps ? newValues.map(v => v === null) : null;
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline));
+					this.paths, newXPos, newYPos, newData.zeroLine, o.spline, gaps));
 			}
 
 			if (this.units.length) {

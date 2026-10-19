@@ -1,4 +1,4 @@
-import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getSplineCurvePointsStr } from './draw-utils';
+import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getLinePathStrs } from './draw-utils';
 import { getStringWidth, isValidNumber, round } from './helpers';
 import { DOT_OVERLAY_SIZE_INCR } from './constants';
 
@@ -486,6 +486,40 @@ export function yMarker(y, label, width, options = {}) {
 	return line;
 }
 
+export function xMarker(x, label, height, options = {}) {
+	if (!isValidNumber(x)) x = 0;
+	if (!options.lineType) options.lineType = 'dashed';
+
+	let line = createSVG('line', {
+		className: 'line-vertical ' + (options.className || '') +
+			(options.lineType === 'dashed' ? ' dashed' : ''),
+		x1: 0,
+		x2: 0,
+		y1: 0,
+		y2: height,
+		styles: {
+			stroke: options.stroke || BASE_LINE_COLOR
+		}
+	});
+
+	let labelSvg = createSVG('text', {
+		className: 'chart-label',
+		x: 0,
+		y: -LABEL_MARGIN,
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'middle',
+		innerHTML: label + ""
+	});
+
+	let marker = createSVG('g', {
+		transform: `translate(${x}, 0)`
+	});
+	marker.appendChild(line);
+	marker.appendChild(labelSvg);
+
+	return marker;
+}
+
 export function yRegion(y1, y2, width, label, options = {}) {
 	// return a group
 	let height = y1 - y2;
@@ -644,14 +678,13 @@ export function datasetDot(x, y, radius, color, label = '', index = 0, hideDotBo
 }
 
 export function getPaths(xList, yList, color, options = {}, meta = {}) {
-	let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
-	let pointsStr = pointsList.join("L");
+	let pathStrs = getLinePathStrs(xList, yList, {
+		spline: options.spline,
+		gaps: options.gaps,
+		zeroLine: meta.zeroLine
+	});
 
-	// Spline
-	if (options.spline)
-		pointsStr = getSplineCurvePointsStr(xList, yList);
-
-	let path = makePath("M" + pointsStr, 'line-graph-path', color);
+	let path = makePath(pathStrs.line, 'line-graph-path' + (options.dashed ? ' dashed' : ''), color);
 
 	// HeatLine
 	if (options.heatline) {
@@ -666,12 +699,17 @@ export function getPaths(xList, yList, color, options = {}, meta = {}) {
 	// Region
 	if (options.regionFill) {
 		let gradient_id_region = makeGradient(meta.svgDefs, color, true);
-
-		let pathStr = "M" + `${xList[0]},${meta.zeroLine}L` + pointsStr + `L${xList.slice(-1)[0]},${meta.zeroLine}`;
-		paths.region = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`);
+		paths.region = makePath(pathStrs.region, `region-fill`, 'none', `url(#${gradient_id_region})`);
 	}
 
 	return paths;
+}
+
+// a dot hidden over a gap keeps its overlay hidden too; the flag sits on the dot's group when it has a label
+function syncDotVisibility(unit, overlay) {
+	let visibility = unit.getAttribute('visibility');
+	if (visibility) overlay.setAttribute('visibility', visibility);
+	else overlay.removeAttribute('visibility');
 }
 
 export let makeOverlay = {
@@ -693,6 +731,7 @@ export let makeOverlay = {
 
 	'dot': (unit) => {
 		let transformValue;
+		let dotUnit = unit;
 		if (unit.nodeName !== 'circle') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];
@@ -703,6 +742,7 @@ export let makeOverlay = {
 		overlay.setAttribute('r', parseInt(radius) + DOT_OVERLAY_SIZE_INCR);
 		overlay.setAttribute('fill', fill);
 		overlay.style.opacity = '0.6';
+		syncDotVisibility(dotUnit, overlay);
 
 		if (transformValue) {
 			overlay.setAttribute('transform', transformValue);
@@ -751,6 +791,7 @@ export let updateOverlay = {
 
 	'dot': (unit, overlay) => {
 		let transformValue;
+		syncDotVisibility(unit, overlay);
 		if (unit.nodeName !== 'circle') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];

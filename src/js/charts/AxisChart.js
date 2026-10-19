@@ -65,6 +65,7 @@ export default class AxisChart extends BaseChart {
 
 	calc(onlyWidthChange = false) {
 		this.calcXPositions();
+		this.calcXMarkers();
 		if (!onlyWidthChange) {
 			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
 		}
@@ -90,6 +91,17 @@ export default class AxisChart extends BaseChart {
 				floatTwo(s.xOffset + i * s.unitWidth)
 			)
 		};
+	}
+
+	// always a list, even when empty, so the marker layer exists for markers added by a later update
+	calcXMarkers() {
+		let s = this.state;
+		s.xMarkers = (this.data.xMarkers || [])
+			.map(d => Object.assign({}, d, {
+				position: s.xAxis.positions[this.data.labels.indexOf(d.value)],
+				options: d.options || {}
+			}))
+			.filter(d => d.position !== undefined);
 	}
 
 	calcYAxisParameters(dataValues, withMinimum = 'false') {
@@ -125,6 +137,7 @@ export default class AxisChart extends BaseChart {
 
 				values: values,
 				yPositions: scaleAll(values),
+				lineOptions: d.lineOptions || {},
 
 				cumulativeYs: cumulativeYs,
 				cumulativeYPos: scaleAll(cumulativeYs),
@@ -313,13 +326,6 @@ export default class AxisChart extends BaseChart {
 					index: index,
 					color: this.colors[index],
 					svgDefs: this.svgDefs,
-					heatline: this.lineOptions.heatline,
-					regionFill: this.lineOptions.regionFill,
-					spline: this.lineOptions.spline,
-					showDots: this.lineOptions.showDots,
-					trailingDot: this.lineOptions.trailingDot,
-					hideDotBorder: this.lineOptions.hideDotBorder,
-					hideLine: this.lineOptions.hideLine,
 
 					// same for all datasets
 					valuesOverPoints: this.config.valuesOverPoints,
@@ -329,21 +335,33 @@ export default class AxisChart extends BaseChart {
 					let d = s.datasets[index];
 					let minLine = s.yAxis.positions[0] < s.yAxis.zeroLine
 						? s.yAxis.positions[0] : s.yAxis.zeroLine;
+					// read on every render, so a dataset's own options follow updated data
+					let lineOptions = Object.assign({}, this.lineOptions, d.lineOptions);
 
 					return {
 						xPositions: s.xAxis.positions,
 						yPositions: d.yPositions,
 
 						values: d.values,
+						lineOptions: lineOptions,
 
 						zeroLine: minLine,
-						radius: this.lineOptions.dotSize || LINE_CHART_DOT_SIZE,
+						radius: lineOptions.dotSize || LINE_CHART_DOT_SIZE,
 					};
 				}.bind(this)
 			];
 		});
 
 		let markerConfigs = [
+			[
+				'xMarkers',
+				{
+					height: this.height
+				},
+				function () {
+					return this.state.xMarkers;
+				}.bind(this)
+			],
 			[
 				'yMarkers',
 				{
@@ -358,7 +376,7 @@ export default class AxisChart extends BaseChart {
 
 		componentConfigs = componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
 
-		let optionals = ['yMarkers', 'yRegions'];
+		let optionals = ['xMarkers', 'yMarkers', 'yRegions'];
 		this.dataUnitComponents = [];
 
 		this.components = new Map(componentConfigs

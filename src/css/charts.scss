@@ -60,7 +60,8 @@
 		}
 	}
 
-	line.dashed {
+	line.dashed,
+	path.dashed {
 		stroke-dasharray: 5, 3;
 	}
 
@@ -119,6 +120,13 @@
 
 		&.is-dim {
 			opacity: 0.5;
+		}
+	}
+
+	&.is-clickable {
+		.donut-path,
+		.donut-legend-item {
+			cursor: pointer;
 		}
 	}
 

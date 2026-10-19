@@ -1,4 +1,4 @@
-import { getSplineCurvePointsStr } from './draw-utils';
+import { getLinePathStrs } from './draw-utils';
 import { barPathStr, getBarGeometry } from './draw';
 
 export const UNIT_ANIM_DUR = 350;
@@ -77,23 +77,17 @@ export function animateDot(dot, x, y) {
 	// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
 }
 
-export function animatePath(paths, newXList, newYList, zeroLine, spline) {
+export function animatePath(paths, newXList, newYList, zeroLine, spline, gaps) {
 	let pathComponents = [];
-	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y)).join("L");
+	let pathStrs = getLinePathStrs(newXList, newYList, { spline, gaps, zeroLine });
 
-	if (spline)
-		pointsStr = getSplineCurvePointsStr(newXList, newYList);
-
-	const animPath = [paths.path, { d: "M" + pointsStr }, PATH_ANIM_DUR, STD_EASING];
+	const animPath = [paths.path, { d: pathStrs.line }, PATH_ANIM_DUR, STD_EASING];
 	pathComponents.push(animPath);
 
 	if (paths.region) {
-		let regStartPt = `${newXList[0]},${zeroLine}L`;
-		let regEndPt = `L${newXList.slice(-1)[0]}, ${zeroLine}`;
-
 		const animRegion = [
 			paths.region,
-			{ d: "M" + regStartPt + pointsStr + regEndPt },
+			{ d: pathStrs.region },
 			PATH_ANIM_DUR,
 			STD_EASING
 		];
