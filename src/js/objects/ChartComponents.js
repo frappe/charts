@@ -382,19 +382,20 @@ let componentConfigs = {
 		layerClass: function () { return 'dataset-units dataset-line dataset-' + this.constants.index; },
 		makeElements(data) {
 			let c = this.constants;
+			let o = data.lineOptions || {};
 			this.unitType = 'dot';
 			this.paths = {};
-			let gaps = c.showGaps ? data.values.map(v => v === null) : null;
-			if (!c.hideLine) {
+			let gaps = o.showGaps ? data.values.map(v => v === null) : null;
+			if (!o.hideLine) {
 				this.paths = getPaths(
 					data.xPositions,
 					data.yPositions,
 					c.color,
 					{
-						heatline: c.heatline,
-						regionFill: c.regionFill,
-						spline: c.spline,
-						dashed: c.dashed,
+						heatline: o.heatline,
+						regionFill: o.regionFill,
+						spline: o.spline,
+						dashed: o.dashed,
 						gaps: gaps
 					},
 					{
@@ -405,7 +406,7 @@ let componentConfigs = {
 			}
 
 						this.units = [];
-			if (c.showDots) {
+			if (o.showDots) {
 				this.units = data.yPositions.map((y, j) => {
 					let dot = datasetDot(
 						data.xPositions[j],
@@ -414,7 +415,7 @@ let componentConfigs = {
 						c.color,
 						(c.valuesOverPoints ? data.values[j] : ''),
 						j,
-						c.hideDotBorder
+						o.hideDotBorder
 					);
 					if (gaps && gaps[j]) dot.setAttribute('visibility', 'hidden');
 					return dot;
@@ -422,7 +423,7 @@ let componentConfigs = {
 			}
 
 			const lastIndex = gaps ? gaps.lastIndexOf(false) : data.yPositions.length - 1;
-			if (c.trailingDot && !c.showDots && lastIndex >= 0) {
+			if (o.trailingDot && !o.showDots && lastIndex >= 0) {
 				const dot = datasetDot(
 					data.xPositions[lastIndex],
 					data.yPositions[lastIndex],
@@ -430,7 +431,7 @@ let componentConfigs = {
 					c.color,
 					(c.valuesOverPoints ? data.values[lastIndex] : ''),
 					lastIndex,
-					c.hideDotBorder
+					o.hideDotBorder
 				);
 
 				this.units.push(dot);
@@ -455,6 +456,7 @@ let componentConfigs = {
 				xPositions: oldXPos,
 				yPositions: oldYPos,
 				values: newValues,
+				lineOptions: newData.lineOptions,
 
 				zeroLine: this.oldData.zeroLine,
 				radius: this.oldData.radius,
@@ -463,9 +465,10 @@ let componentConfigs = {
 			let animateElements = [];
 
 			if (Object.keys(this.paths).length) {
-				let gaps = this.constants.showGaps ? newValues.map(v => v === null) : null;
+				let o = newData.lineOptions || {};
+				let gaps = o.showGaps ? newValues.map(v => v === null) : null;
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline, gaps));
+					this.paths, newXPos, newYPos, newData.zeroLine, o.spline, gaps));
 			}
 
 			if (this.units.length) {

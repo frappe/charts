@@ -125,8 +125,7 @@
 
 	&.is-clickable {
 		.donut-path,
-		.donut-legend-item,
-		.dataset-units {
+		.donut-legend-item {
 			cursor: pointer;
 		}
 	}

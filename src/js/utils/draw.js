@@ -705,6 +705,13 @@ export function getPaths(xList, yList, color, options = {}, meta = {}) {
 	return paths;
 }
 
+// a dot hidden over a gap keeps its overlay hidden too; the flag sits on the dot's group when it has a label
+function syncDotVisibility(unit, overlay) {
+	let visibility = unit.getAttribute('visibility');
+	if (visibility) overlay.setAttribute('visibility', visibility);
+	else overlay.removeAttribute('visibility');
+}
+
 export let makeOverlay = {
 	'bar': (unit) => {
 		let transformValue;
@@ -724,6 +731,7 @@ export let makeOverlay = {
 
 	'dot': (unit) => {
 		let transformValue;
+		let dotUnit = unit;
 		if (unit.nodeName !== 'circle') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];
@@ -734,6 +742,7 @@ export let makeOverlay = {
 		overlay.setAttribute('r', parseInt(radius) + DOT_OVERLAY_SIZE_INCR);
 		overlay.setAttribute('fill', fill);
 		overlay.style.opacity = '0.6';
+		syncDotVisibility(dotUnit, overlay);
 
 		if (transformValue) {
 			overlay.setAttribute('transform', transformValue);
@@ -782,6 +791,7 @@ export let updateOverlay = {
 
 	'dot': (unit, overlay) => {
 		let transformValue;
+		syncDotVisibility(unit, overlay);
 		if (unit.nodeName !== 'circle') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];

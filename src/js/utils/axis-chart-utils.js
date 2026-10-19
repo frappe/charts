@@ -70,7 +70,8 @@ export function zeroDataPrep(realData) {
 			return {
 				name: '',
 				values: zeroArray.slice(0, -1),
-				chartType: d.chartType
+				chartType: d.chartType,
+				lineOptions: d.lineOptions
 			};
 		}),
 	};
