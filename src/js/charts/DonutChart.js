@@ -9,6 +9,7 @@ import { FULL_ANGLE } from "../utils/constants";
 
 export default class DonutChart extends AggregationChart {
   constructor(parent, args) {
+    args.type = args.type || "donut";
     super(parent, args);
     this.type = "donut";
     this.initTimeout = 0;

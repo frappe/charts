@@ -9,6 +9,7 @@ import { FULL_ANGLE } from "../utils/constants";
 
 export default class PieChart extends AggregationChart {
   constructor(parent, args) {
+    args.type = args.type || "pie";
     super(parent, args);
     this.type = "pie";
     this.initTimeout = 0;

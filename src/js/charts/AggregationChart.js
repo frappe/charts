@@ -15,7 +15,8 @@ export default class AggregationChart extends BaseChart {
     this.config.formatTooltipY = (args.tooltipOptions || {}).formatTooltipY;
     this.config.maxSlices = args.maxSlices || 20;
     this.config.maxLegendPoints = args.maxLegendPoints || 20;
-    this.config.legendRowHeight = 60;
+    this.config.legendRowHeight =
+      args.legendRowHeight || (this.config.legendPosition === "right" ? 28 : 34);
   }
 
   calc() {
@@ -74,21 +75,36 @@ export default class AggregationChart extends BaseChart {
     super.renderLegend(this.legendTotals);
   }
 
-  makeLegend(data, index, x_pos, y_pos) {
+  makeLegend(data, index, x_pos, y_pos, options = {}) {
     let formatted = this.config.formatTooltipY
       ? this.config.formatTooltipY(data)
       : data;
 
+    let isRight = this.config.legendPosition === "right";
+    let baseFontSize = options.fontSize || 7.5;
+    let dotSize = options.dotSize || 10;
+    let maxChars = options.maxChars || (isRight ? 18 : 14);
+
     return legendDot(
       x_pos,
       y_pos,
-      12, // size
+      dotSize, // size
       3, // dot radius
       this.colors[index], // fill
       this.state.labels[index], // label
       formatted, // value
-      null, // base_font_size
-      this.config.truncateLegends // truncate_legends
+      baseFontSize, // base_font_size
+      this.config.truncateLegends ? maxChars : false,
+      Object.assign(
+        {
+          fullLabel: this.state.labels[index],
+          labelFontSize: options.labelFontSize || "11px",
+          valueFontSize: options.valueFontSize || "10px",
+          valueY: options.valueY !== undefined ? options.valueY : 13,
+          textOffset: options.textOffset !== undefined ? options.textOffset : 8,
+        },
+        options
+      )
     );
   }
 }

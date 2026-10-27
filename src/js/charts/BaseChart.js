@@ -48,12 +48,21 @@ export default class BaseChart {
 
 		this.colors = this.validateColors(options.colors, this.type);
 
+		let legendPosition =
+			options.legendPosition ||
+			(options.legendOptions && options.legendOptions.position);
+		if (!legendPosition) {
+			legendPosition =
+				this.type === "pie" || this.type === "donut" ? "right" : "bottom";
+		}
+
 		this.config = {
 			showTooltip: 1, // calculate
 			showLegend:
 				typeof options.showLegend !== "undefined"
 					? options.showLegend
 					: 1,
+			legendPosition: legendPosition,
 			isNavigable: options.isNavigable || 0,
 			animate: 0,
 			overrideCeiling: options.overrideCeiling || false,
@@ -78,7 +87,12 @@ export default class BaseChart {
 		if (!this.title.length) {
 			m.titleHeight = 0;
 		}
-		if (!this.config.showLegend) m.legendHeight = 0;
+		if (!this.config.showLegend || this.config.legendPosition === "right") {
+			m.legendHeight = 0;
+			if (this.config.legendPosition === "right" && this.type !== "line" && this.type !== "bar" && this.type !== "axis-mixed") {
+				m.paddings.bottom = 15;
+			}
+		}
 		this.argHeight = options.height || m.baseHeight;
 
 		this.state = {};
@@ -212,7 +226,18 @@ export default class BaseChart {
 
 	updateWidth() {
 		this.baseWidth = getElementContentWidth(this.parent);
-		this.width = this.baseWidth - getExtraWidth(this.measures);
+		if (this.config.showLegend && this.config.legendPosition === "right") {
+			let availWidth = this.baseWidth - getExtraWidth(this.measures);
+			let targetLegendWidth = Math.max(120, Math.min(Math.floor(availWidth * 0.42), 240));
+			if (availWidth - targetLegendWidth < 120) {
+				targetLegendWidth = Math.floor(availWidth * 0.45);
+			}
+			this.legendWidth = Math.max(80, targetLegendWidth);
+			this.width = Math.max(60, availWidth - this.legendWidth);
+		} else {
+			this.legendWidth = 0;
+			this.width = this.baseWidth - getExtraWidth(this.measures);
+		}
 	}
 
 	makeChartArea() {
@@ -250,11 +275,19 @@ export default class BaseChart {
 		);
 
 		if (this.config.showLegend) {
-			top += this.height + m.paddings.bottom;
-			this.legendArea = makeSVGGroup(
-				"chart-legend",
-				`translate(${getLeftOffset(m)}, ${top})`
-			);
+			if (this.config.legendPosition === "right") {
+				let legendX = getLeftOffset(m) + this.width + 15;
+				this.legendArea = makeSVGGroup(
+					"chart-legend",
+					`translate(${legendX}, ${top})`
+				);
+			} else {
+				let legendTop = top + this.height + m.paddings.bottom;
+				this.legendArea = makeSVGGroup(
+					"chart-legend",
+					`translate(${getLeftOffset(m)}, ${legendTop})`
+				);
+			}
 		}
 
 		if (this.title.length) {
@@ -285,6 +318,9 @@ export default class BaseChart {
 		this.data = this.prepareData(data, config);
 		this.calc(); // builds state
 		this.render(this.components, this.config.animate);
+		if (this.config.showLegend) {
+			this.renderLegend();
+		}
 	}
 
 	render(components = this.components, animate = true) {
@@ -317,21 +353,113 @@ export default class BaseChart {
 		}
 	}
 
-	renderLegend(dataset) {
+	renderLegend(dataset = []) {
 		this.legendArea.textContent = "";
-		let count = 0;
-		let y = 0;
+		if (!dataset || !dataset.length) return;
 
-		dataset.map((data, index) => {
-			let divisor = Math.floor(this.width / LEGEND_ITEM_WIDTH);
-			if (count > divisor) {
-				count = 0;
-				y += this.config.legendRowHeight;
-			}
-			let x = LEGEND_ITEM_WIDTH * count;
-			let dot = this.makeLegend(data, index, x, y);
+		if (this.config.legendPosition === "right") {
+			this.renderRightLegend(dataset);
+		} else {
+			this.renderBottomLegend(dataset);
+		}
+	}
+
+	renderRightLegend(dataset) {
+		this.legendArea.textContent = "";
+		let n = dataset.length;
+		if (!n) return;
+
+		let availHeight = this.height;
+		let availWidth = Math.max(80, (this.legendWidth || 140) - 15);
+
+		let numCols = 1;
+		if (availWidth >= 160 && n > 6) {
+			numCols = 2;
+		}
+
+		let itemsPerCol = Math.ceil(n / numCols);
+		let colWidth = Math.floor(availWidth / numCols);
+
+		let idealRowHeight = Math.floor(availHeight / itemsPerCol);
+		let rowHeight = Math.max(13, Math.min(32, idealRowHeight));
+
+		let isCompact = rowHeight < 24;
+		let isInline = rowHeight < 20 || numCols > 1;
+
+		let totalHeight = itemsPerCol * rowHeight;
+		let startY = Math.max(0, Math.floor((availHeight - totalHeight) / 2));
+
+		dataset.forEach((data, index) => {
+			let col = Math.floor(index / itemsPerCol);
+			let row = index % itemsPerCol;
+			let x = col * colWidth;
+			let y = startY + row * rowHeight;
+
+			let dot = this.makeLegend(data, index, x, y, {
+				itemWidth: colWidth,
+				inline: isInline,
+				fontSize: isCompact ? 6.5 : 7.5,
+				labelFontSize: isCompact ? "10px" : "11px",
+				valueFontSize: isCompact ? "9px" : "10px",
+				valueY: isCompact ? 10 : 13,
+				dotSize: isCompact ? 8 : 10,
+				textOffset: isCompact ? 6 : 8,
+				maxChars: Math.max(8, Math.floor((colWidth - 22) / 6.5)),
+			});
 			this.legendArea.appendChild(dot);
-			count++;
+		});
+	}
+
+	renderBottomLegend(dataset) {
+		this.legendArea.textContent = "";
+		if (!dataset || !dataset.length) return;
+
+		let dotSize = 8;
+		let charWidth = 6.5;
+		let itemGap = 24;
+		let rowHeight = this.config.legendRowHeight || 28;
+
+		let items = dataset.map((data, index) => {
+			let label =
+				data.name ||
+				(this.state && this.state.labels ? this.state.labels[index] : "") ||
+				"";
+			let textWidth = label.length * charWidth;
+			let itemWidth = dotSize + 8 + textWidth;
+			return { data, index, itemWidth, label };
+		});
+
+		let rows = [[]];
+		let curRowWidth = 0;
+
+		items.forEach((item) => {
+			let widthWithGap = item.itemWidth + (curRowWidth ? itemGap : 0);
+			if (curRowWidth && curRowWidth + widthWithGap > this.width) {
+				rows.push([]);
+				curRowWidth = 0;
+			}
+			rows[rows.length - 1].push(item);
+			curRowWidth += item.itemWidth + itemGap;
+		});
+
+		rows.forEach((row, rowIndex) => {
+			let x = 0;
+			let y = rowIndex * rowHeight;
+
+			row.forEach((item) => {
+				let dot = this.makeLegend(item.data, item.index, x, y, {
+					itemWidth: item.itemWidth,
+					fontSize: 6.5,
+					labelFontSize: "10px",
+					valueFontSize: "9px",
+					valueY: 12,
+					dotSize: dotSize,
+					textOffset: 6,
+					maxChars: 30,
+				});
+				this.legendArea.appendChild(dot);
+				x += item.itemWidth + itemGap;
+			});
 		});
 	}
 

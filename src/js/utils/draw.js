@@ -326,9 +326,19 @@ export function legendDot(
 	label,
 	value,
 	font_size = null,
-	truncate = false
+	truncate = false,
+	options = {}
 ) {
-	label = truncate ? truncateString(label, LABEL_MAX_CHARS) : label;
+	let maxChars = typeof truncate === "number" ? truncate : LABEL_MAX_CHARS;
+	let fullLabel = options.fullLabel || label;
+	let isInline = options.inline || false;
+
+	if (isInline && value !== null && value !== undefined && value !== "") {
+		label = `${label}: ${value}`;
+		fullLabel = `${fullLabel}: ${value}`;
+	}
+
+	label = truncate ? truncateString(label, maxChars) : label;
 	if (!font_size) font_size = FONT_SIZE;
 
 	let args = {
@@ -341,26 +351,31 @@ export function legendDot(
 		fill: fill,
 	};
 
+	let labelFontSize = options.labelFontSize || font_size * 1.6 + "px";
+	let valueFontSize = options.valueFontSize || font_size * 1.2 + "px";
+	let valueY = options.valueY !== undefined ? options.valueY : FONT_SIZE + 10;
+	let textOffset = options.textOffset !== undefined ? options.textOffset : font_size;
+
 	let textLabel = createSVG("text", {
 		className: "legend-dataset-label",
 		x: size,
 		y: 0,
-		dx: font_size + "px",
+		dx: textOffset + "px",
 		dy: font_size / 3 + "px",
-		"font-size": font_size * 1.6 + "px",
+		"font-size": labelFontSize,
 		"text-anchor": "start",
 		innerHTML: label,
 	});
 
 	let textValue = null;
-	if (value) {
+	if (!isInline && value !== null && value !== undefined && value !== "") {
 		textValue = createSVG("text", {
 			className: "legend-dataset-value",
 			x: size,
-			y: FONT_SIZE + 10,
-			dx: FONT_SIZE + "px",
-			dy: FONT_SIZE / 3 + "px",
-			"font-size": FONT_SIZE * 1.2 + "px",
+			y: valueY,
+			dx: textOffset + "px",
+			dy: font_size / 3 + "px",
+			"font-size": valueFontSize,
 			"text-anchor": "start",
 			innerHTML: value,
 		});
@@ -369,10 +384,20 @@ export function legendDot(
 	let group = createSVG("g", {
 		transform: `translate(${x}, ${y})`,
 	});
+
+	let titleText =
+		value !== null && value !== undefined && value !== ""
+			? `${fullLabel}${isInline ? "" : ": " + value}`
+			: fullLabel;
+	let titleEl = createSVG("title", {
+		innerHTML: titleText,
+	});
+	group.appendChild(titleEl);
+
 	group.appendChild(createSVG("rect", args));
 	group.appendChild(textLabel);
 
-	if (value && textValue) {
+	if (!isInline && textValue) {
 		group.appendChild(textValue);
 	}
 

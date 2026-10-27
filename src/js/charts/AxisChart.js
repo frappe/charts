@@ -27,10 +27,14 @@ import {
 
 export default class AxisChart extends BaseChart {
 	constructor(parent, args) {
+		args.type = args.type || "line";
 		super(parent, args);
 
 		this.barOptions = args.barOptions || {};
 		this.lineOptions = args.lineOptions || {};
+		if (typeof this.lineOptions.hideDots === "undefined") {
+			this.lineOptions.hideDots = 1;
+		}
 
 		this.type = args.type || "line";
 		this.init = 1;
@@ -42,6 +46,8 @@ export default class AxisChart extends BaseChart {
 		if (this.data.datasets.length <= 1) {
 			this.config.showLegend = 0;
 			this.measures.paddings.bottom = 30;
+		} else {
+			this.measures.paddings.bottom = 40;
 		}
 	}
 
@@ -729,17 +735,30 @@ export default class AxisChart extends BaseChart {
 		}
 	} */
 
-	makeLegend(data, index, x_pos, y_pos) {
+	makeLegend(data, index, x_pos, y_pos, options = {}) {
+		let isRight = this.config.legendPosition === "right";
+		let baseFontSize = options.fontSize || 8.75;
+		let dotSize = options.dotSize || (isRight ? 10 : 8);
+		let maxChars = options.maxChars || (isRight ? 18 : 30);
+
 		return legendDot(
 			x_pos,
-			y_pos + 5, // Extra offset
-			12, // size
-			3, // dot radius
-			this.colors[index], // fill
-			data.name, //label
-			null, // value
-			8.75, // base_font_size
-			this.config.truncateLegends // truncate legends
+			y_pos + (isRight ? 0 : 5),
+			dotSize,
+			2.5,
+			this.colors[index],
+			data.name,
+			null,
+			baseFontSize,
+			this.config.truncateLegends ? maxChars : false,
+			Object.assign(
+				{
+					fullLabel: data.name,
+					labelFontSize: options.labelFontSize || (isRight ? "11px" : "10px"),
+					textOffset: options.textOffset || 6,
+				},
+				options
+			)
 		);
 	}
 
