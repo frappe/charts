@@ -162,7 +162,7 @@ let componentConfigs = {
 		makeElements(data) {
 			return data.positions.map((position, i) => {
 				let line = xLine(position, data.calcLabels[i], this.constants.height,
-					{ mode: this.constants.mode, pos: this.constants.pos });
+					{ mode: this.constants.mode, pos: this.constants.pos, rotation: this.constants.rotation });
 				if (data.calcLabels[i] === '' && data.labels && data.labels[i] !== '') {
 					line.setAttribute('visibility', 'hidden');
 				}

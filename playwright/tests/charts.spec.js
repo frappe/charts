@@ -67,6 +67,17 @@ test('time x axis spaces line points by date', async ({ page }) => {
     expect(week / day).toBeCloseTo(8, 1);
 });
 
+test('x axis labels can be rotated', async ({ page }) => {
+    const data = { labels: ['Frappe Technologies', 'Acme Corporation', 'Globex'], datasets: [{ values: [3, 5, 2] }] };
+    const labels = page.locator('#chart .x.axis text');
+    await render(page, { type: 'bar', data });
+    await expect(labels.first()).not.toHaveAttribute('transform', /rotate/);
+    await render(page, { type: 'bar', data, axisOptions: { xAxisLabelRotation: 45 } });
+    await expect(labels).toHaveCount(3);
+    await expect(labels.first()).toHaveAttribute('transform', /rotate\(-45/);
+    await expect(labels.nth(1)).toHaveText('Acme Corporation');
+});
+
 test('horizontal bar chart shows a row per label with its value', async ({ page }) => {
     await render(page, { type: 'bar', barOptions: { horizontal: 1 }, data: { labels: ['India', 'Kenya'], datasets: [{ values: [48200, 6100] }] } });
     await expect(page.locator('#chart .horizontal-bar-label')).toHaveCount(2);

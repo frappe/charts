@@ -330,6 +330,14 @@ function makeVertLine(x, label, y1, y2, options = {}) {
 		innerHTML: label + ""
 	});
 
+	if (options.rotation) {
+		let y = y1 + LABEL_MARGIN;
+		text.setAttribute('y', y);
+		text.setAttribute('dy', '0.35em');
+		text.setAttribute('text-anchor', 'end');
+		text.setAttribute('transform', `rotate(${-options.rotation}, 0, ${y})`);
+	}
+
 	let line = createSVG('g', {
 		transform: `translate(${x}, 0)`
 	});
@@ -452,7 +460,8 @@ export function xLine(x, label, height, options = {}) {
 
 	return makeVertLine(x, label, y1, y2, {
 		className: options.className,
-		lineType: options.lineType
+		lineType: options.lineType,
+		rotation: options.rotation
 	});
 }
 

@@ -8,9 +8,9 @@ import { makeOverlay, updateOverlay, legendDot, makeHoverBand, FONT_SIZE, AXIS_T
 import {
 	BASE_MEASURES, getExtraHeight, getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
 	BAR_CHART_RADIUS, BAR_CHART_GAP, BAR_CHART_MAX_WIDTH, LINE_CHART_DOT_SIZE, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE,
-	LEGEND_CHAR_WIDTH, TOOLTIP_SIDE_GAP, DEFAULT_CHAR_WIDTH
+	LEGEND_CHAR_WIDTH, TOOLTIP_SIDE_GAP, DEFAULT_CHAR_WIDTH, ROTATED_LABEL_MAX_CHARS
 } from '../utils/constants';
-import { shortenLargeNumber } from '../utils/draw-utils';
+import { shortenLargeNumber, truncateString } from '../utils/draw-utils';
 import { getColor } from '../utils/colors';
 
 export default class AxisChart extends BaseChart {
@@ -55,7 +55,7 @@ export default class AxisChart extends BaseChart {
 		this.config.showLegend = this.data.datasets.length > 1
 			? (typeof showLegend !== 'undefined' ? showLegend : 1)
 			: 0;
-		m.paddings.bottom = this.data.datasets.length > 1 ? BASE_MEASURES.paddings.bottom : 30;
+		m.paddings.bottom = (this.data.datasets.length > 1 ? BASE_MEASURES.paddings.bottom : 30) + this.labelSpace;
 		m.legendHeight = this.config.showLegend ? BASE_MEASURES.legendHeight : 0;
 		this.baseLegendHeight = m.legendHeight;
 		this.height = this.argHeight - getExtraHeight(m);
@@ -85,6 +85,35 @@ export default class AxisChart extends BaseChart {
 
 		this.config.valuesOverPoints = options.valuesOverPoints;
 		this.config.legendRowHeight = 30;
+
+		this.config.xAxisLabelRotation = Math.min(Math.max(Number(options.axisOptions.xAxisLabelRotation) || 0, 0), 90);
+		this.labelSpace = this.calcLabelSpace();
+		this.measures.paddings.bottom += this.labelSpace;
+		this.height -= this.labelSpace;
+	}
+
+	calcLabelSpace() {
+		let angle = this.config.xAxisLabelRotation * Math.PI / 180;
+		if (!angle) return 0;
+		let longest = Math.max(0, ...(this.realData.labels || []).map(l => (l + '').length));
+		this.labelMaxChars = Math.min(longest, ROTATED_LABEL_MAX_CHARS);
+		let width = getStringWidth('x'.repeat(this.labelMaxChars), DEFAULT_CHAR_WIDTH);
+		return Math.max(0, Math.ceil(width * Math.sin(angle) + FONT_SIZE * Math.cos(angle) - FONT_SIZE));
+	}
+
+	getRotatedLabels() {
+		let { labels, positions } = this.state.xAxis;
+		let angle = this.config.xAxisLabelRotation * Math.PI / 180;
+		let minGap = FONT_SIZE / Math.sin(angle) + 2;
+		let charWidth = DEFAULT_CHAR_WIDTH * Math.cos(angle);
+		let left = getLeftOffset(this.measures);
+		let last = -Infinity;
+		return labels.map((label, i) => {
+			if (positions[i] - last < minGap) return '';
+			last = positions[i];
+			let room = charWidth > 0.01 ? Math.floor((positions[i] + left) / charWidth) : Infinity;
+			return truncateString(label + '', Math.min(this.labelMaxChars, room)) || '';
+		});
 	}
 
 	prepareData(data = this.data) {
@@ -322,11 +351,14 @@ export default class AxisChart extends BaseChart {
 				{
 					mode: this.config.xAxisMode,
 					height: this.height,
+					rotation: this.config.xAxisLabelRotation,
 					// pos: 'right'
 				},
 				function () {
 					let s = this.state;
-					s.xAxis.calcLabels = s.xAxis.isTime
+					s.xAxis.calcLabels = this.config.xAxisLabelRotation
+						? this.getRotatedLabels()
+						: s.xAxis.isTime
 						? this.getSpacedLabels()
 						: getShortenedLabels(this.width,
 							s.xAxis.labels, this.config.xIsSeries,this.config.seriesLabelSpaceRatio);
