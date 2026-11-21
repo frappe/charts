@@ -50,8 +50,8 @@ export function timestampToMidnight(timestamp, roundAhead = false) {
 
 // export function getMonthsBetween(startDate, endDate) {}
 
-export function getWeeksBetween(startDate, endDate) {
-	let weekStartDate = setDayToSunday(startDate);
+export function getWeeksBetween(startDate, endDate, weekStart = 0) {
+	let weekStartDate = setDayToWeekStart(startDate, weekStart);
 	return Math.ceil(getDaysBetween(weekStartDate, endDate) / NO_OF_DAYS_IN_WEEK);
 }
 
@@ -75,11 +75,11 @@ export function getLastDateInMonth(month, year) {
 }
 
 // mutates
-export function setDayToSunday(date) {
+export function setDayToWeekStart(date, weekStart = 0) {
 	let newDate = clone(date);
-	const day = newDate.getDay();
-	if (day !== 0) {
-		addDays(newDate, (-1) * day);
+	const offset = (newDate.getDay() - weekStart + NO_OF_DAYS_IN_WEEK) % NO_OF_DAYS_IN_WEEK;
+	if (offset !== 0) {
+		addDays(newDate, (-1) * offset);
 	}
 	return newDate;
 }
