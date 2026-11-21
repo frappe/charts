@@ -39,6 +39,7 @@ export default class AxisChart extends BaseChart {
 		options.tooltipOptions = options.tooltipOptions || {};
 
 		this.config.xAxisMode = options.axisOptions.xAxisMode || 'span';
+		this.config.xOffset = options.axisOptions.xOffset;
 		this.config.yAxisMode = options.axisOptions.yAxisMode || 'span';
 		this.config.xIsSeries = options.axisOptions.xIsSeries || 0;
 		this.config.shortenYAxisNumbers = options.axisOptions.shortenYAxisNumbers || 0;
@@ -77,13 +78,10 @@ export default class AxisChart extends BaseChart {
 		let labels = this.data.labels;
 		s.datasetLength = labels.length;
 
-		s.unitWidth = this.width / (s.datasetLength);
-		// Default, as per bar, and mixed. Only line will be a special case
-		s.xOffset = s.unitWidth / 2;
-
-		// // For a pure Line Chart
-		// s.unitWidth = this.width/(s.datasetLength - 1);
-		// s.xOffset = 0;
+		let hasBars = this.data.datasets.some(d => d.chartType === 'bar');
+		let edgeToEdge = this.config.xOffset === 0 && !hasBars && s.datasetLength > 1;
+		s.unitWidth = this.width / (edgeToEdge ? s.datasetLength - 1 : s.datasetLength);
+		s.xOffset = edgeToEdge ? 0 : s.unitWidth / 2;
 
 		s.xAxis = {
 			labels: labels,
