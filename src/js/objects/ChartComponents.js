@@ -405,13 +405,15 @@ let componentConfigs = {
 				);
 			}
 
-						this.units = [];
-			if (o.showDots) {
+			this.units = [];
+			const lastIndex = gaps ? gaps.lastIndexOf(false) : data.yPositions.length - 1;
+			if (o.showDots || c.valuesOverPoints) {
 				this.units = data.yPositions.map((y, j) => {
+					let visible = o.showDots || (o.trailingDot && j === lastIndex);
 					let dot = datasetDot(
 						data.xPositions[j],
 						y,
-						data.radius,
+						visible ? data.radius : 0,
 						c.color,
 						(c.valuesOverPoints ? data.values[j] : ''),
 						j,
@@ -422,8 +424,7 @@ let componentConfigs = {
 				});
 			}
 
-			const lastIndex = gaps ? gaps.lastIndexOf(false) : data.yPositions.length - 1;
-			if (o.trailingDot && !o.showDots && lastIndex >= 0) {
+			if (o.trailingDot && !this.units.length && lastIndex >= 0) {
 				const dot = datasetDot(
 					data.xPositions[lastIndex],
 					data.yPositions[lastIndex],
