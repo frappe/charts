@@ -258,8 +258,7 @@ export default class Heatmap extends BaseChart {
 			col = this.getCol(startOfWeek, month);
 			cols.push(col);
 
-			startOfWeek = new Date(col[NO_OF_DAYS_IN_WEEK - 1].yyyyMmDd);
-			addDays(startOfWeek, 1);
+			addDays(startOfWeek, NO_OF_DAYS_IN_WEEK);
 		}
 
 		if (col[NO_OF_DAYS_IN_WEEK - 1].dataValue !== undefined) {
