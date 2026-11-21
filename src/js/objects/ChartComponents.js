@@ -1,11 +1,10 @@
 import { makeSVGGroup } from '../utils/draw';
-import { makeText, makePath, xLine, yLine, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
+import { makeText, makePath, xLine, yLine, xMarker, yMarker, xRegion, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import {
 	translateHoriLine, translateVertLine, animateRegion, animateBar,
 	animateDot, animatePath, animatePathStr
 } from '../utils/animate';
-import { getMonthName } from '../utils/date-utils';
 
 class ChartComponent {
 	constructor({
@@ -74,15 +73,13 @@ let componentConfigs = {
 	donutSlices: {
 		layerClass: 'donut-slices',
 		makeElements(data) {
-			return data.sliceStrings.map((s, i) => {
-				let slice = makePath(s, 'donut-path', data.colors[i], 'none', data.strokeWidth);
-				slice.style.transition = 'transform .3s;';
-				return slice;
-			});
+			return data.sliceStrings.map((s, i) => makePath(s, 'donut-path', 'none', data.colors[i]));
 		},
 
 		animateElements(newData) {
-			return this.store.map((slice, i) => animatePathStr(slice, newData.sliceStrings[i]));
+			return this.store
+				.filter((slice, i) => newData.sliceStrings[i])
+				.map((slice, i) => animatePathStr(slice, newData.sliceStrings[i]));
 		},
 	},
 	pieSlices: {
@@ -159,10 +156,14 @@ let componentConfigs = {
 	xAxis: {
 		layerClass: 'x axis',
 		makeElements(data) {
-			return data.positions.map((position, i) =>
-				xLine(position, data.calcLabels[i], this.constants.height,
-					{ mode: this.constants.mode, pos: this.constants.pos })
-			);
+			return data.positions.map((position, i) => {
+				let line = xLine(position, data.calcLabels[i], this.constants.height,
+					{ mode: this.constants.mode, pos: this.constants.pos });
+				if (data.calcLabels[i] === '' && data.labels && data.labels[i] !== '') {
+					line.setAttribute('visibility', 'hidden');
+				}
+				return line;
+			});
 		},
 
 		animateElements(newData) {
@@ -176,7 +177,8 @@ let componentConfigs = {
 
 			this.render({
 				positions: oldPos,
-				calcLabels: newLabels
+				calcLabels: newLabels,
+				labels: newData.labels
 			});
 
 			return this.store.map((line, i) => {
@@ -217,6 +219,31 @@ let componentConfigs = {
 					line, newPos[i], oldPos[i]
 				);
 			});
+		}
+	},
+
+	xMarkers: {
+		layerClass: 'x-markers',
+		makeElements(data) {
+			return data.map(m =>
+				xMarker(m.position, m.label, this.constants.height,
+					{ stroke: m.options.stroke, lineType: m.options.lineType })
+			);
+		},
+		animateElements() {
+			return [];
+		}
+	},
+
+	xRegions: {
+		layerClass: 'x-regions',
+		makeElements(data) {
+			return data.map(r =>
+				xRegion(r.startPos, r.endPos, this.constants.height, r.label, r.options)
+			);
+		},
+		animateElements() {
+			return [];
 		}
 	},
 
@@ -263,7 +290,7 @@ let componentConfigs = {
 	heatDomain: {
 		layerClass: function () { return 'heat-domain domain-' + this.constants.index; },
 		makeElements(data) {
-			let { index, colWidth, rowHeight, squareSize, radius, xTranslate } = this.constants;
+			let { monthName, colWidth, rowHeight, squareSize, radius, xTranslate } = this.constants;
 			let monthNameHeight = -12;
 			let x = xTranslate, y = 0;
 
@@ -272,7 +299,7 @@ let componentConfigs = {
 			data.cols.map((week, weekNo) => {
 				if (weekNo === 1) {
 					this.labels.push(
-						makeText('domain-name', x, monthNameHeight, getMonthName(index, true).toUpperCase(),
+						makeText('domain-name', x, monthNameHeight, monthName.toUpperCase(),
 							{
 								fontSize: 9
 							}
@@ -313,14 +340,15 @@ let componentConfigs = {
 					data.xPositions[j],
 					y,
 					data.barWidth,
-					c.color,
+					(data.colors && data.colors[j]) || c.color,
 					data.labels[j],
 					j,
 					data.offsets[j],
 					{
 						zeroLine: data.zeroLine,
 						barsWidth: data.barsWidth,
-						minHeight: c.minHeight
+						minHeight: c.minHeight,
+						radius: c.radius
 					}
 				);
 			});
@@ -347,6 +375,7 @@ let componentConfigs = {
 				yPositions: oldYPos,
 				offsets: oldOffsets,
 				labels: newLabels,
+				colors: newData.colors,
 
 				zeroLine: this.oldData.zeroLine,
 				barsWidth: this.oldData.barsWidth,
@@ -358,7 +387,7 @@ let componentConfigs = {
 			this.store.map((bar, i) => {
 				animateElements = animateElements.concat(animateBar(
 					bar, newXPos[i], newYPos[i], newData.barWidth, newOffsets[i],
-					{ zeroLine: newData.zeroLine }
+					{ zeroLine: newData.zeroLine, minHeight: this.constants.minHeight, radius: this.constants.radius }
 				));
 			});
 
@@ -370,17 +399,23 @@ let componentConfigs = {
 		layerClass: function () { return 'dataset-units dataset-line dataset-' + this.constants.index; },
 		makeElements(data) {
 			let c = this.constants;
+			let o = data.lineOptions || {};
 			this.unitType = 'dot';
 			this.paths = {};
-			if (!c.hideLine) {
+			let gaps = o.showGaps || o.spanGaps ? data.values.map(v => v === null) : null;
+			if (!o.hideLine) {
 				this.paths = getPaths(
 					data.xPositions,
 					data.yPositions,
 					c.color,
 					{
-						heatline: c.heatline,
-						regionFill: c.regionFill,
-						spline: c.spline
+						heatline: o.heatline,
+						regionFill: o.regionFill,
+						spline: o.spline,
+						stepped: o.stepped,
+						spanGaps: o.spanGaps,
+						dashed: o.dashed,
+						gaps: gaps
 					},
 					{
 						svgDefs: c.svgDefs,
@@ -389,23 +424,26 @@ let componentConfigs = {
 				);
 			}
 
-						this.units = [];
-			if (c.showDots) {
+			this.units = [];
+			const lastIndex = gaps ? gaps.lastIndexOf(false) : data.yPositions.length - 1;
+			if (o.showDots || c.valuesOverPoints) {
 				this.units = data.yPositions.map((y, j) => {
-					return datasetDot(
+					let visible = o.showDots || (o.trailingDot && j === lastIndex);
+					let dot = datasetDot(
 						data.xPositions[j],
 						y,
-						data.radius,
+						visible ? data.radius : 0,
 						c.color,
 						(c.valuesOverPoints ? data.values[j] : ''),
 						j,
-						c.hideDotBorder
+						o.hideDotBorder
 					);
+					if (gaps && gaps[j]) dot.setAttribute('visibility', 'hidden');
+					return dot;
 				});
 			}
 
-			if (c.trailingDot && !c.showDots) {
-				const lastIndex = data.yPositions.length - 1;
+			if (o.trailingDot && !this.units.length && lastIndex >= 0) {
 				const dot = datasetDot(
 					data.xPositions[lastIndex],
 					data.yPositions[lastIndex],
@@ -413,7 +451,7 @@ let componentConfigs = {
 					c.color,
 					(c.valuesOverPoints ? data.values[lastIndex] : ''),
 					lastIndex,
-					c.hideDotBorder
+					o.hideDotBorder
 				);
 
 				this.units.push(dot);
@@ -438,6 +476,7 @@ let componentConfigs = {
 				xPositions: oldXPos,
 				yPositions: oldYPos,
 				values: newValues,
+				lineOptions: newData.lineOptions,
 
 				zeroLine: this.oldData.zeroLine,
 				radius: this.oldData.radius,
@@ -446,8 +485,10 @@ let componentConfigs = {
 			let animateElements = [];
 
 			if (Object.keys(this.paths).length) {
+				let o = newData.lineOptions || {};
+				let gaps = o.showGaps || o.spanGaps ? newValues.map(v => v === null) : null;
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine, this.constants.spline));
+					this.paths, newXPos, newYPos, newData.zeroLine, o.spline, gaps, o.stepped, o.spanGaps));
 			}
 
 			if (this.units.length) {

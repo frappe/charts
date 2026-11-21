@@ -1,15 +1,14 @@
 import SvgTip from '../objects/SvgTip';
 import { $, isElementInViewport, getElementContentWidth, isHidden } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup, makeText } from '../utils/draw';
-import { LEGEND_ITEM_WIDTH } from '../utils/constants';
 import {
 	BASE_MEASURES, getExtraHeight, getExtraWidth, getTopOffset, getLeftOffset,
-	INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS
+	INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS, LEGEND_ITEM_GAP
 } from '../utils/constants';
 import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
 import { downloadFile, prepareForExport } from '../utils/export';
-import { deepClone } from '../utils/helpers';
+import { deepClone, getLegendRows } from '../utils/helpers';
 
 export default class BaseChart {
 	constructor(parent, options) {
@@ -28,10 +27,12 @@ export default class BaseChart {
 		this.title = options.title || '';
 		this.type = options.type || '';
 
-		this.realData = this.prepareData(options.data);
+		this.realData = this.prepareData(options.data || {});
 		this.data = this.prepareFirstData(this.realData);
 
 		this.colors = this.validateColors(options.colors, this.type);
+		this.paletteSize = this.colors.length;
+		this.extendColors(this.realData);
 
 		this.config = {
 			showTooltip: 1, // calculate
@@ -39,15 +40,23 @@ export default class BaseChart {
 			isNavigable: options.isNavigable || 0,
 			animate: (typeof options.animate !== 'undefined') ? options.animate : 1,
 			disableEntryAnimation: options.disableEntryAnimation || 0,
-			truncateLegends:  (typeof options.truncateLegends !== 'undefined') ? options.truncateLegends : 1
+			truncateLegends:  (typeof options.truncateLegends !== 'undefined') ? options.truncateLegends : 1,
+			onClick: options.onClick
 		};
+
+		if (this.config.disableEntryAnimation || !this.config.animate) {
+			this.data = this.realData;
+		}
 
 		this.measures = JSON.parse(JSON.stringify(BASE_MEASURES));
 		let m = this.measures;
 		this.setMeasures(options);
+		let measures = options.measures || {};
+		['margins', 'paddings'].forEach(key => Object.assign(m[key], measures[key]));
 		if (!this.title.length) { m.titleHeight = 0; }
 		if (!this.config.showLegend) m.legendHeight = 0;
 		this.argHeight = options.height || m.baseHeight;
+		this.baseLegendHeight = m.legendHeight;
 
 		this.state = {};
 		this.options = {};
@@ -81,6 +90,14 @@ export default class BaseChart {
 			}
 		});
 		return validColors;
+	}
+
+	extendColors(data = {}) {
+		if (this.type === 'heatmap' || !this.paletteSize) return;
+		let count = Math.max((data.labels || []).length, (data.datasets || []).length);
+		for (let i = this.colors.length; i < count; i++) {
+			this.colors.push(this.colors[i % this.paletteSize]);
+		}
 	}
 
 	setMeasures() {
@@ -132,6 +149,7 @@ export default class BaseChart {
 		}
 
 		this.container = $.create('div', args);
+		this.container.classList.toggle('is-clickable', !!this.config.onClick);
 	}
 
 	makeTooltip() {
@@ -159,7 +177,7 @@ export default class BaseChart {
 		// this.components.forEach(c => c.make());
 		this.render(this.components, false);
 
-		if (init) {
+		if (init && this.data !== this.realData) {
 			this.data = this.realData;
 			setTimeout(() => { this.update(this.data, true); }, this.initTimeout);
 		}
@@ -179,9 +197,7 @@ export default class BaseChart {
 	}
 
 	makeChartArea() {
-		if (this.svg) {
-			this.container.removeChild(this.svg);
-		}
+		this.container.querySelectorAll(':scope > svg.frappe-chart').forEach(svg => svg.remove());
 		let m = this.measures;
 
 		this.svg = makeSVGContainer(
@@ -242,6 +258,7 @@ export default class BaseChart {
 		const animate = drawing ? !this.config.disableEntryAnimation : this.config.animate;
 		
 		this.data = this.prepareData(data);
+		this.extendColors(this.data);
 		this.calc(); // builds state
 		this.render(this.components, animate);
 	}
@@ -276,21 +293,20 @@ export default class BaseChart {
 		}
 	}
 
+	calcLegendRows(widths) {
+		if (!this.config.showLegend) return;
+		this.legendRows = getLegendRows(widths, this.width, LEGEND_ITEM_GAP);
+		let extra = Math.max(this.legendRows.length - 1, 0) * this.config.legendRowHeight;
+		this.measures.legendHeight = this.baseLegendHeight + extra;
+		this.baseHeight = this.argHeight + extra;
+	}
+
 	renderLegend(dataset) {
 		this.legendArea.textContent = '';
-		let count = 0;
-		let y = 0;
-
-		dataset.map((data, index) => {
-			let divisor = Math.floor(this.width / LEGEND_ITEM_WIDTH);
-			if (count > divisor) {
-				count = 0;
-				y += this.config.legendRowHeight;
-			}
-			let x = LEGEND_ITEM_WIDTH * count;
-			let dot = this.makeLegend(data, index, x, y);
-			this.legendArea.appendChild(dot);
-			count++;
+		(this.legendRows || []).forEach((row, i) => {
+			row.forEach(({ index, x }) => {
+				this.legendArea.appendChild(this.makeLegend(dataset[index], index, x, i * this.config.legendRowHeight));
+			});
 		});
 	}
 
@@ -342,7 +358,10 @@ export default class BaseChart {
 	updateDataset() { }
 
 	export() {
-		let chartSvg = prepareForExport(this.svg);
+		let background = [this.container, this.parent]
+			.map(el => getComputedStyle(el).backgroundColor)
+			.find(color => color && color !== 'transparent' && !/rgba\(.*,\s*0\)$/.test(color));
+		let chartSvg = prepareForExport(this.svg, background);
 		downloadFile(this.title || 'Chart', [chartSvg]);
 	}
 }

@@ -1,7 +1,7 @@
 import AggregationChart from './AggregationChart';
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset } from '../utils/dom';
-import { getPositionByAngle } from '../utils/helpers';
+import { getPositionByAngle, escapeHTML } from '../utils/helpers';
 import { makeArcPathStr, makeCircleStr } from '../utils/draw';
 import { transform } from '../utils/animation';
 import { FULL_ANGLE } from '../utils/constants';
@@ -38,6 +38,7 @@ export default class PieChart extends AggregationChart {
 
 	calc() {
 		super.calc();
+		this.calcLegend();
 		let s = this.state;
 		this.radius = this.getRadius();
 
@@ -125,10 +126,12 @@ export default class PieChart extends AggregationChart {
 			let g_off = getOffset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
-			let title = (this.formatted_labels && this.formatted_labels.length > 0
+			let title = escapeHTML(this.formatted_labels && this.formatted_labels.length > 0
 				? this.formatted_labels[i] : this.state.labels[i]) + ': ';
-			let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1);
-			this.tip.setValues(x, y, { name: title, value: percent + "%" });
+			let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1) + "%";
+			let format = this.config.formatTooltipY;
+			let value = format ? `${escapeHTML(format(this.state.sliceTotals[i]))} (${percent})` : percent;
+			this.tip.setValues(x, y, { name: title, value: value });
 			this.tip.showTip();
 		} else {
 			this.resetHover(path, color)
@@ -144,6 +147,22 @@ export default class PieChart extends AggregationChart {
 	bindTooltip() {
 		this.container.addEventListener('mousemove', this.mouseMove);
 		this.container.addEventListener('mouseleave', this.mouseLeave);
+		this.container.addEventListener('click', (e) => {
+			if (!this.config.onClick) return;
+			let i = this.components.get(this.sliceName).store.indexOf(e.target);
+			let item = e.target.closest && e.target.closest('.pie-legend-item');
+			if (i === -1 && item) i = parseInt(item.getAttribute('data-index'));
+			if (i === -1 || isNaN(i)) return;
+			let s = this.state;
+			this.config.onClick({ index: i, label: s.labels[i], value: s.sliceTotals[i] });
+		});
+	}
+
+	makeLegend(data, index, x_pos, y_pos) {
+		let item = super.makeLegend(data, index, x_pos, y_pos);
+		item.classList.add('pie-legend-item');
+		item.setAttribute('data-index', index);
+		return item;
 	}
 
 	mouseMove(e) {

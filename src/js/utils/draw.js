@@ -1,10 +1,10 @@
-import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getSplineCurvePointsStr } from './draw-utils';
+import { getBarHeightAndYAttr, truncateString, shortenLargeNumber, getLinePathStrs } from './draw-utils';
 import { getStringWidth, isValidNumber, round } from './helpers';
 import { DOT_OVERLAY_SIZE_INCR } from './constants';
 
 export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
-const LABEL_MAX_CHARS = 18;
+export const LABEL_MAX_CHARS = 18;
 export const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#E2E6E9';
 
@@ -59,7 +59,7 @@ function renderVerticalGradient(svgDefElem, gradientId) {
 function setGradientStop(gradElem, offset, color, opacity) {
 	return createSVG('stop', {
 		'inside': gradElem,
-		'style': `stop-color: ${color}`,
+		styles: { stopColor: color },
 		'offset': offset,
 		'stop-opacity': opacity
 	});
@@ -130,29 +130,47 @@ export function makeCircleStr(startPosition, endPosition, center, radius, clockW
 		${arcEndX} ${arcEndY} z`;
 }
 
-export function makeArcStrokePathStr(startPosition, endPosition, center, radius, clockWise = 1, largeArc = 0) {
-	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
-	let [arcEndX, arcEndY] = [center.x + endPosition.x, center.y + endPosition.y];
+export function makeDonutSectorStr(center, innerRadius, outerRadius, startAngle, endAngle, cornerRadius) {
+	if (!(innerRadius > 0 && outerRadius > 0)) return '';
+	let span = endAngle - startAngle;
+	let cr = Math.min(cornerRadius, (outerRadius - innerRadius) / 2, (span * innerRadius) / 2.2);
+	let outerInset = cr / outerRadius;
+	let innerInset = cr / innerRadius;
+	let largeOuter = span - 2 * outerInset > Math.PI ? 1 : 0;
+	let largeInner = span - 2 * innerInset > Math.PI ? 1 : 0;
+	let point = (r, a) => `${center.x + r * Math.cos(a)} ${center.y + r * Math.sin(a)}`;
 
-	return `M${arcStartX} ${arcStartY}
-		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
-		${arcEndX} ${arcEndY}`;
+	return [
+		`M ${point(outerRadius, startAngle + outerInset)}`,
+		`A ${outerRadius} ${outerRadius} 0 ${largeOuter} 1 ${point(outerRadius, endAngle - outerInset)}`,
+		`Q ${point(outerRadius, endAngle)} ${point(outerRadius - cr, endAngle)}`,
+		`L ${point(innerRadius + cr, endAngle)}`,
+		`Q ${point(innerRadius, endAngle)} ${point(innerRadius, endAngle - innerInset)}`,
+		`A ${innerRadius} ${innerRadius} 0 ${largeInner} 0 ${point(innerRadius, startAngle + innerInset)}`,
+		`Q ${point(innerRadius, startAngle)} ${point(innerRadius + cr, startAngle)}`,
+		`L ${point(outerRadius - cr, startAngle)}`,
+		`Q ${point(outerRadius, startAngle)} ${point(outerRadius, startAngle + outerInset)}`,
+		'Z'
+	].join(' ');
 }
 
-export function makeStrokeCircleStr(startPosition, endPosition, center, radius, clockWise = 1, largeArc = 0) {
-	let [arcStartX, arcStartY] = [center.x + startPosition.x, center.y + startPosition.y];
-	let [arcEndX, midArc, arcEndY] = [center.x + endPosition.x, radius * 2 + arcStartY, center.y + startPosition.y];
+export function makeDonutRingStr(center, innerRadius, outerRadius) {
+	let { x, y } = center;
+	let arc = (r, sweep, toX) => `A ${r} ${r} 0 1 ${sweep} ${toX} ${y}`;
 
-	return `M${arcStartX} ${arcStartY}
-		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
-		${arcEndX} ${midArc}
-		M${arcStartX} ${midArc}
-		A ${radius} ${radius} 0 ${largeArc} ${clockWise ? 1 : 0}
-		${arcEndX} ${arcEndY}`;
+	return [
+		`M ${x + outerRadius} ${y}`,
+		arc(outerRadius, 1, x - outerRadius),
+		arc(outerRadius, 1, x + outerRadius),
+		`M ${x + innerRadius} ${y}`,
+		arc(innerRadius, 0, x - innerRadius),
+		arc(innerRadius, 0, x + innerRadius),
+		'Z'
+	].join(' ');
 }
 
 export function makeGradient(svgDefElem, color, lighter = false) {
-	let gradientId = 'path-fill-gradient' + '-' + color + '-' + (lighter ? 'lighter' : 'default');
+	let gradientId = ('path-fill-gradient-' + color + '-' + (lighter ? 'lighter' : 'default')).replace(/[^\w-]/g, '');
 	let gradientDef = renderVerticalGradient(svgDefElem, gradientId);
 	let opacities = [1, 0.6, 0.2];
 	if (lighter) {
@@ -168,15 +186,15 @@ export function makeGradient(svgDefElem, color, lighter = false) {
 
 export function rightRoundedBar(x, width, height) {
 	// https://medium.com/@dennismphil/one-side-rounded-rectangle-using-svg-fb31cf318d90
-	let radius = height / 2;
-	let xOffset = width - radius;
+	let radius = Math.max(Math.min(height / 2, width), 0);
+	let xOffset = Math.max(width - radius, 0);
 
 	return `M${x},0 h${xOffset} q${radius},0 ${radius},${radius} q0,${radius} -${radius},${radius} h-${xOffset} v${height}z`;
 }
 
 export function leftRoundedBar(x, width, height) {
-	let radius = height / 2;
-	let xOffset = width - radius;
+	let radius = Math.max(Math.min(height / 2, width), 0);
+	let xOffset = Math.max(width - radius, 0);
 
 	return `M${x + radius},0 h${xOffset} v${height} h-${xOffset} q-${radius}, 0 -${radius},-${radius} q0,-${radius} ${radius},-${radius}z`;
 }
@@ -196,7 +214,7 @@ export function percentageBar(x, y, width, height, isFirst, isLast, fill = 'none
 		className: 'percentage-bar',
 		x: x,
 		y: y,
-		width: width,
+		width: Math.max(width, 0),
 		height: height,
 		fill: fill
 	};
@@ -305,7 +323,7 @@ function makeVertLine(x, label, y1, y2, options = {}) {
 
 	let text = createSVG('text', {
 		x: 0,
-		y: y1 > y2 ? y1 + LABEL_MARGIN : y1 - LABEL_MARGIN - FONT_SIZE,
+		y: y1 >= y2 ? y1 + LABEL_MARGIN : y1 - LABEL_MARGIN - FONT_SIZE,
 		dy: FONT_SIZE + 'px',
 		'font-size': FONT_SIZE + 'px',
 		'text-anchor': 'middle',
@@ -324,12 +342,10 @@ function makeVertLine(x, label, y1, y2, options = {}) {
 
 function makeHoriLine(y, label, x1, x2, options = {}) {
 	if (!options.lineType) options.lineType = '';
-	if (options.shortenNumbers) {
-		if (options.numberFormatter) {
-			label = options.numberFormatter(label);
-		} else {
-			label = shortenLargeNumber(label);
-		}
+	if (options.numberFormatter) {
+		label = options.numberFormatter(label);
+	} else if (options.shortenNumbers) {
+		label = shortenLargeNumber(label);
 	}
 
 	let className = 'line-horizontal ' + options.className +
@@ -424,6 +440,10 @@ export function xLine(x, label, height, options = {}) {
 	let y1 = height + AXIS_TICK_LENGTH;
 	let y2 = options.mode === 'span' ? -1 * AXIS_TICK_LENGTH : height;
 
+	if (options.mode === 'none') {
+		y2 = y1;
+	}
+
 	if (options.mode === 'tick' && options.pos === 'top') {
 		// top axis ticks
 		y1 = -1 * AXIS_TICK_LENGTH;
@@ -463,6 +483,69 @@ export function yMarker(y, label, width, options = {}) {
 	line.appendChild(labelSvg);
 
 	return line;
+}
+
+export function xMarker(x, label, height, options = {}) {
+	if (!isValidNumber(x)) x = 0;
+	if (!options.lineType) options.lineType = 'dashed';
+
+	let line = createSVG('line', {
+		className: 'line-vertical ' + (options.className || '') +
+			(options.lineType === 'dashed' ? ' dashed' : ''),
+		x1: 0,
+		x2: 0,
+		y1: 0,
+		y2: height,
+		styles: {
+			stroke: options.stroke || BASE_LINE_COLOR
+		}
+	});
+
+	let labelSvg = createSVG('text', {
+		className: 'chart-label',
+		x: 0,
+		y: -LABEL_MARGIN,
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'middle',
+		innerHTML: label + ""
+	});
+
+	let marker = createSVG('g', {
+		transform: `translate(${x}, 0)`
+	});
+	marker.appendChild(line);
+	marker.appendChild(labelSvg);
+
+	return marker;
+}
+
+export function xRegion(x1, x2, height, label, options = {}) {
+	let rect = createSVG('rect', {
+		className: 'x-region',
+		styles: {
+			fill: options.fill || `rgba(228, 234, 239, 0.49)`,
+			stroke: options.stroke || 'none'
+		},
+		x: x1,
+		y: 0,
+		width: Math.max(x2 - x1, 0),
+		height: height
+	});
+
+	let labelSvg = createSVG('text', {
+		className: 'chart-label',
+		x: (x1 + x2) / 2,
+		y: -LABEL_MARGIN,
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'middle',
+		innerHTML: (label || '') + ""
+	});
+
+	let region = createSVG('g', {});
+	region.appendChild(rect);
+	region.appendChild(labelSvg);
+
+	return region;
 }
 
 export function yRegion(y1, y2, width, label, options = {}) {
@@ -507,82 +590,86 @@ export function yRegion(y1, y2, width, label, options = {}) {
 	return region;
 }
 
-export function datasetBar(x, yTop, width, color, label = '', index = 0, offset = 0, meta = {}) {
+export function makeHoverBand(height) {
+	return createSVG('rect', {
+		className: 'hover-band',
+		x: 0,
+		y: 0,
+		width: 0,
+		height: height
+	});
+}
+
+export function barPathStr(x, y, width, height, radius = 0, roundBottom = false) {
+	let r = Math.max(0, Math.min(radius, width / 2, height));
+	let [right, bottom] = [x + width, y + height];
+
+	if (roundBottom) {
+		return `M${x},${y} V${bottom - r} Q${x},${bottom} ${x + r},${bottom} `
+			+ `H${right - r} Q${right},${bottom} ${right},${bottom - r} V${y} Z`;
+	}
+	return `M${x},${bottom} V${y + r} Q${x},${y} ${x + r},${y} `
+		+ `H${right - r} Q${right},${y} ${right},${y + r} V${bottom} Z`;
+}
+
+export function getBarGeometry(x, yTop, width, offset = 0, meta = {}) {
 	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
 	y -= offset;
 
 	if (height === 0) {
-		height = meta.minHeight;
-		y -= meta.minHeight;
+		height = meta.minHeight || 0;
+		y -= height;
 	}
 
-	// Preprocess numbers to avoid svg building errors
 	if (!isValidNumber(x)) x = 0;
 	if (!isValidNumber(y)) y = 0;
 	if (!isValidNumber(height, true)) height = 0;
 	if (!isValidNumber(width, true)) width = 0;
 
-	// x y h w
+	return { x, y, width, height, roundBottom: yTop > meta.zeroLine };
+}
 
-	// M{x},{y+r}
-	// q0,-{r} {r},-{r}
-	// q{r},0 {r},{r}
-	// v{h-r}
-	// h-{w}z
-
-	// let radius = width/2;
-	// let pathStr = `M${x},${y+radius} q0,-${radius} ${radius},-${radius} q${radius},0 ${radius},${radius} v${height-radius} h-${width}z`
-
-	// let rect = createSVG('path', {
-	// 	className: 'bar mini',
-	// 	d: pathStr,
-	// 	styles: { fill: color },
-	// 	x: x,
-	// 	y: y,
-	// 	'data-point-index': index,
-	// });
-
-	let rect = createSVG('rect', {
-		className: `bar mini`,
-		style: `fill: ${color}`,
-		'data-point-index': index,
-		x: x,
-		y: y,
-		width: width,
-		height: height
-	});
+export function datasetBar(x, yTop, width, color, label = '', index = 0, offset = 0, meta = {}) {
+	let bar = getBarGeometry(x, yTop, width, offset, meta);
 
 	label += "";
+	let hasLabel = label && label.length;
+	let origin = hasLabel ? [0, 0] : [bar.x, bar.y];
 
-	if (!label && !label.length) {
-		return rect;
-	} else {
-		rect.setAttribute('y', 0);
-		rect.setAttribute('x', 0);
-		let text = createSVG('text', {
-			className: 'data-point-value',
-			x: width / 2,
-			y: 0,
-			dy: (FONT_SIZE / 2 * -1) + 'px',
-			'font-size': FONT_SIZE + 'px',
-			'text-anchor': 'middle',
-			innerHTML: label
-		});
+	let path = createSVG('path', {
+		className: `bar mini`,
+		styles: { fill: color, stroke: 'none' },
+		'data-point-index': index,
+		d: barPathStr(origin[0], origin[1], bar.width, bar.height, meta.radius, bar.roundBottom)
+	});
 
-		let group = createSVG('g', {
-			'data-point-index': index,
-			transform: `translate(${x}, ${y})`
-		});
-		group.appendChild(rect);
-		group.appendChild(text);
-
-		return group;
+	if (!hasLabel) {
+		return path;
 	}
+
+	let text = createSVG('text', {
+		className: 'data-point-value',
+		x: bar.width / 2,
+		y: 0,
+		dy: (FONT_SIZE / 2 * -1) + 'px',
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'middle',
+		innerHTML: label
+	});
+
+	let group = createSVG('g', {
+		'data-point-index': index,
+		transform: `translate(${bar.x}, ${bar.y})`
+	});
+	group.appendChild(path);
+	group.appendChild(text);
+
+	return group;
 }
 
 export function datasetDot(x, y, radius, color, label = '', index = 0, hideDotBorder = false) {
 	let dot = createSVG('circle', {
-		style: `fill: ${color}; ${hideDotBorder ? `stroke: ${color}`: ''}`,
+		styles: hideDotBorder ? { fill: color, stroke: color } : { fill: color },
 		'data-point-index': index,
 		cx: x,
 		cy: y,
@@ -619,14 +706,15 @@ export function datasetDot(x, y, radius, color, label = '', index = 0, hideDotBo
 }
 
 export function getPaths(xList, yList, color, options = {}, meta = {}) {
-	let pointsList = yList.map((y, i) => (xList[i] + ',' + y));
-	let pointsStr = pointsList.join("L");
+	let pathStrs = getLinePathStrs(xList, yList, {
+		spline: options.spline,
+		stepped: options.stepped,
+		gaps: options.gaps,
+		spanGaps: options.spanGaps,
+		zeroLine: meta.zeroLine
+	});
 
-	// Spline
-	if (options.spline)
-		pointsStr = getSplineCurvePointsStr(xList, yList);
-
-	let path = makePath("M" + pointsStr, 'line-graph-path', color);
+	let path = makePath(pathStrs.line, 'line-graph-path' + (options.dashed ? ' dashed' : ''), color);
 
 	// HeatLine
 	if (options.heatline) {
@@ -641,18 +729,23 @@ export function getPaths(xList, yList, color, options = {}, meta = {}) {
 	// Region
 	if (options.regionFill) {
 		let gradient_id_region = makeGradient(meta.svgDefs, color, true);
-
-		let pathStr = "M" + `${xList[0]},${meta.zeroLine}L` + pointsStr + `L${xList.slice(-1)[0]},${meta.zeroLine}`;
-		paths.region = makePath(pathStr, `region-fill`, 'none', `url(#${gradient_id_region})`);
+		paths.region = makePath(pathStrs.region, `region-fill`, 'none', `url(#${gradient_id_region})`);
 	}
 
 	return paths;
 }
 
+// a dot hidden over a gap keeps its overlay hidden too; the flag sits on the dot's group when it has a label
+function syncDotVisibility(unit, overlay) {
+	let visibility = unit.getAttribute('visibility');
+	if (visibility) overlay.setAttribute('visibility', visibility);
+	else overlay.removeAttribute('visibility');
+}
+
 export let makeOverlay = {
 	'bar': (unit) => {
 		let transformValue;
-		if (unit.nodeName !== 'rect') {
+		if (unit.nodeName === 'g') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];
 		}
@@ -668,6 +761,7 @@ export let makeOverlay = {
 
 	'dot': (unit) => {
 		let transformValue;
+		let dotUnit = unit;
 		if (unit.nodeName !== 'circle') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];
@@ -678,6 +772,7 @@ export let makeOverlay = {
 		overlay.setAttribute('r', parseInt(radius) + DOT_OVERLAY_SIZE_INCR);
 		overlay.setAttribute('fill', fill);
 		overlay.style.opacity = '0.6';
+		syncDotVisibility(dotUnit, overlay);
 
 		if (transformValue) {
 			overlay.setAttribute('transform', transformValue);
@@ -708,11 +803,11 @@ export let makeOverlay = {
 export let updateOverlay = {
 	'bar': (unit, overlay) => {
 		let transformValue;
-		if (unit.nodeName !== 'rect') {
+		if (unit.nodeName === 'g') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];
 		}
-		let attributes = ['x', 'y', 'width', 'height'];
+		let attributes = ['d'];
 		Object.values(unit.attributes)
 			.filter(attr => attributes.includes(attr.name) && attr.specified)
 			.map(attr => {
@@ -726,6 +821,7 @@ export let updateOverlay = {
 
 	'dot': (unit, overlay) => {
 		let transformValue;
+		syncDotVisibility(unit, overlay);
 		if (unit.nodeName !== 'circle') {
 			transformValue = unit.getAttribute('transform');
 			unit = unit.childNodes[0];

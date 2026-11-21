@@ -1,4 +1,5 @@
-import { getBarHeightAndYAttr, getSplineCurvePointsStr } from './draw-utils';
+import { getLinePathStrs } from './draw-utils';
+import { barPathStr, getBarGeometry } from './draw';
 
 export const UNIT_ANIM_DUR = 350;
 export const PATH_ANIM_DUR = 350;
@@ -43,24 +44,26 @@ export function animateRegion(rectGroup, newY1, newY2, oldY2) {
 }
 
 export function animateBar(bar, x, yTop, width, offset = 0, meta = {}) {
-	let [height, y] = getBarHeightAndYAttr(yTop, meta.zeroLine);
-	y -= offset;
-	if (bar.nodeName !== 'rect') {
-		let rect = bar.childNodes[0];
-		let rectAnim = [
-			rect,
-			{ width: width, height: height },
+	let geometry = getBarGeometry(x, yTop, width, offset, meta);
+	if (bar.nodeName === 'g') {
+		let barPath = bar.childNodes[0];
+		let pathAnim = [
+			barPath,
+			{ d: barPathStr(0, 0, geometry.width, geometry.height, meta.radius, geometry.roundBottom) },
 			UNIT_ANIM_DUR,
 			STD_EASING
 		];
 
 		let oldCoordStr = bar.getAttribute("transform").split("(")[1].slice(0, -1);
-		let groupAnim = translate(bar, oldCoordStr, [x, y], MARKER_LINE_ANIM_DUR);
-		return [rectAnim, groupAnim];
-	} else {
-		return [[bar, { width: width, height: height, x: x, y: y }, UNIT_ANIM_DUR, STD_EASING]];
+		let groupAnim = translate(bar, oldCoordStr, [geometry.x, geometry.y], MARKER_LINE_ANIM_DUR);
+		return [pathAnim, groupAnim];
 	}
-	// bar.animate({height: args.newHeight, y: yTop}, UNIT_ANIM_DUR, mina.easein);
+	return [[
+		bar,
+		{ d: barPathStr(geometry.x, geometry.y, geometry.width, geometry.height, meta.radius, geometry.roundBottom) },
+		UNIT_ANIM_DUR,
+		STD_EASING
+	]];
 }
 
 export function animateDot(dot, x, y) {
@@ -74,23 +77,17 @@ export function animateDot(dot, x, y) {
 	// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
 }
 
-export function animatePath(paths, newXList, newYList, zeroLine, spline) {
+export function animatePath(paths, newXList, newYList, zeroLine, spline, gaps, stepped, spanGaps) {
 	let pathComponents = [];
-	let pointsStr = newYList.map((y, i) => (newXList[i] + ',' + y)).join("L");
+	let pathStrs = getLinePathStrs(newXList, newYList, { spline, stepped, gaps, spanGaps, zeroLine });
 
-	if (spline)
-		pointsStr = getSplineCurvePointsStr(newXList, newYList);
-
-	const animPath = [paths.path, { d: "M" + pointsStr }, PATH_ANIM_DUR, STD_EASING];
+	const animPath = [paths.path, { d: pathStrs.line }, PATH_ANIM_DUR, STD_EASING];
 	pathComponents.push(animPath);
 
 	if (paths.region) {
-		let regStartPt = `${newXList[0]},${zeroLine}L`;
-		let regEndPt = `L${newXList.slice(-1)[0]}, ${zeroLine}`;
-
 		const animRegion = [
 			paths.region,
-			{ d: "M" + regStartPt + pointsStr + regEndPt },
+			{ d: pathStrs.region },
 			PATH_ANIM_DUR,
 			STD_EASING
 		];

@@ -50,8 +50,8 @@ export function timestampToMidnight(timestamp, roundAhead = false) {
 
 // export function getMonthsBetween(startDate, endDate) {}
 
-export function getWeeksBetween(startDate, endDate) {
-	let weekStartDate = setDayToSunday(startDate);
+export function getWeeksBetween(startDate, endDate, weekStart = 0) {
+	let weekStartDate = setDayToWeekStart(startDate, weekStart);
 	return Math.ceil(getDaysBetween(weekStartDate, endDate) / NO_OF_DAYS_IN_WEEK);
 }
 
@@ -65,6 +65,18 @@ export function areInSameMonth(startDate, endDate) {
 		&& startDate.getFullYear() === endDate.getFullYear();
 }
 
+export function getMonthNames(locale) {
+	if (!locale) return MONTH_NAMES_SHORT;
+	let format = new Intl.DateTimeFormat(locale, { month: 'short' });
+	return MONTH_NAMES_SHORT.map((_, i) => format.format(new Date(2026, i, 1)));
+}
+
+export function getDayNames(locale) {
+	if (!locale) return DAY_NAMES_SHORT;
+	let format = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+	return DAY_NAMES_SHORT.map((_, i) => format.format(new Date(2026, 0, 4 + i)));
+}
+
 export function getMonthName(i, short = false) {
 	let monthName = MONTH_NAMES[i];
 	return short ? monthName.slice(0, 3) : monthName;
@@ -75,11 +87,11 @@ export function getLastDateInMonth(month, year) {
 }
 
 // mutates
-export function setDayToSunday(date) {
+export function setDayToWeekStart(date, weekStart = 0) {
 	let newDate = clone(date);
-	const day = newDate.getDay();
-	if (day !== 0) {
-		addDays(newDate, (-1) * day);
+	const offset = (newDate.getDay() - weekStart + NO_OF_DAYS_IN_WEEK) % NO_OF_DAYS_IN_WEEK;
+	if (offset !== 0) {
+		addDays(newDate, (-1) * offset);
 	}
 	return newDate;
 }

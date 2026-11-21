@@ -16,8 +16,15 @@ export function downloadFile(filename, data) {
 	}, 300);
 }
 
-export function prepareForExport(svg) {
+export function prepareForExport(svg, background) {
 	let clone = svg.cloneNode(true);
+	if (background) {
+		let rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+		rect.setAttribute('width', '100%');
+		rect.setAttribute('height', '100%');
+		rect.setAttribute('fill', background);
+		clone.insertBefore(rect, clone.firstChild);
+	}
 	clone.classList.add('chart-container');
 	clone.setAttribute('xmlns', "http://www.w3.org/2000/svg");
 	clone.setAttribute('xmlns:xlink', "http://www.w3.org/1999/xlink");

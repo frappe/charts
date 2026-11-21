@@ -1,15 +1,17 @@
 import BaseChart from './BaseChart';
 import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-utils';
 import { getComponent } from '../objects/ChartComponents';
-import { getOffset, fire } from '../utils/dom';
+import { getOffset, fire, getTextWidth } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
-import { floatTwo } from '../utils/helpers';
-import { makeOverlay, updateOverlay, legendDot } from '../utils/draw';
+import { floatTwo, getStringWidth, escapeHTML, deepClone, round } from '../utils/helpers';
+import { makeOverlay, updateOverlay, legendDot, makeHoverBand, FONT_SIZE, AXIS_TICK_LENGTH } from '../utils/draw';
 import {
-	getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
-	LINE_CHART_DOT_SIZE
+	BASE_MEASURES, getExtraHeight, getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
+	BAR_CHART_RADIUS, BAR_CHART_GAP, BAR_CHART_MAX_WIDTH, LINE_CHART_DOT_SIZE, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE,
+	LEGEND_CHAR_WIDTH, TOOLTIP_SIDE_GAP
 } from '../utils/constants';
 import { shortenLargeNumber } from '../utils/draw-utils';
+import { getColor } from '../utils/colors';
 
 export default class AxisChart extends BaseChart {
 	constructor(parent, args) {
@@ -31,13 +33,43 @@ export default class AxisChart extends BaseChart {
 		}
 	}
 
+	update(data, drawing = false) {
+		if (!drawing && data && this.changesDatasets(data)) {
+			this.data = this.prepareData(deepClone(data));
+			this.updateLegendMeasures();
+			this.draw();
+			return;
+		}
+		super.update(data, drawing);
+	}
+
+	changesDatasets(data) {
+		let next = this.prepareData(deepClone(data)).datasets;
+		let current = this.data.datasets;
+		return next.length !== current.length || next.some((d, i) => d.chartType !== current[i].chartType);
+	}
+
+	updateLegendMeasures() {
+		let m = this.measures;
+		let showLegend = this.rawChartArgs.showLegend;
+		this.config.showLegend = this.data.datasets.length > 1
+			? (typeof showLegend !== 'undefined' ? showLegend : 1)
+			: 0;
+		m.paddings.bottom = this.data.datasets.length > 1 ? BASE_MEASURES.paddings.bottom : 30;
+		m.legendHeight = this.config.showLegend ? BASE_MEASURES.legendHeight : 0;
+		this.baseLegendHeight = m.legendHeight;
+		this.height = this.argHeight - getExtraHeight(m);
+	}
+
 	configure(options) {
 		super.configure(options);
+		this.baseLeftPadding = this.measures.paddings.left;
 
 		options.axisOptions = options.axisOptions || {};
 		options.tooltipOptions = options.tooltipOptions || {};
 
 		this.config.xAxisMode = options.axisOptions.xAxisMode || 'span';
+		this.config.xOffset = options.axisOptions.xOffset;
 		this.config.yAxisMode = options.axisOptions.yAxisMode || 'span';
 		this.config.xIsSeries = options.axisOptions.xIsSeries || 0;
 		this.config.shortenYAxisNumbers = options.axisOptions.shortenYAxisNumbers || 0;
@@ -48,6 +80,7 @@ export default class AxisChart extends BaseChart {
 
 		this.config.formatTooltipX = options.tooltipOptions.formatTooltipX;
 		this.config.formatTooltipY = options.tooltipOptions.formatTooltipY;
+		this.config.tooltipPlacement = options.tooltipOptions.placement || 'side';
 
 		this.config.valuesOverPoints = options.valuesOverPoints;
 		this.config.legendRowHeight = 30;
@@ -62,11 +95,46 @@ export default class AxisChart extends BaseChart {
 	}
 
 	calc(onlyWidthChange = false) {
+		this.calcLegend();
 		this.calcXPositions();
+		this.calcXMarkers();
 		if (!onlyWidthChange) {
-			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+			let hasBars = this.data.datasets.some(d => d.chartType === 'bar');
+			let hasArea = this.data.datasets.some(d => Object.assign({}, this.lineOptions, d.lineOptions).regionFill);
+			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line' && !hasBars && !hasArea);
+			if (this.fitYAxisLabels()) {
+				this.calcLegend();
+				this.calcXPositions();
+				this.calcXMarkers();
+			}
 		}
 		this.makeDataByIndex();
+	}
+
+	fitYAxisLabels() {
+		let m = this.measures;
+		let { numberFormatter, shortenYAxisNumbers } = this.config;
+		let font = `${FONT_SIZE}px ${getComputedStyle(this.container).fontFamily}`;
+		let widest = Math.max(0, ...this.state.yAxis.labels.map(value => {
+			let label = typeof value === 'number' ? round(value) : value;
+			if (numberFormatter) label = numberFormatter(label);
+			else if (shortenYAxisNumbers) label = shortenLargeNumber(label);
+			return getTextWidth(String(label), font);
+		}));
+		let left = Math.max(this.baseLeftPadding, Math.ceil(widest + AXIS_TICK_LENGTH + 8 - m.margins.left));
+		if (left === m.paddings.left) return false;
+
+		m.paddings.left = left;
+		this.updateWidth();
+		if (this.drawArea) {
+			this.drawArea.setAttribute('transform', `translate(${getLeftOffset(m)}, ${getTopOffset(m)})`);
+			if (this.legendArea) {
+				let [, y] = this.legendArea.getAttribute('transform').match(/,\s*([^)]+)\)/) || [];
+				this.legendArea.setAttribute('transform', `translate(${getLeftOffset(m)}, ${y})`);
+			}
+			this.updateTipOffset(getLeftOffset(m), getTopOffset(m));
+		}
+		return true;
 	}
 
 	calcXPositions() {
@@ -74,13 +142,10 @@ export default class AxisChart extends BaseChart {
 		let labels = this.data.labels;
 		s.datasetLength = labels.length;
 
-		s.unitWidth = this.width / (s.datasetLength);
-		// Default, as per bar, and mixed. Only line will be a special case
-		s.xOffset = s.unitWidth / 2;
-
-		// // For a pure Line Chart
-		// s.unitWidth = this.width/(s.datasetLength - 1);
-		// s.xOffset = 0;
+		let hasBars = this.data.datasets.some(d => d.chartType === 'bar');
+		let edgeToEdge = this.config.xOffset === 0 && !hasBars && s.datasetLength > 1;
+		s.unitWidth = this.width / (edgeToEdge ? s.datasetLength - 1 : s.datasetLength);
+		s.xOffset = edgeToEdge ? 0 : s.unitWidth / 2;
 
 		s.xAxis = {
 			labels: labels,
@@ -88,6 +153,17 @@ export default class AxisChart extends BaseChart {
 				floatTwo(s.xOffset + i * s.unitWidth)
 			)
 		};
+	}
+
+	// always a list, even when empty, so the marker layer exists for markers added by a later update
+	calcXMarkers() {
+		let s = this.state;
+		s.xMarkers = (this.data.xMarkers || [])
+			.map(d => Object.assign({}, d, {
+				position: s.xAxis.positions[this.data.labels.indexOf(d.value)],
+				options: d.options || {}
+			}))
+			.filter(d => d.position !== undefined);
 	}
 
 	calcYAxisParameters(dataValues, withMinimum = 'false') {
@@ -117,12 +193,13 @@ export default class AxisChart extends BaseChart {
 			let values = d.values;
 			let cumulativeYs = d.cumulativeYs || [];
 			return {
-				name: d.name && d.name.replace(/<|>|&/g, (char) => char == '&' ? '&amp;' : char == '<' ? '&lt;' : '&gt;'),
+				name: d.name,
 				index: i,
 				chartType: d.chartType,
 
 				values: values,
 				yPositions: scaleAll(values),
+				lineOptions: d.lineOptions || {},
 
 				cumulativeYs: cumulativeYs,
 				cumulativeYPos: scaleAll(cumulativeYs),
@@ -173,10 +250,12 @@ export default class AxisChart extends BaseChart {
 
 		if (this.barOptions.stacked) {
 			key = 'cumulativeYs';
-			let cumulative = new Array(this.state.datasetLength).fill(0);
-			this.data.datasets.map((d, i) => {
-				let values = this.data.datasets[i].values;
-				d[key] = cumulative = cumulative.map((c, i) => c + values[i]);
+			let positive = new Array(this.state.datasetLength).fill(0);
+			let negative = new Array(this.state.datasetLength).fill(0);
+			this.data.datasets.map(d => {
+				d[key] = d.values.map((value, i) => value < 0
+					? (negative[i] += value)
+					: (positive[i] += value));
 			});
 		}
 
@@ -240,6 +319,29 @@ export default class AxisChart extends BaseChart {
 					return this.state.yRegions;
 				}.bind(this)
 			],
+
+			[
+				'xRegions',
+				{
+					height: this.height
+				},
+				function () {
+					let s = this.state;
+					let labels = this.data.labels;
+					return (this.data.xRegions || []).map(r => {
+						let start = labels.indexOf(r.start);
+						let end = labels.indexOf(r.end);
+						if (start === -1 || end === -1) return null;
+						if (start > end) [start, end] = [end, start];
+						return {
+							label: r.label,
+							startPos: s.xAxis.positions[start] - s.unitWidth / 2,
+							endPos: s.xAxis.positions[end] + s.unitWidth / 2,
+							options: r.options || {}
+						};
+					}).filter(Boolean);
+				}.bind(this)
+			],
 		];
 
 		let barDatasets = this.state.datasets.filter(d => d.chartType === 'bar');
@@ -253,6 +355,7 @@ export default class AxisChart extends BaseChart {
 					index: index,
 					color: this.colors[index],
 					stacked: this.barOptions.stacked,
+					radius: this.barOptions.stacked ? 0 : (this.barOptions.radius ?? BAR_CHART_RADIUS),
 
 					// same for all datasets
 					valuesOverPoints: this.config.valuesOverPoints,
@@ -263,20 +366,29 @@ export default class AxisChart extends BaseChart {
 					let d = s.datasets[index];
 					let stacked = this.barOptions.stacked;
 
-					let spaceRatio = this.barOptions.spaceRatio || BAR_CHART_SPACE_RATIO;
+					let spaceRatio = this.barOptions.spaceRatio ?? BAR_CHART_SPACE_RATIO;
 					let barsWidth = s.unitWidth * (1 - spaceRatio);
-					let barWidth = barsWidth / (stacked ? 1 : barDatasets.length);
+					let barCount = stacked ? 1 : barDatasets.length;
+					let barWidth = barsWidth / barCount;
+					let gap = barCount < 2 ? 0 : Math.min(this.barOptions.gap ?? BAR_CHART_GAP, barWidth / 2);
+					let maxWidth = this.barOptions.maxWidth ?? BAR_CHART_MAX_WIDTH;
+					if (maxWidth && barWidth - gap > maxWidth) {
+						barWidth = maxWidth + gap;
+						barsWidth = barWidth * barCount;
+					}
 
 					let xPositions = s.xAxis.positions.map(x => x - barsWidth / 2);
 					if (!stacked) {
-						xPositions = xPositions.map(p => p + barWidth * index);
+						xPositions = xPositions.map(p => p + barWidth * index + gap / 2);
 					}
 
 					let labels = new Array(s.datasetLength).fill('');
 					if (this.config.valuesOverPoints) {
-						let values = stacked && d.index === s.datasets.length - 1
-							? d.cumulativeYs : d.values;
-						labels = values.map(v => this.formatValueLabel(v));
+						if (!stacked) {
+							labels = d.values.map(v => this.formatValueLabel(v));
+						} else if (d.index === s.datasets.length - 1) {
+							labels = d.cumulativeYs.map(v => this.formatValueLabel(v));
+						}
 					}
 
 					let offsets = new Array(s.datasetLength).fill(0);
@@ -290,10 +402,11 @@ export default class AxisChart extends BaseChart {
 						offsets: offsets,
 						// values: d.values,
 						labels: labels,
+						colors: (this.data.datasets[d.index].colors || []).map(color => color && getColor(color)),
 
 						zeroLine: s.yAxis.zeroLine,
 						barsWidth: barsWidth,
-						barWidth: barWidth,
+						barWidth: barWidth - gap,
 					};
 				}.bind(this)
 			];
@@ -307,13 +420,6 @@ export default class AxisChart extends BaseChart {
 					index: index,
 					color: this.colors[index],
 					svgDefs: this.svgDefs,
-					heatline: this.lineOptions.heatline,
-					regionFill: this.lineOptions.regionFill,
-					spline: this.lineOptions.spline,
-					showDots: this.lineOptions.showDots,
-					trailingDot: this.lineOptions.trailingDot,
-					hideDotBorder: this.lineOptions.hideDotBorder,
-					hideLine: this.lineOptions.hideLine,
 
 					// same for all datasets
 					valuesOverPoints: this.config.valuesOverPoints,
@@ -323,21 +429,33 @@ export default class AxisChart extends BaseChart {
 					let d = s.datasets[index];
 					let minLine = s.yAxis.positions[0] < s.yAxis.zeroLine
 						? s.yAxis.positions[0] : s.yAxis.zeroLine;
+					// read on every render, so a dataset's own options follow updated data
+					let lineOptions = Object.assign({}, this.lineOptions, d.lineOptions);
 
 					return {
 						xPositions: s.xAxis.positions,
 						yPositions: d.yPositions,
 
 						values: d.values,
+						lineOptions: lineOptions,
 
 						zeroLine: minLine,
-						radius: this.lineOptions.dotSize || LINE_CHART_DOT_SIZE,
+						radius: lineOptions.dotSize || LINE_CHART_DOT_SIZE,
 					};
 				}.bind(this)
 			];
 		});
 
 		let markerConfigs = [
+			[
+				'xMarkers',
+				{
+					height: this.height
+				},
+				function () {
+					return this.state.xMarkers;
+				}.bind(this)
+			],
 			[
 				'yMarkers',
 				{
@@ -352,7 +470,7 @@ export default class AxisChart extends BaseChart {
 
 		componentConfigs = componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
 
-		let optionals = ['yMarkers', 'yRegions'];
+		let optionals = ['xMarkers', 'yMarkers', 'yRegions'];
 		this.dataUnitComponents = [];
 
 		this.components = new Map(componentConfigs
@@ -378,26 +496,31 @@ export default class AxisChart extends BaseChart {
 			let values = this.state.datasets.map((set, i) => {
 				let value = set.values[index];
 				return {
-					title: set.name,
+					title: escapeHTML(set.name),
 					value: value,
 					yPos: set.yPositions[index],
 					color: this.colors[i],
-					formatted: formatY ? formatY(value, {
+					formatted: escapeHTML(formatY ? formatY(value, {
 						name: set.name,
 						index: set.index,
 						values: set.values
-					}) : value,
+					}) : value),
 				};
 			});
 
 			this.dataByIndex[index] = {
 				label: label,
-				formattedLabel: formatX ? formatX(label) : label,
+				formattedLabel: escapeHTML(formatX ? formatX(label, index) : label),
 				xPos: s.xAxis.positions[index],
 				values: values,
 				yExtreme: s.yExtremes[index],
 			};
 		});
+	}
+
+	makeTooltip() {
+		super.makeTooltip();
+		this.tip.placement = this.config.tooltipPlacement;
 	}
 
 	bindTooltip() {
@@ -410,26 +533,35 @@ export default class AxisChart extends BaseChart {
 
 			if (!this.config.valuesOverPoints && relY < this.height + getTopOffset(m)
 				&& relY > getTopOffset(m)) {
-				this.mapTooltipXPosition(relX);
+				this.mapTooltipXPosition(relX, 0, relY);
 			} else if (this.config.valuesOverPoints && e.target.getAttribute("class") == "data-point-value"){
-				this.mapTooltipXPosition(relX, -20)
+				this.mapTooltipXPosition(relX, -20, relY);
 			}else {
-				this.tip.hideTip();
+				this.hideTooltip();
 			}
 		});
+		this.container.addEventListener('mouseleave', () => this.hideTooltip());
 	}
 
-	mapTooltipXPosition(relX, y=0) {
+	hideTooltip() {
+		this.tip.hideTip();
+		if (this.hoverBand) this.hoverBand.style.display = 'none';
+	}
+
+	mapTooltipXPosition(relX, y = 0, pointerY = null) {
 		let s = this.state;
 		if (!s.yExtremes) return;
 
 		let index = getClosestInArray(relX, s.xAxis.positions, true);
 		if (index >= 0) {
 			let dbi = this.dataByIndex[index];
+			let side = this.tip.placement === 'side';
+			this.showHoverBand(dbi.xPos);
+			this.tip.sideOffset = side ? this.hoverBandWidth() / 2 + TOOLTIP_SIDE_GAP : 0;
 
 			this.tip.setValues(
 				dbi.xPos + this.tip.offset.x,
-				dbi.yExtreme + this.tip.offset.y + y,
+				side && pointerY !== null ? pointerY : dbi.yExtreme + this.tip.offset.y + y,
 				{ name: dbi.formattedLabel, value: '' },
 				dbi.values,
 				index
@@ -439,24 +571,46 @@ export default class AxisChart extends BaseChart {
 		}
 	}
 
-	renderLegend() {
-		let s = this.data;
-		if (s.datasets.length > 1) {
-			super.renderLegend(s.datasets);
+	hoverBandWidth() {
+		let hasBars = this.state.datasets.some(d => d.chartType === 'bar');
+		return hasBars ? this.state.unitWidth : 1;
+	}
+
+	showHoverBand(xPos) {
+		if (!this.hoverBand || !this.drawArea.contains(this.hoverBand)) {
+			this.hoverBand = makeHoverBand(this.height);
+			this.drawArea.insertBefore(this.hoverBand, this.drawArea.firstChild);
 		}
+		let width = this.hoverBandWidth();
+		this.hoverBand.setAttribute('x', xPos - width / 2);
+		this.hoverBand.setAttribute('width', width);
+		this.hoverBand.setAttribute('height', this.height);
+		this.hoverBand.style.display = '';
+	}
+
+	calcLegend() {
+		let datasets = this.data.datasets;
+		if (datasets.length <= 1) return;
+		this.calcLegendRows(datasets.map(data => LEGEND_DOT_SIZE * 2 + getStringWidth(data.name || '', LEGEND_CHAR_WIDTH)));
+	}
+
+	renderLegend() {
+		let datasets = this.data.datasets;
+		if (datasets.length <= 1) return;
+		super.renderLegend(datasets);
 	}
 
 	makeLegend(data, index, x_pos, y_pos) {
 		return legendDot(
 			x_pos,
-			y_pos + 5, // Extra offset
-			12, // size
-			3, // dot radius
-			this.colors[index], // fill
-			data.name, //label
-			null, // value
-			8.75, // base_font_size
-			this.config.truncateLegends // truncate legends
+			y_pos + 5,
+			LEGEND_DOT_SIZE,
+			LEGEND_DOT_SIZE / 2,
+			this.colors[index],
+			data.name,
+			null,
+			LEGEND_FONT_SIZE,
+			this.config.truncateLegends
 		);
 	}
 
@@ -466,12 +620,7 @@ export default class AxisChart extends BaseChart {
 			this.init = 0;
 			return;
 		}
-		if (this.overlayGuides) {
-			this.overlayGuides.forEach(g => {
-				let o = g.overlay;
-				o.parentNode.removeChild(o);
-			});
-		}
+		this.updateOverlayGuides();
 
 		this.overlayGuides = this.dataUnitComponents.map(c => {
 			return {
@@ -481,15 +630,17 @@ export default class AxisChart extends BaseChart {
 			};
 		});
 
-		if (this.state.currentIndex === undefined) {
+		if (this.state.currentIndex === undefined || this.state.currentIndex >= this.state.datasetLength) {
 			this.state.currentIndex = this.state.datasetLength - 1;
 		}
 
 		// Render overlays
 		this.overlayGuides.map(d => {
 			let currentUnit = d.units[this.state.currentIndex];
+			if (!currentUnit) return;
 
 			d.overlay = makeOverlay[d.type](currentUnit);
+			d.overlay.style.pointerEvents = 'none';
 			this.drawArea.appendChild(d.overlay);
 		});
 	}
@@ -498,7 +649,7 @@ export default class AxisChart extends BaseChart {
 		if (this.overlayGuides) {
 			this.overlayGuides.forEach(g => {
 				let o = g.overlay;
-				o.parentNode.removeChild(o);
+				if (o && o.parentNode) o.parentNode.removeChild(o);
 			});
 		}
 	}
@@ -514,21 +665,22 @@ export default class AxisChart extends BaseChart {
 			c.units.map(unit => {
 				unit.addEventListener('click', () => {
 					let index = unit.getAttribute('data-point-index');
-					this.setCurrentDataPoint(index);
+					this.setCurrentDataPoint(index, true);
 				});
 			});
 		});
 
 		// Note: Doesn't work as tooltip is absolutely positioned
-		this.tip.container.addEventListener('click', () => {
+		this.tip.container.onclick = () => {
 			let index = this.tip.container.getAttribute('data-point-index');
-			this.setCurrentDataPoint(index);
-		});
+			this.setCurrentDataPoint(index, true);
+		};
 	}
 
 	updateOverlay() {
-		this.overlayGuides.map(d => {
+		(this.overlayGuides || []).map(d => {
 			let currentUnit = d.units[this.state.currentIndex];
+			if (!currentUnit || !d.overlay) return;
 			updateOverlay[d.type](currentUnit, d.overlay);
 		});
 	}
@@ -551,12 +703,12 @@ export default class AxisChart extends BaseChart {
 		return data_point;
 	}
 
-	setCurrentDataPoint(index) {
+	setCurrentDataPoint(index, fireOnSame = false) {
 		let s = this.state;
 		index = parseInt(index);
 		if (index < 0) index = 0;
 		if (index >= s.xAxis.labels.length) index = s.xAxis.labels.length - 1;
-		if (index === s.currentIndex) return;
+		if (index === s.currentIndex && !fireOnSame) return;
 		s.currentIndex = index;
 		fire(this.parent, "data-select", this.getDataPoint());
 	}

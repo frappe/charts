@@ -14,7 +14,7 @@ export function dataPrep(data, type) {
 	let zeroArray = new Array(datasetLength).fill(0);
 	if (!datasets) {
 		// default
-		datasets = [{
+		datasets = data.datasets = [{
 			values: zeroArray
 		}];
 	}
@@ -70,10 +70,15 @@ export function zeroDataPrep(realData) {
 			return {
 				name: '',
 				values: zeroArray.slice(0, -1),
-				chartType: d.chartType
+				chartType: d.chartType,
+				lineOptions: d.lineOptions
 			};
 		}),
 	};
+
+	if (realData.xMarkers) {
+		zeroData.xMarkers = [];
+	}
 
 	if (realData.yMarkers) {
 		zeroData.yMarkers = [
@@ -101,6 +106,7 @@ export function getShortenedLabels(chartWidth, labels = [], isSeries = true, ser
 	let allowedSpace = (chartWidth / labels.length) * (seriesLabelSpaceRatio || SERIES_LABEL_SPACE_RATIO);
 	if (allowedSpace <= 0) allowedSpace = 1;
 	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
+	if (allowedLetters < 2) isSeries = true;
 
 	let seriesMultiple;
 	if (isSeries) {
