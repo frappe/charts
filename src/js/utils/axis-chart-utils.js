@@ -106,6 +106,7 @@ export function getShortenedLabels(chartWidth, labels = [], isSeries = true, ser
 	let allowedSpace = (chartWidth / labels.length) * (seriesLabelSpaceRatio || SERIES_LABEL_SPACE_RATIO);
 	if (allowedSpace <= 0) allowedSpace = 1;
 	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
+	if (allowedLetters < 2) isSeries = true;
 
 	let seriesMultiple;
 	if (isSeries) {
