@@ -3,12 +3,12 @@ import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
-import { floatTwo, getStringWidth, getLegendRows, escapeHTML } from '../utils/helpers';
+import { floatTwo, getStringWidth, escapeHTML } from '../utils/helpers';
 import { makeOverlay, updateOverlay, legendDot, makeHoverBand } from '../utils/draw';
 import {
 	getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
 	BAR_CHART_RADIUS, BAR_CHART_GAP, BAR_CHART_MAX_WIDTH, LINE_CHART_DOT_SIZE, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE,
-	LEGEND_CHAR_WIDTH, LEGEND_ITEM_GAP, TOOLTIP_SIDE_GAP
+	LEGEND_CHAR_WIDTH, TOOLTIP_SIDE_GAP
 } from '../utils/constants';
 import { shortenLargeNumber } from '../utils/draw-utils';
 
@@ -64,6 +64,7 @@ export default class AxisChart extends BaseChart {
 	}
 
 	calc(onlyWidthChange = false) {
+		this.calcLegend();
 		this.calcXPositions();
 		this.calcXMarkers();
 		if (!onlyWidthChange) {
@@ -494,17 +495,16 @@ export default class AxisChart extends BaseChart {
 		this.hoverBand.style.display = '';
 	}
 
+	calcLegend() {
+		let datasets = this.data.datasets;
+		if (datasets.length <= 1) return;
+		this.calcLegendRows(datasets.map(data => LEGEND_DOT_SIZE * 2 + getStringWidth(data.name || '', LEGEND_CHAR_WIDTH)));
+	}
+
 	renderLegend() {
 		let datasets = this.data.datasets;
 		if (datasets.length <= 1) return;
-
-		this.legendArea.textContent = '';
-		let widths = datasets.map(data => LEGEND_DOT_SIZE * 2 + getStringWidth(data.name || '', LEGEND_CHAR_WIDTH));
-		getLegendRows(widths, this.width, LEGEND_ITEM_GAP).forEach((row, i) => {
-			row.forEach(({ index, x }) => {
-				this.legendArea.appendChild(this.makeLegend(datasets[index], index, x, i * this.config.legendRowHeight));
-			});
-		});
+		super.renderLegend(datasets);
 	}
 
 	makeLegend(data, index, x_pos, y_pos) {

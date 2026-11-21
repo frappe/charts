@@ -65,7 +65,6 @@ export const CHART_POST_ANIMATE_TIMEOUT = 400;
 export const DEFAULT_AXIS_CHART_TYPE = 'line';
 export const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
 
-export const LEGEND_ITEM_WIDTH = 150;
 export const LEGEND_DOT_SIZE = 8;
 export const LEGEND_FONT_SIZE = 8.125;
 export const LEGEND_CHAR_WIDTH = 7;
