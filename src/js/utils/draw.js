@@ -131,6 +131,7 @@ export function makeCircleStr(startPosition, endPosition, center, radius, clockW
 }
 
 export function makeDonutSectorStr(center, innerRadius, outerRadius, startAngle, endAngle, cornerRadius) {
+	if (!(innerRadius > 0 && outerRadius > 0)) return '';
 	let span = endAngle - startAngle;
 	let cr = Math.min(cornerRadius, (outerRadius - innerRadius) / 2, (span * innerRadius) / 2.2);
 	let outerInset = cr / outerRadius;
@@ -185,15 +186,15 @@ export function makeGradient(svgDefElem, color, lighter = false) {
 
 export function rightRoundedBar(x, width, height) {
 	// https://medium.com/@dennismphil/one-side-rounded-rectangle-using-svg-fb31cf318d90
-	let radius = height / 2;
-	let xOffset = width - radius;
+	let radius = Math.max(Math.min(height / 2, width), 0);
+	let xOffset = Math.max(width - radius, 0);
 
 	return `M${x},0 h${xOffset} q${radius},0 ${radius},${radius} q0,${radius} -${radius},${radius} h-${xOffset} v${height}z`;
 }
 
 export function leftRoundedBar(x, width, height) {
-	let radius = height / 2;
-	let xOffset = width - radius;
+	let radius = Math.max(Math.min(height / 2, width), 0);
+	let xOffset = Math.max(width - radius, 0);
 
 	return `M${x + radius},0 h${xOffset} v${height} h-${xOffset} q-${radius}, 0 -${radius},-${radius} q0,-${radius} ${radius},-${radius}z`;
 }
@@ -213,7 +214,7 @@ export function percentageBar(x, y, width, height, isFirst, isLast, fill = 'none
 		className: 'percentage-bar',
 		x: x,
 		y: y,
-		width: width,
+		width: Math.max(width, 0),
 		height: height,
 		fill: fill
 	};
