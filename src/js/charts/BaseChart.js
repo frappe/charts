@@ -181,9 +181,7 @@ export default class BaseChart {
 	}
 
 	makeChartArea() {
-		if (this.svg) {
-			this.container.removeChild(this.svg);
-		}
+		this.container.querySelectorAll(':scope > svg.frappe-chart').forEach(svg => svg.remove());
 		let m = this.measures;
 
 		this.svg = makeSVGContainer(
