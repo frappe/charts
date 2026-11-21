@@ -65,6 +65,18 @@ export function areInSameMonth(startDate, endDate) {
 		&& startDate.getFullYear() === endDate.getFullYear();
 }
 
+export function getMonthNames(locale) {
+	if (!locale) return MONTH_NAMES_SHORT;
+	let format = new Intl.DateTimeFormat(locale, { month: 'short' });
+	return MONTH_NAMES_SHORT.map((_, i) => format.format(new Date(2026, i, 1)));
+}
+
+export function getDayNames(locale) {
+	if (!locale) return DAY_NAMES_SHORT;
+	let format = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+	return DAY_NAMES_SHORT.map((_, i) => format.format(new Date(2026, 0, 4 + i)));
+}
+
 export function getMonthName(i, short = false) {
 	let monthName = MONTH_NAMES[i];
 	return short ? monthName.slice(0, 3) : monthName;

@@ -5,7 +5,6 @@ import {
 	translateHoriLine, translateVertLine, animateRegion, animateBar,
 	animateDot, animatePath, animatePathStr
 } from '../utils/animate';
-import { getMonthName } from '../utils/date-utils';
 
 class ChartComponent {
 	constructor({
@@ -274,7 +273,7 @@ let componentConfigs = {
 	heatDomain: {
 		layerClass: function () { return 'heat-domain domain-' + this.constants.index; },
 		makeElements(data) {
-			let { index, colWidth, rowHeight, squareSize, radius, xTranslate } = this.constants;
+			let { monthName, colWidth, rowHeight, squareSize, radius, xTranslate } = this.constants;
 			let monthNameHeight = -12;
 			let x = xTranslate, y = 0;
 
@@ -283,7 +282,7 @@ let componentConfigs = {
 			data.cols.map((week, weekNo) => {
 				if (weekNo === 1) {
 					this.labels.push(
-						makeText('domain-name', x, monthNameHeight, getMonthName(index, true).toUpperCase(),
+						makeText('domain-name', x, monthNameHeight, monthName.toUpperCase(),
 							{
 								fontSize: 9
 							}
