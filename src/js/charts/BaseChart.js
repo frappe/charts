@@ -1,15 +1,14 @@
 import SvgTip from '../objects/SvgTip';
 import { $, isElementInViewport, getElementContentWidth, isHidden } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup, makeText } from '../utils/draw';
-import { LEGEND_ITEM_WIDTH } from '../utils/constants';
 import {
 	BASE_MEASURES, getExtraHeight, getExtraWidth, getTopOffset, getLeftOffset,
-	INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS
+	INIT_CHART_UPDATE_TIMEOUT, CHART_POST_ANIMATE_TIMEOUT, DEFAULT_COLORS, LEGEND_ITEM_GAP
 } from '../utils/constants';
 import { getColor, isValidColor } from '../utils/colors';
 import { runSMILAnimation } from '../utils/animation';
 import { downloadFile, prepareForExport } from '../utils/export';
-import { deepClone } from '../utils/helpers';
+import { deepClone, getLegendRows } from '../utils/helpers';
 
 export default class BaseChart {
 	constructor(parent, options) {
@@ -49,6 +48,7 @@ export default class BaseChart {
 		if (!this.title.length) { m.titleHeight = 0; }
 		if (!this.config.showLegend) m.legendHeight = 0;
 		this.argHeight = options.height || m.baseHeight;
+		this.baseLegendHeight = m.legendHeight;
 
 		this.state = {};
 		this.options = {};
@@ -276,21 +276,20 @@ export default class BaseChart {
 		}
 	}
 
+	calcLegendRows(widths) {
+		if (!this.config.showLegend) return;
+		this.legendRows = getLegendRows(widths, this.width, LEGEND_ITEM_GAP);
+		let extra = Math.max(this.legendRows.length - 1, 0) * this.config.legendRowHeight;
+		this.measures.legendHeight = this.baseLegendHeight + extra;
+		this.baseHeight = this.argHeight + extra;
+	}
+
 	renderLegend(dataset) {
 		this.legendArea.textContent = '';
-		let count = 0;
-		let y = 0;
-
-		dataset.map((data, index) => {
-			let divisor = Math.floor(this.width / LEGEND_ITEM_WIDTH);
-			if (count > divisor) {
-				count = 0;
-				y += this.config.legendRowHeight;
-			}
-			let x = LEGEND_ITEM_WIDTH * count;
-			let dot = this.makeLegend(data, index, x, y);
-			this.legendArea.appendChild(dot);
-			count++;
+		(this.legendRows || []).forEach((row, i) => {
+			row.forEach(({ index, x }) => {
+				this.legendArea.appendChild(this.makeLegend(dataset[index], index, x, i * this.config.legendRowHeight));
+			});
 		});
 	}
 

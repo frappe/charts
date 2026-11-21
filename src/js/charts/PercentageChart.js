@@ -53,6 +53,7 @@ export default class PercentageChart extends AggregationChart {
 
 	calc() {
 		super.calc();
+		this.calcLegend();
 		let s = this.state;
 
 		s.xPositions = [];
