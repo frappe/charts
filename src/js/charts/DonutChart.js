@@ -63,7 +63,7 @@ export default class DonutChart extends AggregationChart {
 	}
 
 	calcRadii() {
-		let outer = Math.min(this.width, this.height) / 2;
+		let outer = Math.max(Math.min(this.width, this.height) / 2, 0);
 		let lift = outer * DONUT_LIFT_RATIO;
 		let ro = outer - lift;
 		let thickness = this.config.strokeWidth || ro * DONUT_THICKNESS_RATIO;
@@ -151,7 +151,6 @@ export default class DonutChart extends AggregationChart {
 			let m = this.measures;
 			this.legendArea.setAttribute('transform',
 				`translate(${getLeftOffset(m)}, ${getTopOffset(m) + this.height + m.paddings.bottom})`);
-			this.renderLegend();
 		}
 	}
 
