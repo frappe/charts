@@ -2,7 +2,7 @@ import BaseChart from './BaseChart';
 import { getComponent } from '../objects/ChartComponents';
 import { makeText, heatSquare } from '../utils/draw';
 import {
-	DAY_NAMES_SHORT, addDays, areInSameMonth, getLastDateInMonth, setDayToSunday, getYyyyMmDd, getWeeksBetween, getMonthName, clone,
+	DAY_NAMES_SHORT, addDays, areInSameMonth, getLastDateInMonth, setDayToWeekStart, getYyyyMmDd, getWeeksBetween, getMonthName, clone,
 	NO_OF_MILLIS, NO_OF_YEAR_MONTHS, NO_OF_DAYS_IN_WEEK
 } from '../utils/date-utils';
 import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
@@ -22,16 +22,12 @@ export default class Heatmap extends BaseChart {
 
 		this.countLabel = options.countLabel || '';
 
-		let validStarts = ['Sunday', 'Monday'];
-		let startSubDomain = validStarts.includes(options.startSubDomain)
-			? options.startSubDomain : 'Sunday';
-		this.startSubDomainIndex = validStarts.indexOf(startSubDomain);
-
 		this.setup();
 	}
 
 	setMeasures(options) {
 		let m = this.measures;
+		this.startSubDomainIndex = options.startSubDomain === 'Monday' ? 1 : 0;
 		this.discreteDomains = options.discreteDomains === 0 ? 0 : 1;
 
 		m.paddings.top = ROW_HEIGHT * 3;
@@ -42,7 +38,7 @@ export default class Heatmap extends BaseChart {
 
 		let d = this.data;
 		let spacing = this.discreteDomains ? NO_OF_YEAR_MONTHS : 0;
-		this.independentWidth = (getWeeksBetween(d.start, d.end)
+		this.independentWidth = (getWeeksBetween(d.start, d.end, this.startSubDomainIndex)
 			+ spacing) * COL_WIDTH + getExtraWidth(m);
 	}
 
@@ -84,7 +80,7 @@ export default class Heatmap extends BaseChart {
 		s.end = clone(this.data.end);
 
 		s.firstWeekStart = clone(s.start);
-		s.noOfWeeks = getWeeksBetween(s.start, s.end);
+		s.noOfWeeks = getWeeksBetween(s.start, s.end, this.startSubDomainIndex);
 		s.distribution = calcDistribution(
 			Object.values(this.data.dataPoints), HEATMAP_DISTRIBUTION_SIZE);
 
@@ -123,8 +119,10 @@ export default class Heatmap extends BaseChart {
 		);
 
 		let y = 0;
-		DAY_NAMES_SHORT.forEach((dayName, i) => {
-			if ([1, 3, 5].includes(i)) {
+		DAY_NAMES_SHORT.forEach((_, i) => {
+			let day = (i + this.startSubDomainIndex) % DAY_NAMES_SHORT.length;
+			if ([1, 3, 5].includes(day)) {
+				let dayName = DAY_NAMES_SHORT[day];
 				let dayText = makeText('subdomain-name', -COL_WIDTH / 2, y, dayName,
 					{
 						fontSize: HEATMAP_SQUARE_SIZE,
@@ -233,7 +231,7 @@ export default class Heatmap extends BaseChart {
 
 	getDomainConfig(startDate, endDate = '') {
 		let [month, year] = [startDate.getMonth(), startDate.getFullYear()];
-		let startOfWeek = setDayToSunday(startDate); // TODO: Monday as well
+		let startOfWeek = setDayToWeekStart(startDate, this.startSubDomainIndex);
 		endDate = clone(endDate) || getLastDateInMonth(month, year);
 
 		let domainConfig = {
@@ -242,7 +240,7 @@ export default class Heatmap extends BaseChart {
 		};
 
 		addDays(endDate, 1);
-		let noOfMonthWeeks = getWeeksBetween(startOfWeek, endDate);
+		let noOfMonthWeeks = getWeeksBetween(startOfWeek, endDate, this.startSubDomainIndex);
 
 		let cols = [], col;
 		for (var i = 0; i < noOfMonthWeeks; i++) {
