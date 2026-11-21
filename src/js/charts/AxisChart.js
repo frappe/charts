@@ -423,6 +423,7 @@ export default class AxisChart extends BaseChart {
 
 					// same for all datasets
 					valuesOverPoints: this.config.valuesOverPoints,
+					numberFormatter: this.config.numberFormatter,
 				},
 				function () {
 					let s = this.state;
