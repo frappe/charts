@@ -82,8 +82,8 @@ export function isElementInViewport(el) {
 
 export function getElementContentWidth(element) {
 	var styles = window.getComputedStyle(element);
-	var padding = parseFloat(styles.paddingLeft) +
-		parseFloat(styles.paddingRight);
+	var padding = (parseFloat(styles.paddingLeft) || 0) +
+		(parseFloat(styles.paddingRight) || 0);
 
 	return element.clientWidth - padding;
 }
