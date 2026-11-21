@@ -150,9 +150,12 @@ test('percentage chart draws a part per label', async ({ page }) => {
 test('pie and donut legends can sit beside the chart', async ({ page }) => {
     for (const type of ['pie', 'donut']) {
         await render(page, { type, legendPosition: 'right', data: sliceData });
-        const legend = await page.locator('#chart .chart-legend').boundingBox();
-        const slices = await page.locator(`#chart .${type}-path`).evaluateAll(els => Math.max(...els.map(e => e.getBoundingClientRect().right)));
-        expect(legend.x).toBeGreaterThanOrEqual(slices);
+        await expect.poll(() => page.evaluate(type => {
+            const legend = document.querySelector('#chart .chart-legend');
+            const slices = [...document.querySelectorAll(`#chart .${type}-path`)];
+            if (!legend || !slices.length) return false;
+            return legend.getBoundingClientRect().left >= Math.max(...slices.map(e => e.getBoundingClientRect().right));
+        }, type)).toBe(true);
     }
 });
 
