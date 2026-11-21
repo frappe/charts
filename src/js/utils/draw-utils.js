@@ -105,7 +105,7 @@ export function getLinePathStrs(xList, yList, options = {}) {
 	let runs = [[]];
 	yList.forEach((y, i) => {
 		if (options.gaps && options.gaps[i]) {
-			if (runs[runs.length - 1].length) runs.push([]);
+			if (!options.spanGaps && runs[runs.length - 1].length) runs.push([]);
 		} else {
 			runs[runs.length - 1].push(i);
 		}

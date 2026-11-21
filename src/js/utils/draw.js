@@ -682,6 +682,7 @@ export function getPaths(xList, yList, color, options = {}, meta = {}) {
 		spline: options.spline,
 		stepped: options.stepped,
 		gaps: options.gaps,
+		spanGaps: options.spanGaps,
 		zeroLine: meta.zeroLine
 	});
 

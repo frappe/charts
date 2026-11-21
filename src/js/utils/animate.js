@@ -77,9 +77,9 @@ export function animateDot(dot, x, y) {
 	// dot.animate({cy: yTop}, UNIT_ANIM_DUR, mina.easein);
 }
 
-export function animatePath(paths, newXList, newYList, zeroLine, spline, gaps, stepped) {
+export function animatePath(paths, newXList, newYList, zeroLine, spline, gaps, stepped, spanGaps) {
 	let pathComponents = [];
-	let pathStrs = getLinePathStrs(newXList, newYList, { spline, stepped, gaps, zeroLine });
+	let pathStrs = getLinePathStrs(newXList, newYList, { spline, stepped, gaps, spanGaps, zeroLine });
 
 	const animPath = [paths.path, { d: pathStrs.line }, PATH_ANIM_DUR, STD_EASING];
 	pathComponents.push(animPath);
