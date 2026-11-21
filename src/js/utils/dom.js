@@ -88,6 +88,14 @@ export function getElementContentWidth(element) {
 	return element.clientWidth - padding;
 }
 
+export function getElementContentHeight(element) {
+	var styles = window.getComputedStyle(element);
+	var padding = (parseFloat(styles.paddingTop) || 0) +
+		(parseFloat(styles.paddingBottom) || 0);
+
+	return element.clientHeight - padding;
+}
+
 export function bind(element, o) {
 	if (element) {
 		for (var event in o) {

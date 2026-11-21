@@ -92,6 +92,14 @@ test('axis titles are drawn when set', async ({ page }) => {
     await expect(page.locator('#chart .axis-title')).toHaveText(['Day', 'Visits']);
 });
 
+test('height 100% follows the parent height', async ({ page }) => {
+    const style = await page.addStyleTag({ content: '#chart > div { height: 400px }' });
+    await render(page, { type: 'line', data: axisData, height: '100%' });
+    await expect(page.locator('#chart svg.frappe-chart')).toHaveAttribute('height', '400');
+    await style.evaluate(el => { el.textContent = '#chart > div { height: 300px }'; });
+    await expect(page.locator('#chart svg.frappe-chart')).toHaveAttribute('height', '300');
+});
+
 test('horizontal bar chart shows a row per label with its value', async ({ page }) => {
     await render(page, { type: 'bar', barOptions: { horizontal: 1 }, data: { labels: ['India', 'Kenya'], datasets: [{ values: [48200, 6100] }] } });
     await expect(page.locator('#chart .horizontal-bar-label')).toHaveCount(2);

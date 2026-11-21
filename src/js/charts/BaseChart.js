@@ -1,5 +1,5 @@
 import SvgTip from '../objects/SvgTip';
-import { $, isElementInViewport, getElementContentWidth, isHidden } from '../utils/dom';
+import { $, isElementInViewport, getElementContentWidth, getElementContentHeight, isHidden } from '../utils/dom';
 import { makeSVGContainer, makeSVGDefs, makeSVGGroup, makeText } from '../utils/draw';
 import {
 	BASE_MEASURES, getExtraHeight, getExtraWidth, getTopOffset, getLeftOffset,
@@ -55,7 +55,8 @@ export default class BaseChart {
 		['margins', 'paddings'].forEach(key => Object.assign(m[key], measures[key]));
 		if (!this.title.length) { m.titleHeight = 0; }
 		if (!this.config.showLegend) m.legendHeight = 0;
-		this.argHeight = options.height || m.baseHeight;
+		this.fitHeight = options.height === '100%';
+		this.argHeight = (!this.fitHeight && options.height) || m.baseHeight;
 		this.baseLegendHeight = m.legendHeight;
 
 		this.state = {};
@@ -149,6 +150,7 @@ export default class BaseChart {
 		}
 
 		this.container = $.create('div', args);
+		this.container.classList.toggle('fit-height', !!this.fitHeight);
 		this.container.classList.toggle('is-clickable', !!this.config.onClick);
 	}
 
@@ -168,6 +170,7 @@ export default class BaseChart {
 			return;
 		}
 		this.updateWidth();
+		if (this.fitHeight && this.updateHeight()) onlyWidthChange = false;
 
 		this.calc(onlyWidthChange);
 		this.makeChartArea();
@@ -190,6 +193,16 @@ export default class BaseChart {
 	}
 
 	calc() { } // builds state
+
+	updateHeight() {
+		let height = getElementContentHeight(this.parent);
+		if (!height || height === this.argHeight) return false;
+		this.argHeight = height;
+		this.measures.legendHeight = this.baseLegendHeight;
+		this.baseHeight = height;
+		this.height = height - getExtraHeight(this.measures);
+		return true;
+	}
 
 	updateWidth() {
 		this.baseWidth = getElementContentWidth(this.parent);
