@@ -188,10 +188,12 @@ export default class AxisChart extends BaseChart {
 
 		if (this.barOptions.stacked) {
 			key = 'cumulativeYs';
-			let cumulative = new Array(this.state.datasetLength).fill(0);
-			this.data.datasets.map((d, i) => {
-				let values = this.data.datasets[i].values;
-				d[key] = cumulative = cumulative.map((c, i) => c + values[i]);
+			let positive = new Array(this.state.datasetLength).fill(0);
+			let negative = new Array(this.state.datasetLength).fill(0);
+			this.data.datasets.map(d => {
+				d[key] = d.values.map((value, i) => value < 0
+					? (negative[i] += value)
+					: (positive[i] += value));
 			});
 		}
 
