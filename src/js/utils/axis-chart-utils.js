@@ -1,12 +1,10 @@
-import { fillArray } from "../utils/helpers";
+import { fillArray } from '../utils/helpers';
 import {
-	DEFAULT_AXIS_CHART_TYPE,
-	AXIS_DATASET_CHART_TYPES,
-	DEFAULT_CHAR_WIDTH,
-	SERIES_LABEL_SPACE_RATIO,
-} from "../utils/constants";
+	DEFAULT_AXIS_CHART_TYPE, AXIS_DATASET_CHART_TYPES, DEFAULT_CHAR_WIDTH,
+	SERIES_LABEL_SPACE_RATIO
+} from '../utils/constants';
 
-export function dataPrep(data, type, config) {
+export function dataPrep(data, type) {
 	data.labels = data.labels || [];
 
 	let datasetLength = data.labels.length;
@@ -16,28 +14,23 @@ export function dataPrep(data, type, config) {
 	let zeroArray = new Array(datasetLength).fill(0);
 	if (!datasets) {
 		// default
-		datasets = [
-			{
-				values: zeroArray,
-			},
-		];
+		datasets = [{
+			values: zeroArray
+		}];
 	}
 
-	datasets.map((d) => {
+	datasets.map(d => {
 		// Set values
 		if (!d.values) {
 			d.values = zeroArray;
 		} else {
 			// Check for non values
 			let vals = d.values;
-			vals = vals.map((val) => (!isNaN(val) ? val : 0));
+			vals = vals.map(val => (!isNaN(val) ? val : 0));
 
 			// Trim or extend
 			if (vals.length > datasetLength) {
 				vals = vals.slice(0, datasetLength);
-			}
-			if (config) {
-				vals = fillArray(vals, datasetLength - vals.length, null);
 			} else {
 				vals = fillArray(vals, datasetLength - vals.length, 0);
 			}
@@ -46,10 +39,10 @@ export function dataPrep(data, type, config) {
 
 		// Set type
 		if (!d.chartType) {
-			if (!AXIS_DATASET_CHART_TYPES.includes(type))
-				type = DEFAULT_AXIS_CHART_TYPE;
+			if (!AXIS_DATASET_CHART_TYPES.includes(type)) type === DEFAULT_AXIS_CHART_TYPE;
 			d.chartType = type;
 		}
+
 	});
 
 	// Markers
@@ -57,7 +50,7 @@ export function dataPrep(data, type, config) {
 	// Regions
 	// data.yRegions = data.yRegions || [];
 	if (data.yRegions) {
-		data.yRegions.map((d) => {
+		data.yRegions.map(d => {
 			if (d.end < d.start) {
 				[d.start, d.end] = [d.end, d.start];
 			}
@@ -73,23 +66,26 @@ export function zeroDataPrep(realData) {
 
 	let zeroData = {
 		labels: realData.labels.slice(0, -1),
-		datasets: realData.datasets.map((d) => {
-			const { axisID } = d;
+		datasets: realData.datasets.map(d => {
 			return {
-				axisID,
-				name: "",
+				name: '',
 				values: zeroArray.slice(0, -1),
 				chartType: d.chartType,
+				lineOptions: d.lineOptions
 			};
 		}),
 	};
+
+	if (realData.xMarkers) {
+		zeroData.xMarkers = [];
+	}
 
 	if (realData.yMarkers) {
 		zeroData.yMarkers = [
 			{
 				value: 0,
-				label: "",
-			},
+				label: ''
+			}
 		];
 	}
 
@@ -98,38 +94,45 @@ export function zeroDataPrep(realData) {
 			{
 				start: 0,
 				end: 0,
-				label: "",
-			},
+				label: ''
+			}
 		];
 	}
 
 	return zeroData;
 }
 
-export function getShortenedLabels(chartWidth, labels = [], isSeries = true) {
-	let allowedSpace = (chartWidth / labels.length) * SERIES_LABEL_SPACE_RATIO;
+export function getShortenedLabels(chartWidth, labels = [], isSeries = true, seriesLabelSpaceRatio) {
+	let allowedSpace = (chartWidth / labels.length) * (seriesLabelSpaceRatio || SERIES_LABEL_SPACE_RATIO);
 	if (allowedSpace <= 0) allowedSpace = 1;
 	let allowedLetters = allowedSpace / DEFAULT_CHAR_WIDTH;
 
 	let seriesMultiple;
 	if (isSeries) {
 		// Find the maximum label length for spacing calculations
-		let maxLabelLength = Math.max(...labels.map((label) => label.length));
+		let maxLabelLength = Math.max(...labels.map(label => label.length));
 		seriesMultiple = Math.ceil(maxLabelLength / allowedLetters);
 	}
 
 	let calcLabels = labels.map((label, i) => {
 		label += "";
 		if (label.length > allowedLetters) {
+
 			if (!isSeries) {
 				if (allowedLetters - 3 > 0) {
 					label = label.slice(0, allowedLetters - 3) + " ...";
 				} else {
-					label = label.slice(0, allowedLetters) + "..";
+					label = label.slice(0, allowedLetters) + '..';
 				}
 			} else {
-				if (i % seriesMultiple !== 0 && i !== labels.length - 1) {
-					label = "";
+				if (i % seriesMultiple !== 0) {
+					if (i !== (labels.length - 1)) {
+						label = "";
+					}
+				} else {
+					if (i > (labels.length - (seriesMultiple / 2))) {
+						label = "";
+					}
 				}
 			}
 		}

@@ -1,0 +1,22 @@
+name: Publish on NPM
+on:
+  push:
+    branches: [ v2-beta ]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: npm install
+      - run: npm run build
+      - uses: JS-DevTools/npm-publish@v4
+        with:
+          tag: next

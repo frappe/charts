@@ -1,185 +1,320 @@
-import AggregationChart from "./AggregationChart";
-import { getComponent } from "../objects/ChartComponents";
-import { getOffset } from "../utils/dom";
-import { getPositionByAngle } from "../utils/helpers";
-import { makeArcStrokePathStr, makeStrokeCircleStr } from "../utils/draw";
-import { lightenDarkenColor } from "../utils/colors";
-import { transform } from "../utils/animation";
-import { FULL_ANGLE } from "../utils/constants";
+import AggregationChart from './AggregationChart';
+import { getComponent } from '../objects/ChartComponents';
+import { getOffset, getTextWidth } from '../utils/dom';
+import { createSVG, legendDot, makeText, makeDonutSectorStr, makeDonutRingStr } from '../utils/draw';
+import { escapeHTML, getLegendRows, wholePercentages } from '../utils/helpers';
+import {
+	ANGLE_RATIO, getExtraHeight, getLeftOffset, getTopOffset, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE, LEGEND_ITEM_GAP,
+	TOOLTIP_SIDE_GAP, DONUT_GAP_ANGLE, DONUT_LIFT_RATIO, DONUT_THICKNESS_RATIO, DONUT_CORNER_RATIO,
+	DONUT_VALUE_FONT_SIZE, DONUT_LABEL_FONT_SIZE
+} from '../utils/constants';
 
 export default class DonutChart extends AggregationChart {
-  constructor(parent, args) {
-    super(parent, args);
-    this.type = "donut";
-    this.initTimeout = 0;
-    this.init = 1;
+	constructor(parent, args) {
+		super(parent, args);
+		this.init = 1;
+		this.activeIndex = -1;
 
-    this.setup();
-  }
+		this.setup();
+	}
 
-  configure(args) {
-    super.configure(args);
-    this.mouseMove = this.mouseMove.bind(this);
-    this.mouseLeave = this.mouseLeave.bind(this);
+	setMeasures() {
+		this.measures.paddings = { top: 10, bottom: 16, left: 0, right: 0 };
+	}
 
-    this.hoverRadio = args.hoverRadio || 0.1;
-    this.config.startAngle = args.startAngle || 0;
+	configure(args) {
+		super.configure(args);
 
-    this.clockWise = args.clockWise || false;
-    this.strokeWidth = args.strokeWidth || 30;
-  }
+		this.type = 'donut';
+		this.sliceName = 'donutSlices';
 
-  calc() {
-    super.calc();
-    let s = this.state;
-    this.radius =
-      this.height > this.width
-        ? this.center.x - this.strokeWidth / 2
-        : this.center.y - this.strokeWidth / 2;
+		this.config.startAngle = args.startAngle || 0;
+		this.config.clockWise = args.clockWise !== undefined ? args.clockWise : 1;
+		this.config.strokeWidth = args.strokeWidth;
+		this.config.center = args.center || {};
+		this.config.legendRowHeight = 32;
+	}
 
-    const { radius, clockWise } = this;
+	calc() {
+		super.calc();
+		let s = this.state;
 
-    const prevSlicesProperties = s.slicesProperties || [];
-    s.sliceStrings = [];
-    s.slicesProperties = [];
-    let curAngle = 180 - this.config.startAngle;
+		s.percentages = s.grandTotal
+			? wholePercentages(s.sliceTotals.map(total => total / s.grandTotal))
+			: s.sliceTotals.map(() => 0);
 
-    s.sliceTotals.map((total, i) => {
-      const startAngle = curAngle;
-      const originDiffAngle = (total / s.grandTotal) * FULL_ANGLE;
-      const largeArc = originDiffAngle > 180 ? 1 : 0;
-      const diffAngle = clockWise ? -originDiffAngle : originDiffAngle;
-      const endAngle = (curAngle = curAngle + diffAngle);
-      const startPosition = getPositionByAngle(startAngle, radius);
-      const endPosition = getPositionByAngle(endAngle, radius);
+		this.calcLegend();
+		this.height = this.baseHeight - getExtraHeight(this.measures);
+		this.center = { x: this.width / 2, y: this.height / 2 };
+		this.calcRadii();
+		this.calcSlices();
+		this.init = 0;
+	}
 
-      const prevProperty = this.init && prevSlicesProperties[i];
+	calcLegend() {
+		if (!this.config.showLegend) return;
+		let font = `${LEGEND_FONT_SIZE * 1.6}px ${getComputedStyle(this.container).fontFamily}`;
+		let widths = this.state.sliceTotals
+			.slice(0, this.config.maxLegendPoints)
+			.map((total, i) => LEGEND_DOT_SIZE + LEGEND_FONT_SIZE + 6 + getTextWidth(this.legendText(i), font));
 
-      let curStart, curEnd;
-      if (this.init) {
-        curStart = prevProperty ? prevProperty.startPosition : startPosition;
-        curEnd = prevProperty ? prevProperty.endPosition : startPosition;
-      } else {
-        curStart = startPosition;
-        curEnd = endPosition;
-      }
-      const curPath =
-        originDiffAngle === 360
-          ? makeStrokeCircleStr(
-              curStart,
-              curEnd,
-              this.center,
-              this.radius,
-              this.clockWise,
-              largeArc
-            )
-          : makeArcStrokePathStr(
-              curStart,
-              curEnd,
-              this.center,
-              this.radius,
-              this.clockWise,
-              largeArc
-            );
+		this.legendRows = getLegendRows(widths, this.width, LEGEND_ITEM_GAP);
+		this.measures.legendHeight = this.legendRows.length * this.config.legendRowHeight;
+	}
 
-      s.sliceStrings.push(curPath);
-      s.slicesProperties.push({
-        startPosition,
-        endPosition,
-        value: total,
-        total: s.grandTotal,
-        startAngle,
-        endAngle,
-        angle: diffAngle,
-      });
-    });
-    this.init = 0;
-  }
+	calcRadii() {
+		let outer = Math.min(this.width, this.height) / 2;
+		let lift = outer * DONUT_LIFT_RATIO;
+		let ro = outer - lift;
+		let thickness = this.config.strokeWidth || ro * DONUT_THICKNESS_RATIO;
+		let ri = Math.max(ro - thickness, ro * 0.1);
+		this.radii = { ro, ri, lift, corner: (ro - ri) * DONUT_CORNER_RATIO };
+	}
 
-  setupComponents() {
-    let s = this.state;
+	calcSlices() {
+		let s = this.state;
+		let gap = s.sliceTotals.filter(total => total > 0).length > 1 ? DONUT_GAP_ANGLE : 0;
+		let direction = this.config.clockWise ? 1 : -1;
+		let angle = (this.config.startAngle - 90) * ANGLE_RATIO;
 
-    let componentConfigs = [
-      [
-        "donutSlices",
-        {},
-        function () {
-          return {
-            sliceStrings: s.sliceStrings,
-            colors: this.colors,
-            strokeWidth: this.strokeWidth,
-          };
-        }.bind(this),
-      ],
-    ];
+		s.sliceAngles = s.sliceTotals.map(total => {
+			let sweep = s.grandTotal ? (total / s.grandTotal) * 2 * Math.PI : 0;
+			let g = Math.min(gap, sweep / 2);
+			let start = direction > 0 ? angle : angle - sweep;
+			angle += direction * sweep;
+			return [start + g / 2, start + sweep - g / 2];
+		});
 
-    this.components = new Map(
-      componentConfigs.map((args) => {
-        let component = getComponent(...args);
-        return [args[0], component];
-      })
-    );
-  }
+		s.sliceStrings = s.sliceAngles.map((angles, i) => {
+			if (!this.init) return this.slicePath(i, this.radii.ro);
+			let from = direction > 0 ? angles[0] : angles[1];
+			return makeDonutSectorStr(this.center, this.radii.ri, this.radii.ro, from, from, 0);
+		});
+	}
 
-  calTranslateByAngle(property) {
-    const { radius, hoverRadio } = this;
-    const position = getPositionByAngle(
-      property.startAngle + property.angle / 2,
-      radius
-    );
-    return `translate3d(${position.x * hoverRadio}px,${
-      position.y * hoverRadio
-    }px,0)`;
-  }
+	slicePath(i, outer) {
+		let s = this.state;
+		let { ri, corner } = this.radii;
+		if (s.grandTotal && s.sliceTotals[i] === s.grandTotal) {
+			return makeDonutRingStr(this.center, ri, outer);
+		}
+		let [start, end] = s.sliceAngles[i];
+		return makeDonutSectorStr(this.center, ri, outer, start, end, corner);
+	}
 
-  hoverSlice(path, i, flag, e) {
-    if (!path) return;
-    const color = this.colors[i];
-    if (flag) {
-      transform(path, this.calTranslateByAngle(this.state.slicesProperties[i]));
-      path.style.stroke = lightenDarkenColor(color, 50);
-      let g_off = getOffset(this.svg);
-      let x = e.pageX - g_off.left + 10;
-      let y = e.pageY - g_off.top - 10;
-      let title =
-        (this.formatted_labels && this.formatted_labels.length > 0
-          ? this.formatted_labels[i]
-          : this.state.labels[i]) + ": ";
-      let percent = (
-        (this.state.sliceTotals[i] * 100) /
-        this.state.grandTotal
-      ).toFixed(1);
-      this.tip.setValues(x, y, { name: title, value: percent + "%" });
-      this.tip.showTip();
-    } else {
-      transform(path, "translate3d(0,0,0)");
-      this.tip.hideTip();
-      path.style.stroke = color;
-    }
-  }
+	setupComponents() {
+		let s = this.state;
 
-  bindTooltip() {
-    this.container.addEventListener("mousemove", this.mouseMove);
-    this.container.addEventListener("mouseleave", this.mouseLeave);
-  }
+		let componentConfigs = [
+			[
+				this.sliceName,
+				{},
+				function () {
+					return {
+						sliceStrings: s.sliceStrings,
+						colors: this.colors
+					};
+				}.bind(this)
+			]
+		];
 
-  mouseMove(e) {
-    const target = e.target;
-    let slices = this.components.get("donutSlices").store;
-    let prevIndex = this.curActiveSliceIndex;
-    let prevAcitve = this.curActiveSlice;
-    if (slices.includes(target)) {
-      let i = slices.indexOf(target);
-      this.hoverSlice(prevAcitve, prevIndex, false);
-      this.curActiveSlice = target;
-      this.curActiveSliceIndex = i;
-      this.hoverSlice(target, i, true, e);
-    } else {
-      this.mouseLeave();
-    }
-  }
+		this.components = new Map(componentConfigs
+			.map(args => {
+				let component = getComponent(...args);
+				return [args[0], component];
+			}));
+	}
 
-  mouseLeave() {
-    this.hoverSlice(this.curActiveSlice, this.curActiveSliceIndex, false);
-  }
+	makeChartArea() {
+		this.activeIndex = -1;
+		super.makeChartArea();
+		this.svg.setAttribute('role', 'img');
+
+		this.centerValue = makeText('donut-center-value', 0, 0, '', {
+			fontSize: DONUT_VALUE_FONT_SIZE,
+			dy: DONUT_VALUE_FONT_SIZE * 0.35,
+			textAnchor: 'middle'
+		});
+		this.centerLabel = makeText('donut-center-label', 0, DONUT_VALUE_FONT_SIZE, '', {
+			fontSize: DONUT_LABEL_FONT_SIZE,
+			textAnchor: 'middle'
+		});
+		this.drawArea.appendChild(this.centerValue);
+		this.drawArea.appendChild(this.centerLabel);
+		this.placeCenter();
+	}
+
+	update(data, drawing = false) {
+		super.update(data, drawing);
+		this.placeCenter();
+		if (this.config.showLegend) {
+			let m = this.measures;
+			this.legendArea.setAttribute('transform',
+				`translate(${getLeftOffset(m)}, ${getTopOffset(m) + this.height + m.paddings.bottom})`);
+			this.renderLegend();
+		}
+	}
+
+	placeCenter() {
+		let { x, y } = this.center;
+		if (this.centerLabel.textContent) y -= (DONUT_LABEL_FONT_SIZE + DONUT_VALUE_FONT_SIZE * 0.35) / 2 + 1;
+		[this.centerValue, this.centerLabel].forEach(text => {
+			text.setAttribute('transform', `translate(${x}, ${y})`);
+		});
+	}
+
+	render(components, animate) {
+		this.clearHover();
+		this.setCenter();
+		this.svg.setAttribute('aria-label', this.state.labels
+			.map((label, i) => `${label}: ${this.formatValue(this.state.sliceTotals[i])} (${this.state.percentages[i]}%)`)
+			.join(', '));
+		super.render(components, animate);
+	}
+
+	setCenter() {
+		let { value, label } = this.config.center;
+		if (value == null) value = this.formatValue(this.state.grandTotal);
+		this.centerValue.textContent = value;
+		this.centerLabel.textContent = label == null ? '' : label;
+		this.placeCenter();
+	}
+
+	formatValue(value) {
+		return this.config.formatTooltipY ? this.config.formatTooltipY(value) : value;
+	}
+
+	legendText(i) {
+		let s = this.state;
+		return `${s.labels[i]} ${this.formatValue(s.sliceTotals[i])} · ${s.percentages[i]}%`;
+	}
+
+	renderLegend() {
+		let totals = this.state.sliceTotals;
+		this.legendArea.textContent = '';
+		this.legendRows.forEach((row, r) => {
+			row.forEach(({ index, x, width }) => {
+				let item = this.makeLegend(totals[index], index, x, r * this.config.legendRowHeight);
+				item.insertBefore(createSVG('rect', {
+					className: 'donut-legend-hit',
+					x: -LEGEND_DOT_SIZE / 2,
+					y: -this.config.legendRowHeight / 2,
+					width: width + LEGEND_DOT_SIZE,
+					height: this.config.legendRowHeight,
+					fill: 'transparent'
+				}), item.firstChild);
+				this.legendArea.appendChild(item);
+			});
+		});
+	}
+
+	makeLegend(data, index, x_pos, y_pos) {
+		let item = legendDot(
+			x_pos,
+			y_pos + 5,
+			LEGEND_DOT_SIZE,
+			LEGEND_DOT_SIZE / 2,
+			this.colors[index],
+			this.state.labels[index],
+			null,
+			LEGEND_FONT_SIZE,
+			this.config.truncateLegends
+		);
+		item.querySelector('text').appendChild(createSVG('tspan', {
+			className: 'donut-legend-value',
+			dx: '6px',
+			innerHTML: `${this.formatValue(data)} · ${this.state.percentages[index]}%`
+		}));
+		item.setAttribute('class', 'donut-legend-item');
+		item.setAttribute('tabindex', 0);
+		if (this.config.onClick) {
+			item.setAttribute('role', 'button');
+			item.addEventListener('click', () => this.selectSlice(index));
+			item.addEventListener('keydown', (e) => {
+				if (e.key !== 'Enter' && e.key !== ' ') return;
+				e.preventDefault();
+				this.selectSlice(index);
+			});
+		}
+
+		['mouseenter', 'focus'].forEach(event => item.addEventListener(event, () => {
+			this.highlight(index);
+			this.tip.hideTip();
+		}));
+		['mouseleave', 'blur'].forEach(event => item.addEventListener(event, () => this.clearHover()));
+		return item;
+	}
+
+	makeTooltip() {
+		super.makeTooltip();
+		this.tip.placement = 'side';
+		this.tip.sideOffset = TOOLTIP_SIDE_GAP;
+	}
+
+	bindTooltip() {
+		this.container.addEventListener('mousemove', (e) => {
+			if (this.legendArea && this.legendArea.contains(e.target)) return;
+			let i = this.components.get(this.sliceName).store.indexOf(e.target);
+			if (i === -1) {
+				this.clearHover();
+				return;
+			}
+			this.highlight(i);
+			this.showSliceTip(i, e);
+		});
+		this.container.addEventListener('mouseleave', () => this.clearHover());
+		this.container.addEventListener('click', (e) => {
+			let i = this.components.get(this.sliceName).store.indexOf(e.target);
+			if (i !== -1) this.selectSlice(i);
+		});
+	}
+
+	// `index` is the slice's position, which follows data.labels unless maxSlices folds the smallest into 'Rest'
+	selectSlice(i) {
+		if (!this.config.onClick) return;
+		let s = this.state;
+		this.config.onClick({ index: i, label: s.labels[i], value: s.sliceTotals[i] });
+	}
+
+	highlight(i) {
+		if (this.activeIndex === i) return;
+		this.clearHover();
+		this.activeIndex = i;
+
+		let slices = this.components.get(this.sliceName).store;
+		slices.forEach((slice, j) => slice.classList.toggle('is-dim', j !== i));
+		slices[i].setAttribute('d', this.slicePath(i, this.radii.ro + this.radii.lift));
+		this.legendItems().forEach((item, j) => item.classList.toggle('is-dim', j !== i));
+	}
+
+	clearHover() {
+		this.tip.hideTip();
+		if (this.activeIndex === -1) return;
+
+		let slices = this.components.get(this.sliceName).store;
+		slices[this.activeIndex].setAttribute('d', this.slicePath(this.activeIndex, this.radii.ro));
+		slices.forEach(slice => slice.classList.remove('is-dim'));
+		this.legendItems().forEach(item => item.classList.remove('is-dim'));
+		this.activeIndex = -1;
+	}
+
+	showSliceTip(i, e) {
+		let s = this.state;
+		let offset = getOffset(this.container);
+		this.tip.setValues(
+			e.pageX - offset.left,
+			e.pageY - offset.top,
+			{ name: '', value: '' },
+			[{
+				title: escapeHTML(s.labels[i]),
+				formatted: `${escapeHTML(this.formatValue(s.sliceTotals[i]))} <span class="tooltip-muted">${s.percentages[i]}%</span>`,
+				color: this.colors[i]
+			}]
+		);
+		this.tip.showTip();
+	}
+
+	legendItems() {
+		return this.legendArea ? Array.from(this.legendArea.children) : [];
+	}
 }

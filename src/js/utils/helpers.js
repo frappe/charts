@@ -1,4 +1,4 @@
-import { ANGLE_RATIO } from "./constants";
+import { ANGLE_RATIO } from './constants';
 
 /**
  * Returns the value of a number upto 2 decimal places.
@@ -14,10 +14,10 @@ export function floatTwo(d) {
  * @param {Array} arr2 Second array
  */
 export function arraysEqual(arr1, arr2) {
-	if (arr1.length !== arr2.length) return false;
+	if(arr1.length !== arr2.length) return false;
 	let areEqual = true;
 	arr1.map((d, i) => {
-		if (arr2[i] !== d) areEqual = false;
+		if(arr2[i] !== d) areEqual = false;
 	});
 	return areEqual;
 }
@@ -46,8 +46,8 @@ export function shuffle(array) {
  * @param {Object} element element to fill with
  * @param {Boolean} start fill at start?
  */
-export function fillArray(array, count, element, start = false) {
-	if (element == undefined) {
+export function fillArray(array, count, element, start=false) {
+	if(!element) {
 		element = start ? array[0] : array[array.length - 1];
 	}
 	let fillerArray = new Array(Math.abs(count)).fill(element);
@@ -61,19 +61,74 @@ export function fillArray(array, count, element, start = false) {
  * @param {Number} charWidth Width of single char in pixels
  */
 export function getStringWidth(string, charWidth) {
-	return (string + "").length * charWidth;
+	return (string+"").length * charWidth;
+}
+
+/**
+ * Lays out legend items in centred rows that wrap at maxWidth
+ * @param {Number[]} widths Width of each item
+ * @param {Number} maxWidth Width of a row
+ * @param {Number} gap Space between items in a row
+ */
+export function getLegendRows(widths, maxWidth, gap) {
+	if (!widths.length) return [];
+	let rows = [[]];
+	let rowWidth = 0;
+	widths.forEach((width, index) => {
+		let needed = width + (rowWidth ? gap : 0);
+		if (rowWidth && rowWidth + needed > maxWidth) {
+			rows.push([]);
+			rowWidth = 0;
+			needed = width;
+		}
+		rows[rows.length - 1].push({ index, width });
+		rowWidth += needed;
+	});
+
+	return rows.map(row => {
+		let total = row.reduce((sum, item) => sum + item.width, 0) + gap * (row.length - 1);
+		let x = Math.max(0, (maxWidth - total) / 2);
+		return row.map(item => {
+			let position = { index: item.index, x, width: item.width };
+			x += item.width + gap;
+			return position;
+		});
+	});
+}
+
+/**
+ * Rounds fractions to whole percentages that add up to exactly 100
+ * (largest remainder method)
+ * @param {Number[]} fractions Fractions of a whole, summing to 1
+ */
+export function wholePercentages(fractions) {
+	let raw = fractions.map(f => f * 100);
+	let out = raw.map(Math.floor);
+	let short = 100 - out.reduce((a, b) => a + b, 0);
+	raw.map((r, i) => [r - out[i], i])
+		.sort((a, b) => b[0] - a[0])
+		.forEach(([, i]) => {
+			if (short-- > 0) out[i] += 1;
+		});
+	return out;
+}
+
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+export function escapeHTML(value) {
+	return String(value == null ? '' : value).replace(/[&<>"']/g, char => HTML_ESCAPES[char]);
 }
 
 export function bindChange(obj, getFn, setFn) {
 	return new Proxy(obj, {
-		set: function (target, prop, value) {
+		set: function(target, prop, value) {
 			setFn();
 			return Reflect.set(target, prop, value);
 		},
-		get: function (target, prop) {
+		get: function(target, prop) {
 			getFn();
 			return Reflect.get(target, prop);
-		},
+		}
 	});
 }
 
@@ -81,9 +136,9 @@ export function bindChange(obj, getFn, setFn) {
 export function getRandomBias(min, max, bias, influence) {
 	const range = max - min;
 	const biasValue = range * bias + min;
-	var rnd = Math.random() * range + min, // random in range
-		mix = Math.random() * influence; // random mixer
-	return rnd * (1 - mix) + biasValue * mix; // mix full range and bias
+	var rnd = Math.random() * range + min,		// random in range
+		mix = Math.random() * influence;		// random mixer
+	return rnd * (1 - mix) + biasValue * mix;	// mix full range and bias
 }
 
 export function getPositionByAngle(angle, radius) {
@@ -98,7 +153,7 @@ export function getPositionByAngle(angle, radius) {
  * @param {object} candidate Candidate to test
  * @param {Boolean} nonNegative flag to treat negative number as invalid
  */
-export function isValidNumber(candidate, nonNegative = false) {
+export function isValidNumber(candidate, nonNegative=false) {
 	if (Number.isNaN(candidate)) return false;
 	else if (candidate === undefined) return false;
 	else if (!Number.isFinite(candidate)) return false;
@@ -113,31 +168,31 @@ export function isValidNumber(candidate, nonNegative = false) {
 export function round(d) {
 	// https://floating-point-gui.de/
 	// https://www.jacklmoore.com/notes/rounding-in-javascript/
-	return Number(Math.round(d + "e4") + "e-4");
+	return Number(Math.round(d + 'e4') + 'e-4');
 }
 
 /**
  * Creates a deep clone of an object
  * @param {Object} candidate Any Object
  */
-export function deepClone(candidate) {
+ export function deepClone(candidate) {
 	let cloned, value, key;
-
+  
 	if (candidate instanceof Date) {
-		return new Date(candidate.getTime());
+	  return new Date(candidate.getTime());
 	}
-
+  
 	if (typeof candidate !== "object" || candidate === null) {
-		return candidate;
+	  return candidate;
 	}
-
+  
 	cloned = Array.isArray(candidate) ? [] : {};
-
+  
 	for (key in candidate) {
-		value = candidate[key];
-
-		cloned[key] = deepClone(value);
+	  value = candidate[key];
+  
+	  cloned[key] = deepClone(value);
 	}
-
+  
 	return cloned;
-}
+  }

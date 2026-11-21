@@ -1,86 +1,100 @@
-export const ALL_CHART_TYPES = [
-  "line",
-  "scatter",
-  "bar",
-  "percentage",
-  "heatmap",
-  "pie",
-];
+export const ALL_CHART_TYPES = ['line', 'scatter', 'bar', 'percentage', 'heatmap', 'pie'];
 
 export const COMPATIBLE_CHARTS = {
-  bar: ["line", "scatter", "percentage", "pie"],
-  line: ["scatter", "bar", "percentage", "pie"],
-  pie: ["line", "scatter", "percentage", "bar"],
-  percentage: ["bar", "line", "scatter", "pie"],
-  heatmap: [],
+	bar: ['line', 'scatter', 'percentage', 'pie'],
+	line: ['scatter', 'bar', 'percentage', 'pie'],
+	pie: ['line', 'scatter', 'percentage', 'bar'],
+	percentage: ['bar', 'line', 'scatter', 'pie'],
+	heatmap: []
 };
 
 export const DATA_COLOR_DIVISIONS = {
-  bar: "datasets",
-  line: "datasets",
-  pie: "labels",
-  percentage: "labels",
-  heatmap: HEATMAP_DISTRIBUTION_SIZE,
+	bar: 'datasets',
+	line: 'datasets',
+	pie: 'labels',
+	percentage: 'labels',
+	heatmap: HEATMAP_DISTRIBUTION_SIZE
 };
 
 export const BASE_MEASURES = {
-  margins: {
-    top: 10,
-    bottom: 10,
-    left: 20,
-    right: 20,
-  },
-  paddings: {
-    top: 20,
-    bottom: 40,
-    left: 30,
-    right: 10,
-  },
+	margins: {
+		top: 10,
+		bottom: 10,
+		left: 20,
+		right: 20
+	},
+	paddings: {
+		top: 20,
+		bottom: 40,
+		left: 30,
+		right: 10
+	},
 
-  baseHeight: 240,
-  titleHeight: 20,
-  legendHeight: 30,
+	baseHeight: 240,
+	titleHeight: 20,
+	legendHeight: 30,
 
-  titleFontSize: 12,
+	titleFontSize: 12,
 };
 
 export function getTopOffset(m) {
-  return m.titleHeight + m.margins.top + m.paddings.top;
+	return m.titleHeight + m.margins.top + m.paddings.top;
 }
 
 export function getLeftOffset(m) {
-  return m.margins.left + m.paddings.left;
+	return m.margins.left + m.paddings.left;
 }
 
 export function getExtraHeight(m) {
-  let totalExtraHeight =
-    m.margins.top +
-    m.margins.bottom +
-    m.paddings.top +
-    m.paddings.bottom +
-    m.titleHeight +
-    m.legendHeight;
-  return totalExtraHeight;
+	let totalExtraHeight = m.margins.top + m.margins.bottom
+		+ m.paddings.top + m.paddings.bottom
+		+ m.titleHeight + m.legendHeight;
+	return totalExtraHeight;
 }
 
 export function getExtraWidth(m) {
-  let totalExtraWidth =
-    m.margins.left + m.margins.right + m.paddings.left + m.paddings.right;
+	let totalExtraWidth = m.margins.left + m.margins.right
+		+ m.paddings.left + m.paddings.right;
 
-  return totalExtraWidth;
+	return totalExtraWidth;
 }
 
 export const INIT_CHART_UPDATE_TIMEOUT = 700;
 export const CHART_POST_ANIMATE_TIMEOUT = 400;
 
-export const DEFAULT_AXIS_CHART_TYPE = "line";
-export const AXIS_DATASET_CHART_TYPES = ["line", "bar"];
+export const DEFAULT_AXIS_CHART_TYPE = 'line';
+export const AXIS_DATASET_CHART_TYPES = ['line', 'bar'];
 
 export const LEGEND_ITEM_WIDTH = 150;
+export const LEGEND_DOT_SIZE = 8;
+export const LEGEND_FONT_SIZE = 8.125;
+export const LEGEND_CHAR_WIDTH = 7;
+export const LEGEND_ITEM_GAP = 20;
 export const SERIES_LABEL_SPACE_RATIO = 0.6;
 
 export const BAR_CHART_SPACE_RATIO = 0.5;
-export const MIN_BAR_PERCENT_HEIGHT = 0.0;
+export const BAR_CHART_RADIUS = 3;
+export const BAR_CHART_GAP = 2;
+export const BAR_CHART_MAX_WIDTH = 32;
+export const MIN_BAR_PERCENT_HEIGHT = 0.00;
+
+export const DONUT_GAP_ANGLE = 0.03;
+export const DONUT_LIFT_RATIO = 0.04;
+export const DONUT_THICKNESS_RATIO = 0.3;
+export const DONUT_CORNER_RATIO = 0.15;
+export const DONUT_VALUE_FONT_SIZE = 20;
+export const DONUT_LABEL_FONT_SIZE = 12;
+
+export const HBAR_ROW_HEIGHT = 38;
+export const HBAR_BAR_HEIGHT = 24;
+export const HBAR_LABEL_WIDTH = 96;
+export const HBAR_LABEL_GAP = 10;
+export const HBAR_VALUE_GAP = 8;
+export const HBAR_AXIS_HEIGHT = 28;
+export const HBAR_FONT_SIZE = 13;
+export const HBAR_TICK_FONT_SIZE = 12;
+export const HBAR_LEGEND_ROW_HEIGHT = 30;
+export const HBAR_GROUP_BAR_HEIGHT = 16;
 
 export const LINE_CHART_DOT_SIZE = 4;
 export const DOT_OVERLAY_SIZE_INCR = 4;
@@ -97,47 +111,19 @@ export const HEATMAP_GUTTER_SIZE = 2;
 export const DEFAULT_CHAR_WIDTH = 7;
 
 export const TOOLTIP_POINTER_TRIANGLE_HEIGHT = 7.48;
-const DEFAULT_CHART_COLORS = [
-  "pink",
-  "blue",
-  "green",
-  "grey",
-  "red",
-  "yellow",
-  "purple",
-  "teal",
-  "cyan",
-  "orange",
-];
-const HEATMAP_COLORS_GREEN = [
-  "#ebedf0",
-  "#c6e48b",
-  "#7bc96f",
-  "#239a3b",
-  "#196127",
-];
-export const HEATMAP_COLORS_BLUE = [
-  "#ebedf0",
-  "#c0ddf9",
-  "#73b3f3",
-  "#3886e1",
-  "#17459e",
-];
-export const HEATMAP_COLORS_YELLOW = [
-  "#ebedf0",
-  "#fdf436",
-  "#ffc700",
-  "#ff9100",
-  "#06001c",
-];
+export const TOOLTIP_SIDE_GAP = 8;
+const DEFAULT_CHART_COLORS = ['pink', 'blue', 'green', 'grey', 'red', 'yellow', 'purple', 'teal', 'cyan', 'orange'];
+const HEATMAP_COLORS_GREEN = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+export const HEATMAP_COLORS_BLUE = ['#ebedf0', '#c0ddf9', '#73b3f3', '#3886e1', '#17459e'];
+export const HEATMAP_COLORS_YELLOW = ['#ebedf0', '#fdf436', '#ffc700', '#ff9100', '#06001c'];
 
 export const DEFAULT_COLORS = {
-  bar: DEFAULT_CHART_COLORS,
-  line: DEFAULT_CHART_COLORS,
-  pie: DEFAULT_CHART_COLORS,
-  percentage: DEFAULT_CHART_COLORS,
-  heatmap: HEATMAP_COLORS_GREEN,
-  donut: DEFAULT_CHART_COLORS,
+	bar: DEFAULT_CHART_COLORS,
+	line: DEFAULT_CHART_COLORS,
+	pie: DEFAULT_CHART_COLORS,
+	percentage: DEFAULT_CHART_COLORS,
+	heatmap: HEATMAP_COLORS_GREEN,
+	donut: DEFAULT_CHART_COLORS
 };
 
 // Universal constants

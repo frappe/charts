@@ -1,96 +1,94 @@
-import AggregationChart from "./AggregationChart";
-import { getOffset } from "../utils/dom";
-import { getComponent } from "../objects/ChartComponents";
-import { PERCENTAGE_BAR_DEFAULT_HEIGHT } from "../utils/constants";
+import AggregationChart from './AggregationChart';
+import { getOffset } from '../utils/dom';
+import { getComponent } from '../objects/ChartComponents';
+import { PERCENTAGE_BAR_DEFAULT_HEIGHT, getExtraHeight } from '../utils/constants';
 
 export default class PercentageChart extends AggregationChart {
-  constructor(parent, args) {
-    super(parent, args);
-    this.type = "percentage";
-    this.setup();
-  }
+	constructor(parent, args) {
+		super(parent, args);
+		this.type = 'percentage';
+		this.setup();
+	}
 
-  setMeasures(options) {
-    let m = this.measures;
-    this.barOptions = options.barOptions || {};
+	setMeasures(options) {
+		let m = this.measures;
+		this.barOptions = options.barOptions || {};
 
-    let b = this.barOptions;
-    b.height = b.height || PERCENTAGE_BAR_DEFAULT_HEIGHT;
+		let b = this.barOptions;
+		b.height = b.height || PERCENTAGE_BAR_DEFAULT_HEIGHT;
 
-    m.paddings.right = 30;
-    m.legendHeight = 60;
-    m.baseHeight = (b.height + b.depth * 0.5) * 8;
-  }
+		m.paddings.right = 30;
+		m.paddings.top = 60;
+		m.paddings.bottom = 0;
 
-  setupComponents() {
-    let s = this.state;
+		m.legendHeight = 80;
+		m.baseHeight = (b.height) * 8 + getExtraHeight(m);
+	}
 
-    let componentConfigs = [
-      [
-        "percentageBars",
-        {
-          barHeight: this.barOptions.height,
-        },
-        function () {
-          return {
-            xPositions: s.xPositions,
-            widths: s.widths,
-            colors: this.colors,
-          };
-        }.bind(this),
-      ],
-    ];
+	setupComponents() {
+		let s = this.state;
 
-    this.components = new Map(
-      componentConfigs.map((args) => {
-        let component = getComponent(...args);
-        return [args[0], component];
-      })
-    );
-  }
+		let componentConfigs = [
+			[
+				'percentageBars',
+				{
+					barHeight: this.barOptions.height,
+				},
+				function () {
+					return {
+						xPositions: s.xPositions,
+						widths: s.widths,
+						colors: this.colors
+					};
+				}.bind(this)
+			]
+		];
 
-  calc() {
-    super.calc();
-    let s = this.state;
+		this.components = new Map(componentConfigs
+			.map(args => {
+				let component = getComponent(...args);
+				return [args[0], component];
+			}));
+	}
 
-    s.xPositions = [];
-    s.widths = [];
+	calc() {
+		super.calc();
+		let s = this.state;
 
-    let xPos = 0;
-    s.sliceTotals.map((value) => {
-      let width = (this.width * value) / s.grandTotal;
-      s.widths.push(width);
-      s.xPositions.push(xPos);
-      xPos += width;
-    });
-  }
+		s.xPositions = [];
+		s.widths = [];
 
-  makeDataByIndex() {}
+		let xPos = 0;
+		s.sliceTotals.map((value) => {
+			let width = this.width * value / s.grandTotal;
+			s.widths.push(width);
+			s.xPositions.push(xPos);
+			xPos += width;
+		});
+	}
 
-  bindTooltip() {
-    let s = this.state;
-    this.container.addEventListener("mousemove", (e) => {
-      let bars = this.components.get("percentageBars").store;
-      let bar = e.target;
-      if (bars.includes(bar)) {
-        let i = bars.indexOf(bar);
-        let gOff = getOffset(this.container),
-          pOff = getOffset(bar);
+	makeDataByIndex() { }
 
-        let x = pOff.left - gOff.left + parseInt(bar.getAttribute("width")) / 2;
-        let y = pOff.top - gOff.top;
-        let title =
-          (this.formattedLabels && this.formattedLabels.length > 0
-            ? this.formattedLabels[i]
-            : this.state.labels[i]) + ": ";
-        let fraction = s.sliceTotals[i] / s.grandTotal;
+	bindTooltip() {
+		let s = this.state;
+		this.container.addEventListener('mousemove', (e) => {
+			let bars = this.components.get('percentageBars').store;
+			let bar = e.target;
+			if (bars.includes(bar)) {
+				let i = bars.indexOf(bar);
+				let gOff = getOffset(this.container), pOff = getOffset(bar);
 
-        this.tip.setValues(x, y, {
-          name: title,
-          value: (fraction * 100).toFixed(1) + "%",
-        });
-        this.tip.showTip();
-      }
-    });
-  }
+				let width = bar.getAttribute('width') || bar.getBoundingClientRect().width;
+
+				let x = pOff.left - gOff.left + parseInt(width) / 2;
+				let y = pOff.top - gOff.top;
+				let title = (this.formattedLabels && this.formattedLabels.length > 0
+					? this.formattedLabels[i] : this.state.labels[i]) + ': ';
+				let fraction = s.sliceTotals[i] / s.grandTotal;
+
+				this.tip.setValues(x, y, { name: title, value: (fraction * 100).toFixed(1) + "%" });
+				this.tip.showTip();
+			}
+		});
+	}
 }
