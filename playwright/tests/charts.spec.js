@@ -106,6 +106,15 @@ test('axes can be hidden', async ({ page }) => {
     await expect(page.locator('#chart path.line-graph-path')).toHaveCount(2);
 });
 
+test('clicking a column on an axis chart calls onClick', async ({ page }) => {
+    await page.evaluate(data => {
+        window.clicked = null;
+        window.renderChart({ type: 'bar', data, onClick: point => { window.clicked = point; } });
+    }, axisData);
+    await page.locator('#chart .dataset-units path').nth(2).click({ force: true });
+    expect(await page.evaluate(() => window.clicked)).toEqual({ index: 2, label: 'Wed', values: [30, 25] });
+});
+
 test('horizontal bar chart shows a row per label with its value', async ({ page }) => {
     await render(page, { type: 'bar', barOptions: { horizontal: 1 }, data: { labels: ['India', 'Kenya'], datasets: [{ values: [48200, 6100] }] } });
     await expect(page.locator('#chart .horizontal-bar-label')).toHaveCount(2);

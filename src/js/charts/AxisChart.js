@@ -651,6 +651,10 @@ export default class AxisChart extends BaseChart {
 			let o = getOffset(this.container);
 			let relX = e.pageX - o.left - getLeftOffset(m);
 			let relY = e.pageY - o.top;
+			if (this.config.onClick) {
+				let inPlot = relY > getTopOffset(m) && relY < this.height + getTopOffset(m);
+				this.container.style.cursor = inPlot ? 'pointer' : '';
+			}
 
 			if (!this.config.valuesOverPoints && relY < this.height + getTopOffset(m)
 				&& relY > getTopOffset(m)) {
@@ -662,6 +666,15 @@ export default class AxisChart extends BaseChart {
 			}
 		});
 		this.container.addEventListener('mouseleave', () => this.hideTooltip());
+		this.container.addEventListener('click', (e) => {
+			if (!this.config.onClick) return;
+			let m = this.measures;
+			let o = getOffset(this.container);
+			let relY = e.pageY - o.top - getTopOffset(m);
+			if (relY < 0 || relY > this.height) return;
+			let index = getClosestInArray(e.pageX - o.left - getLeftOffset(m), this.state.xAxis.positions, true);
+			if (index >= 0) this.config.onClick(this.getDataPoint(index));
+		});
 	}
 
 	hideTooltip() {
