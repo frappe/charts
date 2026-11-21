@@ -26,7 +26,6 @@ export default class AxisChart extends BaseChart {
 	}
 
 	setMeasures() {
-		this.baseLeftPadding = this.measures.paddings.left;
 		if (this.data.datasets.length <= 1) {
 			this.config.showLegend = 0;
 			this.measures.paddings.bottom = 30;
@@ -35,6 +34,7 @@ export default class AxisChart extends BaseChart {
 
 	configure(options) {
 		super.configure(options);
+		this.baseLeftPadding = this.measures.paddings.left;
 
 		options.axisOptions = options.axisOptions || {};
 		options.tooltipOptions = options.tooltipOptions || {};
