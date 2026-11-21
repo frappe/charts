@@ -11,6 +11,7 @@ import {
 	LEGEND_CHAR_WIDTH, TOOLTIP_SIDE_GAP
 } from '../utils/constants';
 import { shortenLargeNumber } from '../utils/draw-utils';
+import { getColor } from '../utils/colors';
 
 export default class AxisChart extends BaseChart {
 	constructor(parent, args) {
@@ -311,6 +312,7 @@ export default class AxisChart extends BaseChart {
 						offsets: offsets,
 						// values: d.values,
 						labels: labels,
+						colors: (this.data.datasets[d.index].colors || []).map(color => color && getColor(color)),
 
 						zeroLine: s.yAxis.zeroLine,
 						barsWidth: barsWidth,
