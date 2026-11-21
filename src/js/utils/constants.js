@@ -109,6 +109,7 @@ export const HEATMAP_GUTTER_SIZE = 2;
 
 export const DEFAULT_CHAR_WIDTH = 7;
 export const ROTATED_LABEL_MAX_CHARS = 16;
+export const AXIS_TITLE_HEIGHT = 18;
 
 export const TOOLTIP_POINTER_TRIANGLE_HEIGHT = 7.48;
 export const TOOLTIP_SIDE_GAP = 8;

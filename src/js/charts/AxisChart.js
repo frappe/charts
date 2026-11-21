@@ -4,11 +4,11 @@ import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire, getTextWidth } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
 import { floatTwo, getStringWidth, escapeHTML, deepClone, round } from '../utils/helpers';
-import { makeOverlay, updateOverlay, legendDot, makeHoverBand, FONT_SIZE, AXIS_TICK_LENGTH } from '../utils/draw';
+import { makeOverlay, updateOverlay, legendDot, makeHoverBand, makeText, FONT_SIZE, AXIS_TICK_LENGTH } from '../utils/draw';
 import {
 	BASE_MEASURES, getExtraHeight, getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
 	BAR_CHART_RADIUS, BAR_CHART_GAP, BAR_CHART_MAX_WIDTH, LINE_CHART_DOT_SIZE, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE,
-	LEGEND_CHAR_WIDTH, TOOLTIP_SIDE_GAP, DEFAULT_CHAR_WIDTH, ROTATED_LABEL_MAX_CHARS
+	LEGEND_CHAR_WIDTH, TOOLTIP_SIDE_GAP, DEFAULT_CHAR_WIDTH, ROTATED_LABEL_MAX_CHARS, AXIS_TITLE_HEIGHT
 } from '../utils/constants';
 import { shortenLargeNumber, truncateString } from '../utils/draw-utils';
 import { getColor } from '../utils/colors';
@@ -87,7 +87,10 @@ export default class AxisChart extends BaseChart {
 		this.config.legendRowHeight = 30;
 
 		this.config.xAxisLabelRotation = Math.min(Math.max(Number(options.axisOptions.xAxisLabelRotation) || 0, 0), 90);
-		this.labelSpace = this.calcLabelSpace();
+		this.config.xAxisTitle = options.axisOptions.xAxisTitle || '';
+		this.config.yAxisTitle = options.axisOptions.yAxisTitle || '';
+		this.rotatedLabelSpace = this.calcLabelSpace();
+		this.labelSpace = this.rotatedLabelSpace + (this.config.xAxisTitle ? AXIS_TITLE_HEIGHT : 0);
 		this.measures.paddings.bottom += this.labelSpace;
 		this.height -= this.labelSpace;
 	}
@@ -177,7 +180,8 @@ export default class AxisChart extends BaseChart {
 			else if (shortenYAxisNumbers) label = shortenLargeNumber(label);
 			return getTextWidth(String(label), font);
 		}));
-		let left = Math.max(this.baseLeftPadding, Math.ceil(widest + AXIS_TICK_LENGTH + 8 - m.margins.left));
+		let left = Math.max(this.baseLeftPadding, Math.ceil(widest + AXIS_TICK_LENGTH + 8 - m.margins.left))
+			+ (this.config.yAxisTitle ? AXIS_TITLE_HEIGHT : 0);
 		if (left === m.paddings.left) return false;
 
 		m.paddings.left = left;
@@ -189,8 +193,35 @@ export default class AxisChart extends BaseChart {
 				this.legendArea.setAttribute('transform', `translate(${getLeftOffset(m)}, ${y})`);
 			}
 			this.updateTipOffset(getLeftOffset(m), getTopOffset(m));
+			this.placeAxisTitles();
 		}
 		return true;
+	}
+
+	makeChartArea() {
+		super.makeChartArea();
+		this.axisTitles = {};
+		['xAxisTitle', 'yAxisTitle'].filter(key => this.config[key]).forEach(key => {
+			this.axisTitles[key] = makeText('axis-title', 0, 0, this.config[key], {
+				dy: FONT_SIZE * 0.35,
+				textAnchor: 'middle'
+			});
+			this.svg.appendChild(this.axisTitles[key]);
+		});
+		this.placeAxisTitles();
+	}
+
+	placeAxisTitles() {
+		let m = this.measures;
+		let { xAxisTitle, yAxisTitle } = this.axisTitles || {};
+		if (xAxisTitle) {
+			let y = getTopOffset(m) + this.height + AXIS_TICK_LENGTH + 2 * FONT_SIZE + 12 + this.rotatedLabelSpace;
+			xAxisTitle.setAttribute('transform', `translate(${getLeftOffset(m) + this.width / 2}, ${y})`);
+		}
+		if (yAxisTitle) {
+			let x = m.margins.left / 2 + FONT_SIZE / 2;
+			yAxisTitle.setAttribute('transform', `translate(${x}, ${getTopOffset(m) + this.height / 2}) rotate(-90)`);
+		}
 	}
 
 	calcXPositions() {

@@ -85,6 +85,13 @@ test('close line values over points do not overlap', async ({ page }) => {
     expect(boxes[0].bottom <= boxes[1].top || boxes[1].bottom <= boxes[0].top).toBe(true);
 });
 
+test('axis titles are drawn when set', async ({ page }) => {
+    await render(page, { type: 'line', data: axisData });
+    await expect(page.locator('#chart .axis-title')).toHaveCount(0);
+    await render(page, { type: 'line', data: axisData, axisOptions: { xAxisTitle: 'Day', yAxisTitle: 'Visits' } });
+    await expect(page.locator('#chart .axis-title')).toHaveText(['Day', 'Visits']);
+});
+
 test('horizontal bar chart shows a row per label with its value', async ({ page }) => {
     await render(page, { type: 'bar', barOptions: { horizontal: 1 }, data: { labels: ['India', 'Kenya'], datasets: [{ values: [48200, 6100] }] } });
     await expect(page.locator('#chart .horizontal-bar-label')).toHaveCount(2);
