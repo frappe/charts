@@ -530,12 +530,7 @@ export default class AxisChart extends BaseChart {
 			this.init = 0;
 			return;
 		}
-		if (this.overlayGuides) {
-			this.overlayGuides.forEach(g => {
-				let o = g.overlay;
-				o.parentNode.removeChild(o);
-			});
-		}
+		this.updateOverlayGuides();
 
 		this.overlayGuides = this.dataUnitComponents.map(c => {
 			return {
@@ -545,15 +540,17 @@ export default class AxisChart extends BaseChart {
 			};
 		});
 
-		if (this.state.currentIndex === undefined) {
+		if (this.state.currentIndex === undefined || this.state.currentIndex >= this.state.datasetLength) {
 			this.state.currentIndex = this.state.datasetLength - 1;
 		}
 
 		// Render overlays
 		this.overlayGuides.map(d => {
 			let currentUnit = d.units[this.state.currentIndex];
+			if (!currentUnit) return;
 
 			d.overlay = makeOverlay[d.type](currentUnit);
+			d.overlay.style.pointerEvents = 'none';
 			this.drawArea.appendChild(d.overlay);
 		});
 	}
@@ -562,7 +559,7 @@ export default class AxisChart extends BaseChart {
 		if (this.overlayGuides) {
 			this.overlayGuides.forEach(g => {
 				let o = g.overlay;
-				o.parentNode.removeChild(o);
+				if (o && o.parentNode) o.parentNode.removeChild(o);
 			});
 		}
 	}
@@ -578,21 +575,22 @@ export default class AxisChart extends BaseChart {
 			c.units.map(unit => {
 				unit.addEventListener('click', () => {
 					let index = unit.getAttribute('data-point-index');
-					this.setCurrentDataPoint(index);
+					this.setCurrentDataPoint(index, true);
 				});
 			});
 		});
 
 		// Note: Doesn't work as tooltip is absolutely positioned
-		this.tip.container.addEventListener('click', () => {
+		this.tip.container.onclick = () => {
 			let index = this.tip.container.getAttribute('data-point-index');
-			this.setCurrentDataPoint(index);
-		});
+			this.setCurrentDataPoint(index, true);
+		};
 	}
 
 	updateOverlay() {
-		this.overlayGuides.map(d => {
+		(this.overlayGuides || []).map(d => {
 			let currentUnit = d.units[this.state.currentIndex];
+			if (!currentUnit || !d.overlay) return;
 			updateOverlay[d.type](currentUnit, d.overlay);
 		});
 	}
@@ -615,12 +613,12 @@ export default class AxisChart extends BaseChart {
 		return data_point;
 	}
 
-	setCurrentDataPoint(index) {
+	setCurrentDataPoint(index, fireOnSame = false) {
 		let s = this.state;
 		index = parseInt(index);
 		if (index < 0) index = 0;
 		if (index >= s.xAxis.labels.length) index = s.xAxis.labels.length - 1;
-		if (index === s.currentIndex) return;
+		if (index === s.currentIndex && !fireOnSame) return;
 		s.currentIndex = index;
 		fire(this.parent, "data-select", this.getDataPoint());
 	}
