@@ -342,7 +342,10 @@ export default class BaseChart {
 	updateDataset() { }
 
 	export() {
-		let chartSvg = prepareForExport(this.svg);
+		let background = [this.container, this.parent]
+			.map(el => getComputedStyle(el).backgroundColor)
+			.find(color => color && color !== 'transparent' && !/rgba\(.*,\s*0\)$/.test(color));
+		let chartSvg = prepareForExport(this.svg, background);
 		downloadFile(this.title || 'Chart', [chartSvg]);
 	}
 }
