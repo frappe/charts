@@ -116,6 +116,32 @@ export default class AxisChart extends BaseChart {
 		});
 	}
 
+	getLabelsBelow(datasetIndex) {
+		let s = this.state;
+		let lines = s.datasets.filter(d => d.chartType === 'line');
+		if (!this.config.valuesOverPoints || lines.length < 2) return [];
+		let height = FONT_SIZE + 2;
+		return s.datasets[datasetIndex].values.map((v, j) => {
+			let taken = [];
+			let below = false;
+			lines
+				.filter(d => d.values[j] !== null && d.values[j] !== undefined)
+				.sort((a, b) => a.yPositions[j] - b.yPositions[j] || a.index - b.index)
+				.forEach(d => {
+					let o = Object.assign({}, this.lineOptions, d.lineOptions);
+					let r = o.showDots ? (o.dotSize || LINE_CHART_DOT_SIZE) : 0;
+					let y = d.yPositions[j];
+					let above = [y - r - height, y - r];
+					let under = [y + r, y + r + height];
+					let free = box => taken.every(t => box[1] <= t[0] || box[0] >= t[1]);
+					let goBelow = !free(above) && free(under);
+					taken.push(goBelow ? under : above);
+					if (d.index === datasetIndex) below = goBelow;
+				});
+			return below;
+		});
+	}
+
 	prepareData(data = this.data) {
 		return dataPrep(data, this.type);
 	}
@@ -500,6 +526,7 @@ export default class AxisChart extends BaseChart {
 
 						zeroLine: minLine,
 						radius: lineOptions.dotSize || LINE_CHART_DOT_SIZE,
+						labelsBelow: this.getLabelsBelow(index),
 					};
 				}.bind(this)
 			];

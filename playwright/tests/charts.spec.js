@@ -78,6 +78,13 @@ test('x axis labels can be rotated', async ({ page }) => {
     await expect(labels.nth(1)).toHaveText('Acme Corporation');
 });
 
+test('close line values over points do not overlap', async ({ page }) => {
+    await render(page, { type: 'line', valuesOverPoints: 1, data: { labels: ['Jan', 'Feb'], datasets: [{ values: [1500, 1968] }, { values: [900, 1967] }] } });
+    const boxes = await page.locator('#chart .data-point-value').evaluateAll(els => els.filter(e => e.textContent.startsWith('196')).map(e => e.getBoundingClientRect().toJSON()));
+    expect(boxes).toHaveLength(2);
+    expect(boxes[0].bottom <= boxes[1].top || boxes[1].bottom <= boxes[0].top).toBe(true);
+});
+
 test('horizontal bar chart shows a row per label with its value', async ({ page }) => {
     await render(page, { type: 'bar', barOptions: { horizontal: 1 }, data: { labels: ['India', 'Kenya'], datasets: [{ values: [48200, 6100] }] } });
     await expect(page.locator('#chart .horizontal-bar-label')).toHaveCount(2);

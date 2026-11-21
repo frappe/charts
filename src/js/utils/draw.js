@@ -676,7 +676,7 @@ export function datasetBar(x, yTop, width, color, label = '', index = 0, offset 
 	return group;
 }
 
-export function datasetDot(x, y, radius, color, label = '', index = 0, hideDotBorder = false) {
+export function datasetDot(x, y, radius, color, label = '', index = 0, hideDotBorder = false, labelBelow = false) {
 	let dot = createSVG('circle', {
 		styles: hideDotBorder ? { fill: color, stroke: color } : { fill: color },
 		'data-point-index': index,
@@ -697,7 +697,7 @@ export function datasetDot(x, y, radius, color, label = '', index = 0, hideDotBo
 			className: 'data-point-value',
 			x: 0,
 			y: 0,
-			dy: (FONT_SIZE / 2 * -1 - radius) + 'px',
+			dy: (labelBelow ? FONT_SIZE + radius : FONT_SIZE / 2 * -1 - radius) + 'px',
 			'font-size': FONT_SIZE + 'px',
 			'text-anchor': 'middle',
 			innerHTML: label
