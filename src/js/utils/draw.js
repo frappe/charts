@@ -59,7 +59,7 @@ function renderVerticalGradient(svgDefElem, gradientId) {
 function setGradientStop(gradElem, offset, color, opacity) {
 	return createSVG('stop', {
 		'inside': gradElem,
-		'style': `stop-color: ${color}`,
+		styles: { stopColor: color },
 		'offset': offset,
 		'stop-opacity': opacity
 	});
@@ -610,7 +610,7 @@ export function datasetBar(x, yTop, width, color, label = '', index = 0, offset 
 
 	let path = createSVG('path', {
 		className: `bar mini`,
-		style: `fill: ${color}; stroke: none`,
+		styles: { fill: color, stroke: 'none' },
 		'data-point-index': index,
 		d: barPathStr(origin[0], origin[1], bar.width, bar.height, meta.radius, bar.roundBottom)
 	});
@@ -641,7 +641,7 @@ export function datasetBar(x, yTop, width, color, label = '', index = 0, offset 
 
 export function datasetDot(x, y, radius, color, label = '', index = 0, hideDotBorder = false) {
 	let dot = createSVG('circle', {
-		style: `fill: ${color}; ${hideDotBorder ? `stroke: ${color}`: ''}`,
+		styles: hideDotBorder ? { fill: color, stroke: color } : { fill: color },
 		'data-point-index': index,
 		cx: x,
 		cy: y,

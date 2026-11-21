@@ -78,11 +78,12 @@ export default class SvgTip {
 			const color = set.color || this.colors[i] || 'black';
 			let value = set.formatted === 0 || set.formatted ? set.formatted : set.value;
 			let li = $.create('li', {
-				innerHTML: `<div class="tooltip-legend" style="background: ${color};"></div>
+				innerHTML: `<div class="tooltip-legend"></div>
 					<div class="tooltip-label">${set.title ? set.title : ''}</div>
 					<div class="tooltip-value">${value === 0 || value ? value : ''}</div>`
 			});
 
+			li.querySelector('.tooltip-legend').style.background = color;
 			this.dataPointList.appendChild(li);
 		});
 	}
