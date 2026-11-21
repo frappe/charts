@@ -8,7 +8,7 @@ import { makeOverlay, updateOverlay, legendDot, makeHoverBand, FONT_SIZE, AXIS_T
 import {
 	BASE_MEASURES, getExtraHeight, getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
 	BAR_CHART_RADIUS, BAR_CHART_GAP, BAR_CHART_MAX_WIDTH, LINE_CHART_DOT_SIZE, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE,
-	LEGEND_CHAR_WIDTH, TOOLTIP_SIDE_GAP
+	LEGEND_CHAR_WIDTH, TOOLTIP_SIDE_GAP, DEFAULT_CHAR_WIDTH
 } from '../utils/constants';
 import { shortenLargeNumber } from '../utils/draw-utils';
 import { getColor } from '../utils/colors';
@@ -70,6 +70,7 @@ export default class AxisChart extends BaseChart {
 
 		this.config.xAxisMode = options.axisOptions.xAxisMode || 'span';
 		this.config.xOffset = options.axisOptions.xOffset;
+		this.config.xAxisType = options.axisOptions.xAxisType;
 		this.config.yAxisMode = options.axisOptions.yAxisMode || 'span';
 		this.config.xIsSeries = options.axisOptions.xIsSeries || 0;
 		this.config.shortenYAxisNumbers = options.axisOptions.shortenYAxisNumbers || 0;
@@ -147,12 +148,35 @@ export default class AxisChart extends BaseChart {
 		s.unitWidth = this.width / (edgeToEdge ? s.datasetLength - 1 : s.datasetLength);
 		s.xOffset = edgeToEdge ? 0 : s.unitWidth / 2;
 
+		let times = !hasBars && this.config.xAxisType === 'time' ? this.getLabelTimes() : null;
+		let span = this.width - 2 * s.xOffset;
+
 		s.xAxis = {
 			labels: labels,
+			isTime: !!times,
 			positions: labels.map((d, i) =>
-				floatTwo(s.xOffset + i * s.unitWidth)
+				floatTwo(s.xOffset + (times
+					? (times[i] - times[0]) / (times[times.length - 1] - times[0]) * span
+					: i * s.unitWidth))
 			)
 		};
+	}
+
+	getSpacedLabels() {
+		let { labels, positions } = this.state.xAxis;
+		let lastEnd = -Infinity;
+		return labels.map((label, i) => {
+			let half = getStringWidth(label, DEFAULT_CHAR_WIDTH) / 2;
+			if (positions[i] - half < lastEnd) return '';
+			lastEnd = positions[i] + half + DEFAULT_CHAR_WIDTH;
+			return label + '';
+		});
+	}
+
+	getLabelTimes() {
+		let times = this.data.labels.map(d => new Date(d).getTime());
+		let valid = times.length > 1 && times.every((t, i) => !isNaN(t) && (i === 0 || t >= times[i - 1]));
+		return valid && times[times.length - 1] > times[0] ? times : null;
 	}
 
 	// always a list, even when empty, so the marker layer exists for markers added by a later update
@@ -302,8 +326,10 @@ export default class AxisChart extends BaseChart {
 				},
 				function () {
 					let s = this.state;
-					s.xAxis.calcLabels = getShortenedLabels(this.width,
-						s.xAxis.labels, this.config.xIsSeries,this.config.seriesLabelSpaceRatio);
+					s.xAxis.calcLabels = s.xAxis.isTime
+						? this.getSpacedLabels()
+						: getShortenedLabels(this.width,
+							s.xAxis.labels, this.config.xIsSeries,this.config.seriesLabelSpaceRatio);
 
 					return s.xAxis;
 				}.bind(this)

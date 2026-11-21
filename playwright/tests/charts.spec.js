@@ -53,6 +53,20 @@ test('mixed chart draws bars and a line', async ({ page }) => {
     await expect(page.locator('#chart path.line-graph-path')).toHaveCount(1);
 });
 
+test('time x axis spaces line points by date', async ({ page }) => {
+    const data = { labels: ['2017-01-01', '2017-01-02', '2017-01-10'], datasets: [{ values: [1, 2, 10] }] };
+    const gaps = () => page.evaluate(() => {
+        const p = window.chart.state.xAxis.positions;
+        return [p[1] - p[0], p[2] - p[1]];
+    });
+    await render(page, { type: 'line', data });
+    const [even1, even2] = await gaps();
+    expect(even2).toBeCloseTo(even1, 1);
+    await render(page, { type: 'line', data, axisOptions: { xAxisType: 'time' } });
+    const [day, week] = await gaps();
+    expect(week / day).toBeCloseTo(8, 1);
+});
+
 test('horizontal bar chart shows a row per label with its value', async ({ page }) => {
     await render(page, { type: 'bar', barOptions: { horizontal: 1 }, data: { labels: ['India', 'Kenya'], datasets: [{ values: [48200, 6100] }] } });
     await expect(page.locator('#chart .horizontal-bar-label')).toHaveCount(2);
