@@ -127,6 +127,7 @@ export default class HorizontalBarChart extends BaseChart {
 	update(data) {
 		if (!data) return;
 		this.data = this.prepareData(data);
+		this.extendColors(this.data);
 		this.draw();
 	}
 

@@ -4,7 +4,7 @@ import { DOT_OVERLAY_SIZE_INCR } from './constants';
 
 export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
-const LABEL_MAX_CHARS = 18;
+export const LABEL_MAX_CHARS = 18;
 export const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#E2E6E9';
 
@@ -341,12 +341,10 @@ function makeVertLine(x, label, y1, y2, options = {}) {
 
 function makeHoriLine(y, label, x1, x2, options = {}) {
 	if (!options.lineType) options.lineType = '';
-	if (options.shortenNumbers) {
-		if (options.numberFormatter) {
-			label = options.numberFormatter(label);
-		} else {
-			label = shortenLargeNumber(label);
-		}
+	if (options.numberFormatter) {
+		label = options.numberFormatter(label);
+	} else if (options.shortenNumbers) {
+		label = shortenLargeNumber(label);
 	}
 
 	let className = 'line-horizontal ' + options.className +
