@@ -1,5 +1,6 @@
 import AggregationChart from './AggregationChart';
 import { getOffset } from '../utils/dom';
+import { escapeHTML } from '../utils/helpers';
 import { getComponent } from '../objects/ChartComponents';
 import { PERCENTAGE_BAR_DEFAULT_HEIGHT, getExtraHeight } from '../utils/constants';
 
@@ -82,7 +83,7 @@ export default class PercentageChart extends AggregationChart {
 
 				let x = pOff.left - gOff.left + parseInt(width) / 2;
 				let y = pOff.top - gOff.top;
-				let title = (this.formattedLabels && this.formattedLabels.length > 0
+				let title = escapeHTML(this.formattedLabels && this.formattedLabels.length > 0
 					? this.formattedLabels[i] : this.state.labels[i]) + ': ';
 				let fraction = s.sliceTotals[i] / s.grandTotal;
 
