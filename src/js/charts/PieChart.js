@@ -127,8 +127,10 @@ export default class PieChart extends AggregationChart {
 			let y = e.pageY - g_off.top - 10;
 			let title = (this.formatted_labels && this.formatted_labels.length > 0
 				? this.formatted_labels[i] : this.state.labels[i]) + ': ';
-			let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1);
-			this.tip.setValues(x, y, { name: title, value: percent + "%" });
+			let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1) + "%";
+			let format = this.config.formatTooltipY;
+			let value = format ? `${format(this.state.sliceTotals[i])} (${percent})` : percent;
+			this.tip.setValues(x, y, { name: title, value: value });
 			this.tip.showTip();
 		} else {
 			this.resetHover(path, color)
