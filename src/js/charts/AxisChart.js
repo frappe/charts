@@ -1,10 +1,10 @@
 import BaseChart from './BaseChart';
 import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-utils';
 import { getComponent } from '../objects/ChartComponents';
-import { getOffset, fire } from '../utils/dom';
+import { getOffset, fire, getTextWidth } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
-import { floatTwo, getStringWidth, escapeHTML, deepClone } from '../utils/helpers';
-import { makeOverlay, updateOverlay, legendDot, makeHoverBand } from '../utils/draw';
+import { floatTwo, getStringWidth, escapeHTML, deepClone, round } from '../utils/helpers';
+import { makeOverlay, updateOverlay, legendDot, makeHoverBand, FONT_SIZE, AXIS_TICK_LENGTH } from '../utils/draw';
 import {
 	BASE_MEASURES, getExtraHeight, getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
 	BAR_CHART_RADIUS, BAR_CHART_GAP, BAR_CHART_MAX_WIDTH, LINE_CHART_DOT_SIZE, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE,
@@ -63,6 +63,7 @@ export default class AxisChart extends BaseChart {
 
 	configure(options) {
 		super.configure(options);
+		this.baseLeftPadding = this.measures.paddings.left;
 
 		options.axisOptions = options.axisOptions || {};
 		options.tooltipOptions = options.tooltipOptions || {};
@@ -100,8 +101,39 @@ export default class AxisChart extends BaseChart {
 		if (!onlyWidthChange) {
 			let hasBars = this.data.datasets.some(d => d.chartType === 'bar');
 			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line' && !hasBars);
+			if (this.fitYAxisLabels()) {
+				this.calcLegend();
+				this.calcXPositions();
+				this.calcXMarkers();
+			}
 		}
 		this.makeDataByIndex();
+	}
+
+	fitYAxisLabels() {
+		let m = this.measures;
+		let { numberFormatter, shortenYAxisNumbers } = this.config;
+		let font = `${FONT_SIZE}px ${getComputedStyle(this.container).fontFamily}`;
+		let widest = Math.max(0, ...this.state.yAxis.labels.map(value => {
+			let label = typeof value === 'number' ? round(value) : value;
+			if (numberFormatter) label = numberFormatter(label);
+			else if (shortenYAxisNumbers) label = shortenLargeNumber(label);
+			return getTextWidth(String(label), font);
+		}));
+		let left = Math.max(this.baseLeftPadding, Math.ceil(widest + AXIS_TICK_LENGTH + 8 - m.margins.left));
+		if (left === m.paddings.left) return false;
+
+		m.paddings.left = left;
+		this.updateWidth();
+		if (this.drawArea) {
+			this.drawArea.setAttribute('transform', `translate(${getLeftOffset(m)}, ${getTopOffset(m)})`);
+			if (this.legendArea) {
+				let [, y] = this.legendArea.getAttribute('transform').match(/,\s*([^)]+)\)/) || [];
+				this.legendArea.setAttribute('transform', `translate(${getLeftOffset(m)}, ${y})`);
+			}
+			this.updateTipOffset(getLeftOffset(m), getTopOffset(m));
+		}
+		return true;
 	}
 
 	calcXPositions() {
