@@ -145,7 +145,7 @@ export default class BaseChart {
 		};
 
 		if (this.independentWidth) {
-			args.styles = { width: this.independentWidth + 'px' };
+			args.styles = { width: this.independentWidth + 'px', maxWidth: '100%' };
 		}
 
 		this.container = $.create('div', args);
@@ -275,7 +275,7 @@ export default class BaseChart {
 			elementsToAnimate = elementsToAnimate.concat(c.update(animate));
 		});
 		if (elementsToAnimate.length > 0) {
-			runSMILAnimation(this.container, this.svg, elementsToAnimate);
+			runSMILAnimation(this.svg.parentNode, this.svg, elementsToAnimate);
 			setTimeout(() => {
 				components.forEach(c => c.make());
 				this.updateNav();
