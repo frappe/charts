@@ -76,7 +76,7 @@ For a horizontal bar chart, use `type: 'bar'` with `barOptions: { horizontal: 1 
 * `yarn watch` - Build on every change
 * `yarn build` - Build `dist`
 * `yarn test` - Run the Playwright tests (run `yarn playwright install chromium` once first)
-* Commit messages follow [Conventional Commits](https://www.conventionalcommits.org). A merge to `master` runs the tests and publishes a new version to npm.
+* Commit messages follow [Conventional Commits](https://www.conventionalcommits.org). A merge to `master` runs the tests. To publish, run the "Test and Release" workflow from the Actions tab: it releases everything merged since the last version as one new version.
 
 ## Links
 

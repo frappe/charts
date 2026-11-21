@@ -2,6 +2,7 @@ name: Test and Release
 on:
   push:
     branches: [ master ]
+  workflow_dispatch:
 
 concurrency:
   group: release-${{ github.ref }}
@@ -39,6 +40,7 @@ jobs:
             playwright-report
             test-results
       - name: Release
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: yarn semantic-release
