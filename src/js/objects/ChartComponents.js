@@ -1,5 +1,5 @@
 import { makeSVGGroup } from '../utils/draw';
-import { makeText, makePath, xLine, yLine, xMarker, yMarker, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
+import { makeText, makePath, xLine, yLine, xMarker, yMarker, xRegion, yRegion, datasetBar, datasetDot, percentageBar, getPaths, heatSquare } from '../utils/draw';
 import { equilizeNoOfElements } from '../utils/draw-utils';
 import {
 	translateHoriLine, translateVertLine, animateRegion, animateBar,
@@ -228,6 +228,18 @@ let componentConfigs = {
 			return data.map(m =>
 				xMarker(m.position, m.label, this.constants.height,
 					{ stroke: m.options.stroke, lineType: m.options.lineType })
+			);
+		},
+		animateElements() {
+			return [];
+		}
+	},
+
+	xRegions: {
+		layerClass: 'x-regions',
+		makeElements(data) {
+			return data.map(r =>
+				xRegion(r.startPos, r.endPos, this.constants.height, r.label, r.options)
 			);
 		},
 		animateElements() {
