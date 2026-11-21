@@ -6,6 +6,7 @@ import {
 	NO_OF_MILLIS, NO_OF_YEAR_MONTHS, NO_OF_DAYS_IN_WEEK
 } from '../utils/date-utils';
 import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
+import { escapeHTML } from '../utils/helpers';
 import {
 	getExtraHeight, getExtraWidth, HEATMAP_DISTRIBUTION_SIZE, HEATMAP_SQUARE_SIZE,
 	HEATMAP_GUTTER_SIZE
@@ -166,7 +167,7 @@ export default class Heatmap extends BaseChart {
 					let value = count + ' ' + this.countLabel;
 					let name = ' on ' + month + ' ' + dateParts[0] + ', ' + dateParts[2];
 
-					this.tip.setValues(x, y, { name: name, value: value, valueFirst: 1 }, []);
+					this.tip.setValues(x, y, { name: escapeHTML(name), value: escapeHTML(value), valueFirst: 1 }, []);
 					this.tip.showTip();
 				}
 			});

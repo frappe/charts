@@ -3,7 +3,7 @@ import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
-import { floatTwo, getStringWidth } from '../utils/helpers';
+import { floatTwo, getStringWidth, escapeHTML } from '../utils/helpers';
 import { makeOverlay, updateOverlay, legendDot, makeHoverBand } from '../utils/draw';
 import {
 	getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
@@ -133,7 +133,7 @@ export default class AxisChart extends BaseChart {
 			let values = d.values;
 			let cumulativeYs = d.cumulativeYs || [];
 			return {
-				name: d.name && d.name.replace(/<|>|&/g, (char) => char == '&' ? '&amp;' : char == '<' ? '&lt;' : '&gt;'),
+				name: d.name,
 				index: i,
 				chartType: d.chartType,
 
@@ -406,21 +406,21 @@ export default class AxisChart extends BaseChart {
 			let values = this.state.datasets.map((set, i) => {
 				let value = set.values[index];
 				return {
-					title: set.name,
+					title: escapeHTML(set.name),
 					value: value,
 					yPos: set.yPositions[index],
 					color: this.colors[i],
-					formatted: formatY ? formatY(value, {
+					formatted: escapeHTML(formatY ? formatY(value, {
 						name: set.name,
 						index: set.index,
 						values: set.values
-					}) : value,
+					}) : value),
 				};
 			});
 
 			this.dataByIndex[index] = {
 				label: label,
-				formattedLabel: formatX ? formatX(label, index) : label,
+				formattedLabel: escapeHTML(formatX ? formatX(label, index) : label),
 				xPos: s.xAxis.positions[index],
 				values: values,
 				yExtreme: s.yExtremes[index],
