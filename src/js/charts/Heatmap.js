@@ -1,4 +1,5 @@
 import BaseChart from './BaseChart';
+import { getTextWidth } from '../utils/dom';
 import { getComponent } from '../objects/ChartComponents';
 import { makeText, heatSquare } from '../utils/draw';
 import {
@@ -193,7 +194,8 @@ export default class Heatmap extends BaseChart {
 				dy: 9
 			}
 		);
-		x = (COL_WIDTH * 2) + COL_WIDTH / 2;
+		let font = `${HEATMAP_SQUARE_SIZE + 1}px ${getComputedStyle(this.container).fontFamily}`;
+		x = Math.max((COL_WIDTH * 2) + COL_WIDTH / 2, getTextWidth(this.legendLabels[0], font) + COL_WIDTH / 2);
 		this.legendArea.appendChild(lessText);
 
 		this.colors.slice(0, HEATMAP_DISTRIBUTION_SIZE).map((color, i) => {
