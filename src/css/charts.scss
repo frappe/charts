@@ -26,6 +26,11 @@
 		"Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
 		"Helvetica Neue", sans-serif;
 
+	text.title {
+		font-size: 12px;
+		font-weight: normal;
+	}
+
 	.axis,
 	.chart-label {
 		fill: var(--charts-label-color);
