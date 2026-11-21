@@ -1,5 +1,7 @@
 import BaseChart from './BaseChart';
-import { legendDot } from '../utils/draw';
+import { legendDot, FONT_SIZE, LABEL_MAX_CHARS } from '../utils/draw';
+import { getTextWidth } from '../utils/dom';
+import { truncateString } from '../utils/draw-utils';
 import { round } from '../utils/helpers';
 
 export default class AggregationChart extends BaseChart {
@@ -57,10 +59,21 @@ export default class AggregationChart extends BaseChart {
 		};
 	}
 
-	renderLegend() {
+	calcLegend() {
 		let s = this.state;
-		this.legendArea.textContent = '';
+		let family = getComputedStyle(this.container).fontFamily;
 		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
+		this.calcLegendRows(this.legendTotals.map((total, i) => {
+			let label = this.config.truncateLegends ? truncateString(s.labels[i], LABEL_MAX_CHARS) : s.labels[i];
+			let value = this.config.formatTooltipY ? this.config.formatTooltipY(total) : total;
+			return 12 + FONT_SIZE + Math.max(
+				getTextWidth(label, `${FONT_SIZE * 1.6}px ${family}`),
+				getTextWidth(String(value), `${FONT_SIZE * 1.2}px ${family}`)
+			);
+		}));
+	}
+
+	renderLegend() {
 		super.renderLegend(this.legendTotals);
 	}
 

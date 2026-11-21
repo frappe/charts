@@ -4,7 +4,7 @@ import { DOT_OVERLAY_SIZE_INCR } from './constants';
 
 export const AXIS_TICK_LENGTH = 6;
 const LABEL_MARGIN = 4;
-const LABEL_MAX_CHARS = 18;
+export const LABEL_MAX_CHARS = 18;
 export const FONT_SIZE = 10;
 const BASE_LINE_COLOR = '#E2E6E9';
 

@@ -38,6 +38,7 @@ export default class PieChart extends AggregationChart {
 
 	calc() {
 		super.calc();
+		this.calcLegend();
 		let s = this.state;
 		this.radius = this.getRadius();
 
