@@ -3,10 +3,10 @@ import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
-import { floatTwo, getStringWidth, getLegendRows } from '../utils/helpers';
+import { floatTwo, getStringWidth, getLegendRows, deepClone } from '../utils/helpers';
 import { makeOverlay, updateOverlay, legendDot, makeHoverBand } from '../utils/draw';
 import {
-	getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
+	BASE_MEASURES, getExtraHeight, getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
 	BAR_CHART_RADIUS, BAR_CHART_GAP, BAR_CHART_MAX_WIDTH, LINE_CHART_DOT_SIZE, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE,
 	LEGEND_CHAR_WIDTH, LEGEND_ITEM_GAP, TOOLTIP_SIDE_GAP
 } from '../utils/constants';
@@ -30,6 +30,33 @@ export default class AxisChart extends BaseChart {
 			this.config.showLegend = 0;
 			this.measures.paddings.bottom = 30;
 		}
+	}
+
+	update(data, drawing = false) {
+		if (!drawing && data && this.changesDatasets(data)) {
+			this.data = this.prepareData(deepClone(data));
+			this.updateLegendMeasures();
+			this.draw();
+			return;
+		}
+		super.update(data, drawing);
+	}
+
+	changesDatasets(data) {
+		let next = this.prepareData(deepClone(data)).datasets;
+		let current = this.data.datasets;
+		return next.length !== current.length || next.some((d, i) => d.chartType !== current[i].chartType);
+	}
+
+	updateLegendMeasures() {
+		let m = this.measures;
+		let showLegend = this.rawChartArgs.showLegend;
+		this.config.showLegend = this.data.datasets.length > 1
+			? (typeof showLegend !== 'undefined' ? showLegend : 1)
+			: 0;
+		m.paddings.bottom = this.data.datasets.length > 1 ? BASE_MEASURES.paddings.bottom : 30;
+		m.legendHeight = this.config.showLegend ? BASE_MEASURES.legendHeight : 0;
+		this.height = this.baseHeight - getExtraHeight(m);
 	}
 
 	configure(options) {
