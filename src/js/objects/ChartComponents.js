@@ -395,6 +395,7 @@ let componentConfigs = {
 						heatline: o.heatline,
 						regionFill: o.regionFill,
 						spline: o.spline,
+						stepped: o.stepped,
 						dashed: o.dashed,
 						gaps: gaps
 					},
@@ -468,7 +469,7 @@ let componentConfigs = {
 				let o = newData.lineOptions || {};
 				let gaps = o.showGaps ? newValues.map(v => v === null) : null;
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine, o.spline, gaps));
+					this.paths, newXPos, newYPos, newData.zeroLine, o.spline, gaps, o.stepped));
 			}
 
 			if (this.units.length) {

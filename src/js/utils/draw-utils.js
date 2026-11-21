@@ -118,7 +118,9 @@ export function getLinePathStrs(xList, yList, options = {}) {
 		let ys = run.map(i => yList[i]);
 		let pointsStr = options.spline
 			? getSplineCurvePointsStr(xs, ys)
-			: ys.map((y, i) => xs[i] + ',' + y).join('L');
+			: options.stepped
+				? xs.map((x, i) => (i ? `${x},${ys[i - 1]}L` : '') + `${x},${ys[i]}`).join('L')
+				: ys.map((y, i) => xs[i] + ',' + y).join('L');
 		line += 'M' + pointsStr;
 		region += `M${xs[0]},${options.zeroLine}L${pointsStr}L${xs[xs.length - 1]},${options.zeroLine}`;
 	});
