@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../dist/frappe-charts.min.css">
+</head>
+<body style="width: 800px">
+    <div id="chart"></div>
+    <script src="../dist/frappe-charts.umd.js"></script>
+    <script>
+        window.renderChart = (options) => {
+            const parent = document.getElementById('chart');
+            parent.innerHTML = '';
+            const host = document.createElement('div');
+            parent.append(host);
+            window.chart = new window['frappe-charts'].Chart(host, Object.assign({ height: 250, animate: 0 }, options));
+            return true;
+        };
+    </script>
+</body>
+</html>

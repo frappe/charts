@@ -1,0 +1,26 @@
+name: Test Pull Request
+on: pull_request
+
+jobs:
+  test-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'yarn'
+      - run: yarn install --frozen-lockfile
+      - run: yarn build
+      - run: yarn playwright install --with-deps chromium
+      - name: Run tests
+        id: ui-tests
+        run: yarn test
+      - name: Upload Playwright report
+        if: always() && steps.ui-tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
