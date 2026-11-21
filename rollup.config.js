@@ -41,7 +41,7 @@ export default [
 				exclude: ['node_modules/**']
 			}),
 			terser(),
-			postcss(),
+			postcss({ inject: { insertAt: 'top' } }),
 			bundleSize()
 		]
 	}
