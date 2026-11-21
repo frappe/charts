@@ -100,7 +100,8 @@ export default class AxisChart extends BaseChart {
 		this.calcXMarkers();
 		if (!onlyWidthChange) {
 			let hasBars = this.data.datasets.some(d => d.chartType === 'bar');
-			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line' && !hasBars);
+			let hasArea = this.data.datasets.some(d => Object.assign({}, this.lineOptions, d.lineOptions).regionFill);
+			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line' && !hasBars && !hasArea);
 			if (this.fitYAxisLabels()) {
 				this.calcLegend();
 				this.calcXPositions();
