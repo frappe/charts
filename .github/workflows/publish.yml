@@ -1,22 +1,40 @@
-name: Publish on NPM
+name: Test and Release
 on:
   push:
-    branches: [ v2-beta ]
+    branches: [ master ]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
 
 jobs:
-  publish:
+  test-and-release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
-          package-manager-cache: false
-      - run: npm install
-      - run: npm run build
-      - uses: JS-DevTools/npm-publish@v4
+          cache: 'yarn'
+      - run: yarn install --frozen-lockfile
+      - run: yarn build
+      - run: yarn playwright install --with-deps chromium
+      - name: Run tests
+        id: ui-tests
+        run: yarn test
+      - name: Upload Playwright report
+        if: always() && steps.ui-tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
         with:
-          tag: next
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn semantic-release
