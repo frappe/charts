@@ -51,6 +51,8 @@ export default class BaseChart {
 		this.measures = JSON.parse(JSON.stringify(BASE_MEASURES));
 		let m = this.measures;
 		this.setMeasures(options);
+		let measures = options.measures || {};
+		['margins', 'paddings'].forEach(key => Object.assign(m[key], measures[key]));
 		if (!this.title.length) { m.titleHeight = 0; }
 		if (!this.config.showLegend) m.legendHeight = 0;
 		this.argHeight = options.height || m.baseHeight;
