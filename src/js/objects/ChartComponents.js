@@ -6,6 +6,10 @@ import {
 	animateDot, animatePath, animatePathStr
 } from '../utils/animate';
 
+function formatPointValue(value, numberFormatter) {
+	return numberFormatter && value !== null && value !== undefined ? numberFormatter(value) : value;
+}
+
 class ChartComponent {
 	constructor({
 		layerClass = '',
@@ -434,7 +438,7 @@ let componentConfigs = {
 						y,
 						visible ? data.radius : 0,
 						c.color,
-						(c.valuesOverPoints ? data.values[j] : ''),
+						(c.valuesOverPoints ? formatPointValue(data.values[j], c.numberFormatter) : ''),
 						j,
 						o.hideDotBorder
 					);
@@ -449,7 +453,7 @@ let componentConfigs = {
 					data.yPositions[lastIndex],
 					data.radius,
 					c.color,
-					(c.valuesOverPoints ? data.values[lastIndex] : ''),
+					(c.valuesOverPoints ? formatPointValue(data.values[lastIndex], c.numberFormatter) : ''),
 					lastIndex,
 					o.hideDotBorder
 				);

@@ -272,6 +272,12 @@ export default class AxisChart extends BaseChart {
 		return [].concat(...allValueLists);
 	}
 
+	formatValueLabel(value) {
+		return this.config.numberFormatter
+			? this.config.numberFormatter(value)
+			: shortenLargeNumber(value);
+	}
+
 	setupComponents() {
 		let componentConfigs = [
 			[
@@ -379,9 +385,9 @@ export default class AxisChart extends BaseChart {
 					let labels = new Array(s.datasetLength).fill('');
 					if (this.config.valuesOverPoints) {
 						if (!stacked) {
-							labels = d.values.map(v => shortenLargeNumber(v));
+							labels = d.values.map(v => this.formatValueLabel(v));
 						} else if (d.index === s.datasets.length - 1) {
-							labels = d.cumulativeYs.map(v => shortenLargeNumber(v));
+							labels = d.cumulativeYs.map(v => this.formatValueLabel(v));
 						}
 					}
 
@@ -417,6 +423,7 @@ export default class AxisChart extends BaseChart {
 
 					// same for all datasets
 					valuesOverPoints: this.config.valuesOverPoints,
+					numberFormatter: this.config.numberFormatter,
 				},
 				function () {
 					let s = this.state;
