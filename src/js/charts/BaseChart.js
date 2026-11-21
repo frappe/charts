@@ -42,6 +42,10 @@ export default class BaseChart {
 			onClick: options.onClick
 		};
 
+		if (this.config.disableEntryAnimation || !this.config.animate) {
+			this.data = this.realData;
+		}
+
 		this.measures = JSON.parse(JSON.stringify(BASE_MEASURES));
 		let m = this.measures;
 		this.setMeasures(options);
@@ -161,7 +165,7 @@ export default class BaseChart {
 		// this.components.forEach(c => c.make());
 		this.render(this.components, false);
 
-		if (init) {
+		if (init && this.data !== this.realData) {
 			this.data = this.realData;
 			setTimeout(() => { this.update(this.data, true); }, this.initTimeout);
 		}
