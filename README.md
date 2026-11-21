@@ -1,155 +1,96 @@
-<div align="center">
-    <img src="https://github.com/frappe/design/blob/master/logos/logo-2019/frappe-charts-logo.png" height="128">
-    <a href="https://frappe.github.io/charts">
-        <h2>Frappe Charts</h2>
-    </a>
-    <p align="center">
-        <p>GitHub-inspired modern, intuitive and responsive charts with zero dependencies</p>
-        <a href="https://frappe.github.io/charts">
-            <b>Explore Demos » </b>
-        </a>
-        <a href="https://codepen.io/pratu16x7/pen/wjKBoq">
-            <b> Edit at CodePen »</b>
-        </a>
-    </p>
+<div align="center" markdown="1">
+
+<img width="80" alt="Frappe Charts logo" src="https://github.com/user-attachments/assets/37b7ffaf-8354-48f2-8b9c-fa04fae0135b">
+
+<h1>Frappe Charts</h1>
+
+**Simple, modern SVG charts for the web, with zero dependencies**
+
+[![Test and Release](https://github.com/frappe/charts/actions/workflows/publish.yml/badge.svg)](https://github.com/frappe/charts/actions/workflows/publish.yml)
+[![npm version](https://img.shields.io/npm/v/frappe-charts.svg)](https://www.npmjs.com/package/frappe-charts)
+![npm bundle size (minified + gzip)](https://img.shields.io/bundlephobia/minzip/frappe-charts.svg)
+
+[Live demos](https://frappe.io/charts)
+
+<img alt="Frappe Charts: mixed axis, line with a today marker, horizontal bar and donut charts" src=".github/charts.png">
+
 </div>
 
-<p align="center">
-    <a href="https://travis-ci.org/frappe/charts">
-        <img src="https://img.shields.io/travis/frappe/charts.svg?style=flat-square">
-    </a>
-    <a href="http://github.com/frappe/charts/tree/master/dist/js/frappe-charts.min.iife.js">
-        <img src="http://img.badgesize.io/frappe/charts/master/dist/frappe-charts.min.iife.js.svg?compression=gzip">
-    </a>
-</p>
+## Frappe Charts
 
-<p align="center">
-    <a href="https://frappe.github.io/charts">
-        <img src=".github/example.gif">
-    </a>
-</p>
+Frappe Charts is a small charting library with a simple API. It started as the sales graph in [ERPNext](https://github.com/frappe/erpnext) and is now used for charts across the [Frappe Framework](https://github.com/frappe/frappe).
 
-### Contents
-* [Installation](#installation)
-* [Usage](#usage)
-* [Contribute](https://frappe.io/charts/docs/contributing)
-* [Updates](#updates)
-* [License](#license)
+### Key Features
 
-#### Installation
-* Install via [`npm`](https://www.npmjs.com/get-npm):
+- **Chart types**: bar, horizontal bar, line, mixed axis, donut, pie, percentage and heatmap.
+- **Axis charts**: stacked bars, rounded bars, smooth or dashed lines, gaps in lines, region fill, X and Y markers and Y regions.
+- **Tooltips**: one tooltip per column with every series in it, with your own number format.
+- **Donut**: a total or your own value in the center, and `onClick` for slices and legend items.
+- **Live data**: add, remove or replace data points, and the chart animates to the new shape.
+- **Theming**: colors and lines come from CSS variables such as `--charts-label-color`, so dark mode is a few lines of CSS.
+- **Export**: save any chart as an SVG file.
 
-  ```sh
-  $ npm install frappe-charts
-  ```
+## Usage
 
-  and include in your project:
-  ```js
-  import { Chart } from "frappe-charts"
-  ```
+```bash
+npm install frappe-charts
+```
 
-  ...or include following for es-modules(eg:vuejs):
-  ```js
-  import { Chart } from 'frappe-charts/dist/frappe-charts.esm.js'
-  // import css
-  import 'frappe-charts/dist/frappe-charts.min.css'
-  ```
-
-* ...or include within your HTML
-
-  ```html
-    <script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.1.0/dist/frappe-charts.min.iife.js"></script>
-    <!-- or -->
-    <script src="https://unpkg.com/frappe-charts@1.1.0/dist/frappe-charts.min.iife.js"></script>
-  ```
-
-#### Usage
 ```js
-const data = {
-    labels: ["12am-3am", "3am-6pm", "6am-9am", "9am-12am",
-        "12pm-3pm", "3pm-6pm", "6pm-9pm", "9am-12am"
-    ],
+import { Chart } from 'frappe-charts';
+import 'frappe-charts/dist/frappe-charts.min.css';
+```
+
+Or load it in the browser:
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/frappe-charts/dist/frappe-charts.min.css">
+<script src="https://unpkg.com/frappe-charts/dist/frappe-charts.umd.js"></script>
+<!-- the browser build exposes window['frappe-charts'].Chart -->
+```
+
+```js
+const chart = new Chart('#chart', {
+  title: 'Sales by channel',
+  type: 'axis-mixed', // or 'bar', 'line', 'donut', 'pie', 'percentage', 'heatmap'
+  height: 250,
+  colors: ['#318ad8', '#30a66d'],
+  data: {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
     datasets: [
-        {
-            name: "Some Data", type: "bar",
-            values: [25, 40, 30, 35, 8, 52, 17, -4]
-        },
-        {
-            name: "Another Set", type: "line",
-            values: [25, 50, -10, 15, 18, 32, 27, 14]
-        }
-    ]
-}
+      { name: 'Online', chartType: 'bar', values: [42, 48, 39, 55, 61, 58] },
+      { name: 'Target', chartType: 'line', values: [60, 62, 64, 68, 72, 76] }
+    ],
+    yMarkers: [{ label: 'Goal', value: 70 }]
+  }
+});
 
-const chart = new frappe.Chart("#chart", {  // or a DOM element,
-                                            // new Chart() in case of ES6 module with above usage
-    title: "My Awesome Chart",
-    data: data,
-    type: 'axis-mixed', // or 'bar', 'line', 'scatter', 'pie', 'percentage'
-    height: 250,
-    colors: ['#7cd6fd', '#743ee2']
-})
+chart.addDataPoint('Jul', [66, 80]);
+chart.export();
 ```
 
-...or for es-modules (replace `new frappe.Chart()` with `new Chart()`):
-```diff
-- const chart = new frappe.Chart("#chart", {
-+ const chart = new Chart("#chart", {  // or a DOM element,
-                                    // new Chart() in case of ES6 module with above usage
-    title: "My Awesome Chart",
-    data: data,
-    type: 'axis-mixed', // or 'bar', 'line', 'scatter', 'pie', 'percentage'
-    height: 250,
-    colors: ['#7cd6fd', '#743ee2']
-})
-```
+For a horizontal bar chart, use `type: 'bar'` with `barOptions: { horizontal: 1 }`.
 
+## Development Setup
 
-If you want to contribute:
+* `yarn install`
+* `yarn watch` - Build on every change
+* `yarn build` - Build `dist`
+* `yarn test` - Run the Playwright tests (run `yarn playwright install chromium` once first)
+* Commit messages follow [Conventional Commits](https://www.conventionalcommits.org). A merge to `master` runs the tests and publishes a new version to npm.
 
-1. Clone this repo.
-2. `cd` into project directory
-3. `npm install`
-4. `npm run dev`
+## Links
 
-#### Updates
+- [Release notes](https://github.com/frappe/charts/releases), and [older updates](CHANGELOG.md)
+- [So we decided to create our own charts](https://medium.com/@pratu16x7/so-we-decided-to-create-our-own-charts-a95cb5032c97)
 
-##### v1.0.0
-- Major rewrite out. Some new features include:
-    - Mixed type axis datasets
-    - Stacked bar charts
-    - Value over data points
-    - Y Markers and regions
-    - Dot size, Bar space size, and other options
-    - Legend for axis charts
-- We would be looking to incorporate existing PRs and issues in the meantime.
-
-##### Please read [#93](https://github.com/frappe/charts/issues/93) for v0.1.0 updates on rework and development.
-
-##### v0.0.7
-- [Custom color values](https://github.com/frappe/charts/pull/71) for charts as hex codes. The API now takes an array of colors for all charts instead of a color for each dataset.
-- [@iamkdev's](https://github.com/iamkdev) blog on [usage with Angular](https://medium.com/@iamkdev/frappé-charts-with-angular-c9c5dd075d9f).
-
-##### v0.0.5
-- More [flexible Y values](https://github.com/frappe/charts/commit/3de049c451194dcd8e61ff91ceeb998ce131c709): independent from exponent, minimum Y axis point for line graphs.
-- Customisable [Heatmap colors](https://github.com/frappe/charts/pull/53); check out the Halloween demo on the [website](https://frappe.github.io/charts) :D
-- Tooltip values can be [formatted](https://github.com/frappe/charts/commit/e3d9ed0eae14b65044dca0542cdd4d12af3f2b44).
-
-##### v0.0.4
-- Build update: [Shipped](https://github.com/frappe/charts/pull/35) an ES6 module, along with the browser friendly IIFE.
-
-##### v0.0.2
-- We have an animated [Pie Chart](https://github.com/frappe/charts/issues/29)! Thanks [@sheweichun](https://github.com/sheweichun).
-- [@tobiaslins](https://github.com/tobiaslins) contributed tweaks for his quest to make these easy to use with React. Check out his [repo](https://github.com/tobiaslins/frappe-charts-react-example) and updates at [#24](https://github.com/frappe/charts/issues/24) to learn more :)
-- A new logo.
-
-##### v0.0.1
-- The very first version out, with animatable bars and lines, a percentage chart and a heatmap. GitHub-style.
-
-#### License
-This repository has been released under the [MIT License](LICENSE)
-
-------------------
-Project maintained by [Frappe](https://frappe.io).
-Used in [ERPNext](https://erpnext.com). Read the [blog post](https://medium.com/@pratu16x7/so-we-decided-to-create-our-own-charts-a95cb5032c97).
-
+<br>
+<br>
+<div align="center" style="padding-top: 0.75rem;">
+	<a href="https://frappe.io" target="_blank">
+		<picture>
+			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/Frappe-white.png">
+			<img src="https://frappe.io/files/Frappe-black.png" alt="Frappe Technologies" height="28"/>
+		</picture>
+	</a>
+</div>
