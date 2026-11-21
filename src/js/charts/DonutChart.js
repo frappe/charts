@@ -151,7 +151,6 @@ export default class DonutChart extends AggregationChart {
 			let m = this.measures;
 			this.legendArea.setAttribute('transform',
 				`translate(${getLeftOffset(m)}, ${getTopOffset(m) + this.height + m.paddings.bottom})`);
-			this.renderLegend();
 		}
 	}
 
