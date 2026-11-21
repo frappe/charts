@@ -210,7 +210,7 @@ export default class HorizontalBarChart extends BaseChart {
 		let radius = rounded ? this.config.radius : 0;
 		return createSVG('path', {
 			className: 'bar',
-			style: `fill: ${color}; stroke: none`,
+			styles: { fill: color, stroke: 'none' },
 			d: horizontalBarPathStr(x0, x1, top, height, radius)
 		});
 	}
