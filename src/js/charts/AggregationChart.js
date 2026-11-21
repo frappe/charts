@@ -7,6 +7,12 @@ export default class AggregationChart extends BaseChart {
 		super(parent, args);
 	}
 
+	prepareData(data) {
+		data.labels = data.labels || [];
+		data.datasets = data.datasets || [];
+		return data;
+	}
+
 	configure(args) {
 		super.configure(args);
 

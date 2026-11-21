@@ -14,7 +14,7 @@ export function dataPrep(data, type) {
 	let zeroArray = new Array(datasetLength).fill(0);
 	if (!datasets) {
 		// default
-		datasets = [{
+		datasets = data.datasets = [{
 			values: zeroArray
 		}];
 	}
