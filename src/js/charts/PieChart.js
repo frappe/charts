@@ -1,7 +1,7 @@
 import AggregationChart from './AggregationChart';
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset } from '../utils/dom';
-import { getPositionByAngle } from '../utils/helpers';
+import { getPositionByAngle, escapeHTML } from '../utils/helpers';
 import { makeArcPathStr, makeCircleStr } from '../utils/draw';
 import { transform } from '../utils/animation';
 import { FULL_ANGLE } from '../utils/constants';
@@ -126,11 +126,11 @@ export default class PieChart extends AggregationChart {
 			let g_off = getOffset(this.svg);
 			let x = e.pageX - g_off.left + 10;
 			let y = e.pageY - g_off.top - 10;
-			let title = (this.formatted_labels && this.formatted_labels.length > 0
+			let title = escapeHTML(this.formatted_labels && this.formatted_labels.length > 0
 				? this.formatted_labels[i] : this.state.labels[i]) + ': ';
 			let percent = (this.state.sliceTotals[i] * 100 / this.state.grandTotal).toFixed(1) + "%";
 			let format = this.config.formatTooltipY;
-			let value = format ? `${format(this.state.sliceTotals[i])} (${percent})` : percent;
+			let value = format ? `${escapeHTML(format(this.state.sliceTotals[i]))} (${percent})` : percent;
 			this.tip.setValues(x, y, { name: title, value: value });
 			this.tip.showTip();
 		} else {

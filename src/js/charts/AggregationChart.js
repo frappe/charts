@@ -65,6 +65,31 @@ export default class AggregationChart extends BaseChart {
 		};
 	}
 
+	update(data, drawing = false) {
+		let legendRows = (this.legendRows || []).length;
+		super.update(data, drawing);
+		if (!this.config.showLegend) return;
+		if ((this.legendRows || []).length !== legendRows) this.draw(true);
+		else this.renderLegend();
+	}
+
+	addDataPoint(label, datasetValues, index = this.data.labels.length) {
+		this.data.labels.splice(index, 0, label);
+		this.data.datasets.forEach((d, i) => {
+			d.values.splice(index, 0, [].concat(datasetValues)[i]);
+		});
+		this.update(this.data);
+	}
+
+	removeDataPoint(index = this.data.labels.length - 1) {
+		if (this.data.labels.length <= 1) return;
+		this.data.labels.splice(index, 1);
+		this.data.datasets.forEach(d => {
+			d.values.splice(index, 1);
+		});
+		this.update(this.data);
+	}
+
 	calcLegend() {
 		let s = this.state;
 		let family = getComputedStyle(this.container).fontFamily;

@@ -21,10 +21,16 @@
 
 .chart-container {
 	position: relative; /* for absolutely positioned tooltip */
+	direction: ltr;
 
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
 		"Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
 		"Helvetica Neue", sans-serif;
+
+	text.title {
+		font-size: 12px;
+		font-weight: normal;
+	}
 
 	.axis,
 	.chart-label {
