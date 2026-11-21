@@ -3,6 +3,7 @@ import { legendDot, FONT_SIZE, LABEL_MAX_CHARS } from '../utils/draw';
 import { getTextWidth } from '../utils/dom';
 import { truncateString } from '../utils/draw-utils';
 import { round } from '../utils/helpers';
+import { getExtraHeight, getLeftOffset, getTopOffset, LEGEND_ITEM_GAP } from '../utils/constants';
 
 export default class AggregationChart extends BaseChart {
 	constructor(parent, args) {
@@ -22,6 +23,52 @@ export default class AggregationChart extends BaseChart {
 		this.config.maxSlices = args.maxSlices || 20;
 		this.config.maxLegendPoints = args.maxLegendPoints || 20;
 		this.config.legendRowHeight = 60;
+		this.config.legendPosition = ['left', 'right'].includes(args.legendPosition) ? args.legendPosition : 'bottom';
+		if (this.config.legendPosition !== 'bottom') this.config.legendRowHeight = 44;
+	}
+
+	isSideLegend() {
+		return this.config.showLegend && this.config.legendPosition !== 'bottom' && ['pie', 'donut'].includes(this.type);
+	}
+
+	sideLegendRows(widths) {
+		let m = this.measures;
+		this.legendWidth = Math.min(Math.max(0, ...widths), this.width / 2);
+		m.legendHeight = 0;
+		this.baseHeight = Math.max(this.argHeight, widths.length * this.config.legendRowHeight + getExtraHeight(m));
+		this.height = this.baseHeight - getExtraHeight(m);
+		return widths.map((width, index) => [{ index, x: 0, width }]);
+	}
+
+	plotWidth() {
+		return this.isSideLegend() ? Math.max(this.width - this.legendWidth - LEGEND_ITEM_GAP, 0) : this.width;
+	}
+
+	plotHeight() {
+		return this.isSideLegend() ? Math.min(this.height, this.argHeight - getExtraHeight(this.measures)) : this.height;
+	}
+
+	plotCenter() {
+		let x = this.plotWidth() / 2;
+		if (this.isSideLegend() && this.config.legendPosition === 'left') x += this.legendWidth + LEGEND_ITEM_GAP;
+		return { x, y: this.height / 2 };
+	}
+
+	placeLegend() {
+		let m = this.measures;
+		if (!this.isSideLegend()) {
+			this.legendArea.setAttribute('transform',
+				`translate(${getLeftOffset(m)}, ${getTopOffset(m) + this.height + m.paddings.bottom})`);
+			return;
+		}
+		let x = getLeftOffset(m) + (this.config.legendPosition === 'right' ? this.width - this.legendWidth : 0);
+		let rows = (this.legendRows || []).length;
+		let middle = (rows - 1) * this.config.legendRowHeight / 2;
+		try {
+			let box = this.legendArea.getBBox();
+			if (box.height) middle = box.y + box.height / 2;
+		} catch (e) {}
+		this.legendArea.setAttribute('transform', `translate(${x}, ${getTopOffset(m) + this.height / 2 - middle})`);
 	}
 
 	calc() {
@@ -94,18 +141,21 @@ export default class AggregationChart extends BaseChart {
 		let s = this.state;
 		let family = getComputedStyle(this.container).fontFamily;
 		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
-		this.calcLegendRows(this.legendTotals.map((total, i) => {
+		let widths = this.legendTotals.map((total, i) => {
 			let label = this.config.truncateLegends ? truncateString(s.labels[i], LABEL_MAX_CHARS) : s.labels[i];
 			let value = this.config.formatTooltipY ? this.config.formatTooltipY(total) : total;
 			return 12 + FONT_SIZE + Math.max(
 				getTextWidth(label, `${FONT_SIZE * 1.6}px ${family}`),
 				getTextWidth(String(value), `${FONT_SIZE * 1.2}px ${family}`)
 			);
-		}));
+		});
+		if (this.isSideLegend()) this.legendRows = this.sideLegendRows(widths);
+		else this.calcLegendRows(widths);
 	}
 
 	renderLegend() {
 		super.renderLegend(this.legendTotals);
+		if (this.isSideLegend()) this.placeLegend();
 	}
 
 	makeLegend(data, index, x_pos, y_pos) {

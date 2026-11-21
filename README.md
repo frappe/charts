@@ -8,6 +8,7 @@
 
 [![Test and Release](https://github.com/frappe/charts/actions/workflows/publish.yml/badge.svg)](https://github.com/frappe/charts/actions/workflows/publish.yml)
 [![npm version](https://img.shields.io/npm/v/frappe-charts.svg)](https://www.npmjs.com/package/frappe-charts)
+[![gzipped size](https://deno.bundlejs.com/badge?q=frappe-charts)](https://bundlejs.com/?q=frappe-charts)
 
 [Live demos](https://frappe.io/charts)
 

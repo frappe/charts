@@ -4,7 +4,7 @@ import { getOffset, getTextWidth } from '../utils/dom';
 import { createSVG, legendDot, makeText, makeDonutSectorStr, makeDonutRingStr } from '../utils/draw';
 import { escapeHTML, getLegendRows, wholePercentages } from '../utils/helpers';
 import {
-	ANGLE_RATIO, getExtraHeight, getLeftOffset, getTopOffset, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE, LEGEND_ITEM_GAP,
+	ANGLE_RATIO, getExtraHeight, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE, LEGEND_ITEM_GAP,
 	TOOLTIP_SIDE_GAP, DONUT_GAP_ANGLE, DONUT_LIFT_RATIO, DONUT_THICKNESS_RATIO, DONUT_CORNER_RATIO,
 	DONUT_VALUE_FONT_SIZE, DONUT_LABEL_FONT_SIZE
 } from '../utils/constants';
@@ -45,7 +45,7 @@ export default class DonutChart extends AggregationChart {
 
 		this.calcLegend();
 		this.height = this.baseHeight - getExtraHeight(this.measures);
-		this.center = { x: this.width / 2, y: this.height / 2 };
+		this.center = this.plotCenter();
 		this.calcRadii();
 		this.calcSlices();
 		this.init = 0;
@@ -58,12 +58,16 @@ export default class DonutChart extends AggregationChart {
 			.slice(0, this.config.maxLegendPoints)
 			.map((total, i) => LEGEND_DOT_SIZE + LEGEND_FONT_SIZE + 6 + getTextWidth(this.legendText(i), font));
 
+		if (this.isSideLegend()) {
+			this.legendRows = this.sideLegendRows(widths);
+			return;
+		}
 		this.legendRows = getLegendRows(widths, this.width, LEGEND_ITEM_GAP);
 		this.measures.legendHeight = this.legendRows.length * this.config.legendRowHeight;
 	}
 
 	calcRadii() {
-		let outer = Math.max(Math.min(this.width, this.height) / 2, 0);
+		let outer = Math.max(Math.min(this.plotWidth(), this.plotHeight()) / 2, 0);
 		let lift = outer * DONUT_LIFT_RATIO;
 		let ro = outer - lift;
 		let thickness = this.config.strokeWidth || ro * DONUT_THICKNESS_RATIO;
@@ -147,11 +151,7 @@ export default class DonutChart extends AggregationChart {
 	update(data, drawing = false) {
 		super.update(data, drawing);
 		this.placeCenter();
-		if (this.config.showLegend) {
-			let m = this.measures;
-			this.legendArea.setAttribute('transform',
-				`translate(${getLeftOffset(m)}, ${getTopOffset(m) + this.height + m.paddings.bottom})`);
-		}
+		if (this.config.showLegend) this.placeLegend();
 	}
 
 	placeCenter() {
@@ -205,6 +205,7 @@ export default class DonutChart extends AggregationChart {
 				this.legendArea.appendChild(item);
 			});
 		});
+		if (this.isSideLegend()) this.placeLegend();
 	}
 
 	makeLegend(data, index, x_pos, y_pos) {

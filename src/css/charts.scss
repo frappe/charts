@@ -23,6 +23,14 @@
 	position: relative; /* for absolutely positioned tooltip */
 	direction: ltr;
 
+	.heatmap-scroll {
+		overflow-x: auto;
+	}
+
+	&.fit-height svg.frappe-chart {
+		display: block;
+	}
+
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
 		"Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
 		"Helvetica Neue", sans-serif;

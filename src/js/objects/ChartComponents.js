@@ -162,7 +162,7 @@ let componentConfigs = {
 		makeElements(data) {
 			return data.positions.map((position, i) => {
 				let line = xLine(position, data.calcLabels[i], this.constants.height,
-					{ mode: this.constants.mode, pos: this.constants.pos });
+					{ mode: this.constants.mode, pos: this.constants.pos, rotation: this.constants.rotation });
 				if (data.calcLabels[i] === '' && data.labels && data.labels[i] !== '') {
 					line.setAttribute('visibility', 'hidden');
 				}
@@ -440,7 +440,8 @@ let componentConfigs = {
 						c.color,
 						(c.valuesOverPoints ? formatPointValue(data.values[j], c.numberFormatter) : ''),
 						j,
-						o.hideDotBorder
+						o.hideDotBorder,
+						(data.labelsBelow || [])[j]
 					);
 					if (gaps && gaps[j]) dot.setAttribute('visibility', 'hidden');
 					return dot;
@@ -455,7 +456,8 @@ let componentConfigs = {
 					c.color,
 					(c.valuesOverPoints ? formatPointValue(data.values[lastIndex], c.numberFormatter) : ''),
 					lastIndex,
-					o.hideDotBorder
+					o.hideDotBorder,
+					(data.labelsBelow || [])[lastIndex]
 				);
 
 				this.units.push(dot);
@@ -481,6 +483,7 @@ let componentConfigs = {
 				yPositions: oldYPos,
 				values: newValues,
 				lineOptions: newData.lineOptions,
+				labelsBelow: newData.labelsBelow,
 
 				zeroLine: this.oldData.zeroLine,
 				radius: this.oldData.radius,

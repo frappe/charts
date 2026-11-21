@@ -67,6 +67,54 @@ test('time x axis spaces line points by date', async ({ page }) => {
     expect(week / day).toBeCloseTo(8, 1);
 });
 
+test('x axis labels can be rotated', async ({ page }) => {
+    const data = { labels: ['Frappe Technologies', 'Acme Corporation', 'Globex'], datasets: [{ values: [3, 5, 2] }] };
+    const labels = page.locator('#chart .x.axis text');
+    await render(page, { type: 'bar', data });
+    await expect(labels.first()).not.toHaveAttribute('transform', /rotate/);
+    await render(page, { type: 'bar', data, axisOptions: { xAxisLabelRotation: 45 } });
+    await expect(labels).toHaveCount(3);
+    await expect(labels.first()).toHaveAttribute('transform', /rotate\(-45/);
+    await expect(labels.nth(1)).toHaveText('Acme Corporation');
+});
+
+test('close line values over points do not overlap', async ({ page }) => {
+    await render(page, { type: 'line', valuesOverPoints: 1, data: { labels: ['Jan', 'Feb'], datasets: [{ values: [1500, 1968] }, { values: [900, 1967] }] } });
+    const boxes = await page.locator('#chart .data-point-value').evaluateAll(els => els.filter(e => e.textContent.startsWith('196')).map(e => e.getBoundingClientRect().toJSON()));
+    expect(boxes).toHaveLength(2);
+    expect(boxes[0].bottom <= boxes[1].top || boxes[1].bottom <= boxes[0].top).toBe(true);
+});
+
+test('axis titles are drawn when set', async ({ page }) => {
+    await render(page, { type: 'line', data: axisData });
+    await expect(page.locator('#chart .axis-title')).toHaveCount(0);
+    await render(page, { type: 'line', data: axisData, axisOptions: { xAxisTitle: 'Day', yAxisTitle: 'Visits' } });
+    await expect(page.locator('#chart .axis-title')).toHaveText(['Day', 'Visits']);
+});
+
+test('height 100% follows the parent height', async ({ page }) => {
+    const style = await page.addStyleTag({ content: '#chart > div { height: 400px }' });
+    await render(page, { type: 'line', data: axisData, height: '100%' });
+    await expect(page.locator('#chart svg.frappe-chart')).toHaveAttribute('height', '400');
+    await style.evaluate(el => { el.textContent = '#chart > div { height: 300px }'; });
+    await expect(page.locator('#chart svg.frappe-chart')).toHaveAttribute('height', '300');
+});
+
+test('axes can be hidden', async ({ page }) => {
+    await render(page, { type: 'line', data: axisData, axisOptions: { hideXAxis: 1, hideYAxis: 1 } });
+    await expect(page.locator('#chart .x.axis text, #chart .y.axis text')).toHaveCount(0);
+    await expect(page.locator('#chart path.line-graph-path')).toHaveCount(2);
+});
+
+test('clicking a column on an axis chart calls onClick', async ({ page }) => {
+    await page.evaluate(data => {
+        window.clicked = null;
+        window.renderChart({ type: 'bar', data, onClick: point => { window.clicked = point; } });
+    }, axisData);
+    await page.locator('#chart .dataset-units path').nth(2).click({ force: true });
+    expect(await page.evaluate(() => window.clicked)).toEqual({ index: 2, label: 'Wed', values: [30, 25] });
+});
+
 test('horizontal bar chart shows a row per label with its value', async ({ page }) => {
     await render(page, { type: 'bar', barOptions: { horizontal: 1 }, data: { labels: ['India', 'Kenya'], datasets: [{ values: [48200, 6100] }] } });
     await expect(page.locator('#chart .horizontal-bar-label')).toHaveCount(2);
@@ -97,6 +145,15 @@ test('pie chart draws a slice per label', async ({ page }) => {
 test('percentage chart draws a part per label', async ({ page }) => {
     await render(page, { type: 'percentage', data: sliceData });
     await expect(page.locator('#chart .percentage-bar')).toHaveCount(3);
+});
+
+test('pie and donut legends can sit beside the chart', async ({ page }) => {
+    for (const type of ['pie', 'donut']) {
+        await render(page, { type, legendPosition: 'right', data: sliceData });
+        const legend = await page.locator('#chart .chart-legend').boundingBox();
+        const slices = await page.locator(`#chart .${type}-path`).evaluateAll(els => Math.max(...els.map(e => e.getBoundingClientRect().right)));
+        expect(legend.x).toBeGreaterThanOrEqual(slices);
+    }
 });
 
 test('heatmap draws a square per day', async ({ page }) => {

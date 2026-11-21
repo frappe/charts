@@ -1,5 +1,5 @@
 import BaseChart from './BaseChart';
-import { getTextWidth } from '../utils/dom';
+import { $, getTextWidth } from '../utils/dom';
 import { getComponent } from '../objects/ChartComponents';
 import { makeText, heatSquare } from '../utils/draw';
 import {
@@ -181,6 +181,13 @@ export default class Heatmap extends BaseChart {
 				}
 			});
 		});
+	}
+
+	makeChartArea() {
+		if (!this.scrollArea) this.scrollArea = $.create('div', { inside: this.container, className: 'heatmap-scroll' });
+		this.scrollArea.textContent = '';
+		super.makeChartArea();
+		this.scrollArea.appendChild(this.svg);
 	}
 
 	renderLegend() {
