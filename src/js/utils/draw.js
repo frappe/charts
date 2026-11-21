@@ -520,6 +520,35 @@ export function xMarker(x, label, height, options = {}) {
 	return marker;
 }
 
+export function xRegion(x1, x2, height, label, options = {}) {
+	let rect = createSVG('rect', {
+		className: 'x-region',
+		styles: {
+			fill: options.fill || `rgba(228, 234, 239, 0.49)`,
+			stroke: options.stroke || 'none'
+		},
+		x: x1,
+		y: 0,
+		width: Math.max(x2 - x1, 0),
+		height: height
+	});
+
+	let labelSvg = createSVG('text', {
+		className: 'chart-label',
+		x: (x1 + x2) / 2,
+		y: -LABEL_MARGIN,
+		'font-size': FONT_SIZE + 'px',
+		'text-anchor': 'middle',
+		innerHTML: (label || '') + ""
+	});
+
+	let region = createSVG('g', {});
+	region.appendChild(rect);
+	region.appendChild(labelSvg);
+
+	return region;
+}
+
 export function yRegion(y1, y2, width, label, options = {}) {
 	// return a group
 	let height = y1 - y2;

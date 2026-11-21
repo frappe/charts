@@ -249,6 +249,29 @@ export default class AxisChart extends BaseChart {
 					return this.state.yRegions;
 				}.bind(this)
 			],
+
+			[
+				'xRegions',
+				{
+					height: this.height
+				},
+				function () {
+					let s = this.state;
+					let labels = this.data.labels;
+					return (this.data.xRegions || []).map(r => {
+						let start = labels.indexOf(r.start);
+						let end = labels.indexOf(r.end);
+						if (start === -1 || end === -1) return null;
+						if (start > end) [start, end] = [end, start];
+						return {
+							label: r.label,
+							startPos: s.xAxis.positions[start] - s.unitWidth / 2,
+							endPos: s.xAxis.positions[end] + s.unitWidth / 2,
+							options: r.options || {}
+						};
+					}).filter(Boolean);
+				}.bind(this)
+			],
 		];
 
 		let barDatasets = this.state.datasets.filter(d => d.chartType === 'bar');
