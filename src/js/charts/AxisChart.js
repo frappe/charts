@@ -87,6 +87,8 @@ export default class AxisChart extends BaseChart {
 		this.config.legendRowHeight = 30;
 
 		this.config.xAxisLabelRotation = Math.min(Math.max(Number(options.axisOptions.xAxisLabelRotation) || 0, 0), 90);
+		this.config.hideXAxis = options.axisOptions.hideXAxis || 0;
+		this.config.hideYAxis = options.axisOptions.hideYAxis || 0;
 		this.config.xAxisTitle = options.axisOptions.xAxisTitle || '';
 		this.config.yAxisTitle = options.axisOptions.yAxisTitle || '';
 		this.rotatedLabelSpace = this.calcLabelSpace();
@@ -171,6 +173,7 @@ export default class AxisChart extends BaseChart {
 	}
 
 	fitYAxisLabels() {
+		if (this.config.hideYAxis) return false;
 		let m = this.measures;
 		let { numberFormatter, shortenYAxisNumbers } = this.config;
 		let font = `${FONT_SIZE}px ${getComputedStyle(this.container).fontFamily}`;
@@ -588,10 +591,11 @@ export default class AxisChart extends BaseChart {
 		componentConfigs = componentConfigs.concat(barsConfigs, lineConfigs, markerConfigs);
 
 		let optionals = ['xMarkers', 'yMarkers', 'yRegions'];
+		let hidden = [this.config.hideXAxis && 'xAxis', this.config.hideYAxis && 'yAxis'];
 		this.dataUnitComponents = [];
 
 		this.components = new Map(componentConfigs
-			.filter(args => !optionals.includes(args[0]) || this.state[args[0]])
+			.filter(args => (!optionals.includes(args[0]) || this.state[args[0]]) && !hidden.includes(args[0]))
 			.map(args => {
 				let component = getComponent(...args);
 				if (args[0].includes('lineGraph') || args[0].includes('barGraph')) {

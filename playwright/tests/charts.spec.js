@@ -100,6 +100,12 @@ test('height 100% follows the parent height', async ({ page }) => {
     await expect(page.locator('#chart svg.frappe-chart')).toHaveAttribute('height', '300');
 });
 
+test('axes can be hidden', async ({ page }) => {
+    await render(page, { type: 'line', data: axisData, axisOptions: { hideXAxis: 1, hideYAxis: 1 } });
+    await expect(page.locator('#chart .x.axis text, #chart .y.axis text')).toHaveCount(0);
+    await expect(page.locator('#chart path.line-graph-path')).toHaveCount(2);
+});
+
 test('horizontal bar chart shows a row per label with its value', async ({ page }) => {
     await render(page, { type: 'bar', barOptions: { horizontal: 1 }, data: { labels: ['India', 'Kenya'], datasets: [{ values: [48200, 6100] }] } });
     await expect(page.locator('#chart .horizontal-bar-label')).toHaveCount(2);
