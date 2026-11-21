@@ -33,12 +33,14 @@ export default class PieChart extends AggregationChart {
 	}
 
 	getRadius() {
+		if (this.isSideLegend()) return Math.min(this.plotWidth(), this.plotHeight()) / 2;
 		return this.height > this.width ? this.center.x : this.center.y;
 	}
 
 	calc() {
 		super.calc();
 		this.calcLegend();
+		if (this.isSideLegend()) this.center = this.plotCenter();
 		let s = this.state;
 		this.radius = this.getRadius();
 

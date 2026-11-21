@@ -117,6 +117,15 @@ test('percentage chart draws a part per label', async ({ page }) => {
     await expect(page.locator('#chart .percentage-bar')).toHaveCount(3);
 });
 
+test('pie and donut legends can sit beside the chart', async ({ page }) => {
+    for (const type of ['pie', 'donut']) {
+        await render(page, { type, legendPosition: 'right', data: sliceData });
+        const legend = await page.locator('#chart .chart-legend').boundingBox();
+        const slices = await page.locator(`#chart .${type}-path`).evaluateAll(els => Math.max(...els.map(e => e.getBoundingClientRect().right)));
+        expect(legend.x).toBeGreaterThanOrEqual(slices);
+    }
+});
+
 test('heatmap draws a square per day', async ({ page }) => {
     await page.evaluate(() => window.renderChart({
         type: 'heatmap',
