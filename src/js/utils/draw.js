@@ -708,7 +708,9 @@ export function datasetDot(x, y, radius, color, label = '', index = 0, hideDotBo
 export function getPaths(xList, yList, color, options = {}, meta = {}) {
 	let pathStrs = getLinePathStrs(xList, yList, {
 		spline: options.spline,
+		stepped: options.stepped,
 		gaps: options.gaps,
+		spanGaps: options.spanGaps,
 		zeroLine: meta.zeroLine
 	});
 

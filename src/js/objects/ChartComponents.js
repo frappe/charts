@@ -402,7 +402,7 @@ let componentConfigs = {
 			let o = data.lineOptions || {};
 			this.unitType = 'dot';
 			this.paths = {};
-			let gaps = o.showGaps ? data.values.map(v => v === null) : null;
+			let gaps = o.showGaps || o.spanGaps ? data.values.map(v => v === null) : null;
 			if (!o.hideLine) {
 				this.paths = getPaths(
 					data.xPositions,
@@ -412,6 +412,8 @@ let componentConfigs = {
 						heatline: o.heatline,
 						regionFill: o.regionFill,
 						spline: o.spline,
+						stepped: o.stepped,
+						spanGaps: o.spanGaps,
 						dashed: o.dashed,
 						gaps: gaps
 					},
@@ -484,9 +486,9 @@ let componentConfigs = {
 
 			if (Object.keys(this.paths).length) {
 				let o = newData.lineOptions || {};
-				let gaps = o.showGaps ? newValues.map(v => v === null) : null;
+				let gaps = o.showGaps || o.spanGaps ? newValues.map(v => v === null) : null;
 				animateElements = animateElements.concat(animatePath(
-					this.paths, newXPos, newYPos, newData.zeroLine, o.spline, gaps));
+					this.paths, newXPos, newYPos, newData.zeroLine, o.spline, gaps, o.stepped, o.spanGaps));
 			}
 
 			if (this.units.length) {

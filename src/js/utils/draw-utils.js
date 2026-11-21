@@ -105,7 +105,7 @@ export function getLinePathStrs(xList, yList, options = {}) {
 	let runs = [[]];
 	yList.forEach((y, i) => {
 		if (options.gaps && options.gaps[i]) {
-			if (runs[runs.length - 1].length) runs.push([]);
+			if (!options.spanGaps && runs[runs.length - 1].length) runs.push([]);
 		} else {
 			runs[runs.length - 1].push(i);
 		}
@@ -118,7 +118,9 @@ export function getLinePathStrs(xList, yList, options = {}) {
 		let ys = run.map(i => yList[i]);
 		let pointsStr = options.spline
 			? getSplineCurvePointsStr(xs, ys)
-			: ys.map((y, i) => xs[i] + ',' + y).join('L');
+			: options.stepped
+				? xs.map((x, i) => (i ? `${x},${ys[i - 1]}L` : '') + `${x},${ys[i]}`).join('L')
+				: ys.map((y, i) => xs[i] + ',' + y).join('L');
 		line += 'M' + pointsStr;
 		region += `M${xs[0]},${options.zeroLine}L${pointsStr}L${xs[xs.length - 1]},${options.zeroLine}`;
 	});
