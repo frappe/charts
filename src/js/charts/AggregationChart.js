@@ -1,10 +1,18 @@
 import BaseChart from './BaseChart';
-import { legendDot } from '../utils/draw';
+import { legendDot, FONT_SIZE, LABEL_MAX_CHARS } from '../utils/draw';
+import { getTextWidth } from '../utils/dom';
+import { truncateString } from '../utils/draw-utils';
 import { round } from '../utils/helpers';
 
 export default class AggregationChart extends BaseChart {
 	constructor(parent, args) {
 		super(parent, args);
+	}
+
+	prepareData(data) {
+		data.labels = data.labels || [];
+		data.datasets = data.datasets || [];
+		return data;
 	}
 
 	configure(args) {
@@ -58,8 +66,11 @@ export default class AggregationChart extends BaseChart {
 	}
 
 	update(data, drawing = false) {
+		let legendRows = (this.legendRows || []).length;
 		super.update(data, drawing);
-		if (this.config.showLegend) this.renderLegend();
+		if (!this.config.showLegend) return;
+		if ((this.legendRows || []).length !== legendRows) this.draw(true);
+		else this.renderLegend();
 	}
 
 	addDataPoint(label, datasetValues, index = this.data.labels.length) {
@@ -79,10 +90,21 @@ export default class AggregationChart extends BaseChart {
 		this.update(this.data);
 	}
 
-	renderLegend() {
+	calcLegend() {
 		let s = this.state;
-		this.legendArea.textContent = '';
+		let family = getComputedStyle(this.container).fontFamily;
 		this.legendTotals = s.sliceTotals.slice(0, this.config.maxLegendPoints);
+		this.calcLegendRows(this.legendTotals.map((total, i) => {
+			let label = this.config.truncateLegends ? truncateString(s.labels[i], LABEL_MAX_CHARS) : s.labels[i];
+			let value = this.config.formatTooltipY ? this.config.formatTooltipY(total) : total;
+			return 12 + FONT_SIZE + Math.max(
+				getTextWidth(label, `${FONT_SIZE * 1.6}px ${family}`),
+				getTextWidth(String(value), `${FONT_SIZE * 1.2}px ${family}`)
+			);
+		}));
+	}
+
+	renderLegend() {
 		super.renderLegend(this.legendTotals);
 	}
 
