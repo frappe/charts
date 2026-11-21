@@ -68,7 +68,8 @@ export default class AxisChart extends BaseChart {
 		this.calcXPositions();
 		this.calcXMarkers();
 		if (!onlyWidthChange) {
-			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line');
+			let hasBars = this.data.datasets.some(d => d.chartType === 'bar');
+			this.calcYAxisParameters(this.getAllYValues(), this.type === 'line' && !hasBars);
 		}
 		this.makeDataByIndex();
 	}
