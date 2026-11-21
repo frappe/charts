@@ -131,7 +131,9 @@
 
 	&.is-clickable {
 		.donut-path,
-		.donut-legend-item {
+		.donut-legend-item,
+		.pie-path,
+		.pie-legend-item {
 			cursor: pointer;
 		}
 	}

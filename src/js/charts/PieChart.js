@@ -147,6 +147,22 @@ export default class PieChart extends AggregationChart {
 	bindTooltip() {
 		this.container.addEventListener('mousemove', this.mouseMove);
 		this.container.addEventListener('mouseleave', this.mouseLeave);
+		this.container.addEventListener('click', (e) => {
+			if (!this.config.onClick) return;
+			let i = this.components.get(this.sliceName).store.indexOf(e.target);
+			let item = e.target.closest && e.target.closest('.pie-legend-item');
+			if (i === -1 && item) i = parseInt(item.getAttribute('data-index'));
+			if (i === -1 || isNaN(i)) return;
+			let s = this.state;
+			this.config.onClick({ index: i, label: s.labels[i], value: s.sliceTotals[i] });
+		});
+	}
+
+	makeLegend(data, index, x_pos, y_pos) {
+		let item = super.makeLegend(data, index, x_pos, y_pos);
+		item.classList.add('pie-legend-item');
+		item.setAttribute('data-index', index);
+		return item;
 	}
 
 	mouseMove(e) {
