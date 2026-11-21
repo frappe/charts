@@ -157,10 +157,14 @@ let componentConfigs = {
 	xAxis: {
 		layerClass: 'x axis',
 		makeElements(data) {
-			return data.positions.map((position, i) =>
-				xLine(position, data.calcLabels[i], this.constants.height,
-					{ mode: this.constants.mode, pos: this.constants.pos })
-			);
+			return data.positions.map((position, i) => {
+				let line = xLine(position, data.calcLabels[i], this.constants.height,
+					{ mode: this.constants.mode, pos: this.constants.pos });
+				if (data.calcLabels[i] === '' && data.labels && data.labels[i] !== '') {
+					line.setAttribute('visibility', 'hidden');
+				}
+				return line;
+			});
 		},
 
 		animateElements(newData) {
@@ -174,7 +178,8 @@ let componentConfigs = {
 
 			this.render({
 				positions: oldPos,
-				calcLabels: newLabels
+				calcLabels: newLabels,
+				labels: newData.labels
 			});
 
 			return this.store.map((line, i) => {
