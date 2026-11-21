@@ -31,6 +31,8 @@ export default class BaseChart {
 		this.data = this.prepareFirstData(this.realData);
 
 		this.colors = this.validateColors(options.colors, this.type);
+		this.paletteSize = this.colors.length;
+		this.extendColors(this.realData);
 
 		this.config = {
 			showTooltip: 1, // calculate
@@ -86,6 +88,14 @@ export default class BaseChart {
 			}
 		});
 		return validColors;
+	}
+
+	extendColors(data = {}) {
+		if (this.type === 'heatmap' || !this.paletteSize) return;
+		let count = Math.max((data.labels || []).length, (data.datasets || []).length);
+		for (let i = this.colors.length; i < count; i++) {
+			this.colors.push(this.colors[i % this.paletteSize]);
+		}
 	}
 
 	setMeasures() {
@@ -246,6 +256,7 @@ export default class BaseChart {
 		const animate = drawing ? !this.config.disableEntryAnimation : this.config.animate;
 		
 		this.data = this.prepareData(data);
+		this.extendColors(this.data);
 		this.calc(); // builds state
 		this.render(this.components, animate);
 	}
