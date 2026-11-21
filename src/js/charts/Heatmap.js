@@ -1,8 +1,9 @@
 import BaseChart from './BaseChart';
+import { getTextWidth } from '../utils/dom';
 import { getComponent } from '../objects/ChartComponents';
 import { makeText, heatSquare } from '../utils/draw';
 import {
-	DAY_NAMES_SHORT, addDays, areInSameMonth, getLastDateInMonth, setDayToWeekStart, getYyyyMmDd, getWeeksBetween, getMonthName, clone,
+	getMonthNames, getDayNames, addDays, areInSameMonth, getLastDateInMonth, setDayToWeekStart, getYyyyMmDd, getWeeksBetween, clone,
 	NO_OF_MILLIS, NO_OF_YEAR_MONTHS, NO_OF_DAYS_IN_WEEK
 } from '../utils/date-utils';
 import { calcDistribution, getMaxCheckpoint } from '../utils/intervals';
@@ -22,6 +23,10 @@ export default class Heatmap extends BaseChart {
 		this.type = 'heatmap';
 
 		this.countLabel = options.countLabel || '';
+		this.legendLabels = options.legendLabels || ['Less', 'More'];
+		this.locale = options.locale;
+		this.monthNames = getMonthNames(options.locale);
+		this.dayNames = getDayNames(options.locale);
 
 		this.setup();
 	}
@@ -96,6 +101,7 @@ export default class Heatmap extends BaseChart {
 			'heatDomain',
 			{
 				index: config.index,
+				monthName: this.monthNames[config.index],
 				colWidth: COL_WIDTH,
 				rowHeight: ROW_HEIGHT,
 				squareSize: HEATMAP_SQUARE_SIZE,
@@ -120,10 +126,10 @@ export default class Heatmap extends BaseChart {
 		);
 
 		let y = 0;
-		DAY_NAMES_SHORT.forEach((_, i) => {
-			let day = (i + this.startSubDomainIndex) % DAY_NAMES_SHORT.length;
+		this.dayNames.forEach((_, i) => {
+			let day = (i + this.startSubDomainIndex) % this.dayNames.length;
 			if ([1, 3, 5].includes(day)) {
-				let dayName = DAY_NAMES_SHORT[day];
+				let dayName = this.dayNames[day];
 				let dayText = makeText('subdomain-name', -COL_WIDTH / 2, y, dayName,
 					{
 						fontSize: HEATMAP_SQUARE_SIZE,
@@ -157,7 +163,7 @@ export default class Heatmap extends BaseChart {
 					let count = daySquare.getAttribute('data-value');
 					let dateParts = daySquare.getAttribute('data-date').split('-');
 
-					let month = getMonthName(parseInt(dateParts[1]) - 1, true);
+					let month = this.monthNames[parseInt(dateParts[1]) - 1];
 
 					let gOff = this.container.getBoundingClientRect(), pOff = daySquare.getBoundingClientRect();
 
@@ -165,7 +171,10 @@ export default class Heatmap extends BaseChart {
 					let x = pOff.left - gOff.left + width / 2;
 					let y = pOff.top - gOff.top;
 					let value = count + ' ' + this.countLabel;
-					let name = ' on ' + month + ' ' + dateParts[0] + ', ' + dateParts[2];
+					let name = this.locale
+						? ' · ' + new Intl.DateTimeFormat(this.locale, { dateStyle: 'medium' })
+							.format(new Date(dateParts[0], dateParts[1] - 1, dateParts[2]))
+						: ' on ' + month + ' ' + dateParts[0] + ', ' + dateParts[2];
 
 					this.tip.setValues(x, y, { name: escapeHTML(name), value: escapeHTML(value), valueFirst: 1 }, []);
 					this.tip.showTip();
@@ -180,13 +189,14 @@ export default class Heatmap extends BaseChart {
 		let y = ROW_HEIGHT;
 		let radius = this.rawChartArgs.radius || 0;
 
-		let lessText = makeText('subdomain-name', x, y, 'Less',
+		let lessText = makeText('subdomain-name', x, y, this.legendLabels[0],
 			{
 				fontSize: HEATMAP_SQUARE_SIZE + 1,
 				dy: 9
 			}
 		);
-		x = (COL_WIDTH * 2) + COL_WIDTH / 2;
+		let font = `${HEATMAP_SQUARE_SIZE + 1}px ${getComputedStyle(this.container).fontFamily}`;
+		x = Math.max((COL_WIDTH * 2) + COL_WIDTH / 2, getTextWidth(this.legendLabels[0], font) + COL_WIDTH / 2);
 		this.legendArea.appendChild(lessText);
 
 		this.colors.slice(0, HEATMAP_DISTRIBUTION_SIZE).map((color, i) => {
@@ -196,7 +206,7 @@ export default class Heatmap extends BaseChart {
 		});
 
 		let moreTextX = x + HEATMAP_DISTRIBUTION_SIZE * (COL_WIDTH + 3) + COL_WIDTH / 4;
-		let moreText = makeText('subdomain-name', moreTextX, y, 'More',
+		let moreText = makeText('subdomain-name', moreTextX, y, this.legendLabels[1],
 			{
 				fontSize: HEATMAP_SQUARE_SIZE + 1,
 				dy: 9

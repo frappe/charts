@@ -5,7 +5,6 @@ import {
 	translateHoriLine, translateVertLine, animateRegion, animateBar,
 	animateDot, animatePath, animatePathStr
 } from '../utils/animate';
-import { getMonthName } from '../utils/date-utils';
 
 class ChartComponent {
 	constructor({
@@ -157,10 +156,14 @@ let componentConfigs = {
 	xAxis: {
 		layerClass: 'x axis',
 		makeElements(data) {
-			return data.positions.map((position, i) =>
-				xLine(position, data.calcLabels[i], this.constants.height,
-					{ mode: this.constants.mode, pos: this.constants.pos })
-			);
+			return data.positions.map((position, i) => {
+				let line = xLine(position, data.calcLabels[i], this.constants.height,
+					{ mode: this.constants.mode, pos: this.constants.pos });
+				if (data.calcLabels[i] === '' && data.labels && data.labels[i] !== '') {
+					line.setAttribute('visibility', 'hidden');
+				}
+				return line;
+			});
 		},
 
 		animateElements(newData) {
@@ -174,7 +177,8 @@ let componentConfigs = {
 
 			this.render({
 				positions: oldPos,
-				calcLabels: newLabels
+				calcLabels: newLabels,
+				labels: newData.labels
 			});
 
 			return this.store.map((line, i) => {
@@ -274,7 +278,7 @@ let componentConfigs = {
 	heatDomain: {
 		layerClass: function () { return 'heat-domain domain-' + this.constants.index; },
 		makeElements(data) {
-			let { index, colWidth, rowHeight, squareSize, radius, xTranslate } = this.constants;
+			let { monthName, colWidth, rowHeight, squareSize, radius, xTranslate } = this.constants;
 			let monthNameHeight = -12;
 			let x = xTranslate, y = 0;
 
@@ -283,7 +287,7 @@ let componentConfigs = {
 			data.cols.map((week, weekNo) => {
 				if (weekNo === 1) {
 					this.labels.push(
-						makeText('domain-name', x, monthNameHeight, getMonthName(index, true).toUpperCase(),
+						makeText('domain-name', x, monthNameHeight, monthName.toUpperCase(),
 							{
 								fontSize: 9
 							}
@@ -324,7 +328,7 @@ let componentConfigs = {
 					data.xPositions[j],
 					y,
 					data.barWidth,
-					c.color,
+					(data.colors && data.colors[j]) || c.color,
 					data.labels[j],
 					j,
 					data.offsets[j],
@@ -359,6 +363,7 @@ let componentConfigs = {
 				yPositions: oldYPos,
 				offsets: oldOffsets,
 				labels: newLabels,
+				colors: newData.colors,
 
 				zeroLine: this.oldData.zeroLine,
 				barsWidth: this.oldData.barsWidth,

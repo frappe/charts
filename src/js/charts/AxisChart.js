@@ -3,14 +3,15 @@ import { dataPrep, zeroDataPrep, getShortenedLabels } from '../utils/axis-chart-
 import { getComponent } from '../objects/ChartComponents';
 import { getOffset, fire, getTextWidth } from '../utils/dom';
 import { calcChartIntervals, getIntervalSize, getValueRange, getZeroIndex, scale, getClosestInArray } from '../utils/intervals';
-import { floatTwo, getStringWidth, escapeHTML, round } from '../utils/helpers';
+import { floatTwo, getStringWidth, escapeHTML, deepClone, round } from '../utils/helpers';
 import { makeOverlay, updateOverlay, legendDot, makeHoverBand, FONT_SIZE, AXIS_TICK_LENGTH } from '../utils/draw';
 import {
-	getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
+	BASE_MEASURES, getExtraHeight, getTopOffset, getLeftOffset, MIN_BAR_PERCENT_HEIGHT, BAR_CHART_SPACE_RATIO,
 	BAR_CHART_RADIUS, BAR_CHART_GAP, BAR_CHART_MAX_WIDTH, LINE_CHART_DOT_SIZE, LEGEND_DOT_SIZE, LEGEND_FONT_SIZE,
 	LEGEND_CHAR_WIDTH, TOOLTIP_SIDE_GAP
 } from '../utils/constants';
 import { shortenLargeNumber } from '../utils/draw-utils';
+import { getColor } from '../utils/colors';
 
 export default class AxisChart extends BaseChart {
 	constructor(parent, args) {
@@ -32,6 +33,34 @@ export default class AxisChart extends BaseChart {
 		}
 	}
 
+	update(data, drawing = false) {
+		if (!drawing && data && this.changesDatasets(data)) {
+			this.data = this.prepareData(deepClone(data));
+			this.updateLegendMeasures();
+			this.draw();
+			return;
+		}
+		super.update(data, drawing);
+	}
+
+	changesDatasets(data) {
+		let next = this.prepareData(deepClone(data)).datasets;
+		let current = this.data.datasets;
+		return next.length !== current.length || next.some((d, i) => d.chartType !== current[i].chartType);
+	}
+
+	updateLegendMeasures() {
+		let m = this.measures;
+		let showLegend = this.rawChartArgs.showLegend;
+		this.config.showLegend = this.data.datasets.length > 1
+			? (typeof showLegend !== 'undefined' ? showLegend : 1)
+			: 0;
+		m.paddings.bottom = this.data.datasets.length > 1 ? BASE_MEASURES.paddings.bottom : 30;
+		m.legendHeight = this.config.showLegend ? BASE_MEASURES.legendHeight : 0;
+		this.baseLegendHeight = m.legendHeight;
+		this.height = this.argHeight - getExtraHeight(m);
+	}
+
 	configure(options) {
 		super.configure(options);
 		this.baseLeftPadding = this.measures.paddings.left;
@@ -40,6 +69,7 @@ export default class AxisChart extends BaseChart {
 		options.tooltipOptions = options.tooltipOptions || {};
 
 		this.config.xAxisMode = options.axisOptions.xAxisMode || 'span';
+		this.config.xOffset = options.axisOptions.xOffset;
 		this.config.yAxisMode = options.axisOptions.yAxisMode || 'span';
 		this.config.xIsSeries = options.axisOptions.xIsSeries || 0;
 		this.config.shortenYAxisNumbers = options.axisOptions.shortenYAxisNumbers || 0;
@@ -111,13 +141,10 @@ export default class AxisChart extends BaseChart {
 		let labels = this.data.labels;
 		s.datasetLength = labels.length;
 
-		s.unitWidth = this.width / (s.datasetLength);
-		// Default, as per bar, and mixed. Only line will be a special case
-		s.xOffset = s.unitWidth / 2;
-
-		// // For a pure Line Chart
-		// s.unitWidth = this.width/(s.datasetLength - 1);
-		// s.xOffset = 0;
+		let hasBars = this.data.datasets.some(d => d.chartType === 'bar');
+		let edgeToEdge = this.config.xOffset === 0 && !hasBars && s.datasetLength > 1;
+		s.unitWidth = this.width / (edgeToEdge ? s.datasetLength - 1 : s.datasetLength);
+		s.xOffset = edgeToEdge ? 0 : s.unitWidth / 2;
 
 		s.xAxis = {
 			labels: labels,
@@ -345,6 +372,7 @@ export default class AxisChart extends BaseChart {
 						offsets: offsets,
 						// values: d.values,
 						labels: labels,
+						colors: (this.data.datasets[d.index].colors || []).map(color => color && getColor(color)),
 
 						zeroLine: s.yAxis.zeroLine,
 						barsWidth: barsWidth,

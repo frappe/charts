@@ -36,6 +36,10 @@ function getNiceStep(range) {
 function getChartIntervals(maxValue, minValue = 0) {
 	let magnitude = Math.pow(10, normalize(maxValue)[1]);
 	let lowerBound = Math.floor(minValue / magnitude) * magnitude;
+	if (maxValue > minValue && minValue - lowerBound > maxValue - minValue) {
+		let dataStep = getNiceStep(maxValue - minValue);
+		lowerBound = Math.floor(minValue / dataStep) * dataStep;
+	}
 	let step = magnitude;
 	let noOfParts = 5;
 
